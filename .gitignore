@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# next build
+.next/
+out/
+dist/
+
+# env (secret)
+.env
+.env.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Own folder ignore
+mxp_logo/
+db_schema/
+adjust_code/
