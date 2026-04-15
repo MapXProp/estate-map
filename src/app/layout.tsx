@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang={process.env.NEXT_PUBLIC_THEME_DIR === 'rtl' ? 'ar' : 'en'}
+      lang={process.env.NEXT_PUBLIC_THEME_DIR === 'rtl' ? 'ar' : 'th'}
       dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
       suppressHydrationWarning
       className={cn('font-sans', poppins.variable)}
