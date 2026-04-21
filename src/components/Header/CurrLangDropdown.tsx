@@ -45,11 +45,15 @@ const Languages = ({ languages }: { languages: Awaited<ReturnType<typeof getLang
     <div className="grid gap-6 lg:grid-cols-2">
       {languages.map((item, index) => (
         <CloseButton
-          as={Link}
-          href={item.href}
+          as="button"
           key={index}
+          onClick={() => {
+            // เซต Cookie และ Refresh หน้า
+            document.cookie = `NEXT_LOCALE=${item.id === 'English' ? 'en' : 'th'}; path=/; max-age=31536000`
+            window.location.reload()
+          }}
           className={clsx(
-            '-m-2.5 flex items-center rounded-lg p-2.5 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden dark:hover:bg-neutral-700',
+            '-m-2.5 flex items-center rounded-lg p-2.5 text-left transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden dark:hover:bg-neutral-700',
             item.active ? 'bg-neutral-100 dark:bg-neutral-700' : 'opacity-80'
           )}
         >
@@ -100,13 +104,13 @@ const CurrLangDropdown: FC<Props> = ({
         )}
       >
         <TabGroup>
-          <TabList className="flex space-x-1 rounded-full bg-neutral-100 p-1 dark:bg-neutral-700">
-            {['Language', 'Currency'].map((category) => (
+          <TabList className="font-sarabun! font-semibold text-2xl flex space-x-1 rounded-full bg-neutral-100 p-1 dark:bg-neutral-700">
+            {['ภาษา', 'ค่าเงิน'].map((category) => (
               <Tab
                 key={category}
                 className={({ selected }) =>
                   clsx(
-                    'w-full rounded-full py-2 text-sm leading-5 font-medium text-neutral-700 focus:ring-0 focus:outline-hidden',
+                    'w-full rounded-full py-2 text-base leading-5 font-medium text-neutral-700 focus:ring-0 focus:outline-hidden',
                     selected
                       ? 'bg-white shadow-sm'
                       : 'text-neutral-700 hover:bg-white/70 dark:text-neutral-300 dark:hover:bg-neutral-900/40'

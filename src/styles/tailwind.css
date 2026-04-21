@@ -6,7 +6,65 @@
 @plugin '@tailwindcss/aspect-ratio';
 
 @custom-variant dark (&:where(.dark, .dark *));
+@theme {
+  /* กำหนด Sarabun เป็น Utility font-sarabun */
+  --font-sarabun: var(--font-sarabun);
+  
+  /* ให้ font-sans หลักของเว็บ ใช้ Sarabun นำหน้า Poppins (เฉพาะจุดที่เป็นภาษาไทย) */
+  --font-sans: var(--font-sarabun), var(--font-sans), ui-sans-serif, system-ui;
+}
+/* ก๊อปปี้ทั้งหมดนี้ไปวางใน globals.css */
+/* ก๊อปปี้ทั้งหมดนี้ไปวางใน globals.css */
 
+/* 1. กำหนด Animation ของตัวไฟ */
+@keyframes flicker-flame {
+  0%, 100% { transform: scaleY(1); opacity: 0.9; }
+  50% { transform: scaleY(1.1) translateY(-2px); opacity: 1; }
+}
+
+/* 2. กำหนด Animation ของเงาไฟ (Glow) */
+@keyframes flicker-glow {
+  0%, 100% { box-shadow: 0 -4px 10px rgba(255, 100, 0, 0.5), 0 -8px 20px rgba(255, 200, 0, 0.3); }
+  50% { box-shadow: 0 -6px 15px rgba(255, 100, 0, 0.7), 0 -10px 30px rgba(255, 200, 0, 0.5); }
+}
+
+/* 3. สร้าง Class สำหรับปุ่มไฟลุก */
+.button-fire-border {
+  position: relative;
+  overflow: visible; /* สำคัญมาก เพื่อให้ไฟลอยพ้นขอบ */
+  background: linear-gradient(to right, #ff4500, #ff8c00); /* สีปุ่มส้ม-แดง */
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  animation: flicker-glow 1.5s infinite ease-in-out; /* เงาไฟสั่นไหว */
+}
+
+/* 4. สร้าง "ตัวไฟ" ด้านบนโดยใช้ pseudo-element (:before) */
+.button-fire-border:before {
+  content: '';
+  position: absolute;
+  top: -8px; /* ลอยพ้นขอบบน */
+  left: 10%;
+  right: 10%;
+  height: 12px;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.9) 0%, /* ยอดไฟสีขาว */
+    rgba(255, 200, 0, 0.8) 30%,  /* กลางไฟสีเหลือง */
+    rgba(255, 100, 0, 0.6) 70%,  /* ฐานไฟสีส้ม */
+    transparent 100%
+  );
+  filter: blur(1.5px); /* ทำให้ไฟดูนุ่มนวล */
+  border-radius: 50% 50% 20% 20%; /* ทรงเปลวไฟ */
+  transform-origin: bottom center;
+  animation: flicker-flame 0.2s infinite ease-in-out; /* ไฟสั่นไหวเร็วๆ */
+  z-index: -1; /* อยู่หลังตัวอักษรปุ่ม */
+}
+
+/* เอฟเฟกต์ตอน Hover (เอาเมาส์ไปชี้) */
+.button-fire-border:hover {
+  transform: scale(1.05) translateY(-2px);
+  background: linear-gradient(to right, #ff5722, #ff9800);
+}
 @theme {
   --color-primary-50: rgb(238, 242, 255);
   --color-primary-100: rgb(224, 231, 255);

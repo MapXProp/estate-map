@@ -3,11 +3,18 @@ import { DirectionProvider } from '@/components/ui/direction'
 import { cn } from '@/lib/utils'
 import '@/styles/tailwind.css'
 import { Metadata } from 'next'
-import { Poppins } from 'next/font/google'
+import { Poppins, Sarabun } from 'next/font/google'
 import 'rc-slider/assets/index.css'
 //import CustomizeControl from './customize-control'
 
 const poppins = Poppins({ subsets: ['latin'], variable: '--font-sans', weight: ['300', '400', '500', '600', '700'] })
+const sarabun = Sarabun({
+  subsets: ['thai', 'latin'],
+  display: 'swap',
+  variable: '--font-sarabun',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
+})
 
 export const metadata: Metadata = {
   title: {
@@ -24,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang={process.env.NEXT_PUBLIC_THEME_DIR === 'rtl' ? 'ar' : 'th'}
       dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
       suppressHydrationWarning
-      className={cn('font-sans', poppins.variable)}
+      className={cn('font-sans', poppins.variable, sarabun.variable)}
     >
       <body className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>

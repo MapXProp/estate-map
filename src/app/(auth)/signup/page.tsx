@@ -1,11 +1,12 @@
+'use client'
+
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
-import { Metadata } from 'next'
 import Link from 'next/link'
-import type { JSX } from 'react'
+import { useState, type JSX } from 'react'
 
 const socials: {
   name: string
@@ -49,11 +50,67 @@ const socials: {
   },
 ]
 
-export const metadata: Metadata = {
-  title: 'Sign Up',
-  description: 'Sign up for a new account',
-}
 const Page = () => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const validatePassword = (pass: string) => {
+    const hasUpper = /[A-Z]/.test(pass)
+    const hasLower = /[a-z]/.test(pass)
+    const hasNumber = /[0-9]/.test(pass)
+    // ตรวจสอบว่ามีตัวอักษรที่ไม่ใช่ (A-Z, a-z, 0-9) หรือไม่ ซึ่งจะครอบคลุม _ และอักขระพิเศษทั้งหมด
+    const hasSpecial = /[^A-Za-z0-9]/.test(pass)
+    return pass.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    // 1. Client-side Validation (Matching your Go Backend)
+    if (!email.includes('@')) {
+      setError('รูปแบบ Email ไม่ถูกต้อง')
+      return
+    }
+
+    if (!validatePassword(password)) {
+      setError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร รวมถึงตัวพิมพ์ใหญ่ พิมพ์เล็ก ตัวเลข และอักขระพิเศษ')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // เปลี่ยน URL เป็น /apix/users ตามที่คุณระบุ
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/apix/signupNewUser'
+      
+      console.log("กำลังส่งข้อมูลไปที่:", apiUrl) // Debug ดู URL ใน Console (F12)
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      // ป้องกันการพยายาม parse JSON ถ้า response ไม่ใช่ JSON (แก้ปัญหา <!DOCTYPE error)
+      const isJson = response.headers.get('content-type')?.includes('application/json')
+      const data = isJson ? await response.json() : null
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Server Error (${response.status}): ตรวจสอบ URL หรือ Backend ของคุณ`)
+      }
+
+      // สำเร็จ: อาจจะ redirect ไปหน้า login หรือหน้าอื่น
+      window.location.href = '/login?success=registered'
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="container">
       <div className="my-16 flex justify-center">
@@ -83,18 +140,36 @@ const Page = () => {
           <div className="absolute top-1/2 left-0 w-full -translate-y-1/2 transform border border-neutral-100 dark:border-neutral-800"></div>
         </div>
         {/* FORM */}
-        <form className="grid grid-cols-1 gap-6" action="#" method="post">
+        <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
           <Field className="block">
             <Label className="text-neutral-800 dark:text-neutral-200">{T['login']['Email address']}</Label>
-            <Input type="email" placeholder="example@example.com" className="mt-1" />
+            <Input
+              type="email"
+              placeholder="example@example.com"
+              className="mt-1"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </Field>
           <Field className="block">
             <Label className="flex items-center justify-between text-neutral-800 dark:text-neutral-200">
               {T['login']['Password']}
             </Label>
-            <Input type="password" className="mt-1" />
+            <Input
+              type="password"
+              className="mt-1"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </Field>
-          <ButtonPrimary type="submit">{T['common']['Continue']}</ButtonPrimary>
+
+          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
+          <ButtonPrimary type="submit" disabled={isLoading}>
+            {isLoading ? 'Processing...' : T['common']['Continue']}
+          </ButtonPrimary>
         </form>
 
         {/* ==== */}

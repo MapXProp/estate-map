@@ -32,7 +32,7 @@ const Page = () => {
       {/* FORM */}
       <Form id="add-listing-form" action={handleSubmitForm} className="flex flex-col gap-y-8">
         {/* ITEM */}
-        <FormItem
+        <FormItem className='font-sarabun'
           label={T['addListings']['page1']['Choose a property type']}
           desccription={T['addListings']['page1']['propertyTypeDescription']}
         >

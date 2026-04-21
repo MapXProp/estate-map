@@ -176,8 +176,8 @@ export default function Footer2() {
           </div>
         </div>
         <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24 dark:border-gray-700">
-          <p className="text-sm/6 text-gray-600 dark:text-neutral-400">
-            &copy; 2026 Made with ❤️ by MapxProp
+          <p className="text-sm/6 text-gray-600 dark:text-neutral-400 font-sarabun!">
+            &copy; 2026 สร้างสรรค์ ❤️ โดยทีมงาน MapxProp
           </p>
         </div>
       </div>

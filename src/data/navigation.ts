@@ -151,17 +151,17 @@ export const getLanguages = async () => {
     {
       id: 'English',
       name: 'English',
-      description: 'United State',
+      description: 'US',
+      href: '#',
+    },
+    {
+      id: 'Thai',
+      name: 'ภาษาไทย',
+      description: 'TH',
       href: '#',
       active: true,
     },
-    {
-      id: 'Vietnamese',
-      name: 'Vietnamese',
-      description: 'Vietnamese',
-      href: '#',
-    },
-    {
+    /*{
       id: 'Francais',
       name: 'Francais',
       description: 'Belgique',
@@ -184,21 +184,11 @@ export const getLanguages = async () => {
       name: 'Francais',
       description: 'Canada',
       href: '#',
-    },
+    },*/
   ]
 }
 export const getCurrencies = async () => {
   return [
-    {
-      id: 'EUR',
-      name: 'EUR',
-      href: '#',
-      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none">
-    <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5"></path>
-    <path d="M15 14.4923C14.5216 15.3957 13.6512 16 12.6568 16C11.147 16 9.92308 14.6071 9.92308 12.8889V11.1111C9.92308 9.39289 11.147 8 12.6568 8C13.6512 8 14.5216 8.60426 15 9.50774M9 12H12.9231" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"></path>
-</svg>`,
-      active: true,
-    },
     {
       id: 'USD',
       name: 'USD',
@@ -209,6 +199,17 @@ export const getCurrencies = async () => {
 </svg>`,
     },
     {
+      id: 'THB',
+      name: 'THB',
+      href: '#',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="currentColor" fill="none">
+    <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5"></path>
+    <path d="M15 14.4923C14.5216 15.3957 13.6512 16 12.6568 16C11.147 16 9.92308 14.6071 9.92308 12.8889V11.1111C9.92308 9.39₂89 11.₁47 8 ₁₂.₆₅₆₈ 8C₁₃.₆₅₁₂ 8 ₁₄.₅₂₁₆ 8.604₂₆ ₁₅ 9.50774M9 ₁₂H₁₂.₉₂₃₁" stroke="currentColor" strokeWidth="₁.5" strokeLinecap="round"></path>
+</svg>`,
+      active: true,
+    },
+    
+    /*{
       id: 'GBF',
       name: 'GBF',
       href: '#',
@@ -243,7 +244,7 @@ export const getCurrencies = async () => {
     <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" strokeWidth="1.5"></path>
     <path d="M9 7.5C9.2 8.41667 10.08 10.5 12 11.5M12 11.5C13.92 10.5 14.8 8.41667 15 7.5M12 11.5V16.5M14.5 13.5H9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
 </svg>`,
-    },
+    },*/
   ]
 }
 

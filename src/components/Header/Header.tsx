@@ -45,8 +45,8 @@ const Header: FC<HeaderProps> = async ({ hasBorderBottom = true, className }) =>
             </div>
             <MegaMenuPopover megamenu={megamenu} featuredCategory={featuredCategory} />
             <CurrLangDropdown currencies={currencies} languages={languages} className="hidden md:block" />
-            <Button className="-mx-1 py-1.75!" color="light" href={'/add-listing/1'}>
-              List your property
+            <Button className="-mx-1 py-1.75! font-sarabun! font-medium button-fire-border font-bold px-7 py-3 rounded-full text-lg shadow-2xl" color="light" href={'/add-listing/1'}>
+              ลงประกาศ ฟรี
             </Button>
             <NotifyDropdown />
             <AvatarDropdown />
