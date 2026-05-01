@@ -135,6 +135,9 @@ export const en = {
   MobileMenuBar: {
     siteDescription: 'Discover the most outstanding articles on all topics of life. Write your stories and share them',
   },
+  Footer2: {
+    copyright: '© 2026 Crafted with ❤️ by MapxProp',
+  },
   addListings: {
     'Add new listing': 'Add new listing',
     'Add new car': 'Add new car',
@@ -149,15 +152,29 @@ export const en = {
     },
     page1: {
       pageTitle: 'Choosing listing categories',
+      pageDescription:
+        'Start with the essentials so buyers or renters can understand the type of property, the headline, and the overall feel of your listing at a glance.',
+      introBadge: 'Step 1 of 10',
+      sectionTitle: 'Build the first impression of your listing',
+      sectionDescription:
+        'Choose the property format, write a standout title, and add a short description that helps people quickly understand what makes this place special.',
       'Choose a property type': 'Choose a property type',
       propertyTypeDescription:
         'Professional hospitality businesses that usually have a unique style or theme defining their brand and decor',
+      Title: 'Listing title',
+      titleDescription: 'Keep it short, clear, and highlight the strongest selling point of the property.',
+      titlePlaceholder: 'Luxury corner condo near BTS with skyline view',
       'Place name': 'Place name',
       placeNameDescription:
         'A catchy name usually includes: House name + Room name + Featured property + Tourist destination',
       'Rental form': 'Rental form',
       rentalFormDescription:
         "Guests have the whole place to themselves—there's a private entrance and no shared spaces. A bedroom, bathroom, and kitchen are usually included.",
+      Description: 'Short description',
+      descriptionDescription:
+        'Write 2-4 sentences about the vibe, key features, and nearby landmarks to make the listing feel more inviting.',
+      descriptionPlaceholder:
+        'Bright and airy apartment with a private balcony, fully equipped kitchen, and easy access to cafes, transit, and shopping.',
     },
     page2: {
       pageTitle: 'Your place location',

@@ -1,5 +1,7 @@
-import Logo from '@/shared/Logo'
+'use client'
 
+import Logo from '@/shared/Logo'
+import T from '@/utils/getT'
 import type { JSX } from 'react'
 
 const navigation: {
@@ -177,7 +179,7 @@ export default function Footer2() {
         </div>
         <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24 dark:border-gray-700">
           <p className="text-sm/6 text-gray-600 dark:text-neutral-400 font-sarabun!">
-            &copy; 2026 สร้างสรรค์ ❤️ โดยทีมงาน MapxProp
+            {T.Footer2.copyright}
           </p>
         </div>
       </div>
