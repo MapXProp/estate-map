@@ -84,7 +84,7 @@ const Page = () => {
 
     try {
       // เปลี่ยน URL เป็น /apix/users ตามที่คุณระบุ
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/apix/signupNewUser'
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/apix/userRegister'
       
       console.log("กำลังส่งข้อมูลไปที่:", apiUrl) // Debug ดู URL ใน Console (F12)
 

@@ -1,11 +1,13 @@
+'use client'
+
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
-import { Metadata } from 'next'
 import Link from 'next/link'
-import type { JSX } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, type JSX } from 'react'
 
 const socials: {
   name: string
@@ -49,12 +51,89 @@ const socials: {
   },
 ]
 
-export const metadata: Metadata = {
-  title: 'Login',
-  description: 'Login to your account',
+type LoginResponse = {
+  token?: string
+  access_token?: string
+  public_user_id?: string
+  email?: string
+  error?: string
+}
+
+const getLoginApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+  if (!apiUrl) {
+    return 'http://localhost:8080/apix/userLogin'
+  }
+
+  const normalizedApiUrl = apiUrl.replace(/\/$/, '')
+  const apixIndex = normalizedApiUrl.indexOf('/apix')
+  const apiBaseUrl = apixIndex >= 0 ? normalizedApiUrl.slice(0, apixIndex) : normalizedApiUrl
+
+  return `${apiBaseUrl}/apix/userLogin`
 }
 
 const Page = () => {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+
+    const trimmedEmail = email.trim().toLowerCase()
+
+    if (!trimmedEmail.includes('@')) {
+      setError('รูปแบบ Email ไม่ถูกต้อง')
+      return
+    }
+
+    if (!password) {
+      setError('กรุณากรอกรหัสผ่าน')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(getLoginApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password }),
+      })
+
+      const isJson = response.headers.get('content-type')?.includes('application/json')
+      const data = (isJson ? await response.json() : null) as LoginResponse | null
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Login failed (${response.status})`)
+      }
+
+      const token = data?.token || data?.access_token
+      if (token) {
+        localStorage.setItem('mapxprop_token', token)
+      }
+      if (data?.public_user_id || data?.email) {
+        localStorage.setItem(
+          'mapxprop_user',
+          JSON.stringify({
+            public_user_id: data.public_user_id,
+            email: data.email || trimmedEmail,
+          })
+        )
+      }
+
+      router.push('/account')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ไม่สามารถเข้าสู่ระบบได้')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="container">
       <div className="my-16 flex justify-center">
@@ -82,10 +161,17 @@ const Page = () => {
           <div className="absolute top-1/2 left-0 w-full -translate-y-1/2 border border-neutral-100 dark:border-neutral-800"></div>
         </div>
         {/* FORM */}
-        <form className="grid grid-cols-1 gap-6" action="#" method="post">
+        <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
           <Field className="block">
             <Label className="text-neutral-800 dark:text-neutral-200">{T['login']['Email address']}</Label>
-            <Input type="email" placeholder="example@example.com" className="mt-1" />
+            <Input
+              type="email"
+              placeholder="example@example.com"
+              className="mt-1"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </Field>
           <Field className="block">
             <div className="flex items-center justify-between text-neutral-800 dark:text-neutral-200">
@@ -94,9 +180,20 @@ const Page = () => {
                 {T['login']['Forgot password?']}
               </Link>
             </div>
-            <Input type="password" className="mt-1" />
+            <Input
+              type="password"
+              className="mt-1"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           </Field>
-          <ButtonPrimary type="submit">Login</ButtonPrimary>
+
+          {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
+          <ButtonPrimary type="submit" disabled={isLoading}>
+            {isLoading ? 'Processing...' : 'Login'}
+          </ButtonPrimary>
         </form>
 
         {/* ==== */}
