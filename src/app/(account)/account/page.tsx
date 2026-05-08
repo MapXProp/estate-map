@@ -6,6 +6,7 @@ import { Divider } from '@/shared/divider'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
+import SuccessToast from '@/shared/SuccessToast'
 import Textarea from '@/shared/Textarea'
 import T from '@/utils/getT'
 import { Metadata } from 'next'
@@ -16,7 +17,10 @@ export const metadata: Metadata = {
   description: 'Booking online & rental online Next.js Template',
 }
 
-const Page = () => {
+const Page = async ({ searchParams }: { searchParams?: Promise<{ login?: string }> }) => {
+  const params = await searchParams
+  const showLoginSuccess = params?.login === 'success'
+
   const handleSubmitForm = async (formData: FormData) => {
     'use server'
     // Handle form submission logic here
@@ -27,6 +31,8 @@ const Page = () => {
     <div>
       {/* HEADING */}
       <h1 className="text-3xl font-semibold">{T['accountPage']['Account information']}</h1>
+
+      {showLoginSuccess && <SuccessToast message={T['accountPage']['Login successfully']} clearParam="login" />}
 
       <Divider className="my-8 w-14!" />
 

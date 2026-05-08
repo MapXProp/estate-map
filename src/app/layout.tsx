@@ -7,11 +7,15 @@ import { Poppins, Sarabun } from 'next/font/google'
 import 'rc-slider/assets/index.css'
 //import CustomizeControl from './customize-control'
 
-const poppins = Poppins({ subsets: ['latin'], variable: '--font-sans', weight: ['300', '400', '500', '600', '700'] })
+const poppins = Poppins({
+  subsets: ['latin'],
+  variable: '--font-poppins-next',
+  weight: ['300', '400', '500', '600', '700'],
+})
 const sarabun = Sarabun({
   subsets: ['thai', 'latin'],
   display: 'swap',
-  variable: '--font-sarabun',
+  variable: '--font-sarabun-next',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
   style: ['normal', 'italic'],
 })

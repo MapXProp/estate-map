@@ -264,6 +264,7 @@ export const th = {
   },
   accountPage: {
     'Account information': 'ข้อมูลบัญชี',
+    'Login successfully': 'เข้าสู่ระบบสำเร็จ',
     'Edit profile': 'แก้ไขโปรไฟล์',
     'Change password': 'เปลี่ยนรหัสผ่าน',
     'Log out': 'ออกจากระบบ',
@@ -294,6 +295,11 @@ export const th = {
   },
   login: {
     Login: 'เข้าสู่ระบบ',
+    OR: 'หรือ',
+    'Continue with Google': 'เข้าสู่ระบบด้วย Google',
+    'Continue with Facebook': 'เข้าสู่ระบบด้วย Facebook',
+    'Continue with LINE': 'เข้าสู่ระบบด้วย LINE',
+    'Logout successfully': 'ออกจากระบบสำเร็จ',
     'Email address': 'อีเมล',
     Password: 'รหัสผ่าน',
     'Forgot password?': 'ลืมรหัสผ่าน?',

@@ -1,0 +1,1370 @@
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="(home-pages)/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                    <SegmentViewNode type="page" pagePath="(app)/(hom...">
+                      <SegmentTrieNode>
+                      <Page>
+                        <main className="relative o...">
+                          <div>
+                          <div className="relative c...">
+                            ...
+                              <StaySearchForm formStyle="default">
+                                <Form className="relative z..." action={function handleFormSubmit}>
+                                  <form
+                                    className="relative z-10 flex w-full rounded-full bg-white [--form-bg:var(--color-..."
+                                    action={function handleFormSubmit}
+                                    ref={function}
+-                                   __gcruniqueid="1"
+                                  >
+                                    ...
+                                      <div onMouseDown={function onMouseDown} onTouchStart={function onTouchStart} ...>
+                                        <MapPinIcon>
+                                        <div className="grow">
+                                          <Ro ref={{current:null}} aria-label="Search for..." className="block w-fu..." ...>
+                                            <input
+                                              aria-label="Search for a location"
+                                              className="block w-full truncate border-none bg-transparent p-0 font-sem..."
+                                              name="location"
+                                              placeholder="ทำเลที่ตั้ง"
+                                              autoComplete="off"
+                                              id="headlessui-combobox-input-_R_cr4r8qatn9esnelb_"
+                                              role="combobox"
+                                              type="text"
+                                              aria-controls={undefined}
+                                              aria-expanded={false}
+                                              aria-activedescendant={undefined}
+                                              aria-labelledby={undefined}
+                                              aria-describedby={undefined}
+                                              aria-autocomplete="list"
+                                              defaultValue={undefined}
+                                              disabled={undefined}
+                                              autoFocus={false}
+                                              onCompositionStart={function onCompositionStart}
+                                              onCompositionEnd={function onCompositionEnd}
+                                              onKeyDown={function onKeyDown}
+                                              onChange={function onChange}
+                                              onFocus={function onFocus}
+                                              onBlur={function onBlur}
+                                              onPointerEnter={function onPointerEnter}
+                                              onPointerLeave={function onPointerLeave}
+                                              ref={function o.useCallback}
+                                              data-headlessui-state=""
+-                                             __gcruniqueid="2"
+                                            >
+                                          ...
+                                    ...
+                            <div>
+                            <div>
+                            <div>
+                            <hr>
+                            <div>
+                            <div>
+                            <SectionSubscribe2>
+                              <div className={"relative..."}>
+                                <div className="mb-10 shri...">
+                                  <h1>
+                                  <h2>
+                                  <ul>
+                                  <form
+                                    className="relative mt-10 max-w-sm"
+                                    action="#"
+                                    method="POST"
+-                                   __gcruniqueid="3"
+                                  >
+                                    <Input>
+                                      <input
+                                        type="email"
+                                        className={"block w-full border-neutral-200 bg-white focus:border-primary-300..."}
+                                        required={true}
+                                        aria-required={true}
+                                        placeholder="กรอกอีเมลของคุณ"
+-                                       __gcruniqueid="4"
+                                      >
+                                    ...
+                                ...
+                            ...
+                    ...
+                  ...
+        ...
+ 
+[browser] Image with src "/_next/static/media/404.0atz2em4vu_~7.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] Image with src "https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/404.0atz2em4vu_~7.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login?log..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ScrollAndMaybeFocusHandler cacheNode={{rsc:{...}, ...}}>
+      <InnerScrollAndFocusHandlerOld focusAndScrollRef={{scrollRef:null, ...}} cacheNode={{rsc:{...}, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="login/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="(auth)/log...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function Page} serverProvidedParams={{...}}>
+                        <Page params={Promise} searchParams={Promise}>
+                          <div className="container">
+                            <div>
+                            <div className="mx-auto ma...">
+                              <div>
+                              <div>
+                              <form
+                                className="grid grid-cols-1 gap-6"
+                                method="post"
+                                onSubmit={function handleSubmit}
+-                               __gcruniqueid="1"
+                              >
+                                ...
+                                  <Label>
+                                  <_c ref={{current:null}} type="email" name="email" autoComplete="email" ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="email"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="email"
+                                      autoComplete="email"
+                                      placeholder="example@example.com"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="2"
+                                    >
+                                  ...
+                                ...
+                                  <div>
+                                  <_c ref={{current:null}} type="password" name="password" autoComplete="current-pa..." ...>
+                                    <input
+                                      ref={{current:null}}
+                                      type="password"
+                                      className="block w-full border-neutral-200 bg-white focus:border-primary-300 foc..."
+                                      name="password"
+                                      autoComplete="current-password"
+                                      placeholder="••••••••"
+                                      required={true}
+                                      value=""
+                                      onChange={function onChange}
+-                                     __gcruniqueid="3"
+                                    >
+                                  ...
+                                ...
+                              ...
+                    ...
+                  ...
+        ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="th" dir="ltr" suppressHydrationWarning={true} className="font-sans ...">
+                          <body
+                            className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100"
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 

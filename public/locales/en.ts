@@ -264,6 +264,7 @@ export const en = {
   },
   accountPage: {
     'Account information': 'Account information',
+    'Login successfully': 'Login Successfully',
     'Edit profile': 'Edit profile',
     'Change password': 'Change password',
     'Log out': 'Log out',
@@ -294,6 +295,11 @@ export const en = {
   },
   login: {
     Login: 'Login',
+    OR: 'OR',
+    'Continue with Google': 'Continue with Google',
+    'Continue with Facebook': 'Continue with Facebook',
+    'Continue with LINE': 'Continue with LINE',
+    'Logout successfully': 'Logout Successfully',
     'Email address': 'Email address',
     Password: 'Password',
     'Forgot password?': 'Forgot password?',

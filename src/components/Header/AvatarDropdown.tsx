@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuth } from '@/hooks/useAuth'
 import avatarImage from '@/images/avatars/Image-1.png'
 import Avatar from '@/shared/Avatar'
 import { Divider } from '@/shared/divider'
@@ -15,12 +16,23 @@ import {
   UserIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useRouter } from 'next/navigation'
 
 interface Props {
   className?: string
 }
 
 export default function AvatarDropdown({ className }: Props) {
+  const router = useRouter()
+  const { isAuthenticated, isLoading, logout, user } = useAuth()
+  const displayName = [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || 'Guest'
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/login?logout=success')
+    router.refresh()
+  }
+
   return (
     <div className={className}>
       <Popover>
@@ -41,16 +53,44 @@ export default function AvatarDropdown({ className }: Props) {
               <Avatar src={avatarImage.src} className="size-12" />
 
               <div className="grow">
-                <h4 className="font-semibold">Eden Smith</h4>
-                <p className="mt-0.5 text-xs">Los Angeles, CA</p>
+                <h4 className="font-semibold">{isLoading ? 'Checking account...' : displayName}</h4>
+                <p className="mt-0.5 text-xs">{isAuthenticated ? user?.email : 'Sign in to manage your account'}</p>
               </div>
             </div>
 
             <Divider />
 
+            {!isAuthenticated && !isLoading && (
+              <>
+                <Link
+                  href={'/login'}
+                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+                >
+                  <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                    <HugeiconsIcon icon={UserIcon} size={24} strokeWidth={1.5} />
+                  </div>
+                  <p className="ms-4 text-sm font-medium">Sign in</p>
+                </Link>
+
+                <Link
+                  href={'/signup'}
+                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+                >
+                  <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                    <HugeiconsIcon icon={Task01Icon} size={24} strokeWidth={1.5} />
+                  </div>
+                  <p className="ms-4 text-sm font-medium">Create account</p>
+                </Link>
+
+                <Divider />
+              </>
+            )}
+
+            {isAuthenticated && (
+              <>
             {/* ------------------ 1 --------------------- */}
             <Link
-              href={'/authors/john-doe'}
+              href={'/account'}
               className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
             >
               <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
@@ -61,7 +101,7 @@ export default function AvatarDropdown({ className }: Props) {
 
             {/* ------------------ 2 --------------------- */}
             <Link
-              href={'/authors/john-doe'}
+              href={'/add-listing/1'}
               className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
             >
               <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
@@ -82,6 +122,8 @@ export default function AvatarDropdown({ className }: Props) {
             </Link>
 
             <Divider />
+              </>
+            )}
 
             {/* ------------------ 2 --------------------- */}
             <div className="focus-visible:ring-opacity-50 -m-3 flex items-center justify-between rounded-lg p-2 hover:bg-neutral-100 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 dark:hover:bg-neutral-700">
@@ -107,15 +149,18 @@ export default function AvatarDropdown({ className }: Props) {
             </Link>
 
             {/* ------------------ 2 --------------------- */}
-            <Link
-              href={'#'}
-              className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
-            >
-              <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                <HugeiconsIcon icon={Logout01Icon} size={24} strokeWidth={1.5} />
-              </div>
-              <p className="ms-4 text-sm font-medium">{'Log out'}</p>
-            </Link>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="-m-3 flex items-center rounded-lg p-2 text-left transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+              >
+                <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                  <HugeiconsIcon icon={Logout01Icon} size={24} strokeWidth={1.5} />
+                </div>
+                <p className="ms-4 text-sm font-medium">{'Log out'}</p>
+              </button>
+            )}
           </div>
         </PopoverPanel>
       </Popover>

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins: ['192.168.1.45'],
   reactStrictMode: false,
   images: {
     minimumCacheTTL: 2678400 * 6, // 3 months

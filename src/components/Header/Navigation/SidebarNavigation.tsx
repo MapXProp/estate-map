@@ -1,6 +1,7 @@
 'use client'
 
 import { getCurrencies, getLanguages, TNavigationItem } from '@/data/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Divider } from '@/shared/divider'
 import { Link } from '@/shared/link'
@@ -12,7 +13,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import CurrLangDropdown from '../CurrLangDropdown'
 
 interface Props {
@@ -24,6 +25,8 @@ interface Props {
 const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => {
   const handleClose = useClose()
   const router = useRouter()
+  const { logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Prefetch the next step to improve performance
   useEffect(() => {
@@ -40,6 +43,22 @@ const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => 
     handleClose()
     // Redirect to the search page
     router.push('/stay-categories/all' + (searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''))
+  }
+
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+    try {
+      await logout()
+      handleClose()
+      router.replace('/login?logout=success')
+      router.refresh()
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   const _renderMenuChild = (
@@ -105,10 +124,8 @@ const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => 
           <input
             type="search"
             name="search"
-            autoFocus
             autoComplete="off"
             aria-label="Search for articles"
-            data-autofocus
             placeholder="Type and press enter"
             className="w-full border-none bg-transparent focus:ring-0 focus:outline-hidden sm:text-sm"
           />
@@ -132,12 +149,8 @@ const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => 
       {/* FOR OUR DEMO */}
 
       <div className="flex items-center justify-between gap-x-2.5 py-6">
-        <ButtonPrimary
-          href="https://themeforest.net/item/chisfis-online-booking-nextjs-template/43399526"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Buy this template
+        <ButtonPrimary type="button" className="cursor-pointer" disabled={isLoggingOut} onClick={handleLogout}>
+          {isLoggingOut ? 'Logging out...' : 'Logout'}
         </ButtonPrimary>
 
         <CurrLangDropdown

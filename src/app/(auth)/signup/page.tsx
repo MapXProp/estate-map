@@ -4,6 +4,7 @@ import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Logo from '@/shared/Logo'
+import { getAuthApiUrl } from '@/lib/auth'
 import T from '@/utils/getT'
 import Link from 'next/link'
 import { useState, type JSX } from 'react'
@@ -84,7 +85,7 @@ const Page = () => {
 
     try {
       // เปลี่ยน URL เป็น /apix/users ตามที่คุณระบุ
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/apix/userRegister'
+      const apiUrl = getAuthApiUrl('userRegister')
       
       console.log("กำลังส่งข้อมูลไปที่:", apiUrl) // Debug ดู URL ใน Console (F12)
 

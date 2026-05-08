@@ -112,13 +112,13 @@ const FooterQuickNavigation = () => {
               <p className="text-xs/6">{item.name}</p>
             </Link>
           ) : (
-            <div
+            <button
+              type="button"
               key={item.name}
               role="menuitem"
-              tabIndex={0}
               aria-label={`Open menu`}
               className={clsx(
-                '-mx-2 flex cursor-pointer flex-col items-center justify-between px-2 text-neutral-500 dark:text-neutral-300',
+                '-mx-2 flex cursor-pointer flex-col items-center justify-between px-2 text-neutral-500 touch-manipulation dark:text-neutral-300',
                 isActive && 'text-red-600'
               )}
               onClick={() => {
@@ -129,7 +129,7 @@ const FooterQuickNavigation = () => {
             >
               <item.icon className="size-6" />
               <p className="text-xs/6">{item.name}</p>
-            </div>
+            </button>
           )
         })}
       </div>
