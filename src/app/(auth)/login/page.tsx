@@ -1,11 +1,11 @@
 'use client'
 
+import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Logo from '@/shared/Logo'
 import SuccessToast from '@/shared/SuccessToast'
-import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
 import T from '@/utils/getT'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,7 +14,8 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 const socials: {
   labelKey: 'Continue with Google' | 'Continue with Facebook' | 'Continue with LINE'
   href: string
-  provider?: 'google' | 'facebook'
+  provider?: 'google' | 'facebook' | 'line'
+  disabled?: boolean
   icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element
 }[] = [
   {
@@ -23,10 +24,22 @@ const socials: {
     provider: 'google',
     icon: (props) => (
       <svg viewBox="0 0 24 24" {...props}>
-        <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.13H12v4.03h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.25c1.9-1.75 2.97-4.33 2.97-7.43z" />
-        <path fill="#34A853" d="M12 22c2.7 0 4.98-.9 6.63-2.34l-3.25-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.05v2.59A10 10 0 0 0 12 22z" />
-        <path fill="#FBBC05" d="M6.41 13.98A6 6 0 0 1 6.09 12c0-.69.12-1.35.32-1.98V7.43H3.05A10 10 0 0 0 2 12c0 1.61.38 3.14 1.05 4.57l3.36-2.59z" />
-        <path fill="#EA4335" d="M12 5.89c1.47 0 2.8.51 3.84 1.5l2.87-2.87A9.62 9.62 0 0 0 12 2a10 10 0 0 0-8.95 5.43l3.36 2.59C7.2 7.65 9.4 5.89 12 5.89z" />
+        <path
+          fill="#4285F4"
+          d="M21.6 12.23c0-.74-.07-1.45-.19-2.13H12v4.03h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.25c1.9-1.75 2.97-4.33 2.97-7.43z"
+        />
+        <path
+          fill="#34A853"
+          d="M12 22c2.7 0 4.98-.9 6.63-2.34l-3.25-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.05v2.59A10 10 0 0 0 12 22z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M6.41 13.98A6 6 0 0 1 6.09 12c0-.69.12-1.35.32-1.98V7.43H3.05A10 10 0 0 0 2 12c0 1.61.38 3.14 1.05 4.57l3.36-2.59z"
+        />
+        <path
+          fill="#EA4335"
+          d="M12 5.89c1.47 0 2.8.51 3.84 1.5l2.87-2.87A9.62 9.62 0 0 0 12 2a10 10 0 0 0-8.95 5.43l3.36 2.59C7.2 7.65 9.4 5.89 12 5.89z"
+        />
       </svg>
     ),
   },
@@ -34,6 +47,7 @@ const socials: {
     labelKey: 'Continue with Facebook',
     href: '#',
     provider: 'facebook',
+    disabled: true,
     icon: (props) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path
@@ -48,9 +62,13 @@ const socials: {
   {
     labelKey: 'Continue with LINE',
     href: '#',
+    provider: 'line',
     icon: (props) => (
       <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
-        <path fill="#06C755" d="M12 3C6.48 3 2 6.7 2 11.26c0 4.09 3.63 7.52 8.53 8.15.33.07.78.22.9.51.1.27.06.68.03.95l-.14.88c-.04.27-.22 1.05.87.57 1.09-.47 5.88-3.45 8.02-5.9A7.45 7.45 0 0 0 22 11.26C22 6.7 17.52 3 12 3z" />
+        <path
+          fill="#06C755"
+          d="M12 3C6.48 3 2 6.7 2 11.26c0 4.09 3.63 7.52 8.53 8.15.33.07.78.22.9.51.1.27.06.68.03.95l-.14.88c-.04.27-.22 1.05.87.57 1.09-.47 5.88-3.45 8.02-5.9A7.45 7.45 0 0 0 22 11.26C22 6.7 17.52 3 12 3z"
+        />
         <path
           fill="#fff"
           d="M7.03 9.33h1.02v3.12h1.69v.86H7.03V9.33zm3.24 0h1.02v3.98h-1.02V9.33zm1.77 0h.98l1.59 2.15V9.33h1v3.98h-.94l-1.63-2.23v2.23h-1V9.33zm4.22 0h2.75v.86h-1.73v.67h1.55v.83h-1.55v.76h1.77v.86h-2.79V9.33z"
@@ -91,6 +109,9 @@ const Page = () => {
     }
     if (loginError?.startsWith('facebook_')) {
       setError(T['login']['Facebook login failed'])
+    }
+    if (loginError?.startsWith('line_')) {
+      setError(T['login']['LINE login failed'])
     }
     if (params.has('email') || params.has('password')) {
       params.delete('email')
@@ -174,7 +195,7 @@ const Page = () => {
   }
 
   const getSocialHref = (item: (typeof socials)[number]) => {
-    if (item.provider !== 'google' && item.provider !== 'facebook') {
+    if (item.provider !== 'google' && item.provider !== 'facebook' && item.provider !== 'line') {
       return item.href
     }
 
@@ -196,18 +217,20 @@ const Page = () => {
 
       <div className="mx-auto max-w-lg space-y-7">
         <div className="grid gap-3.5">
-          {socials.map((item, index) => (
-            <Link
-              key={index}
-              href={getSocialHref(item)}
-              className="flex h-12 w-full items-center rounded-lg bg-primary-50 px-5 transition-transform hover:translate-y-0.5 dark:bg-neutral-800"
-            >
-              <item.icon className="size-5.5 shrink-0" />
-              <p className="grow text-center text-[15px] font-medium text-neutral-700 dark:text-neutral-300">
-                {T['login'][item.labelKey]}
-              </p>
-            </Link>
-          ))}
+          {socials
+            .filter((item) => !item.disabled)
+            .map((item, index) => (
+              <Link
+                key={index}
+                href={getSocialHref(item)}
+                className="flex h-12 w-full items-center rounded-lg bg-primary-50 px-5 transition-transform hover:translate-y-0.5 dark:bg-neutral-800"
+              >
+                <item.icon className="size-5.5 shrink-0" />
+                <p className="grow text-center text-[15px] font-medium text-neutral-700 dark:text-neutral-300">
+                  {T['login'][item.labelKey]}
+                </p>
+              </Link>
+            ))}
         </div>
         {/* OR */}
         <div className="relative text-center">
