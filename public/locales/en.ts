@@ -300,6 +300,7 @@ export const en = {
     'Continue with Facebook': 'Continue with Facebook',
     'Continue with LINE': 'Continue with LINE',
     'Google login failed': 'Google login failed. Please try again.',
+    'Facebook login failed': 'Facebook login failed. Please try again.',
     'Logout successfully': 'Logout Successfully',
     'Email address': 'Email address',
     Password: 'Password',

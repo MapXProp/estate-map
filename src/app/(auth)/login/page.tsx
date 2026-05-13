@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 const socials: {
   labelKey: 'Continue with Google' | 'Continue with Facebook' | 'Continue with LINE'
   href: string
-  provider?: 'google'
+  provider?: 'google' | 'facebook'
   icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element
 }[] = [
   {
@@ -33,6 +33,7 @@ const socials: {
   {
     labelKey: 'Continue with Facebook',
     href: '#',
+    provider: 'facebook',
     icon: (props) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path
@@ -84,8 +85,12 @@ const Page = () => {
     if (params.get('logout') === 'success') {
       setSuccessMessage(T['login']['Logout successfully'])
     }
-    if (params.get('error')?.startsWith('google_')) {
+    const loginError = params.get('error')
+    if (loginError?.startsWith('google_')) {
       setError(T['login']['Google login failed'])
+    }
+    if (loginError?.startsWith('facebook_')) {
+      setError(T['login']['Facebook login failed'])
     }
     if (params.has('email') || params.has('password')) {
       params.delete('email')
@@ -169,11 +174,11 @@ const Page = () => {
   }
 
   const getSocialHref = (item: (typeof socials)[number]) => {
-    if (item.provider !== 'google') {
+    if (item.provider !== 'google' && item.provider !== 'facebook') {
       return item.href
     }
 
-    const url = new URL(getAuthApiUrl('auth/google/start'))
+    const url = new URL(getAuthApiUrl(`auth/${item.provider}/start`))
     if (typeof window !== 'undefined') {
       const redirectPath = new URLSearchParams(window.location.search).get('redirect')
       if (redirectPath?.startsWith('/') && !redirectPath.startsWith('//')) {
