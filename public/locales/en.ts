@@ -308,6 +308,7 @@ export const en = {
     'Forgot password?': 'Forgot password?',
     'New user?': 'New user?',
     'Create an account': 'Create an account',
+    'Sign up to start using MapxProp': 'Sign up to start using MapxProp',
     Signup: 'Signup',
     'Already have an account?': 'Already have an account?',
     'Sign in': 'Sign in',

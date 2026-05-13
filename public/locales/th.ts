@@ -302,6 +302,7 @@ export const th = {
     'Forgot password?': 'ลืมรหัสผ่าน?',
     'New user?': 'ผู้ใช้ใหม่?',
     'Create an account': 'สร้างบัญชีใหม่',
+    'Sign up to start using MapxProp': 'สมัครสมาชิกเพื่อเริ่มใช้งาน MapxProp',
     Signup: 'สมัครสมาชิก',
     'Already have an account?': 'มีบัญชีอยู่แล้ว?',
     'Sign in': 'เข้าสู่ระบบ',
