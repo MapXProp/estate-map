@@ -9,6 +9,7 @@ import 'rc-slider/assets/index.css'
 
 const poppins = Poppins({
   subsets: ['latin'],
+  display: 'swap',
   variable: '--font-poppins-next',
   weight: ['300', '400', '500', '600', '700'],
 })
@@ -16,8 +17,7 @@ const sarabun = Sarabun({
   subsets: ['thai', 'latin'],
   display: 'swap',
   variable: '--font-sarabun-next',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800'],
-  style: ['normal', 'italic'],
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
