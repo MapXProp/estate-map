@@ -299,6 +299,7 @@ export const en = {
     'Continue with Google': 'Continue with Google',
     'Continue with Facebook': 'Continue with Facebook',
     'Continue with LINE': 'Continue with LINE',
+    'Google login failed': 'Google login failed. Please try again.',
     'Logout successfully': 'Logout Successfully',
     'Email address': 'Email address',
     Password: 'Password',

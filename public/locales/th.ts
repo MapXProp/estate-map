@@ -299,6 +299,7 @@ export const th = {
     'Continue with Google': 'เข้าสู่ระบบด้วย Google',
     'Continue with Facebook': 'เข้าสู่ระบบด้วย Facebook',
     'Continue with LINE': 'เข้าสู่ระบบด้วย LINE',
+    'Google login failed': 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองอีกครั้ง',
     'Logout successfully': 'ออกจากระบบสำเร็จ',
     'Email address': 'อีเมล',
     Password: 'รหัสผ่าน',

@@ -14,11 +14,13 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 const socials: {
   labelKey: 'Continue with Google' | 'Continue with Facebook' | 'Continue with LINE'
   href: string
+  provider?: 'google'
   icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element
 }[] = [
   {
     labelKey: 'Continue with Google',
     href: '#',
+    provider: 'google',
     icon: (props) => (
       <svg viewBox="0 0 24 24" {...props}>
         <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.13H12v4.03h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.25c1.9-1.75 2.97-4.33 2.97-7.43z" />
@@ -81,6 +83,9 @@ const Page = () => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('logout') === 'success') {
       setSuccessMessage(T['login']['Logout successfully'])
+    }
+    if (params.get('error')?.startsWith('google_')) {
+      setError(T['login']['Google login failed'])
     }
     if (params.has('email') || params.has('password')) {
       params.delete('email')
@@ -163,6 +168,21 @@ const Page = () => {
     }
   }
 
+  const getSocialHref = (item: (typeof socials)[number]) => {
+    if (item.provider !== 'google') {
+      return item.href
+    }
+
+    const url = new URL(getAuthApiUrl('auth/google/start'))
+    if (typeof window !== 'undefined') {
+      const redirectPath = new URLSearchParams(window.location.search).get('redirect')
+      if (redirectPath?.startsWith('/') && !redirectPath.startsWith('//')) {
+        url.searchParams.set('redirect', redirectPath)
+      }
+    }
+    return url.toString()
+  }
+
   return (
     <div className="container">
       <div className="my-16 flex justify-center">
@@ -174,7 +194,7 @@ const Page = () => {
           {socials.map((item, index) => (
             <Link
               key={index}
-              href={item.href}
+              href={getSocialHref(item)}
               className="flex h-12 w-full items-center rounded-lg bg-primary-50 px-5 transition-transform hover:translate-y-0.5 dark:bg-neutral-800"
             >
               <item.icon className="size-5.5 shrink-0" />
