@@ -1,12 +1,13 @@
 'use client'
 
-import { getAuthApiUrl } from '@/lib/auth'
+import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
 import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState, type JSX } from 'react'
 
 const socials: {
@@ -76,7 +77,18 @@ const socials: {
   },
 ]
 
+type SignupResponse = {
+  token?: string
+  access_token?: string
+  public_user_id?: string
+  name?: string
+  surname?: string
+  email?: string
+  error?: string
+}
+
 const Page = () => {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -86,7 +98,6 @@ const Page = () => {
     const hasUpper = /[A-Z]/.test(pass)
     const hasLower = /[a-z]/.test(pass)
     const hasNumber = /[0-9]/.test(pass)
-    // ตรวจสอบว่ามีตัวอักษรที่ไม่ใช่ (A-Z, a-z, 0-9) หรือไม่ ซึ่งจะครอบคลุม _ และอักขระพิเศษทั้งหมด
     const hasSpecial = /[^A-Za-z0-9]/.test(pass)
     return pass.length >= 8 && hasUpper && hasLower && hasNumber && hasSpecial
   }
@@ -95,8 +106,9 @@ const Page = () => {
     e.preventDefault()
     setError(null)
 
-    // 1. Client-side Validation (Matching your Go Backend)
-    if (!email.includes('@')) {
+    const trimmedEmail = email.trim().toLowerCase()
+
+    if (!trimmedEmail.includes('@')) {
       setError('รูปแบบ Email ไม่ถูกต้อง')
       return
     }
@@ -109,29 +121,24 @@ const Page = () => {
     setIsLoading(true)
 
     try {
-      // เปลี่ยน URL เป็น /apix/users ตามที่คุณระบุ
-      const apiUrl = getAuthApiUrl('userRegister')
-
-      console.log('กำลังส่งข้อมูลไปที่:', apiUrl) // Debug ดู URL ใน Console (F12)
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch(getAuthApiUrl('userRegister'), {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       })
 
-      // ป้องกันการพยายาม parse JSON ถ้า response ไม่ใช่ JSON (แก้ปัญหา <!DOCTYPE error)
       const isJson = response.headers.get('content-type')?.includes('application/json')
-      const data = isJson ? await response.json() : null
+      const data = (isJson ? await response.json() : null) as SignupResponse | null
 
       if (!response.ok) {
-        throw new Error(data?.error || `Server Error (${response.status}): ตรวจสอบ URL หรือ Backend ของคุณ`)
+        throw new Error(data?.error || `Signup failed (${response.status})`)
       }
 
-      // สำเร็จ: อาจจะ redirect ไปหน้า login หรือหน้าอื่น
-      window.location.href = '/login?success=registered'
-    } catch (err: any) {
-      setError(err.message)
+      setStoredAuth({ ...data, email: data?.email || trimmedEmail })
+      router.push('/account?login=success')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ไม่สามารถสร้างบัญชีได้')
     } finally {
       setIsLoading(false)
     }
@@ -177,14 +184,14 @@ const Page = () => {
               </Link>
             ))}
         </div>
-        {/* OR */}
+
         <div className="relative text-center">
           <span className="relative z-10 inline-block bg-white px-4 text-sm font-medium dark:bg-neutral-900 dark:text-neutral-400">
             {T['login']['OR']}
           </span>
           <div className="absolute top-1/2 left-0 w-full -translate-y-1/2 transform border border-neutral-100 dark:border-neutral-800"></div>
         </div>
-        {/* FORM */}
+
         <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
           <Field className="block">
             <Label className="text-neutral-800 dark:text-neutral-200">{T['login']['Email address']}</Label>
@@ -225,7 +232,6 @@ const Page = () => {
           </ButtonPrimary>
         </form>
 
-        {/* ==== */}
         <div className="block text-center text-sm text-neutral-700 dark:text-neutral-300">
           {T['login']['Already have an account?']} {` `}
           <Link href="/login" className="font-medium underline">
