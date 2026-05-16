@@ -100,8 +100,14 @@ const Page = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    let shouldSanitizeUrl = false
     if (params.get('logout') === 'success') {
       setSuccessMessage(T['login']['Logout successfully'])
+    }
+    if (params.get('reset') === 'success') {
+      setSuccessMessage('ตั้งรหัสผ่านใหม่เรียบร้อย กรุณาเข้าสู่ระบบอีกครั้ง')
+      params.delete('reset')
+      shouldSanitizeUrl = true
     }
     const loginError = params.get('error')
     if (loginError?.startsWith('google_')) {
@@ -116,6 +122,9 @@ const Page = () => {
     if (params.has('email') || params.has('password')) {
       params.delete('email')
       params.delete('password')
+      shouldSanitizeUrl = true
+    }
+    if (shouldSanitizeUrl) {
       const sanitizedUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`
       window.history.replaceState(null, '', sanitizedUrl)
     }
