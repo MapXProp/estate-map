@@ -1,0 +1,372 @@
+export type PropertyGroupCode = 'residential' | 'mixed_use' | 'commercial' | 'land'
+
+export type PropertyTypeCode =
+  | 'detached_house'
+  | 'semi_detached_house'
+  | 'townhouse'
+  | 'condo'
+  | 'apartment'
+  | 'dormitory'
+  | 'shophouse'
+  | 'home_office'
+  | 'office'
+  | 'retail_space'
+  | 'warehouse'
+  | 'factory'
+  | 'land'
+
+export type UseCaseCode =
+  | 'residential'
+  | 'office'
+  | 'retail'
+  | 'food_service'
+  | 'storage'
+  | 'industrial'
+  | 'hospitality'
+  | 'agriculture'
+
+export type ListingScopeCode = 'single_unit' | 'whole_property' | 'multi_unit' | 'land_plot' | 'space_slot'
+export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer'
+
+export type TaxonomyOption<TCode extends string> = {
+  code: TCode
+  nameTh: string
+  nameEn: string
+  description: string
+}
+
+export type PropertyTypeDefinition = TaxonomyOption<PropertyTypeCode> & {
+  groupCode: PropertyGroupCode
+  aliases: string[]
+  allowedUseCases: UseCaseCode[]
+  defaultUseCases: UseCaseCode[]
+  allowedScopes: ListingScopeCode[]
+  defaultScope: ListingScopeCode
+  allowedOffers: OfferTypeCode[]
+  supportsBusinessSpaceType?: boolean
+}
+
+export const propertyGroups: TaxonomyOption<PropertyGroupCode>[] = [
+  {
+    code: 'residential',
+    nameTh: 'ที่อยู่อาศัย',
+    nameEn: 'Residential',
+    description: 'บ้าน คอนโด ทาวน์เฮาส์ อพาร์ตเมนต์ และหอพัก',
+  },
+  {
+    code: 'mixed_use',
+    nameTh: 'อยู่อาศัยและทำธุรกิจ',
+    nameEn: 'Mixed use',
+    description: 'ตึกแถว อาคารพาณิชย์ และโฮมออฟฟิศ',
+  },
+  {
+    code: 'commercial',
+    nameTh: 'พื้นที่ธุรกิจ',
+    nameEn: 'Commercial',
+    description: 'สำนักงาน ร้านค้า โกดัง และโรงงาน',
+  },
+  {
+    code: 'land',
+    nameTh: 'ที่ดิน',
+    nameEn: 'Land',
+    description: 'ที่ดินเปล่าหรือที่ดินพร้อมสิ่งปลูกสร้าง',
+  },
+]
+
+const commonPropertyOffers: OfferTypeCode[] = ['sale', 'rent', 'sublease']
+
+export const propertyTypes: PropertyTypeDefinition[] = [
+  {
+    code: 'detached_house',
+    groupCode: 'residential',
+    nameTh: 'บ้านเดี่ยว',
+    nameEn: 'Detached house',
+    description: 'บ้านที่ไม่ใช้ผนังร่วมกับหลังข้างเคียง',
+    aliases: ['house', 'single_house'],
+    allowedUseCases: ['residential', 'office'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'semi_detached_house',
+    groupCode: 'residential',
+    nameTh: 'บ้านแฝด',
+    nameEn: 'Semi-detached house',
+    description: 'บ้านสองหลังที่มีผนังหรือส่วนโครงสร้างเชื่อมกัน',
+    aliases: ['twin_house', 'duplex_house'],
+    allowedUseCases: ['residential', 'office'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'townhouse',
+    groupCode: 'residential',
+    nameTh: 'ทาวน์เฮาส์ / ทาวน์โฮม',
+    nameEn: 'Townhouse',
+    description: 'บ้านแถวที่ใช้ผนังร่วมกับยูนิตข้างเคียง',
+    aliases: ['townhome'],
+    allowedUseCases: ['residential', 'office', 'retail'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'condo',
+    groupCode: 'residential',
+    nameTh: 'คอนโดมิเนียม',
+    nameEn: 'Condominium',
+    description: 'ห้องชุดในอาคารที่มีกรรมสิทธิ์แยกเป็นยูนิต',
+    aliases: ['condominium'],
+    allowedUseCases: ['residential'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['single_unit'],
+    defaultScope: 'single_unit',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'apartment',
+    groupCode: 'residential',
+    nameTh: 'อพาร์ตเมนต์',
+    nameEn: 'Apartment',
+    description: 'ห้องเช่าหรืออาคารที่มีหลายห้องให้เช่า',
+    aliases: ['apartment_building'],
+    allowedUseCases: ['residential'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['single_unit', 'multi_unit', 'whole_property'],
+    defaultScope: 'single_unit',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'dormitory',
+    groupCode: 'residential',
+    nameTh: 'หอพัก',
+    nameEn: 'Dormitory',
+    description: 'หอพักนักเรียน นักศึกษา หรือคนทำงาน',
+    aliases: ['student_accommodation', 'dorm'],
+    allowedUseCases: ['residential'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['single_unit', 'multi_unit', 'whole_property'],
+    defaultScope: 'multi_unit',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'shophouse',
+    groupCode: 'mixed_use',
+    nameTh: 'ตึกแถว / อาคารพาณิชย์',
+    nameEn: 'Shophouse',
+    description: 'อาคารแถวที่ใช้พักอาศัยและประกอบธุรกิจได้',
+    aliases: ['commercial_building', 'row_building'],
+    allowedUseCases: ['residential', 'office', 'retail', 'food_service', 'storage'],
+    defaultUseCases: ['residential', 'retail'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: [...commonPropertyOffers, 'business_transfer'],
+  },
+  {
+    code: 'home_office',
+    groupCode: 'mixed_use',
+    nameTh: 'โฮมออฟฟิศ',
+    nameEn: 'Home office',
+    description: 'อาคารที่ออกแบบให้พักอาศัยและทำสำนักงาน',
+    aliases: [],
+    allowedUseCases: ['residential', 'office', 'retail'],
+    defaultUseCases: ['residential', 'office'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'office',
+    groupCode: 'commercial',
+    nameTh: 'สำนักงาน / ออฟฟิศ',
+    nameEn: 'Office',
+    description: 'ยูนิตสำนักงาน ชั้นสำนักงาน หรืออาคารสำนักงาน',
+    aliases: ['office_unit'],
+    allowedUseCases: ['office'],
+    defaultUseCases: ['office'],
+    allowedScopes: ['single_unit', 'whole_property'],
+    defaultScope: 'single_unit',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'retail_space',
+    groupCode: 'commercial',
+    nameTh: 'พื้นที่ค้าขาย',
+    nameEn: 'Retail space',
+    description: 'ร้านค้า ล็อก คีออส เคาน์เตอร์ หรือพื้นที่ขายสินค้า',
+    aliases: ['shop_space', 'kiosk', 'stall'],
+    allowedUseCases: ['retail', 'food_service'],
+    defaultUseCases: ['retail'],
+    allowedScopes: ['space_slot', 'single_unit', 'whole_property'],
+    defaultScope: 'space_slot',
+    allowedOffers: ['rent', 'sublease', 'business_transfer'],
+    supportsBusinessSpaceType: true,
+  },
+  {
+    code: 'warehouse',
+    groupCode: 'commercial',
+    nameTh: 'โกดัง / คลังสินค้า',
+    nameEn: 'Warehouse',
+    description: 'อาคารสำหรับเก็บสินค้าและงานโลจิสติกส์',
+    aliases: ['storage_building'],
+    allowedUseCases: ['storage', 'industrial'],
+    defaultUseCases: ['storage'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'factory',
+    groupCode: 'commercial',
+    nameTh: 'โรงงาน',
+    nameEn: 'Factory',
+    description: 'อาคารสำหรับการผลิตหรือกิจกรรมอุตสาหกรรม',
+    aliases: ['industrial_building'],
+    allowedUseCases: ['industrial', 'storage'],
+    defaultUseCases: ['industrial'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: commonPropertyOffers,
+  },
+  {
+    code: 'land',
+    groupCode: 'land',
+    nameTh: 'ที่ดิน',
+    nameEn: 'Land',
+    description: 'ที่ดินเปล่าหรือที่ดินพร้อมสิ่งปลูกสร้าง',
+    aliases: ['land_plot'],
+    allowedUseCases: [
+      'residential',
+      'office',
+      'retail',
+      'food_service',
+      'storage',
+      'industrial',
+      'hospitality',
+      'agriculture',
+    ],
+    defaultUseCases: [],
+    allowedScopes: ['land_plot'],
+    defaultScope: 'land_plot',
+    allowedOffers: ['sale', 'rent', 'sublease'],
+  },
+]
+
+export const useCases: TaxonomyOption<UseCaseCode>[] = [
+  { code: 'residential', nameTh: 'อยู่อาศัย', nameEn: 'Residential', description: 'พักอาศัยระยะสั้นหรือระยะยาว' },
+  { code: 'office', nameTh: 'สำนักงาน', nameEn: 'Office', description: 'สำนักงาน บริษัท หรือพื้นที่ทำงาน' },
+  { code: 'retail', nameTh: 'ร้านค้า', nameEn: 'Retail', description: 'ขายสินค้า หน้าร้าน หรือบริการลูกค้า' },
+  {
+    code: 'food_service',
+    nameTh: 'ร้านอาหารและคาเฟ่',
+    nameEn: 'Food service',
+    description: 'อาหาร เครื่องดื่ม หรือครัวเชิงพาณิชย์',
+  },
+  { code: 'storage', nameTh: 'เก็บสินค้า', nameEn: 'Storage', description: 'คลังสินค้า สต๊อกสินค้า หรือโลจิสติกส์' },
+  { code: 'industrial', nameTh: 'อุตสาหกรรม', nameEn: 'Industrial', description: 'ผลิต ประกอบ หรือกิจกรรมโรงงาน' },
+  { code: 'hospitality', nameTh: 'ธุรกิจที่พัก', nameEn: 'Hospitality', description: 'โรงแรม โฮสเทล หรือบริการที่พัก' },
+  {
+    code: 'agriculture',
+    nameTh: 'เกษตรกรรม',
+    nameEn: 'Agriculture',
+    description: 'เพาะปลูก เลี้ยงสัตว์ หรือกิจกรรมเกษตร',
+  },
+]
+
+export const listingScopes: TaxonomyOption<ListingScopeCode>[] = [
+  {
+    code: 'single_unit',
+    nameTh: 'ห้องหรือยูนิตเดียว',
+    nameEn: 'Single unit',
+    description: 'ประกาศห้องหรือพื้นที่หนึ่งยูนิต',
+  },
+  {
+    code: 'whole_property',
+    nameTh: 'ทั้งหลังหรือทั้งอาคาร',
+    nameEn: 'Whole property',
+    description: 'ประกาศทรัพย์ทั้งหมดในรายการเดียว',
+  },
+  {
+    code: 'multi_unit',
+    nameTh: 'หลายห้องหรือหลายยูนิต',
+    nameEn: 'Multiple units',
+    description: 'มีหลายประเภทห้อง จำนวนห้อง และราคา',
+  },
+  {
+    code: 'land_plot',
+    nameTh: 'แปลงที่ดิน',
+    nameEn: 'Land plot',
+    description: 'ประกาศที่ดินหนึ่งแปลงหรือหลายแปลงติดกัน',
+  },
+  {
+    code: 'space_slot',
+    nameTh: 'พื้นที่ย่อย ล็อก หรือคีออส',
+    nameEn: 'Space slot',
+    description: 'พื้นที่ค้าขายภายในอาคาร ตลาด หรือโครงการ',
+  },
+]
+
+export const offerTypes: TaxonomyOption<OfferTypeCode>[] = [
+  { code: 'sale', nameTh: 'ขาย', nameEn: 'For sale', description: 'ขายกรรมสิทธิ์ในทรัพย์' },
+  { code: 'rent', nameTh: 'ให้เช่า', nameEn: 'For rent', description: 'ให้เช่าตามรอบเดือนหรือระยะเวลาที่กำหนด' },
+  {
+    code: 'sublease',
+    nameTh: 'ให้เช่าช่วง',
+    nameEn: 'Sublease',
+    description: 'ผู้เช่าปัจจุบันนำสิทธิการเช่ามาให้เช่าช่วง',
+  },
+  {
+    code: 'business_transfer',
+    nameTh: 'เซ้งกิจการ',
+    nameEn: 'Business transfer',
+    description: 'โอนสิทธิการเช่าหรือกิจการพร้อมอุปกรณ์',
+  },
+]
+
+export const businessSpaceTypes = [
+  { code: 'mall_shop', nameTh: 'ร้านภายในห้าง', nameEn: 'Mall shop' },
+  { code: 'mall_kiosk', nameTh: 'คีออสในห้าง', nameEn: 'Mall kiosk' },
+  { code: 'food_court_counter', nameTh: 'เคาน์เตอร์ศูนย์อาหาร', nameEn: 'Food court counter' },
+  { code: 'market_stall', nameTh: 'ล็อกในตลาดหรือตลาดนัด', nameEn: 'Market stall' },
+  { code: 'school_canteen', nameTh: 'พื้นที่ในโรงเรียน', nameEn: 'School canteen' },
+  { code: 'office_canteen', nameTh: 'พื้นที่ในสำนักงาน', nameEn: 'Office canteen' },
+  { code: 'dormitory_shop', nameTh: 'ร้านค้าในหอพัก', nameEn: 'Dormitory shop' },
+  { code: 'standalone_shop', nameTh: 'ร้านค้า Standalone', nameEn: 'Standalone shop' },
+  { code: 'street_food_space', nameTh: 'พื้นที่ขายอาหารริมทาง', nameEn: 'Street food space' },
+] as const
+
+export const getPropertyType = (code: string) => propertyTypes.find((item) => item.code === code)
+export const getPropertyGroup = (code: string) => propertyGroups.find((item) => item.code === code)
+export const getUseCase = (code: string) => useCases.find((item) => item.code === code)
+export const getListingScope = (code: string) => listingScopes.find((item) => item.code === code)
+export const getOfferType = (code: string) => offerTypes.find((item) => item.code === code)
+export const getPropertyTypesForGroup = (groupCode: PropertyGroupCode) =>
+  propertyTypes.filter((item) => item.groupCode === groupCode)
+
+export const normalizeLegacyPropertyType = (code: string): PropertyTypeCode => {
+  if (code === 'house') return 'detached_house'
+  if (code === 'commercial_building') return 'shophouse'
+  if (propertyTypes.some((item) => item.code === code)) return code as PropertyTypeCode
+  return 'detached_house'
+}
+
+export const mapUseCasesToLegacyUsage = (codes: UseCaseCode[]) => {
+  const hasResidential = codes.includes('residential')
+  const hasBusiness = codes.some((code) => code !== 'residential')
+  if (hasResidential && hasBusiness) return 'mixed'
+  return hasBusiness ? 'business' : 'residence'
+}
+
+export const offersToLegacyListingType = (codes: OfferTypeCode[]) => {
+  if (codes.includes('sale') && codes.includes('rent')) return 'sale_and_rent'
+  if (codes.includes('sale')) return 'sale'
+  if (codes.includes('rent')) return 'rent'
+  if (codes.includes('sublease')) return 'sublease'
+  if (codes.includes('business_transfer')) return 'business_transfer'
+  return 'rent'
+}

@@ -90,7 +90,7 @@ const FooterQuickNavigation = () => {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-6 bg-white/90 px-2.5 py-4 shadow ring-1 shadow-slate-200/80 ring-slate-900/5 backdrop-blur-sm transition-transform lg:hidden dark:bg-neutral-950/90"
+      className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-6 bg-white/90 px-2.5 py-4 shadow ring-1 shadow-slate-200/80 ring-slate-900/5 backdrop-blur-sm transition-transform min-[744px]:hidden dark:bg-neutral-950/90"
     >
       <div className="mx-auto flex w-full max-w-lg justify-around text-center">
         {/* MENU */}
@@ -118,7 +118,7 @@ const FooterQuickNavigation = () => {
               role="menuitem"
               aria-label={`Open menu`}
               className={clsx(
-                '-mx-2 flex cursor-pointer flex-col items-center justify-between px-2 text-neutral-500 touch-manipulation dark:text-neutral-300',
+                '-mx-2 flex cursor-pointer touch-manipulation flex-col items-center justify-between px-2 text-neutral-500 dark:text-neutral-300',
                 isActive && 'text-red-600'
               )}
               onClick={() => {

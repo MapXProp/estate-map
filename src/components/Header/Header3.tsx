@@ -119,14 +119,14 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
           className
         )}
       >
-        <div className="relative flex h-20 px-4 lg:px-8">
+        <div className="relative flex h-20 px-4 min-[744px]:px-6 lg:px-8">
           <div className="flex flex-1 justify-between">
             {/* Logo (lg+) */}
             <div className="relative z-11 flex flex-1/2 items-center">
               <Logo />
             </div>
 
-            <div className="mx-auto flex w-full max-w-md shrink-0 justify-center">
+            <div className="mx-auto flex w-full max-w-[280px] shrink-0 justify-center min-[744px]:max-w-[360px] min-[1100px]:max-w-md">
               {/* BUTTON SHOW HERO SEARCH FORM DESKTOP */}
               <Headless.Transition show={!showHeroSearch}>
                 <div
@@ -143,13 +143,17 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   tabIndex={0}
                 >
                   <div className="flex shrink-0 items-center text-sm font-medium whitespace-nowrap">
-                    <div className="block cursor-pointer py-3 ps-5 pe-4">{locationText}</div>
-                    <div className="h-5 w-px bg-neutral-300 dark:bg-neutral-700"></div>
-                    <div className="block cursor-pointer px-4 py-3">{dateText}</div>
+                    <div className="block max-w-44 cursor-pointer truncate py-3 ps-5 pe-4 min-[744px]:max-w-none">
+                      {locationText}
+                    </div>
+                    <div className="hidden h-5 w-px bg-neutral-300 min-[744px]:block dark:bg-neutral-700"></div>
+                    <div className="hidden cursor-pointer px-4 py-3 min-[744px]:block">{dateText}</div>
                     {initSearchFormTab !== 'Cars' && (
-                      <div className="h-5 w-px bg-neutral-300 dark:bg-neutral-700"></div>
+                      <div className="hidden h-5 w-px bg-neutral-300 min-[744px]:block dark:bg-neutral-700"></div>
                     )}
-                    {initSearchFormTab !== 'Cars' && <div className="block cursor-pointer px-4 py-3">{guestsText}</div>}
+                    {initSearchFormTab !== 'Cars' && (
+                      <div className="hidden cursor-pointer px-4 py-3 min-[744px]:block">{guestsText}</div>
+                    )}
                   </div>
 
                   <div className="ms-auto shrink-0 cursor-pointer pe-2">
@@ -189,7 +193,9 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
 
               <NotifyDropdown />
               <AvatarDropdown />
-              <HamburgerBtnMenu />
+              <div className="hidden min-[744px]:block">
+                <HamburgerBtnMenu />
+              </div>
             </div>
           </div>
         </div>

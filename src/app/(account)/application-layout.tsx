@@ -14,12 +14,12 @@ interface Props {
 const ApplicationLayout: React.FC<Props> = ({ children }) => {
   return (
     <Aside.Provider>
-      {/* Desktop Header - Will be hidden on mobile devices  */}
-      <div className="hidden lg:block">
+      {/* Compact desktop header starts at iPad mini portrait width (744px). */}
+      <div className="hidden min-[744px]:block">
         <Header />
       </div>
-      {/* HeroSearchFormMobile - will display on mobile devices instead of Header-desktop */}
-      <div className="sticky top-0 z-10 container flex h-20 items-center justify-center bg-white lg:hidden dark:bg-neutral-900">
+      {/* Keep the mobile search header for phones only. */}
+      <div className="sticky top-0 z-10 container flex h-20 items-center justify-center bg-white min-[744px]:hidden dark:bg-neutral-900">
         <HeroSearchFormMobile />
       </div>
       {/*  */}
