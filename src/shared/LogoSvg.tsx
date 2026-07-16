@@ -1,10 +1,5 @@
 const LogoSvg = () => {
-  return (
-    <img 
-      src="/M3 png.png" 
-      alt="MapxProp" 
-    />
-  )
+  return <img className="block w-full" src="/M5.png" alt="MapxProp" />
 }
 
 export default LogoSvg

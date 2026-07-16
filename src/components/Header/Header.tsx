@@ -46,7 +46,7 @@ const Header: FC<HeaderProps> = async ({ hasBorderBottom = true, className }) =>
             <MegaMenuPopover megamenu={megamenu} featuredCategory={featuredCategory} />
             <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[744px]:block" />
             <Button
-              className="button-fire-border min-h-11 rounded-full px-4! py-2.5! font-sarabun! text-sm! font-bold whitespace-nowrap shadow-lg min-[744px]:-mx-1 min-[744px]:px-7! min-[744px]:py-3! min-[744px]:text-lg! min-[744px]:shadow-2xl"
+              className="button-fire-border min-h-10 rounded-full px-4! py-2! font-sarabun! text-sm! font-semibold whitespace-nowrap shadow-md min-[744px]:-mx-1 min-[744px]:px-5! min-[744px]:shadow-lg"
               color="light"
               href={'/add-listing/1'}
             >
