@@ -2,6 +2,8 @@
 
 import * as Headless from '@headlessui/react'
 import { Banknote, Check, ChevronDown, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import PropertySearchBackdrop from './PropertySearchBackdrop'
 
 export type PropertyOfferType = 'sale' | 'rent' | 'business_transfer'
 
@@ -151,33 +153,66 @@ const PropertyPricePopover = ({
   value: PropertyPriceSelection
   onChange: (value: PropertyPriceSelection) => void
 }) => {
+  const priceButtonRef = useRef<HTMLButtonElement>(null)
   const content = offerContent[offerType]
   const summary = getPriceSummary(offerType, value)
   const hasInvalidRange = Boolean(value.minPrice && value.maxPrice && Number(value.minPrice) > Number(value.maxPrice))
 
   const updateValue = (next: Partial<PropertyPriceSelection>) => onChange({ ...value, ...next })
   const clearValue = () => onChange({ minPrice: '', maxPrice: '', monthlyRentMax: '' })
+  const [desktopPricePopupPosition, setDesktopPricePopupPosition] = useState<{
+    right: number
+    bottom: number
+  } | null>(null)
+
+  const updatePricePopupPosition = useCallback(() => {
+    if (window.innerWidth < 1100 || !priceButtonRef.current) {
+      setDesktopPricePopupPosition(null)
+      return
+    }
+
+    const buttonRect = priceButtonRef.current.getBoundingClientRect()
+    setDesktopPricePopupPosition({
+      right: window.innerWidth - buttonRect.right,
+      bottom: window.innerHeight - buttonRect.top + 14,
+    })
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('resize', updatePricePopupPosition)
+    window.addEventListener('scroll', updatePricePopupPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePricePopupPosition)
+      window.removeEventListener('scroll', updatePricePopupPosition, true)
+    }
+  }, [updatePricePopupPosition])
 
   return (
     <Headless.Popover className="relative min-w-0">
-      {({ close }) => (
+      {({ close, open }) => (
         <>
-          <Headless.PopoverButton className="flex min-h-16 w-full items-center gap-2 rounded-2xl px-3 text-left transition hover:bg-[#f3f7f5] focus:outline-none min-[744px]:min-h-20 min-[744px]:gap-3 min-[744px]:px-4 dark:hover:bg-neutral-800">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f7eee2] text-[#8b5a22] min-[744px]:size-10 dark:bg-amber-950 dark:text-amber-200">
+          <PropertySearchBackdrop open={open} onClose={close} />
+          <Headless.PopoverButton
+            ref={priceButtonRef}
+            onClick={updatePricePopupPosition}
+            className="flex min-h-16 w-full items-center gap-3 rounded-2xl px-4 text-left transition hover:bg-[#f3f7f5] focus:outline-none min-[744px]:min-h-20 dark:hover:bg-neutral-800"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f7eee2] text-[#8b5a22] dark:bg-amber-950 dark:text-amber-200">
               <Banknote className="size-5" strokeWidth={1.8} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-xs font-semibold text-neutral-900 min-[744px]:text-sm dark:text-white">
-                {content.fieldLabel}
-              </span>
+              <span className="block text-sm font-semibold text-neutral-900 dark:text-white">{content.fieldLabel}</span>
               <span className="mt-1 block truncate text-sm text-neutral-500 dark:text-neutral-400">{summary}</span>
             </span>
             <ChevronDown className="size-4 shrink-0 text-neutral-400" />
           </Headless.PopoverButton>
 
           <Headless.PopoverPanel
+            portal
             transition
-            className="fixed inset-x-3 bottom-20 z-50 max-h-[calc(100dvh-6.5rem)] w-auto origin-bottom overflow-y-auto overscroll-contain rounded-3xl border border-neutral-200 bg-white p-4 shadow-2xl transition duration-150 sm:inset-x-8 sm:p-6 lg:absolute lg:inset-x-auto lg:top-[calc(100%+14px)] lg:right-0 lg:bottom-auto lg:max-h-[min(70vh,720px)] lg:w-[min(520px,calc(100vw-32px))] lg:origin-top-right dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-3 data-closed:opacity-0 lg:data-closed:-translate-y-2"
+            style={desktopPricePopupPosition ? { left: 'auto', top: 'auto', ...desktopPricePopupPosition } : undefined}
+            className="fixed inset-x-3 bottom-20 z-50 max-h-[calc(100dvh-6.5rem)] w-auto origin-bottom overflow-y-auto overscroll-contain rounded-3xl border border-neutral-200 bg-white p-4 shadow-2xl transition duration-150 min-[1100px]:inset-x-auto min-[1100px]:top-auto min-[1100px]:max-h-[min(52vh,520px)] min-[1100px]:w-[min(520px,calc(100vw-32px))] min-[1100px]:origin-bottom-right min-[1100px]:shadow-[0_-24px_65px_-30px_rgba(18,63,50,0.38)] sm:inset-x-8 sm:p-6 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-3 data-closed:opacity-0 min-[1100px]:data-closed:translate-y-2"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
