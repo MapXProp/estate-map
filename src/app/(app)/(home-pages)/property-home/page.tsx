@@ -121,24 +121,20 @@ const locations = [
 const PropertyHomePrototype = () => {
   return (
     <main className="overflow-hidden bg-white dark:bg-neutral-900">
-      <section className="container pt-5 sm:pt-8 lg:pt-12">
+      <section className="container pt-3 sm:pt-6 lg:pt-10">
         <div className="relative overflow-hidden rounded-[32px] bg-[#edf4f0] lg:rounded-[44px] dark:bg-[#10231d]">
           <div className="pointer-events-none absolute -top-24 -left-24 size-72 rounded-full bg-emerald-200/35 blur-3xl dark:bg-emerald-700/15" />
-          <div className="grid min-h-[470px] lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="relative z-10 flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-14 lg:py-16 xl:px-18">
-              <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-[#bfd9cd] bg-white/70 px-3 py-1.5 text-xs font-semibold text-[#176b50] backdrop-blur dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
-                Property discovery ที่เข้าใจการใช้งานจริง
-              </div>
-              <h1 className="max-w-2xl text-4xl/[1.12] font-semibold tracking-[-0.035em] text-neutral-950 sm:text-5xl/[1.08] lg:text-6xl/[1.08] dark:text-white">
+          <div className="grid min-[744px]:min-h-[360px] min-[744px]:grid-cols-[1.05fr_0.95fr] lg:min-h-[420px] lg:grid-cols-[1.02fr_0.98fr]">
+            <div className="relative z-10 flex flex-col justify-center px-6 py-8 min-[744px]:px-8 min-[744px]:py-10 sm:px-8 sm:py-9 lg:px-12 lg:py-12 xl:px-14">
+              <h1 className="max-w-2xl text-[2.15rem]/[1.08] font-semibold tracking-[-0.035em] text-neutral-950 min-[744px]:text-[2.4rem]/[1.08] sm:text-4xl/[1.08] lg:text-5xl/[1.08] xl:text-6xl/[1.08] dark:text-white">
                 พื้นที่ที่ใช่
                 <br />
                 <span className="text-[#176b50] dark:text-emerald-300">สำหรับชีวิตและธุรกิจ</span>
               </h1>
-              <p className="mt-5 max-w-xl text-base/7 text-neutral-600 sm:text-lg/8 dark:text-neutral-300">
+              <p className="mt-3 line-clamp-2 max-w-xl text-sm/6 text-neutral-600 min-[744px]:line-clamp-none sm:text-base/7 lg:text-lg/8 dark:text-neutral-300">
                 ไม่ว่าคุณจะหาบ้าน ตึกแถว ร้านค้า โกดัง หรือที่ดิน MapxProp ช่วยค้นหาจากสิ่งที่คุณต้องการทำได้โดยตรง
               </p>
-              <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 dark:text-neutral-300">
+              <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 min-[744px]:flex dark:text-neutral-300">
                 <span className="inline-flex items-center gap-1.5">
                   <CheckCircle2 className="size-4 text-[#176b50] dark:text-emerald-300" /> ข้อมูลตรงประเภททรัพย์
                 </span>
@@ -148,7 +144,7 @@ const PropertyHomePrototype = () => {
               </div>
             </div>
 
-            <div className="relative min-h-[340px] overflow-hidden lg:min-h-full">
+            <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
               <Image
                 fill
                 priority
@@ -157,18 +153,12 @@ const PropertyHomePrototype = () => {
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0d2f25]/55 via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#edf4f0] lg:via-transparent lg:to-transparent dark:lg:from-[#10231d]" />
-              <div className="absolute right-5 bottom-5 left-5 flex items-end justify-between gap-3 sm:right-8 sm:bottom-8 sm:left-auto">
-                <div className="rounded-2xl border border-white/50 bg-white/88 px-4 py-3 shadow-xl backdrop-blur-md dark:border-white/10 dark:bg-neutral-900/85">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">ประกาศอัปเดตสัปดาห์นี้</p>
-                  <p className="mt-0.5 text-xl font-bold text-neutral-950 dark:text-white">1,248 รายการ</p>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#edf4f0] via-transparent to-transparent dark:from-[#10231d]" />
             </div>
           </div>
         </div>
 
-        <div className="relative z-20 mx-auto -mt-8 max-w-[1180px] px-2 sm:-mt-11 sm:px-5 lg:-mt-14">
+        <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
           <PropertyHomeSearch />
           <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
             <span className="font-medium text-neutral-700 dark:text-neutral-200">ค้นหายอดนิยม:</span>

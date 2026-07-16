@@ -136,7 +136,7 @@ const PriceInput = ({
         value={formatInputAmount(value)}
         onChange={(event) => onChange(cleanAmount(event.target.value))}
         placeholder={placeholder}
-        className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-sm font-medium text-neutral-900 placeholder:text-neutral-300 focus:ring-0 dark:text-white dark:placeholder:text-neutral-600"
+        className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-base font-medium text-neutral-900 placeholder:text-neutral-300 focus:ring-0 min-[744px]:text-sm dark:text-white dark:placeholder:text-neutral-600"
       />
     </span>
   </label>
@@ -162,12 +162,14 @@ const PropertyPricePopover = ({
     <Headless.Popover className="relative min-w-0">
       {({ close }) => (
         <>
-          <Headless.PopoverButton className="flex min-h-20 w-full items-center gap-3 rounded-2xl px-4 text-left transition hover:bg-[#f3f7f5] focus:outline-none dark:hover:bg-neutral-800">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f7eee2] text-[#8b5a22] dark:bg-amber-950 dark:text-amber-200">
+          <Headless.PopoverButton className="flex min-h-16 w-full items-center gap-2 rounded-2xl px-3 text-left transition hover:bg-[#f3f7f5] focus:outline-none min-[744px]:min-h-20 min-[744px]:gap-3 min-[744px]:px-4 dark:hover:bg-neutral-800">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#f7eee2] text-[#8b5a22] min-[744px]:size-10 dark:bg-amber-950 dark:text-amber-200">
               <Banknote className="size-5" strokeWidth={1.8} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-neutral-900 dark:text-white">{content.fieldLabel}</span>
+              <span className="block text-xs font-semibold text-neutral-900 min-[744px]:text-sm dark:text-white">
+                {content.fieldLabel}
+              </span>
               <span className="mt-1 block truncate text-sm text-neutral-500 dark:text-neutral-400">{summary}</span>
             </span>
             <ChevronDown className="size-4 shrink-0 text-neutral-400" />
@@ -175,7 +177,7 @@ const PropertyPricePopover = ({
 
           <Headless.PopoverPanel
             transition
-            className="absolute top-[calc(100%+14px)] right-0 z-50 w-[min(520px,calc(100vw-32px))] origin-top-right rounded-3xl border border-neutral-200 bg-white p-5 shadow-2xl transition duration-150 sm:p-6 dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-2 data-closed:opacity-0"
+            className="fixed inset-x-3 bottom-20 z-50 max-h-[calc(100dvh-6.5rem)] w-auto origin-bottom overflow-y-auto overscroll-contain rounded-3xl border border-neutral-200 bg-white p-4 shadow-2xl transition duration-150 sm:inset-x-8 sm:p-6 lg:absolute lg:inset-x-auto lg:top-[calc(100%+14px)] lg:right-0 lg:bottom-auto lg:max-h-[min(70vh,720px)] lg:w-[min(520px,calc(100vw-32px))] lg:origin-top-right dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-3 data-closed:opacity-0 lg:data-closed:-translate-y-2"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
