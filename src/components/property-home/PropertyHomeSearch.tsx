@@ -61,35 +61,12 @@ const propertyGroups = [
   },
 ] as const
 
-const propertyGroupColorStyles = {
-  residential: {
-    card: 'border-[#ffd0c3] bg-[#fff8f5] text-[#9f3c28] hover:border-[#ff8a70] hover:bg-[#fff0eb] dark:border-rose-900 dark:bg-rose-950/25 dark:text-rose-200 dark:hover:border-rose-600 dark:hover:bg-rose-950/45',
-    active:
-      'border-[#ff6b4a] bg-[#ffe7df] text-[#8f321f] shadow-sm shadow-[#ff6b4a]/15 ring-2 ring-[#ff6b4a]/10 dark:border-rose-400 dark:bg-rose-950/60 dark:text-rose-100 dark:ring-rose-400/15',
-    action: 'text-[#e44f31] dark:text-rose-300',
-    chip: 'hover:border-[#ff6b4a] hover:bg-[#fff0eb] hover:text-[#8f321f] dark:hover:border-rose-500 dark:hover:bg-rose-950/50 dark:hover:text-rose-100',
-  },
-  mixed_use: {
-    card: 'border-[#c5e6f7] bg-[#f5fbff] text-[#176487] hover:border-[#67bce5] hover:bg-[#eaf7ff] dark:border-sky-900 dark:bg-sky-950/25 dark:text-sky-200 dark:hover:border-sky-600 dark:hover:bg-sky-950/45',
-    active:
-      'border-[#43a8d8] bg-[#dcf2ff] text-[#105777] shadow-sm shadow-[#43a8d8]/15 ring-2 ring-[#43a8d8]/10 dark:border-sky-400 dark:bg-sky-950/60 dark:text-sky-100 dark:ring-sky-400/15',
-    action: 'text-[#1684b8] dark:text-sky-300',
-    chip: 'hover:border-[#43a8d8] hover:bg-[#eaf7ff] hover:text-[#105777] dark:hover:border-sky-500 dark:hover:bg-sky-950/50 dark:hover:text-sky-100',
-  },
-  commercial: {
-    card: 'border-[#f1dda1] bg-[#fffdf4] text-[#7a5712] hover:border-[#e7b93d] hover:bg-[#fff7d7] dark:border-amber-900 dark:bg-amber-950/25 dark:text-amber-200 dark:hover:border-amber-600 dark:hover:bg-amber-950/45',
-    active:
-      'border-[#e3ae22] bg-[#fff1bd] text-[#6f4b00] shadow-sm shadow-[#e3ae22]/15 ring-2 ring-[#e3ae22]/10 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 dark:ring-amber-400/15',
-    action: 'text-[#b47b00] dark:text-amber-300',
-    chip: 'hover:border-[#e3ae22] hover:bg-[#fff7d7] hover:text-[#6f4b00] dark:hover:border-amber-500 dark:hover:bg-amber-950/50 dark:hover:text-amber-100',
-  },
-  land: {
-    card: 'border-[#bfe5ca] bg-[#f5fcf7] text-[#246a3d] hover:border-[#67c487] hover:bg-[#eaf8ee] dark:border-emerald-900 dark:bg-emerald-950/25 dark:text-emerald-200 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/45',
-    active:
-      'border-[#4bb875] bg-[#ddf5e5] text-[#1b5e35] shadow-sm shadow-[#4bb875]/15 ring-2 ring-[#4bb875]/10 dark:border-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-100 dark:ring-emerald-400/15',
-    action: 'text-[#249053] dark:text-emerald-300',
-    chip: 'hover:border-[#4bb875] hover:bg-[#eaf8ee] hover:text-[#1b5e35] dark:hover:border-emerald-500 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-100',
-  },
+const propertyCategoryStyles = {
+  card: 'border-neutral-200 bg-white text-neutral-800 hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-orange-700 dark:hover:bg-orange-950/30',
+  active:
+    'border-orange-500 bg-orange-50 text-orange-900 shadow-sm shadow-orange-500/10 ring-1 ring-orange-500 dark:border-orange-500 dark:bg-orange-950/40 dark:text-orange-100 dark:ring-orange-500',
+  action: 'text-orange-600 dark:text-orange-300',
+  chip: 'hover:border-orange-400 hover:bg-orange-50 hover:text-orange-800 dark:hover:border-orange-600 dark:hover:bg-orange-950/40 dark:hover:text-orange-100',
 } as const
 
 const useCases = [
@@ -249,9 +226,9 @@ const PropertyHomeSearch = () => {
                       key={value}
                       type="button"
                       onClick={() => setCategoryMode(value as CategoryMode)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      className={`rounded-full border border-transparent px-4 py-2 text-sm font-semibold transition ${
                         categoryMode === value
-                          ? 'bg-[#ef5b3f] text-white shadow-md shadow-[#ef5b3f]/20 dark:bg-orange-300 dark:text-orange-950'
+                          ? 'border-orange-200 bg-orange-50 text-orange-700 shadow-sm shadow-orange-500/10 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-200'
                           : 'bg-neutral-100 text-neutral-600 hover:text-neutral-900 dark:bg-neutral-800 dark:text-neutral-300'
                       }`}
                     >
@@ -267,13 +244,14 @@ const PropertyHomeSearch = () => {
                       {propertyGroups.map((group) => {
                         const Icon = group.icon
                         const isActive = activeGroup === group.value
-                        const colors = propertyGroupColorStyles[group.value]
                         return (
                           <button
                             key={group.value}
                             type="button"
                             onClick={() => setActiveGroup(group.value)}
-                            className={`rounded-2xl border p-3 text-left transition ${isActive ? colors.active : colors.card}`}
+                            className={`rounded-2xl border p-3 text-left transition ${
+                              isActive ? propertyCategoryStyles.active : propertyCategoryStyles.card
+                            }`}
                           >
                             <Icon className="mb-3 size-5" strokeWidth={1.7} />
                             <span className="block text-sm font-semibold">{group.label}</span>
@@ -296,7 +274,7 @@ const PropertyHomeSearch = () => {
                             })
                             close()
                           }}
-                          className={`text-xs font-semibold hover:underline ${propertyGroupColorStyles[selectedGroup.value].action}`}
+                          className={`text-xs font-semibold hover:underline ${propertyCategoryStyles.action}`}
                         >
                           เลือกทั้งหมดในกลุ่ม
                         </button>
@@ -310,7 +288,7 @@ const PropertyHomeSearch = () => {
                               setSelectedCategory({ value, label, kind: 'property_type' })
                               close()
                             }}
-                            className={`rounded-full border border-neutral-200 px-4 py-2 text-sm text-neutral-700 transition dark:border-neutral-700 dark:text-neutral-300 ${propertyGroupColorStyles[selectedGroup.value].chip}`}
+                            className={`rounded-full border border-neutral-200 px-4 py-2 text-sm text-neutral-700 transition dark:border-neutral-700 dark:text-neutral-300 ${propertyCategoryStyles.chip}`}
                           >
                             {label}
                           </button>
@@ -330,9 +308,9 @@ const PropertyHomeSearch = () => {
                             setSelectedCategory({ value: useCase.value, label: useCase.label, kind: 'use_case' })
                             close()
                           }}
-                          className="flex items-center gap-3 rounded-2xl border border-neutral-200 p-3 text-left transition hover:border-[#d66b52] hover:bg-[#fff2ed] dark:border-neutral-700 dark:hover:border-rose-600 dark:hover:bg-rose-950/50"
+                          className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-orange-700 dark:hover:bg-orange-950/30"
                         >
-                          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#ffebe4] text-[#b9503a] dark:bg-rose-950 dark:text-rose-200">
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300">
                             <Icon className="size-5" strokeWidth={1.7} />
                           </span>
                           <span>
