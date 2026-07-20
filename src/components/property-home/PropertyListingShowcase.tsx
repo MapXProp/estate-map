@@ -153,17 +153,17 @@ const PropertyListingShowcase = () => {
   }
 
   return (
-    <section className="py-14 sm:py-18 lg:py-24">
+    <section className="pt-14 pb-10 sm:pt-18 sm:pb-14 lg:pt-24 lg:pb-16">
       <div className="container">
         <div className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
             <p className="mb-2 text-sm font-semibold tracking-wide text-[#176b50] dark:text-emerald-300">
-              คัดมาให้เริ่มดูได้ง่าย
+              อัปเดตล่าสุด
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              อสังหาที่น่าสนใจ
+              ประกาศใหม่และน่าสนใจ
             </h2>
-            <p className="mt-2 text-neutral-500 dark:text-neutral-400">
+            <p className="mt-2 hidden text-neutral-500 sm:block dark:text-neutral-400">
               การ์ดเดียวกัน แต่เลือกแสดงรายละเอียดสำคัญให้เหมาะกับทรัพย์แต่ละประเภท
             </p>
           </div>
@@ -186,11 +186,14 @@ const PropertyListingShowcase = () => {
           </div>
         </div>
 
-        <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {visibleListings.map((listing) => {
             const liked = likedIds.includes(listing.id)
             return (
-              <article key={listing.id} className="group min-w-0">
+              <article
+                key={listing.id}
+                className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
+              >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
                   <Image
                     fill

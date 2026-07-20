@@ -180,6 +180,59 @@ const PropertyHomePrototype = () => {
         </div>
       </section>
 
+      <PropertyListingShowcase />
+
+      <section className="container py-10 sm:py-14 lg:py-16">
+        <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">
+          <div>
+            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">สำรวจจากทำเล</p>
+            <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+              เมืองที่คนกำลังค้นหา
+            </h2>
+          </div>
+          <Link
+            href="/real-estate-categories-map/all"
+            className="hidden items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:inline-flex dark:text-neutral-300 dark:hover:text-emerald-300"
+          >
+            ดูบนแผนที่ <ArrowRight className="size-4" />
+          </Link>
+        </div>
+
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+          {locations.map((location) => (
+            <Link
+              key={location.name}
+              href={`/real-estate-categories/all?location=${encodeURIComponent(location.name)}`}
+              className="group relative w-[78vw] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-3xl bg-neutral-200 sm:w-auto sm:max-w-none"
+            >
+              <div className="relative aspect-[4/3]">
+                <Image
+                  fill
+                  src={location.image}
+                  alt={`อสังหาริมทรัพย์ใน${location.name}`}
+                  sizes="(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                  <p className="flex items-center gap-1.5 text-lg font-semibold">
+                    <MapPin className="size-5" /> {location.name}
+                  </p>
+                  <p className="mt-1 text-sm text-white/75">{location.count}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <Link
+          href="/real-estate-categories-map/all"
+          className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:hidden dark:text-neutral-300 dark:hover:text-emerald-300"
+        >
+          ดูบนแผนที่ <ArrowRight className="size-4" />
+        </Link>
+      </section>
+
       <section className="container pt-16 pb-8 sm:pt-20 lg:pt-24">
         <div className="mb-7 flex items-end justify-between gap-5">
           <div>
@@ -213,8 +266,6 @@ const PropertyHomePrototype = () => {
           })}
         </div>
       </section>
-
-      <PropertyListingShowcase />
 
       <section className="bg-[#f5f7f4] py-16 sm:py-20 lg:py-24 dark:bg-neutral-950/60">
         <div className="container">
@@ -253,50 +304,6 @@ const PropertyHomePrototype = () => {
               )
             })}
           </div>
-        </div>
-      </section>
-
-      <section className="container py-16 sm:py-20 lg:py-24">
-        <div className="mb-8 flex items-end justify-between gap-5">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">สำรวจจากทำเล</p>
-            <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              เมืองที่คนกำลังค้นหา
-            </h2>
-          </div>
-          <Link
-            href="/real-estate-categories-map/all"
-            className="hidden items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:inline-flex dark:text-neutral-300 dark:hover:text-emerald-300"
-          >
-            ดูบนแผนที่ <ArrowRight className="size-4" />
-          </Link>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {locations.map((location, index) => (
-            <Link
-              key={location.name}
-              href={`/real-estate-categories/all?location=${encodeURIComponent(location.name)}`}
-              className={`group relative overflow-hidden rounded-3xl bg-neutral-200 ${index === 0 ? 'sm:col-span-2 lg:col-span-1' : ''}`}
-            >
-              <div className="relative aspect-[4/3]">
-                <Image
-                  fill
-                  src={location.image}
-                  alt={`อสังหาริมทรัพย์ใน${location.name}`}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                  <p className="flex items-center gap-1.5 text-lg font-semibold">
-                    <MapPin className="size-5" /> {location.name}
-                  </p>
-                  <p className="mt-1 text-sm text-white/75">{location.count}</p>
-                </div>
-              </div>
-            </Link>
-          ))}
         </div>
       </section>
 
