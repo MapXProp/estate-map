@@ -1,0 +1,168 @@
+import Logo from '@/shared/Logo'
+import { ArrowRight, CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
+
+const footerNavigation = [
+  {
+    title: 'ค้นหาอสังหา',
+    links: [
+      ['ซื้ออสังหา', '/real-estate-categories/all?offer_type=sale'],
+      ['เช่าอสังหา', '/real-estate-categories/all?offer_type=rent'],
+      ['เซ้งกิจการ', '/real-estate-categories/all?offer_type=business_transfer'],
+      ['ประกาศใหม่', '/real-estate-categories/all?sort=newest'],
+      ['ดูบนแผนที่', '/real-estate-categories-map/all'],
+    ],
+  },
+  {
+    title: 'เจ้าของทรัพย์',
+    links: [
+      ['ลงประกาศฟรี', '/add-listing/1'],
+      ['จัดการบัญชี', '/account'],
+      ['รายการที่บันทึก', '/account-savelists'],
+      ['สอบถามการลงประกาศ', '/contact?topic=listing'],
+    ],
+  },
+  {
+    title: 'เกี่ยวกับ MapxProp',
+    links: [
+      ['เกี่ยวกับเรา', '/about'],
+      ['บทความและคำแนะนำ', '/blog'],
+      ['ติดต่อเรา', '/contact'],
+      ['แจ้งประกาศไม่ถูกต้อง', '/contact?topic=report-listing'],
+    ],
+  },
+] as const
+
+const popularLocations = ['กรุงเทพมหานคร', 'เชียงใหม่', 'ชลบุรี', 'ภูเก็ต', 'ขอนแก่น', 'นครราชสีมา'] as const
+
+const NavigationLinks = ({ links }: { links: (typeof footerNavigation)[number]['links'] }) => (
+  <ul className="space-y-3">
+    {links.map(([label, href]) => (
+      <li key={label}>
+        <Link
+          href={href}
+          className="text-sm text-neutral-600 transition hover:text-[#176b50] dark:text-neutral-400 dark:hover:text-emerald-300"
+        >
+          {label}
+        </Link>
+      </li>
+    ))}
+  </ul>
+)
+
+const PropertyFooterPrototype = () => {
+  return (
+    <footer className="bg-[#f5f7f4] dark:bg-neutral-950">
+      <div className="container pt-10 min-[744px]:pt-14 lg:pt-16">
+        <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-6 py-9 text-white min-[744px]:flex min-[744px]:items-center min-[744px]:justify-between min-[744px]:gap-8 min-[744px]:px-9 min-[744px]:py-10 lg:px-12 dark:bg-emerald-950">
+          <div className="pointer-events-none absolute -top-20 right-14 size-52 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute -right-16 -bottom-36 size-72 rounded-full bg-emerald-300/10" />
+          <div className="relative max-w-2xl">
+            <p className="text-sm font-semibold text-emerald-200">สำหรับเจ้าของทรัพย์และผู้ประกอบการ</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight min-[744px]:text-3xl">
+              มีพื้นที่ดี ๆ ที่อยากให้คนค้นพบ?
+            </h2>
+            <p className="mt-2 max-w-xl text-sm/6 text-emerald-50/75 min-[744px]:text-base/7">
+              ลงรายละเอียดครั้งเดียว ให้ผู้ซื้อและผู้เช่าค้นพบทรัพย์ของคุณจากประเภทและการใช้งานที่ตรงกัน
+            </p>
+          </div>
+          <div className="relative mt-6 flex flex-wrap gap-3 min-[744px]:mt-0 min-[744px]:shrink-0">
+            <Link
+              href="/add-listing/1"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-500 px-6 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-orange-600"
+            >
+              ลงประกาศฟรี
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/contact?topic=listing"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              สอบถามเรา
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-10 py-12 min-[744px]:grid-cols-12 min-[744px]:gap-7 lg:py-14">
+          <div className="min-[744px]:col-span-5 lg:col-span-4">
+            <Logo className="w-24" />
+            <p className="mt-5 max-w-sm text-sm/6 text-neutral-600 dark:text-neutral-400">
+              ช่วยค้นหาพื้นที่สำหรับชีวิตและธุรกิจ ตั้งแต่บ้าน คอนโด ร้านค้า โกดัง โรงงาน ไปจนถึงที่ดิน
+            </p>
+            <div className="mt-5 space-y-2.5 text-sm text-neutral-600 dark:text-neutral-400">
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="size-4 text-[#176b50] dark:text-emerald-300" />
+                ข้อมูลตรงประเภททรัพย์
+              </p>
+              <p className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-[#176b50] dark:text-emerald-300" />
+                แสดงสถานะยืนยันประกาศ
+              </p>
+              <p className="flex items-center gap-2">
+                <Flag className="size-4 text-[#176b50] dark:text-emerald-300" />
+                แจ้งประกาศไม่ถูกต้องได้
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden min-[744px]:col-span-7 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-8 lg:col-span-8 lg:grid-cols-3">
+            {footerNavigation.map((section) => (
+              <div key={section.title}>
+                <h3 className="mb-5 text-sm font-semibold text-neutral-950 dark:text-white">{section.title}</h3>
+                <NavigationLinks links={section.links} />
+              </div>
+            ))}
+          </div>
+
+          <div className="divide-y divide-neutral-200 border-y border-neutral-200 min-[744px]:hidden dark:divide-neutral-800 dark:border-neutral-800">
+            {footerNavigation.map((section, index) => (
+              <details key={section.title} className="group" open={index === 0}>
+                <summary className="flex cursor-pointer list-none items-center justify-between py-4 text-sm font-semibold text-neutral-950 marker:hidden dark:text-white">
+                  {section.title}
+                  <ChevronDown className="size-4 text-neutral-400 transition group-open:rotate-180" />
+                </summary>
+                <div className="pb-5">
+                  <NavigationLinks links={section.links} />
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-y border-neutral-200 py-6 dark:border-neutral-800">
+          <div className="flex flex-col gap-4 min-[744px]:flex-row min-[744px]:items-center">
+            <p className="shrink-0 text-sm font-semibold text-neutral-950 dark:text-white">ทำเลยอดนิยม</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {popularLocations.map((location) => (
+                <Link
+                  key={location}
+                  href={`/real-estate-categories/all?location=${encodeURIComponent(location)}`}
+                  className="text-sm text-neutral-600 transition hover:text-[#176b50] dark:text-neutral-400 dark:hover:text-emerald-300"
+                >
+                  {location}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 pt-6 pb-28 text-sm text-neutral-500 min-[744px]:flex-row min-[744px]:items-center min-[744px]:justify-between min-[744px]:pb-8 dark:text-neutral-500">
+          <p>© 2026 MapxProp. พื้นที่ที่ใช่ สำหรับชีวิตและธุรกิจ</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/about" className="transition hover:text-neutral-900 dark:hover:text-white">
+              เกี่ยวกับเรา
+            </Link>
+            <Link href="/contact" className="transition hover:text-neutral-900 dark:hover:text-white">
+              ติดต่อเรา
+            </Link>
+            <span className="rounded-full border border-neutral-200 px-3 py-1.5 dark:border-neutral-800">
+              ภาษาไทย · THB
+            </span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export default PropertyFooterPrototype

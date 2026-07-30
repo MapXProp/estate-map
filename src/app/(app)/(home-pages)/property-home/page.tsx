@@ -306,26 +306,6 @@ const PropertyHomePrototype = () => {
           </div>
         </div>
       </section>
-
-      <section className="container pb-20 lg:pb-28">
-        <div className="relative overflow-hidden rounded-[32px] bg-[#123f32] px-6 py-10 text-white sm:px-10 sm:py-12 lg:flex lg:items-center lg:justify-between lg:px-14 dark:bg-emerald-950">
-          <div className="pointer-events-none absolute -top-16 right-12 size-56 rounded-full border border-white/10" />
-          <div className="pointer-events-none absolute -right-10 -bottom-32 size-72 rounded-full bg-emerald-300/10" />
-          <div className="relative max-w-2xl">
-            <p className="text-sm font-semibold text-emerald-200">สำหรับเจ้าของทรัพย์และผู้ประกอบการ</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">มีพื้นที่ดี ๆ ที่อยากให้คนค้นพบ?</h2>
-            <p className="mt-3 text-emerald-50/75">
-              ลงรายละเอียดครั้งเดียว ระบบช่วยจัดประกาศให้อยู่ในหมวดและการใช้งานที่คนค้นหาจริง
-            </p>
-          </div>
-          <Link
-            href="/add-listing/1"
-            className="relative mt-7 inline-flex min-h-13 items-center justify-center rounded-full bg-white px-7 font-semibold text-[#123f32] shadow-xl transition hover:-translate-y-0.5 hover:bg-emerald-50 lg:mt-0"
-          >
-            ลงประกาศฟรี
-          </Link>
-        </div>
-      </section>
     </main>
   )
 }

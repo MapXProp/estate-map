@@ -1,7 +1,8 @@
 'use client'
 
+import { propertyGroups, propertyUseCases } from '@/data/property-navigation'
 import * as Headless from '@headlessui/react'
-import { Building2, ChevronDown, Factory, House, LandPlot, MapPin, Search, Store, Warehouse } from 'lucide-react'
+import { Building2, ChevronDown, MapPin, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PropertyPricePopover, { PropertyOfferType, PropertyPriceSelection } from './PropertyPricePopover'
@@ -15,52 +16,6 @@ const offerTypes: { value: PropertyOfferType; label: string }[] = [
   { value: 'business_transfer', label: 'เซ้ง' },
 ]
 
-const propertyGroups = [
-  {
-    value: 'residential',
-    label: 'ที่อยู่อาศัย',
-    description: 'บ้าน คอนโด หอพัก',
-    icon: House,
-    types: [
-      ['detached_house', 'บ้านเดี่ยว'],
-      ['semi_detached_house', 'บ้านแฝด'],
-      ['townhouse', 'ทาวน์เฮาส์'],
-      ['condo', 'คอนโด'],
-      ['apartment', 'อพาร์ตเมนต์'],
-      ['dormitory', 'หอพัก'],
-    ],
-  },
-  {
-    value: 'mixed_use',
-    label: 'อยู่และทำธุรกิจ',
-    description: 'ตึกแถว โฮมออฟฟิศ',
-    icon: Building2,
-    types: [
-      ['shophouse', 'ตึกแถว / อาคารพาณิชย์'],
-      ['home_office', 'โฮมออฟฟิศ'],
-    ],
-  },
-  {
-    value: 'commercial',
-    label: 'ธุรกิจและอุตสาหกรรม',
-    description: 'ร้านค้า ออฟฟิศ โกดัง',
-    icon: Warehouse,
-    types: [
-      ['office', 'สำนักงาน / ออฟฟิศ'],
-      ['retail_space', 'พื้นที่ค้าขาย'],
-      ['warehouse', 'โกดัง / คลังสินค้า'],
-      ['factory', 'โรงงาน'],
-    ],
-  },
-  {
-    value: 'land',
-    label: 'ที่ดิน',
-    description: 'เปล่า หรือพร้อมสิ่งปลูกสร้าง',
-    icon: LandPlot,
-    types: [['land', 'ที่ดิน']],
-  },
-] as const
-
 const propertyCategoryStyles = {
   card: 'border-neutral-200 bg-white text-neutral-800 hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-orange-700 dark:hover:bg-orange-950/30',
   active:
@@ -68,16 +23,6 @@ const propertyCategoryStyles = {
   action: 'text-orange-600 dark:text-orange-300',
   chip: 'hover:border-orange-400 hover:bg-orange-50 hover:text-orange-800 dark:hover:border-orange-600 dark:hover:bg-orange-950/40 dark:hover:text-orange-100',
 } as const
-
-const useCases = [
-  { value: 'residential', label: 'อยู่อาศัย', description: 'บ้านหรือพื้นที่สำหรับการพักอาศัย', icon: House },
-  { value: 'office', label: 'ทำสำนักงาน', description: 'ออฟฟิศและพื้นที่ทำงาน', icon: Building2 },
-  { value: 'retail', label: 'เปิดร้านค้า', description: 'ร้าน คีออส หรือล็อกขายของ', icon: Store },
-  { value: 'food_service', label: 'ร้านอาหาร / คาเฟ่', description: 'พื้นที่ที่รองรับธุรกิจอาหาร', icon: Store },
-  { value: 'storage', label: 'เก็บสินค้า', description: 'โกดังและคลังสินค้า', icon: Warehouse },
-  { value: 'industrial', label: 'ผลิตสินค้า', description: 'โรงงานและงานอุตสาหกรรม', icon: Factory },
-  { value: 'agriculture', label: 'เกษตรกรรม', description: 'ที่ดินสำหรับทำการเกษตร', icon: LandPlot },
-] as const
 
 const emptyPriceSelection: PropertyPriceSelection = { minPrice: '', maxPrice: '', monthlyRentMax: '' }
 
@@ -298,7 +243,7 @@ const PropertyHomeSearch = () => {
                   </div>
                 ) : (
                   <div className="grid gap-2 sm:grid-cols-2">
-                    {useCases.map((useCase) => {
+                    {propertyUseCases.map((useCase) => {
                       const Icon = useCase.icon
                       return (
                         <button

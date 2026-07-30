@@ -1,3 +1,5 @@
+import PropertyHeaderPrototype from '@/components/Header/PropertyHeaderPrototype'
+import PropertyFooterPrototype from '@/components/property-home/PropertyFooterPrototype'
 import { Metadata } from 'next'
 import { ApplicationLayout } from '../application-layout'
 
@@ -9,5 +11,9 @@ export const metadata: Metadata = {
 }
 
 export default function Layout({ children, params }: { children: React.ReactNode; params: any }) {
-  return <ApplicationLayout>{children}</ApplicationLayout>
+  return (
+    <ApplicationLayout header={<PropertyHeaderPrototype />} footer={<PropertyFooterPrototype />}>
+      {children}
+    </ApplicationLayout>
+  )
 }

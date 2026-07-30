@@ -4,21 +4,26 @@ import { cn } from '@/lib/utils'
 import '@/styles/tailwind.css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { Metadata } from 'next'
-import { Poppins, Sarabun } from 'next/font/google'
+import { Inter, Noto_Sans_Thai, Sarabun } from 'next/font/google'
 import 'rc-slider/assets/index.css'
 //import CustomizeControl from './customize-control'
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-poppins-next',
-  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-inter-next',
 })
 const sarabun = Sarabun({
-  subsets: ['thai', 'latin'],
+  subsets: ['thai'],
   display: 'swap',
   variable: '--font-sarabun-next',
   weight: ['400', '500', '600', '700'],
+})
+const notoSansThaiFallback = Noto_Sans_Thai({
+  subsets: ['thai'],
+  display: 'swap',
+  variable: '--font-noto-sans-thai-fallback',
+  preload: false,
 })
 
 const googleAnalyticsId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
@@ -38,9 +43,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang={process.env.NEXT_PUBLIC_THEME_DIR === 'rtl' ? 'ar' : 'th'}
       dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
       suppressHydrationWarning
-      className={cn('font-sans', poppins.variable, sarabun.variable)}
+      className={cn('font-sans', inter.variable, sarabun.variable, notoSansThaiFallback.variable)}
     >
-      <body className="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
+      <body className="bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-neutral-100">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <DirectionProvider
             dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
