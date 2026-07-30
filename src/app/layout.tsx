@@ -2,6 +2,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { DirectionProvider } from '@/components/ui/direction'
 import { cn } from '@/lib/utils'
 import '@/styles/tailwind.css'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { Metadata } from 'next'
 import { Poppins, Sarabun } from 'next/font/google'
 import 'rc-slider/assets/index.css'
@@ -19,6 +20,8 @@ const sarabun = Sarabun({
   variable: '--font-sarabun-next',
   weight: ['400', '500', '600', '700'],
 })
+
+const googleAnalyticsId = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
 
 export const metadata: Metadata = {
   title: {
@@ -52,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </DirectionProvider>
         </ThemeProvider>
       </body>
+      {process.env.NODE_ENV === 'production' && googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
     </html>
   )
 }
