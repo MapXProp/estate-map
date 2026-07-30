@@ -47,7 +47,7 @@ const PropertyHeaderPrototype = async () => {
               <Map className="size-4" />
               แผนที่
             </Link>
-            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[1200px]:block" />
+            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[900px]:block" />
             <Button
               className="button-fire-border min-h-10 rounded-full px-4! py-2! font-sarabun! text-sm! font-semibold whitespace-nowrap shadow-md min-[1100px]:px-5! min-[1100px]:shadow-lg"
               color="light"

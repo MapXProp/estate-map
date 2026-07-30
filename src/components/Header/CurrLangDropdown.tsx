@@ -1,137 +1,294 @@
 'use client'
 
 import { getCurrencies, getLanguages } from '@/data/navigation'
-import { Link } from '@/shared/link'
-import {
-  CloseButton,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-  PopoverPanelProps,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
-} from '@headlessui/react'
-import { BanknotesIcon, GlobeAltIcon, SlashIcon } from '@heroicons/react/24/outline'
-import { ChevronDownIcon } from '@heroicons/react/24/solid'
+import { CloseButton, Popover, PopoverButton, PopoverPanel, PopoverPanelProps } from '@headlessui/react'
+import { BanknotesIcon, CheckIcon, ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { FC } from 'react'
+import { FC, useSyncExternalStore } from 'react'
 
-const Currencies = ({ currencies }: { currencies: Awaited<ReturnType<typeof getCurrencies>> }) => {
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {currencies.map((item, index) => (
-        <CloseButton
-          as={Link}
-          key={index}
-          href={item.href}
-          className={clsx(
-            '-m-2.5 flex items-center rounded-lg p-2.5 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden dark:hover:bg-neutral-700',
-            item.active ? 'bg-neutral-100 dark:bg-neutral-700' : 'opacity-80'
-          )}
-        >
-          <div dangerouslySetInnerHTML={{ __html: item.icon }} />
-          <p className="ms-2 text-sm font-medium">{item.name}</p>
-        </CloseButton>
-      ))}
-    </div>
-  )
+type Language = Awaited<ReturnType<typeof getLanguages>>[number]
+type Currency = Awaited<ReturnType<typeof getCurrencies>>[number]
+
+const languageMeta: Record<string, { code: string; nativeName: string; description: string }> = {
+  English: {
+    code: 'EN',
+    nativeName: 'English',
+    description: 'English language',
+  },
+  Thai: {
+    code: 'TH',
+    nativeName: 'ภาษาไทย',
+    description: 'ภาษาไทย',
+  },
 }
 
-const Languages = ({ languages }: { languages: Awaited<ReturnType<typeof getLanguages>> }) => {
-  return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {languages.map((item, index) => (
-        <CloseButton
-          as="button"
-          key={index}
-          onClick={() => {
-            // เซต Cookie และ Refresh หน้า
-            document.cookie = `NEXT_LOCALE=${item.id === 'English' ? 'en' : 'th'}; path=/; max-age=31536000`
-            window.location.reload()
-          }}
-          className={clsx(
-            '-m-2.5 flex items-center rounded-lg p-2.5 text-left transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden dark:hover:bg-neutral-700',
-            item.active ? 'bg-neutral-100 dark:bg-neutral-700' : 'opacity-80'
-          )}
-        >
-          <div>
-            <p className="text-sm font-medium">{item.name}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.description}</p>
-          </div>
-        </CloseButton>
-      ))}
-    </div>
-  )
+const currencyMeta: Record<string, { symbol: string; description: string }> = {
+  THB: {
+    symbol: '฿',
+    description: 'บาทไทย',
+  },
+  USD: {
+    symbol: '$',
+    description: 'ดอลลาร์สหรัฐ',
+  },
 }
+
+const writePreferenceCookie = (name: string, value: string) => {
+  window.document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`
+}
+
+const preferenceChangeEvent = 'mapxprop:preference-change'
+
+const subscribeToPreferences = (onStoreChange: () => void) => {
+  window.addEventListener('storage', onStoreChange)
+  window.addEventListener(preferenceChangeEvent, onStoreChange)
+
+  return () => {
+    window.removeEventListener('storage', onStoreChange)
+    window.removeEventListener(preferenceChangeEvent, onStoreChange)
+  }
+}
+
+const getStoredLanguage = () => window.localStorage.getItem('mapxprop_language') ?? 'Thai'
+const getStoredCurrency = () => window.localStorage.getItem('mapxprop_currency') ?? 'THB'
+const getServerLanguage = () => 'Thai'
+const getServerCurrency = () => 'THB'
 
 interface Props {
   panelAnchor?: PopoverPanelProps['anchor']
   panelClassName?: PopoverPanelProps['className']
-
   className?: string
-  currencies: Awaited<ReturnType<typeof getCurrencies>>
-  languages: Awaited<ReturnType<typeof getLanguages>>
+  currencies: Currency[]
+  languages: Language[]
 }
 
 const CurrLangDropdown: FC<Props> = ({
   panelAnchor = {
     to: 'bottom end',
-    gap: 16,
+    gap: 14,
   },
   className,
   languages,
   currencies,
-  panelClassName = 'w-sm',
+  panelClassName,
 }) => {
+  const activeLanguage = languages.find((item) => item.active) ?? languages[0]
+  const activeCurrency = currencies.find((item) => item.active) ?? currencies[0]
+  const storedLanguage = useSyncExternalStore(subscribeToPreferences, getStoredLanguage, getServerLanguage)
+  const storedCurrency = useSyncExternalStore(subscribeToPreferences, getStoredCurrency, getServerCurrency)
+  const selectedLanguage = languages.some((item) => item.id === storedLanguage)
+    ? storedLanguage
+    : (activeLanguage?.id ?? 'Thai')
+  const selectedCurrency = currencies.some((item) => item.id === storedCurrency)
+    ? storedCurrency
+    : (activeCurrency?.id ?? 'THB')
+
+  const languageCode = languageMeta[selectedLanguage]?.code ?? activeLanguage?.description ?? 'TH'
+  const selectedCurrencyMeta = currencyMeta[selectedCurrency] ?? {
+    symbol: selectedCurrency,
+    description: selectedCurrency,
+  }
+
+  const selectLanguage = (language: Language) => {
+    const locale = language.id === 'English' ? 'en' : 'th'
+    writePreferenceCookie('NEXT_LOCALE', locale)
+    window.localStorage.setItem('mapxprop_language', language.id)
+    window.dispatchEvent(new Event(preferenceChangeEvent))
+
+    if (language.id !== selectedLanguage) {
+      window.location.reload()
+    }
+  }
+
+  const selectCurrency = (currency: Currency) => {
+    writePreferenceCookie('MAPX_CURRENCY', currency.id)
+    window.localStorage.setItem('mapxprop_currency', currency.id)
+    window.dispatchEvent(new Event(preferenceChangeEvent))
+  }
+
   return (
-    <Popover className={clsx('group', className)}>
-      <PopoverButton className="-m-2.5 flex items-center p-2.5 text-sm font-medium text-neutral-600 group-hover:text-neutral-950 focus:outline-hidden focus-visible:outline-hidden dark:text-neutral-200 dark:group-hover:text-neutral-100">
-        <GlobeAltIcon className="size-5" />
-        <SlashIcon className="size-5 opacity-60" />
-        <BanknotesIcon className="size-5" />
-        <ChevronDownIcon className="ms-1 size-4 group-data-open:rotate-180" aria-hidden="true" />
+    <Popover className={clsx('group relative', className)}>
+      <PopoverButton
+        aria-label={`ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`}
+        className="flex h-10 items-center rounded-full border border-neutral-200 bg-white p-1.5 text-neutral-700 shadow-sm transition duration-200 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-[#125640] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30 group-data-open:border-emerald-300 group-data-open:bg-emerald-50 group-data-open:text-[#125640] min-[1200px]:h-11 min-[1200px]:px-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
+      >
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#eaf5f0] text-[#176b50] min-[1200px]:size-8 dark:bg-emerald-900/50 dark:text-emerald-300">
+          <GlobeAltIcon className="size-4.5" />
+        </span>
+
+        <span className="hidden items-center min-[900px]:flex">
+          <span className="px-1.5 text-[11px] font-semibold tracking-wide min-[1200px]:px-2 min-[1200px]:text-xs">
+            {languageCode}
+          </span>
+          <span className="h-4 border-l border-neutral-200 dark:border-neutral-700" />
+          <span className="flex items-center gap-1 px-1.5 text-[11px] font-semibold min-[1200px]:gap-1.5 min-[1200px]:px-2 min-[1200px]:text-xs">
+            <span className="text-sm text-[#a65d12]">{selectedCurrencyMeta.symbol}</span>
+            <span className="hidden min-[1200px]:inline">{selectedCurrency}</span>
+          </span>
+        </span>
+
+        <ChevronDownIcon
+          className="mx-0.5 hidden size-3.5 transition group-data-open:rotate-180 min-[1200px]:block"
+          aria-hidden="true"
+        />
       </PopoverButton>
 
       <PopoverPanel
         anchor={panelAnchor}
         transition
         className={clsx(
-          'z-40 rounded-3xl bg-white p-6 shadow-lg ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0 dark:bg-neutral-800',
+          'z-50 w-[calc(100vw-1rem)] max-w-[27rem] rounded-[24px] border border-neutral-200/80 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.32)] transition duration-200 ease-out data-closed:translate-y-2 data-closed:scale-[0.98] data-closed:opacity-0 min-[480px]:w-[27rem] min-[480px]:rounded-[28px] min-[480px]:p-5 min-[1280px]:w-[34rem] min-[1280px]:max-w-[34rem] min-[1280px]:p-6 dark:border-neutral-700 dark:bg-neutral-900',
           panelClassName
         )}
       >
-        <TabGroup>
-          <TabList className="font-sarabun! font-semibold text-2xl flex space-x-1 rounded-full bg-neutral-100 p-1 dark:bg-neutral-700">
-            {['ภาษา', 'ค่าเงิน'].map((category) => (
-              <Tab
-                key={category}
-                className={({ selected }) =>
-                  clsx(
-                    'w-full rounded-full py-2 text-base leading-5 font-medium text-neutral-700 focus:ring-0 focus:outline-hidden',
-                    selected
-                      ? 'bg-white shadow-sm'
-                      : 'text-neutral-700 hover:bg-white/70 dark:text-neutral-300 dark:hover:bg-neutral-900/40'
-                  )
-                }
+        <div className="flex items-start gap-3 border-b border-neutral-100 pb-5 dark:border-neutral-800">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#eaf5f0] text-[#176b50] dark:bg-emerald-900/40 dark:text-emerald-300">
+            <GlobeAltIcon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">ภาษาและสกุลเงิน</h2>
+            <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+              เลือกรูปแบบที่คุณสะดวกสำหรับการค้นหาอสังหา
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-5 min-[1280px]:grid-cols-2 min-[1280px]:gap-4">
+          <section aria-labelledby="language-options-title">
+            <div className="mb-2.5 flex items-center gap-2">
+              <GlobeAltIcon className="size-4 text-neutral-400" />
+              <h3
+                id="language-options-title"
+                className="font-sarabun text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300"
               >
-                {category}
-              </Tab>
-            ))}
-          </TabList>
-          <TabPanels className="mt-5">
-            <TabPanel className="rounded-xl p-3 focus:ring-0 focus:outline-hidden">
-              <Languages languages={languages} />
-            </TabPanel>
-            <TabPanel className="rounded-xl p-3 focus:ring-0 focus:outline-hidden">
-              <Currencies currencies={currencies} />
-            </TabPanel>
-          </TabPanels>
-        </TabGroup>
+                ภาษา
+              </h3>
+            </div>
+            <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
+              {languages.map((language) => {
+                const meta = languageMeta[language.id] ?? {
+                  code: language.description,
+                  nativeName: language.name,
+                  description: language.description,
+                }
+                const isSelected = language.id === selectedLanguage
+
+                return (
+                  <button
+                    key={language.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => selectLanguage(language)}
+                    className={clsx(
+                      'relative flex min-h-17 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition min-[400px]:min-h-18 min-[400px]:gap-3 min-[400px]:p-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30',
+                      isSelected
+                        ? 'border-[#176b50] bg-[#f0f8f4] text-[#124e3c] shadow-sm dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-200'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30'
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'grid size-8 shrink-0 place-items-center rounded-xl text-[11px] font-bold tracking-wide min-[400px]:size-9 min-[400px]:text-xs',
+                        isSelected
+                          ? 'bg-[#176b50] text-white'
+                          : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                      )}
+                    >
+                      {meta.code}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-sarabun text-xs font-semibold min-[400px]:text-sm">
+                        {meta.nativeName}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[10px] text-neutral-500 min-[400px]:text-[11px] dark:text-neutral-400">
+                        {meta.description}
+                      </span>
+                    </span>
+                    {isSelected ? (
+                      <span className="absolute top-2 right-2 grid size-4 place-items-center rounded-full bg-[#176b50] text-white">
+                        <CheckIcon className="size-2.5 stroke-[2.5]" />
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <section aria-labelledby="currency-options-title">
+            <div className="mb-2.5 flex items-center gap-2">
+              <BanknotesIcon className="size-4 text-neutral-400" />
+              <h3
+                id="currency-options-title"
+                className="font-sarabun text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300"
+              >
+                สกุลเงิน
+              </h3>
+            </div>
+            <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
+              {currencies.map((currency) => {
+                const meta = currencyMeta[currency.id] ?? {
+                  symbol: currency.name,
+                  description: currency.name,
+                }
+                const isSelected = currency.id === selectedCurrency
+
+                return (
+                  <button
+                    key={currency.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => selectCurrency(currency)}
+                    className={clsx(
+                      'relative flex min-h-16 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition min-[400px]:gap-3 min-[400px]:p-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/30',
+                      isSelected
+                        ? 'border-orange-400 bg-orange-50 text-orange-950 shadow-sm dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-100'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 hover:bg-orange-50/60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-orange-800 dark:hover:bg-orange-950/20'
+                    )}
+                  >
+                    <span
+                      className={clsx(
+                        'grid size-8 shrink-0 place-items-center rounded-xl text-sm font-semibold min-[400px]:size-9 min-[400px]:text-base',
+                        isSelected
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300'
+                      )}
+                    >
+                      {meta.symbol}
+                    </span>
+                    <span>
+                      <span className="block text-xs font-semibold min-[400px]:text-sm">{currency.name}</span>
+                      <span className="mt-0.5 block font-sarabun text-[10px] text-neutral-500 min-[400px]:text-[11px] dark:text-neutral-400">
+                        {meta.description}
+                      </span>
+                    </span>
+                    {isSelected ? (
+                      <span className="absolute top-2 right-2 grid size-4 place-items-center rounded-full bg-orange-500 text-white">
+                        <CheckIcon className="size-2.5 stroke-[2.5]" />
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
+          <p className="font-sarabun text-[11px] leading-4 text-neutral-500 dark:text-neutral-400">
+            ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้
+          </p>
+          <CloseButton
+            as="button"
+            type="button"
+            className="shrink-0 rounded-full bg-[#124e3c] px-4 py-2 font-sarabun text-xs font-semibold text-white transition hover:bg-[#0d3d2f] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30"
+          >
+            เสร็จสิ้น
+          </CloseButton>
+        </div>
       </PopoverPanel>
     </Popover>
   )
 }
+
 export default CurrLangDropdown
