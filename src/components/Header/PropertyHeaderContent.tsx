@@ -2,13 +2,13 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getCurrencies, getLanguages } from '@/data/navigation'
-import { Button } from '@/shared/Button'
 import Logo from '@/shared/Logo'
 import { Map } from 'lucide-react'
 import Link from 'next/link'
 import AvatarDropdown from './AvatarDropdown'
 import CurrLangDropdown from './CurrLangDropdown'
 import NotifyDropdown from './NotifyDropdown'
+import PropertyListingCta from './PropertyListingCta'
 import PropertyMegaMenu from './PropertyMegaMenu'
 
 type Props = {
@@ -59,13 +59,10 @@ const PropertyHeaderContent = ({ currencies, languages }: Props) => {
               {isThai ? 'แผนที่' : 'Map'}
             </Link>
             <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[900px]:block" />
-            <Button
-              className="button-fire-border min-h-10 rounded-full px-4! py-2! font-sarabun! text-sm! font-semibold whitespace-nowrap shadow-md min-[1100px]:px-5! min-[1100px]:shadow-lg"
-              color="light"
-              href="/add-listing/1"
-            >
-              {isThai ? 'ลงประกาศ ฟรี' : 'List for free'}
-            </Button>
+            <PropertyListingCta
+              label={isThai ? 'ลงประกาศ' : 'List property'}
+              freeLabel={isThai ? 'ฟรี' : 'Free'}
+            />
             <NotifyDropdown className="hidden min-[900px]:block" />
             <AvatarDropdown />
           </div>

@@ -26,6 +26,7 @@ import ExperienceSearchFormMobile from './experience-search-form/ExperienceSearc
 import FlightSearchFormMobile from './flight-search-form/FlightSearchFormMobile'
 import RealestateSearchFormMobile from './real-estate-search-form/RealestateSearchFormMobile'
 import StaySearchFormMobile from './stay-search-form/StaySearchFormMobile'
+import MobilePropertySearch from '../property-home/MobilePropertySearch'
 
 const formTabs: { name: ListingType; icon: IconSvgElement; formComponent: React.ComponentType<{}> }[] = [
   { name: 'Stays', icon: House03Icon, formComponent: StaySearchFormMobile },
@@ -44,6 +45,11 @@ const HeroSearchFormMobile = ({ className }: { className?: string }) => {
 
   // pathname
   const pathname = usePathname()
+  const isPropertyHome = pathname === '/' || pathname === '/property-home'
+
+  if (isPropertyHome) {
+    return <MobilePropertySearch className={className} />
+  }
 
   let locationText = 'Where to?'
   let weekText = 'Any week'

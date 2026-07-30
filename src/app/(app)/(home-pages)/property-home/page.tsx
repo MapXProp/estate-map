@@ -188,7 +188,9 @@ const PropertyHomePrototype = () => {
         </div>
 
         <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
-          <PropertyHomeSearch />
+          <div className="hidden min-[744px]:block">
+            <PropertyHomeSearch />
+          </div>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
             <span className="font-medium text-neutral-700 dark:text-neutral-200">
               {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}

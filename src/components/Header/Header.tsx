@@ -1,6 +1,5 @@
 import { getStayCategories } from '@/data/categories'
 import { getCurrencies, getLanguages, getNavMegaMenu } from '@/data/navigation'
-import { Button } from '@/shared/Button'
 import Logo from '@/shared/Logo'
 import clsx from 'clsx'
 import { FC } from 'react'
@@ -10,6 +9,7 @@ import CurrLangDropdown from './CurrLangDropdown'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import MegaMenuPopover from './MegaMenuPopover'
 import NotifyDropdown from './NotifyDropdown'
+import PropertyListingCta from './PropertyListingCta'
 interface HeaderProps {
   hasBorderBottom?: boolean
   className?: string
@@ -45,13 +45,7 @@ const Header: FC<HeaderProps> = async ({ hasBorderBottom = true, className }) =>
             </div>
             <MegaMenuPopover megamenu={megamenu} featuredCategory={featuredCategory} />
             <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[744px]:block" />
-            <Button
-              className="button-fire-border min-h-10 rounded-full px-4! py-2! font-sarabun! text-sm! font-semibold whitespace-nowrap shadow-md min-[744px]:-mx-1 min-[744px]:px-5! min-[744px]:shadow-lg"
-              color="light"
-              href={'/add-listing/1'}
-            >
-              ลงประกาศ ฟรี
-            </Button>
+            <PropertyListingCta className="min-[744px]:-mx-1" />
             <NotifyDropdown className="hidden min-[744px]:block" />
             <AvatarDropdown />
           </div>
