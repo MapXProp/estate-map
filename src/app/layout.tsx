@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@/components/theme-provider'
+import { PreferencesProvider } from '@/components/preferences/PreferencesProvider'
 import { DirectionProvider } from '@/components/ui/direction'
 import { cn } from '@/lib/utils'
 import '@/styles/tailwind.css'
@@ -47,17 +48,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-neutral-100">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <DirectionProvider
-            dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
-            direction={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
-          >
-            <div>
-              {children}
+          <PreferencesProvider>
+            <DirectionProvider
+              dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
+              direction={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
+            >
+              <div>
+                {children}
 
-              {/* For Chisfis's demo  -- you can remove it  */}
-              {/* <CustomizeControl /> */}
-            </div>
-          </DirectionProvider>
+                {/* For Chisfis's demo  -- you can remove it  */}
+                {/* <CustomizeControl /> */}
+              </div>
+            </DirectionProvider>
+          </PreferencesProvider>
         </ThemeProvider>
       </body>
       {process.env.NODE_ENV === 'production' && googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}

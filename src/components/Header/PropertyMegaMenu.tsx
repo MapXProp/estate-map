@@ -1,6 +1,7 @@
 'use client'
 
 import { propertyGroups, propertyUseCases } from '@/data/property-navigation'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   CloseButton,
   Popover,
@@ -26,9 +27,15 @@ const locations = [
   ['นครราชสีมา', 'Nakhon Ratchasima'],
 ] as const
 
-const tabs = ['ตามประเภททรัพย์', 'ตามการใช้งาน', 'ตามทำเล'] as const
+const tabs = [
+  ['ตามประเภททรัพย์', 'By property type'],
+  ['ตามการใช้งาน', 'By use'],
+  ['ตามทำเล', 'By location'],
+] as const
 
 const PropertyMegaMenu = () => {
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const [activeGroup, setActiveGroup] = useState<(typeof propertyGroups)[number]['value']>('residential')
   const selectedGroup = useMemo(
     () => propertyGroups.find((group) => group.value === activeGroup) ?? propertyGroups[0],
@@ -38,7 +45,7 @@ const PropertyMegaMenu = () => {
   return (
     <Popover className="group">
       <PopoverButton className="flex min-h-10 items-center rounded-full px-2.5 text-sm font-semibold whitespace-nowrap text-neutral-700 transition hover:bg-neutral-100 hover:text-neutral-950 focus:outline-hidden min-[1100px]:px-3.5 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-white">
-        ประเภทอสังหา
+        {isThai ? 'ประเภทอสังหา' : 'Property types'}
         <ChevronDown className="ms-1 size-4 transition group-data-open:rotate-180" aria-hidden="true" />
       </PopoverButton>
 
@@ -56,9 +63,11 @@ const PropertyMegaMenu = () => {
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-[#176b50] dark:text-emerald-300">
               <Sparkles className="size-3.5" />
-              ค้นหาแบบไม่ต้องจำชื่อหมวด
+              {isThai ? 'ค้นหาแบบไม่ต้องจำชื่อหมวด' : 'Search without knowing category names'}
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-neutral-950 dark:text-white">คุณกำลังมองหาพื้นที่แบบไหน</h2>
+            <h2 className="mt-1 text-xl font-semibold text-neutral-950 dark:text-white">
+              {isThai ? 'คุณกำลังมองหาพื้นที่แบบไหน' : 'What kind of space are you looking for?'}
+            </h2>
           </div>
           <CloseButton
             as={Link}
@@ -66,18 +75,18 @@ const PropertyMegaMenu = () => {
             className="hidden items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:border-neutral-400 min-[900px]:inline-flex dark:border-neutral-700 dark:text-neutral-200"
           >
             <Search className="size-4" />
-            ค้นหาทั้งหมด
+            {isThai ? 'ค้นหาทั้งหมด' : 'Search all'}
           </CloseButton>
         </div>
 
         <TabGroup>
           <TabList className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-neutral-100 p-1 dark:bg-neutral-800">
-            {tabs.map((tab) => (
+            {tabs.map(([tab, tabEn]) => (
               <Tab
                 key={tab}
                 className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold text-neutral-500 transition outline-none hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white data-selected:bg-[#123f32] data-selected:text-white data-selected:shadow-sm dark:data-selected:bg-emerald-800"
               >
-                {tab}
+                {isThai ? tab : tabEn}
               </Tab>
             ))}
           </TabList>
@@ -104,9 +113,9 @@ const PropertyMegaMenu = () => {
                       <Icon
                         className={`size-5 ${isActive ? 'text-orange-600' : 'text-[#176b50] dark:text-emerald-300'}`}
                       />
-                      <span className="mt-3 block text-sm font-semibold">{group.label}</span>
+                      <span className="mt-3 block text-sm font-semibold">{isThai ? group.label : group.labelEn}</span>
                       <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
-                        {group.description}
+                        {isThai ? group.description : group.descriptionEn}
                       </span>
                     </button>
                   )
@@ -115,24 +124,26 @@ const PropertyMegaMenu = () => {
 
               <div className="mt-5 border-t border-neutral-100 pt-5 dark:border-neutral-800">
                 <div className="mb-3 flex items-center justify-between gap-4">
-                  <p className="font-semibold text-neutral-950 dark:text-white">{selectedGroup.label}</p>
+                  <p className="font-semibold text-neutral-950 dark:text-white">
+                    {isThai ? selectedGroup.label : selectedGroup.labelEn}
+                  </p>
                   <CloseButton
                     as={Link}
                     href={`/real-estate-categories/all?property_group=${selectedGroup.value}`}
                     className="text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-300"
                   >
-                    ดูทั้งหมดในกลุ่ม
+                    {isThai ? 'ดูทั้งหมดในกลุ่ม' : 'View entire group'}
                   </CloseButton>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedGroup.types.map(([value, label]) => (
+                  {selectedGroup.types.map(([value, label, labelEn]) => (
                     <CloseButton
                       as={Link}
                       key={value}
                       href={`/real-estate-categories/all?property_type=${value}`}
                       className="rounded-full border border-neutral-200 px-4 py-2 text-sm text-neutral-700 transition hover:border-orange-400 hover:bg-orange-50 hover:text-orange-800 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-orange-600 dark:hover:bg-orange-950/30 dark:hover:text-orange-100"
                     >
-                      {label}
+                      {isThai ? label : labelEn}
                     </CloseButton>
                   ))}
                 </div>
@@ -155,10 +166,10 @@ const PropertyMegaMenu = () => {
                       </span>
                       <span>
                         <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                          {useCase.label}
+                          {isThai ? useCase.label : useCase.labelEn}
                         </span>
                         <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                          {useCase.description}
+                          {isThai ? useCase.description : useCase.descriptionEn}
                         </span>
                       </span>
                     </CloseButton>
@@ -180,8 +191,12 @@ const PropertyMegaMenu = () => {
                       <MapPin className="size-5" />
                     </span>
                     <span>
-                      <span className="block text-sm font-semibold text-neutral-950 dark:text-white">{thaiName}</span>
-                      <span className="block text-xs text-neutral-500 dark:text-neutral-400">{englishName}</span>
+                      <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                        {isThai ? thaiName : englishName}
+                      </span>
+                      <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                        {isThai ? englishName : thaiName}
+                      </span>
                     </span>
                   </CloseButton>
                 ))}
@@ -192,7 +207,7 @@ const PropertyMegaMenu = () => {
                 className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 p-3 text-sm font-semibold text-neutral-700 transition hover:border-[#176b50] hover:bg-[#edf6f1] hover:text-[#176b50] dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
               >
                 <Map className="size-5" />
-                สำรวจอสังหาบนแผนที่
+                {isThai ? 'สำรวจอสังหาบนแผนที่' : 'Explore properties on the map'}
               </CloseButton>
             </TabPanel>
           </TabPanels>

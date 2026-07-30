@@ -1,1 +1,1 @@
-export { default, metadata } from './property-home/page'
+export { default } from './property-home/page'

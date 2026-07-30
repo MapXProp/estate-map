@@ -1,10 +1,11 @@
 'use client'
 
 import { getCurrencies, getLanguages } from '@/data/navigation'
+import { AppCurrency, AppLocale, usePreferences } from '@/components/preferences/PreferencesProvider'
 import { CloseButton, Popover, PopoverButton, PopoverPanel, PopoverPanelProps } from '@headlessui/react'
 import { BanknotesIcon, CheckIcon, ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { FC, useSyncExternalStore } from 'react'
+import { FC } from 'react'
 
 type Language = Awaited<ReturnType<typeof getLanguages>>[number]
 type Currency = Awaited<ReturnType<typeof getCurrencies>>[number]
@@ -33,27 +34,6 @@ const currencyMeta: Record<string, { symbol: string; description: string }> = {
   },
 }
 
-const writePreferenceCookie = (name: string, value: string) => {
-  window.document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`
-}
-
-const preferenceChangeEvent = 'mapxprop:preference-change'
-
-const subscribeToPreferences = (onStoreChange: () => void) => {
-  window.addEventListener('storage', onStoreChange)
-  window.addEventListener(preferenceChangeEvent, onStoreChange)
-
-  return () => {
-    window.removeEventListener('storage', onStoreChange)
-    window.removeEventListener(preferenceChangeEvent, onStoreChange)
-  }
-}
-
-const getStoredLanguage = () => window.localStorage.getItem('mapxprop_language') ?? 'Thai'
-const getStoredCurrency = () => window.localStorage.getItem('mapxprop_currency') ?? 'THB'
-const getServerLanguage = () => 'Thai'
-const getServerCurrency = () => 'THB'
-
 interface Props {
   panelAnchor?: PopoverPanelProps['anchor']
   panelClassName?: PopoverPanelProps['className']
@@ -72,16 +52,10 @@ const CurrLangDropdown: FC<Props> = ({
   currencies,
   panelClassName,
 }) => {
+  const { locale, currency: selectedCurrency, setLocale, setCurrency } = usePreferences()
   const activeLanguage = languages.find((item) => item.active) ?? languages[0]
   const activeCurrency = currencies.find((item) => item.active) ?? currencies[0]
-  const storedLanguage = useSyncExternalStore(subscribeToPreferences, getStoredLanguage, getServerLanguage)
-  const storedCurrency = useSyncExternalStore(subscribeToPreferences, getStoredCurrency, getServerCurrency)
-  const selectedLanguage = languages.some((item) => item.id === storedLanguage)
-    ? storedLanguage
-    : (activeLanguage?.id ?? 'Thai')
-  const selectedCurrency = currencies.some((item) => item.id === storedCurrency)
-    ? storedCurrency
-    : (activeCurrency?.id ?? 'THB')
+  const selectedLanguage = locale === 'en' ? 'English' : 'Thai'
 
   const languageCode = languageMeta[selectedLanguage]?.code ?? activeLanguage?.description ?? 'TH'
   const selectedCurrencyMeta = currencyMeta[selectedCurrency] ?? {
@@ -90,26 +64,21 @@ const CurrLangDropdown: FC<Props> = ({
   }
 
   const selectLanguage = (language: Language) => {
-    const locale = language.id === 'English' ? 'en' : 'th'
-    writePreferenceCookie('NEXT_LOCALE', locale)
-    window.localStorage.setItem('mapxprop_language', language.id)
-    window.dispatchEvent(new Event(preferenceChangeEvent))
-
-    if (language.id !== selectedLanguage) {
-      window.location.reload()
-    }
+    setLocale((language.id === 'English' ? 'en' : 'th') as AppLocale)
   }
 
   const selectCurrency = (currency: Currency) => {
-    writePreferenceCookie('MAPX_CURRENCY', currency.id)
-    window.localStorage.setItem('mapxprop_currency', currency.id)
-    window.dispatchEvent(new Event(preferenceChangeEvent))
+    setCurrency((currency.id === 'USD' ? 'USD' : 'THB') as AppCurrency)
   }
 
   return (
     <Popover className={clsx('group relative', className)}>
       <PopoverButton
-        aria-label={`ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`}
+        aria-label={
+          locale === 'th'
+            ? `ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`
+            : `Language ${languageCode}, currency ${selectedCurrency}`
+        }
         className="flex h-10 items-center rounded-full border border-neutral-200 bg-white p-1.5 text-neutral-700 shadow-sm transition duration-200 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-[#125640] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30 group-data-open:border-emerald-300 group-data-open:bg-emerald-50 group-data-open:text-[#125640] min-[1200px]:h-11 min-[1200px]:px-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#eaf5f0] text-[#176b50] min-[1200px]:size-8 dark:bg-emerald-900/50 dark:text-emerald-300">
@@ -146,9 +115,13 @@ const CurrLangDropdown: FC<Props> = ({
             <GlobeAltIcon className="size-5" />
           </span>
           <div className="min-w-0">
-            <h2 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">ภาษาและสกุลเงิน</h2>
+            <h2 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">
+              {locale === 'th' ? 'ภาษาและสกุลเงิน' : 'Language and currency'}
+            </h2>
             <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-              เลือกรูปแบบที่คุณสะดวกสำหรับการค้นหาอสังหา
+              {locale === 'th'
+                ? 'เลือกรูปแบบที่คุณสะดวกสำหรับการค้นหาอสังหา'
+                : 'Choose how you want to browse properties'}
             </p>
           </div>
         </div>
@@ -161,7 +134,7 @@ const CurrLangDropdown: FC<Props> = ({
                 id="language-options-title"
                 className="font-sarabun text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300"
               >
-                ภาษา
+                {locale === 'th' ? 'ภาษา' : 'Language'}
               </h3>
             </div>
             <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
@@ -222,7 +195,7 @@ const CurrLangDropdown: FC<Props> = ({
                 id="currency-options-title"
                 className="font-sarabun text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300"
               >
-                สกุลเงิน
+                {locale === 'th' ? 'สกุลเงิน' : 'Currency'}
               </h3>
             </div>
             <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
@@ -276,14 +249,16 @@ const CurrLangDropdown: FC<Props> = ({
 
         <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
           <p className="font-sarabun text-[11px] leading-4 text-neutral-500 dark:text-neutral-400">
-            ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้
+            {locale === 'th'
+              ? 'ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้'
+              : 'Your choices are saved on this device'}
           </p>
           <CloseButton
             as="button"
             type="button"
             className="shrink-0 rounded-full bg-[#124e3c] px-4 py-2 font-sarabun text-xs font-semibold text-white transition hover:bg-[#0d3d2f] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30"
           >
-            เสร็จสิ้น
+            {locale === 'th' ? 'เสร็จสิ้น' : 'Done'}
           </CloseButton>
         </div>
       </PopoverPanel>

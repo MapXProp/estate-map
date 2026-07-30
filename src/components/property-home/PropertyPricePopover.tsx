@@ -1,6 +1,7 @@
 'use client'
 
 import * as Headless from '@headlessui/react'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { Banknote, Check, ChevronDown, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import PropertySearchBackdrop from './PropertySearchBackdrop'
@@ -14,54 +15,66 @@ export type PropertyPriceSelection = {
 }
 
 type PricePreset = {
-  label: string
   minPrice: string
   maxPrice: string
 }
 
 const presets: Record<PropertyOfferType, PricePreset[]> = {
   sale: [
-    { label: 'ไม่เกิน 1 ล้าน', minPrice: '', maxPrice: '1000000' },
-    { label: 'ไม่เกิน 3 ล้าน', minPrice: '', maxPrice: '3000000' },
-    { label: '3–5 ล้าน', minPrice: '3000000', maxPrice: '5000000' },
-    { label: '5–10 ล้าน', minPrice: '5000000', maxPrice: '10000000' },
-    { label: '10 ล้านบาทขึ้นไป', minPrice: '10000000', maxPrice: '' },
+    { minPrice: '', maxPrice: '1000000' },
+    { minPrice: '', maxPrice: '3000000' },
+    { minPrice: '3000000', maxPrice: '5000000' },
+    { minPrice: '5000000', maxPrice: '10000000' },
+    { minPrice: '10000000', maxPrice: '' },
   ],
   rent: [
-    { label: 'ไม่เกิน 5,000', minPrice: '', maxPrice: '5000' },
-    { label: '5,000–10,000', minPrice: '5000', maxPrice: '10000' },
-    { label: '10,000–20,000', minPrice: '10000', maxPrice: '20000' },
-    { label: '20,000–50,000', minPrice: '20000', maxPrice: '50000' },
-    { label: '50,000 ขึ้นไป', minPrice: '50000', maxPrice: '' },
+    { minPrice: '', maxPrice: '5000' },
+    { minPrice: '5000', maxPrice: '10000' },
+    { minPrice: '10000', maxPrice: '20000' },
+    { minPrice: '20000', maxPrice: '50000' },
+    { minPrice: '50000', maxPrice: '' },
   ],
   business_transfer: [
-    { label: 'ไม่เกิน 300,000', minPrice: '', maxPrice: '300000' },
-    { label: '300,000–500,000', minPrice: '300000', maxPrice: '500000' },
-    { label: '500,000–1 ล้าน', minPrice: '500000', maxPrice: '1000000' },
-    { label: '1–3 ล้าน', minPrice: '1000000', maxPrice: '3000000' },
-    { label: '3 ล้านบาทขึ้นไป', minPrice: '3000000', maxPrice: '' },
+    { minPrice: '', maxPrice: '300000' },
+    { minPrice: '300000', maxPrice: '500000' },
+    { minPrice: '500000', maxPrice: '1000000' },
+    { minPrice: '1000000', maxPrice: '3000000' },
+    { minPrice: '3000000', maxPrice: '' },
   ],
 }
 
 const offerContent: Record<
   PropertyOfferType,
-  { fieldLabel: string; description: string; minPlaceholder: string; maxPlaceholder: string }
+  {
+    fieldLabel: string
+    fieldLabelEn: string
+    description: string
+    descriptionEn: string
+    minPlaceholder: string
+    maxPlaceholder: string
+  }
 > = {
   sale: {
     fieldLabel: 'งบซื้อรวม',
+    fieldLabelEn: 'Purchase budget',
     description: 'ราคาขายรวมของทรัพย์',
+    descriptionEn: 'Total property purchase price',
     minPlaceholder: 'เช่น 1,000,000',
     maxPlaceholder: 'เช่น 3,000,000',
   },
   rent: {
     fieldLabel: 'ค่าเช่าต่อเดือน',
+    fieldLabelEn: 'Monthly rent',
     description: 'งบค่าเช่าที่จ่ายในแต่ละเดือน',
+    descriptionEn: 'Monthly rental budget',
     minPlaceholder: 'เช่น 5,000',
     maxPlaceholder: 'เช่น 20,000',
   },
   business_transfer: {
     fieldLabel: 'ค่าเซ้งกิจการ',
+    fieldLabelEn: 'Transfer budget',
     description: 'เงินก้อนที่จ่ายเพื่อรับช่วงกิจการหรือสิทธิการเช่า',
+    descriptionEn: 'Upfront payment to take over a business or lease',
     minPlaceholder: 'เช่น 300,000',
     maxPlaceholder: 'เช่น 1,000,000',
   },
@@ -74,68 +87,70 @@ const formatInputAmount = (value: string) => {
   return Number(value).toLocaleString('en-US')
 }
 
-const formatCompactAmount = (value: string) => {
-  const amount = Number(value)
-  if (!amount) return ''
-
-  if (amount >= 1_000_000) {
-    const millions = amount / 1_000_000
-    return `${Number.isInteger(millions) ? millions : millions.toFixed(1)} ล้าน`
-  }
-
-  return amount.toLocaleString('en-US')
-}
-
-export const getPriceSummary = (offerType: PropertyOfferType, selection: PropertyPriceSelection) => {
+export const getPriceSummary = (
+  offerType: PropertyOfferType,
+  selection: PropertyPriceSelection,
+  formatAmount: (amount: number) => string = (amount) => `฿${amount.toLocaleString('en-US')}`,
+  locale: 'th' | 'en' = 'th'
+) => {
   const { minPrice, maxPrice, monthlyRentMax } = selection
   let mainSummary = ''
+  const isThai = locale === 'th'
 
   if (minPrice && maxPrice && Number(minPrice) > Number(maxPrice)) {
-    return 'ตรวจสอบช่วงราคา'
+    return isThai ? 'ตรวจสอบช่วงราคา' : 'Check price range'
   }
 
   if (minPrice && maxPrice && minPrice === maxPrice) {
-    mainSummary = `฿${formatCompactAmount(minPrice)}`
+    mainSummary = formatAmount(Number(minPrice))
   } else if (minPrice && maxPrice) {
-    mainSummary = `฿${formatCompactAmount(minPrice)}–${formatCompactAmount(maxPrice)}`
+    mainSummary = `${formatAmount(Number(minPrice))}–${formatAmount(Number(maxPrice))}`
   } else if (maxPrice) {
-    mainSummary = `ไม่เกิน ฿${formatCompactAmount(maxPrice)}`
+    mainSummary = `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatAmount(Number(maxPrice))}`
   } else if (minPrice) {
-    mainSummary = `ตั้งแต่ ฿${formatCompactAmount(minPrice)}`
+    mainSummary = `${isThai ? 'ตั้งแต่' : 'From'} ${formatAmount(Number(minPrice))}`
   }
 
   if (offerType === 'rent') {
-    return mainSummary ? `${mainSummary}/เดือน` : 'ไม่จำกัดค่าเช่า'
+    return mainSummary ? `${mainSummary}/${isThai ? 'เดือน' : 'month'}` : isThai ? 'ไม่จำกัดค่าเช่า' : 'Any rent'
   }
 
   if (offerType === 'business_transfer') {
-    const transferSummary = mainSummary ? `ค่าเซ้ง ${mainSummary}` : 'ไม่จำกัดค่าเซ้ง'
+    const transferSummary = mainSummary
+      ? `${isThai ? 'ค่าเซ้ง' : 'Transfer'} ${mainSummary}`
+      : isThai
+        ? 'ไม่จำกัดค่าเซ้ง'
+        : 'Any transfer price'
     return monthlyRentMax
-      ? `${transferSummary} · เช่า ≤ ฿${formatCompactAmount(monthlyRentMax)}/เดือน`
+      ? `${transferSummary} · ${isThai ? 'เช่า' : 'rent'} ≤ ${formatAmount(Number(monthlyRentMax))}/${isThai ? 'เดือน' : 'month'}`
       : transferSummary
   }
 
-  return mainSummary || 'ไม่จำกัดงบซื้อ'
+  return mainSummary || (isThai ? 'ไม่จำกัดงบซื้อ' : 'Any purchase price')
 }
 
 const PriceInput = ({
   label,
   value,
   placeholder,
+  symbol,
+  displayValue,
   onChange,
 }: {
   label: string
   value: string
   placeholder: string
+  symbol: string
+  displayValue: (value: string) => string
   onChange: (value: string) => void
 }) => (
   <label className="block min-w-0 flex-1">
     <span className="mb-1.5 block text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</span>
     <span className="flex items-center rounded-2xl border border-neutral-200 bg-white px-3 transition focus-within:border-[#176b50] focus-within:ring-2 focus-within:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-emerald-400">
-      <span className="text-sm font-semibold text-neutral-400">฿</span>
+      <span className="text-sm font-semibold text-neutral-400">{symbol}</span>
       <input
         inputMode="numeric"
-        value={formatInputAmount(value)}
+        value={formatInputAmount(displayValue(value))}
         onChange={(event) => onChange(cleanAmount(event.target.value))}
         placeholder={placeholder}
         className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-base font-medium text-neutral-900 placeholder:text-neutral-300 focus:ring-0 min-[744px]:text-sm dark:text-white dark:placeholder:text-neutral-600"
@@ -153,9 +168,25 @@ const PropertyPricePopover = ({
   value: PropertyPriceSelection
   onChange: (value: PropertyPriceSelection) => void
 }) => {
+  const { locale, currency, convertFromThb, convertToThb, formatCurrency } = usePreferences()
+  const isThai = locale === 'th'
   const priceButtonRef = useRef<HTMLButtonElement>(null)
   const content = offerContent[offerType]
-  const summary = getPriceSummary(offerType, value)
+  const compactCurrency = useCallback(
+    (amount: number) => formatCurrency(amount, { compact: true }),
+    [formatCurrency]
+  )
+  const summary = getPriceSummary(offerType, value, compactCurrency, locale)
+  const displayValue = useCallback(
+    (rawValue: string) => (rawValue ? String(Math.round(convertFromThb(Number(rawValue)))) : ''),
+    [convertFromThb]
+  )
+  const updateFromDisplayValue = useCallback(
+    (rawValue: string) => (rawValue ? String(Math.round(convertToThb(Number(rawValue)))) : ''),
+    [convertToThb]
+  )
+  const currencySymbol = currency === 'USD' ? '$' : '฿'
+  const fieldLabel = isThai ? content.fieldLabel : content.fieldLabelEn
   const hasInvalidRange = Boolean(value.minPrice && value.maxPrice && Number(value.minPrice) > Number(value.maxPrice))
 
   const updateValue = (next: Partial<PropertyPriceSelection>) => onChange({ ...value, ...next })
@@ -202,7 +233,7 @@ const PropertyPricePopover = ({
               <Banknote className="size-5" strokeWidth={1.8} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-neutral-900 dark:text-white">{content.fieldLabel}</span>
+              <span className="block text-sm font-semibold text-neutral-900 dark:text-white">{fieldLabel}</span>
               <span className="mt-1 block truncate text-sm text-neutral-500 dark:text-neutral-400">{summary}</span>
             </span>
             <ChevronDown className="size-4 shrink-0 text-neutral-400" />
@@ -216,8 +247,15 @@ const PropertyPricePopover = ({
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-lg font-semibold text-neutral-950 dark:text-white">{content.fieldLabel}</h3>
-                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{content.description}</p>
+                <h3 className="text-lg font-semibold text-neutral-950 dark:text-white">{fieldLabel}</h3>
+                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  {isThai ? content.description : content.descriptionEn}
+                </p>
+                {currency === 'USD' && (
+                  <p className="mt-1 text-xs text-orange-600 dark:text-orange-300">
+                    {isThai ? 'ราคา USD เป็นราคาอ้างอิงโดยประมาณ' : 'USD amounts are approximate reference prices'}
+                  </p>
+                )}
               </div>
               {(value.minPrice || value.maxPrice || value.monthlyRentMax) && (
                 <button
@@ -225,7 +263,7 @@ const PropertyPricePopover = ({
                   onClick={clearValue}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white"
                 >
-                  <RotateCcw className="size-3.5" /> ล้าง
+                  <RotateCcw className="size-3.5" /> {isThai ? 'ล้าง' : 'Clear'}
                 </button>
               )}
             </div>
@@ -233,9 +271,14 @@ const PropertyPricePopover = ({
             <div className="mt-5 flex flex-wrap gap-2">
               {presets[offerType].map((preset) => {
                 const selected = value.minPrice === preset.minPrice && value.maxPrice === preset.maxPrice
+                const presetLabel = preset.maxPrice && !preset.minPrice
+                  ? `${isThai ? 'ไม่เกิน' : 'Up to'} ${compactCurrency(Number(preset.maxPrice))}`
+                  : preset.minPrice && preset.maxPrice
+                    ? `${compactCurrency(Number(preset.minPrice))}–${compactCurrency(Number(preset.maxPrice))}`
+                    : `${compactCurrency(Number(preset.minPrice))}${isThai ? ' ขึ้นไป' : '+'}`
                 return (
                   <button
-                    key={preset.label}
+                    key={`${preset.minPrice}-${preset.maxPrice}`}
                     type="button"
                     onClick={() => updateValue({ minPrice: preset.minPrice, maxPrice: preset.maxPrice })}
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition ${
@@ -245,35 +288,43 @@ const PropertyPricePopover = ({
                     }`}
                   >
                     {selected && <Check className="size-3.5" />}
-                    {preset.label}
+                    {presetLabel}
                   </button>
                 )
               })}
             </div>
 
             <div className="mt-6 border-t border-neutral-100 pt-5 dark:border-neutral-800">
-              <p className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">กำหนดช่วงราคาเอง</p>
+              <p className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">
+                {isThai ? 'กำหนดช่วงราคาเอง' : 'Set a custom range'}
+              </p>
               <div className="flex items-end gap-2.5">
                 <PriceInput
-                  label="ราคาต่ำสุด"
+                  label={isThai ? 'ราคาต่ำสุด' : 'Minimum'}
                   value={value.minPrice}
-                  placeholder={content.minPlaceholder}
-                  onChange={(minPrice) => updateValue({ minPrice })}
+                  placeholder={formatInputAmount(displayValue(content.minPlaceholder.replace(/[^0-9]/g, '')))}
+                  symbol={currencySymbol}
+                  displayValue={displayValue}
+                  onChange={(minPrice) => updateValue({ minPrice: updateFromDisplayValue(minPrice) })}
                 />
                 <span className="mb-3.5 text-neutral-300 dark:text-neutral-600">—</span>
                 <PriceInput
-                  label="ราคาสูงสุด"
+                  label={isThai ? 'ราคาสูงสุด' : 'Maximum'}
                   value={value.maxPrice}
-                  placeholder={content.maxPlaceholder}
-                  onChange={(maxPrice) => updateValue({ maxPrice })}
+                  placeholder={formatInputAmount(displayValue(content.maxPlaceholder.replace(/[^0-9]/g, '')))}
+                  symbol={currencySymbol}
+                  displayValue={displayValue}
+                  onChange={(maxPrice) => updateValue({ maxPrice: updateFromDisplayValue(maxPrice) })}
                 />
               </div>
               <p className="mt-2 text-xs text-neutral-400">
-                หากต้องการราคาเฉพาะ เช่น 3 ล้านบาท ให้กรอกขั้นต่ำและสูงสุดเท่ากัน
+                {isThai
+                  ? 'หากต้องการราคาเฉพาะ เช่น 3 ล้านบาท ให้กรอกขั้นต่ำและสูงสุดเท่ากัน'
+                  : 'For an exact price, enter the same minimum and maximum.'}
               </p>
               {hasInvalidRange && (
                 <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
-                  ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด
+                  {isThai ? 'ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด' : 'Minimum cannot exceed maximum'}
                 </p>
               )}
             </div>
@@ -281,13 +332,21 @@ const PropertyPricePopover = ({
             {offerType === 'business_transfer' && (
               <div className="mt-5 rounded-2xl bg-[#f7f3eb] p-4 dark:bg-amber-950/35">
                 <PriceInput
-                  label="ค่าเช่ารายเดือนหลังรับช่วง (ไม่เกิน)"
+                  label={
+                    isThai ? 'ค่าเช่ารายเดือนหลังรับช่วง (ไม่เกิน)' : 'Monthly rent after transfer (maximum)'
+                  }
                   value={value.monthlyRentMax}
-                  placeholder="เช่น 30,000"
-                  onChange={(monthlyRentMax) => updateValue({ monthlyRentMax })}
+                  placeholder={formatInputAmount(displayValue('30000'))}
+                  symbol={currencySymbol}
+                  displayValue={displayValue}
+                  onChange={(monthlyRentMax) =>
+                    updateValue({ monthlyRentMax: updateFromDisplayValue(monthlyRentMax) })
+                  }
                 />
                 <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                  ค่าเซ้งเป็นเงินก้อน ส่วนค่าเช่ารายเดือนเป็นภาระที่ต้องจ่ายต่อเจ้าของพื้นที่
+                  {isThai
+                    ? 'ค่าเซ้งเป็นเงินก้อน ส่วนค่าเช่ารายเดือนเป็นภาระที่ต้องจ่ายต่อเจ้าของพื้นที่'
+                    : 'The transfer fee is upfront; monthly rent remains payable to the property owner.'}
                 </p>
               </div>
             )}
@@ -300,7 +359,7 @@ const PropertyPricePopover = ({
                 disabled={hasInvalidRange}
                 className="shrink-0 rounded-full bg-[#123f32] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0b3227] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-200 dark:text-emerald-950"
               >
-                ใช้งบนี้
+                {isThai ? 'ใช้งบนี้' : 'Apply budget'}
               </button>
             </div>
           </Headless.PopoverPanel>

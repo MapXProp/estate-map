@@ -1,6 +1,7 @@
 'use client'
 
 import { propertyGroups, propertyUseCases } from '@/data/property-navigation'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import * as Headless from '@headlessui/react'
 import { Building2, ChevronDown, MapPin, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -10,10 +11,10 @@ import PropertySearchBackdrop from './PropertySearchBackdrop'
 
 type CategoryMode = 'property_type' | 'use_case'
 
-const offerTypes: { value: PropertyOfferType; label: string }[] = [
-  { value: 'sale', label: 'ซื้อ' },
-  { value: 'rent', label: 'เช่า' },
-  { value: 'business_transfer', label: 'เซ้ง' },
+const offerTypes: { value: PropertyOfferType; label: string; labelEn: string }[] = [
+  { value: 'sale', label: 'ซื้อ', labelEn: 'Buy' },
+  { value: 'rent', label: 'เช่า', labelEn: 'Rent' },
+  { value: 'business_transfer', label: 'เซ้ง', labelEn: 'Business transfer' },
 ]
 
 const propertyCategoryStyles = {
@@ -28,11 +29,18 @@ const emptyPriceSelection: PropertyPriceSelection = { minPrice: '', maxPrice: ''
 
 const PropertyHomeSearch = () => {
   const router = useRouter()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const categoryButtonRef = useRef<HTMLButtonElement>(null)
   const [offerType, setOfferType] = useState<PropertyOfferType>('sale')
   const [categoryMode, setCategoryMode] = useState<CategoryMode>('property_type')
   const [activeGroup, setActiveGroup] = useState<(typeof propertyGroups)[number]['value']>('residential')
-  const [selectedCategory, setSelectedCategory] = useState({ value: '', label: 'ทุกประเภท', kind: 'property_type' })
+  const [selectedCategory, setSelectedCategory] = useState({
+    value: '',
+    label: 'ทุกประเภท',
+    labelEn: 'All types',
+    kind: 'property_type',
+  })
   const [location, setLocation] = useState('')
   const [prices, setPrices] = useState<Record<PropertyOfferType, PropertyPriceSelection>>({
     sale: { ...emptyPriceSelection },
@@ -112,7 +120,7 @@ const PropertyHomeSearch = () => {
                 : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white'
             }`}
           >
-            {item.label}
+            {isThai ? item.label : item.labelEn}
           </button>
         ))}
       </div>
@@ -123,12 +131,14 @@ const PropertyHomeSearch = () => {
             <MapPin className="size-5" strokeWidth={1.8} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-neutral-900 dark:text-white">ทำเลที่ตั้ง</span>
+            <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
+              {isThai ? 'ทำเลที่ตั้ง' : 'Location'}
+            </span>
             <input
               value={location}
               onChange={(event) => setLocation(event.target.value)}
               className="mt-1 w-full border-0 bg-transparent p-0 text-base text-neutral-500 placeholder:text-neutral-400 focus:ring-0 min-[744px]:text-sm dark:text-neutral-300"
-              placeholder="จังหวัด เขต หรือชื่อโครงการ"
+              placeholder={isThai ? 'จังหวัด เขต หรือชื่อโครงการ' : 'Province, district or project'}
             />
           </span>
         </label>
@@ -147,10 +157,10 @@ const PropertyHomeSearch = () => {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
-                    ประเภทหรือการใช้งาน
+                    {isThai ? 'ประเภทหรือการใช้งาน' : 'Type or use'}
                   </span>
                   <span className="mt-1 block truncate text-sm text-neutral-500 dark:text-neutral-400">
-                    {selectedCategory.label}
+                    {isThai ? selectedCategory.label : selectedCategory.labelEn}
                   </span>
                 </span>
                 <ChevronDown className="size-4 shrink-0 text-neutral-400" />
@@ -164,8 +174,8 @@ const PropertyHomeSearch = () => {
               >
                 <div className="mb-5 flex gap-2 border-b border-neutral-100 pb-4 dark:border-neutral-800">
                   {[
-                    ['property_type', 'เลือกตามประเภททรัพย์'],
-                    ['use_case', 'เลือกตามการใช้งาน'],
+                    ['property_type', isThai ? 'เลือกตามประเภททรัพย์' : 'Choose by property type'],
+                    ['use_case', isThai ? 'เลือกตามการใช้งาน' : 'Choose by use'],
                   ].map(([value, label]) => (
                     <button
                       key={value}
@@ -184,7 +194,9 @@ const PropertyHomeSearch = () => {
 
                 {categoryMode === 'property_type' ? (
                   <div>
-                    <p className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">กลุ่มอสังหาริมทรัพย์</p>
+                    <p className="mb-3 text-sm font-semibold text-neutral-900 dark:text-white">
+                      {isThai ? 'กลุ่มอสังหาริมทรัพย์' : 'Property groups'}
+                    </p>
                     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
                       {propertyGroups.map((group) => {
                         const Icon = group.icon
@@ -199,8 +211,10 @@ const PropertyHomeSearch = () => {
                             }`}
                           >
                             <Icon className="mb-3 size-5" strokeWidth={1.7} />
-                            <span className="block text-sm font-semibold">{group.label}</span>
-                            <span className="mt-1 block text-xs opacity-65">{group.description}</span>
+                            <span className="block text-sm font-semibold">{isThai ? group.label : group.labelEn}</span>
+                            <span className="mt-1 block text-xs opacity-65">
+                              {isThai ? group.description : group.descriptionEn}
+                            </span>
                           </button>
                         )
                       })}
@@ -208,34 +222,37 @@ const PropertyHomeSearch = () => {
 
                     <div className="mt-5 border-t border-neutral-100 pt-5 dark:border-neutral-800">
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-neutral-900 dark:text-white">{selectedGroup.label}</p>
+                        <p className="text-sm font-semibold text-neutral-900 dark:text-white">
+                          {isThai ? selectedGroup.label : selectedGroup.labelEn}
+                        </p>
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedCategory({
                               value: selectedGroup.value,
                               label: selectedGroup.label,
+                              labelEn: selectedGroup.labelEn,
                               kind: 'property_group',
                             })
                             close()
                           }}
                           className={`text-xs font-semibold hover:underline ${propertyCategoryStyles.action}`}
                         >
-                          เลือกทั้งหมดในกลุ่ม
+                          {isThai ? 'เลือกทั้งหมดในกลุ่ม' : 'Select entire group'}
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {selectedGroup.types.map(([value, label]) => (
+                        {selectedGroup.types.map(([value, label, labelEn]) => (
                           <button
                             key={value}
                             type="button"
                             onClick={() => {
-                              setSelectedCategory({ value, label, kind: 'property_type' })
+                              setSelectedCategory({ value, label, labelEn, kind: 'property_type' })
                               close()
                             }}
                             className={`rounded-full border border-neutral-200 px-4 py-2 text-sm text-neutral-700 transition dark:border-neutral-700 dark:text-neutral-300 ${propertyCategoryStyles.chip}`}
                           >
-                            {label}
+                            {isThai ? label : labelEn}
                           </button>
                         ))}
                       </div>
@@ -250,7 +267,12 @@ const PropertyHomeSearch = () => {
                           key={useCase.value}
                           type="button"
                           onClick={() => {
-                            setSelectedCategory({ value: useCase.value, label: useCase.label, kind: 'use_case' })
+                            setSelectedCategory({
+                              value: useCase.value,
+                              label: useCase.label,
+                              labelEn: useCase.labelEn,
+                              kind: 'use_case',
+                            })
                             close()
                           }}
                           className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-3 text-left transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-orange-700 dark:hover:bg-orange-950/30"
@@ -260,10 +282,10 @@ const PropertyHomeSearch = () => {
                           </span>
                           <span>
                             <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
-                              {useCase.label}
+                              {isThai ? useCase.label : useCase.labelEn}
                             </span>
                             <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                              {useCase.description}
+                              {isThai ? useCase.description : useCase.descriptionEn}
                             </span>
                           </span>
                         </button>
@@ -285,11 +307,11 @@ const PropertyHomeSearch = () => {
         <button
           type="submit"
           disabled={hasInvalidPrice}
-          aria-label="ค้นหาอสังหาริมทรัพย์"
+          aria-label={isThai ? 'ค้นหาอสังหาริมทรัพย์' : 'Search properties'}
           className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#123f32] px-7 font-semibold text-white shadow-lg shadow-[#123f32]/20 transition hover:-translate-y-0.5 hover:bg-[#0b3227] disabled:cursor-not-allowed disabled:opacity-40 min-[744px]:min-w-36 min-[744px]:self-center min-[744px]:justify-self-end min-[744px]:rounded-full min-[744px]:px-6 min-[1100px]:m-2 min-[1100px]:aspect-square min-[1100px]:min-h-16 min-[1100px]:min-w-0 min-[1100px]:self-stretch min-[1100px]:justify-self-stretch min-[1100px]:px-0 dark:bg-emerald-200 dark:text-emerald-950 dark:hover:bg-emerald-100"
         >
           <Search className="size-5" strokeWidth={2} />
-          <span className="min-[1100px]:sr-only">ค้นหา</span>
+          <span className="min-[1100px]:sr-only">{isThai ? 'ค้นหา' : 'Search'}</span>
         </button>
       </div>
     </form>
