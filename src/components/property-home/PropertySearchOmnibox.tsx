@@ -14,7 +14,10 @@ type Props = {
   variant?: 'hero' | 'header'
   autoFocus?: boolean
   initialQuery?: string
-  onSubmitQuery?: () => void
+  onSubmitQuery?: (query: string) => void
+  buildQuery?: (query: string) => string
+  suggestionsMode?: 'popover' | 'inline'
+  showSuggestionsOnEmpty?: boolean
 }
 
 const iconForSuggestion = (type: string) => {
@@ -28,6 +31,9 @@ const PropertySearchOmnibox = ({
   autoFocus = false,
   initialQuery = '',
   onSubmitQuery,
+  buildQuery,
+  suggestionsMode = 'popover',
+  showSuggestionsOnEmpty = true,
 }: Props) => {
   const router = useRouter()
   const { locale } = usePreferences()
@@ -39,7 +45,7 @@ const PropertySearchOmnibox = ({
   const [suggestions, setSuggestions] = useState<PropertySearchSuggestion[]>([])
 
   useEffect(() => {
-    if (!focused) return
+    if (!focused || (!showSuggestionsOnEmpty && !query.trim())) return
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
       setLoading(true)
@@ -51,7 +57,7 @@ const PropertySearchOmnibox = ({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [focused, query])
+  }, [focused, query, showSuggestionsOnEmpty])
 
   useEffect(() => {
     const close = (event: PointerEvent) => {
@@ -63,13 +69,14 @@ const PropertySearchOmnibox = ({
 
   const submit = (event?: FormEvent, selectedQuery = query) => {
     event?.preventDefault()
-    const value = selectedQuery.trim()
+    const rawValue = selectedQuery.trim()
+    const value = (buildQuery?.(rawValue) ?? rawValue).trim()
     if (!value) {
       setFocused(true)
       return
     }
     setFocused(false)
-    onSubmitQuery?.()
+    onSubmitQuery?.(value)
     router.push(getPropertySearchUrl(value))
   }
 
@@ -123,10 +130,14 @@ const PropertySearchOmnibox = ({
         </button>
       </form>
 
-      {focused && (
+      {focused && (showSuggestionsOnEmpty || Boolean(query.trim())) && (
         <div
-          className={`absolute inset-x-0 z-[80] overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-[0_24px_70px_-20px_rgba(15,23,42,0.25)] dark:border-neutral-700 dark:bg-neutral-900 ${
-            isHeader ? 'top-[calc(100%+10px)] min-w-[360px]' : 'top-[calc(100%+12px)]'
+          className={`inset-x-0 z-[80] overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-[0_24px_70px_-20px_rgba(15,23,42,0.25)] dark:border-neutral-700 dark:bg-neutral-900 ${
+            suggestionsMode === 'inline'
+              ? 'relative mt-3'
+              : isHeader
+                ? 'absolute top-[calc(100%+10px)] min-w-[360px]'
+                : 'absolute top-[calc(100%+12px)]'
           }`}
         >
           <div className="flex items-center gap-2 border-b border-neutral-100 px-5 py-3 text-xs font-semibold text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">

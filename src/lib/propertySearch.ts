@@ -16,6 +16,7 @@ export type PropertySearchChip = {
 export type PropertySearchIntent = {
   query: string
   normalized_query: string
+  locale: 'th' | 'en'
   property_types?: string[]
   property_groups?: string[]
   use_cases?: string[]
