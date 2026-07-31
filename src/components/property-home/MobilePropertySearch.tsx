@@ -338,7 +338,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                 {isThai ? 'อยากได้พื้นที่แบบไหน?' : 'What space are you looking for?'}
               </DialogTitle>
               <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai ? 'พิมพ์เองหรือแตะตัวเลือกก็ได้' : 'Type naturally or use quick choices'}
+                {isThai ? 'เลือกประเภท งบประมาณ และทำเลที่ต้องการ' : 'Choose a property type, budget, and location'}
               </p>
             </div>
             <button
@@ -371,10 +371,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                   </button>
                 )}
               </div>
-              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai ? 'เลือกได้หลายประเภท' : 'Choose more than one type'}
-              </p>
-              <div className="-mx-4 mt-2 grid snap-x auto-cols-[88px] grid-flow-col grid-rows-2 gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="-me-4 mt-2 grid snap-x auto-cols-[88px] grid-flow-col grid-rows-2 gap-2 overflow-x-auto ps-2 pe-4 pt-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {propertyTypes.map((property) => {
                   const Icon = property.icon
                   const active = selectedPropertyTypes.some((item) => item.value === property.value)
@@ -386,7 +383,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                       aria-pressed={active}
                       className={`relative flex min-h-[78px] snap-start flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-[11px] leading-tight font-semibold transition ${
                         active
-                          ? 'border-[#176b50] bg-[#e7f2ed] text-[#123f32] ring-1 ring-[#176b50] dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400'
+                          ? 'border-[#176b50] bg-[#e7f2ed] text-[#123f32] ring-1 ring-[#176b50] ring-inset dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400'
                           : 'border-neutral-200 bg-white text-neutral-600 active:border-[#8ab6a7] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
                       }`}
                     >
@@ -637,7 +634,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                   onClick={applyBudget}
                   className="mt-5 min-h-13 w-full rounded-2xl bg-[#123f32] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,63,50,0.22)] transition active:scale-[0.99] dark:bg-emerald-200 dark:text-emerald-950"
                 >
-                  {isThai ? 'ใช้ตัวเลือกนี้' : 'Apply selection'}
+                  {isThai ? 'ใช้งบนี้' : 'Use this budget'}
                 </button>
               </div>
             </div>
