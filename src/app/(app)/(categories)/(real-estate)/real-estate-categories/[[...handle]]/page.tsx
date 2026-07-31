@@ -2,6 +2,7 @@ import HeroSectionWithSearchForm1 from '@/components/hero-sections/HeroSectionWi
 import { RealEstateHeroSearchForm } from '@/components/HeroSearchForm/RealEstateHeroSearchForm'
 import ListingFilterTabs from '@/components/ListingFilterTabs'
 import PropertyCardH from '@/components/PropertyCardH'
+import PropertySearchResults from '@/components/property-home/PropertySearchResults'
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListingFilterOptions, getRealEstateListings } from '@/data/listings'
 import { Button } from '@/shared/Button'
@@ -26,8 +27,19 @@ export async function generateMetadata({ params }: { params: Promise<{ handle?: 
   return { title: name, description }
 }
 
-const Page = async ({ params }: { params: Promise<{ handle?: string[] }> }) => {
+const Page = async ({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle?: string[] }>
+  searchParams: Promise<{ q?: string }>
+}) => {
   const { handle } = await params
+  const { q } = await searchParams
+
+  if (q?.trim()) {
+    return <PropertySearchResults query={q.trim()} />
+  }
 
   const category = await getRealEstateCategoryByHandle(handle?.[0])
   const listings = await getRealEstateListings()

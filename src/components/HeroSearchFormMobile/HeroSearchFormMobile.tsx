@@ -45,7 +45,11 @@ const HeroSearchFormMobile = ({ className }: { className?: string }) => {
 
   // pathname
   const pathname = usePathname()
-  const isPropertyHome = pathname === '/' || pathname === '/property-home'
+  const isPropertyHome =
+    pathname === '/' ||
+    pathname === '/property-home' ||
+    pathname.startsWith('/real-estate-categories') ||
+    pathname.startsWith('/real-estate-listings')
 
   if (isPropertyHome) {
     return <MobilePropertySearch className={className} />

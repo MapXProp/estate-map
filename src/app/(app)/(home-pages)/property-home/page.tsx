@@ -196,14 +196,14 @@ const PropertyHomePrototype = () => {
               {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}
             </span>
             {[
-              ['คอนโดใกล้รถไฟฟ้า', 'Condos near transit', 'property_type=condo'],
-              ['ตึกแถวทำร้านอาหาร', 'Shophouses for restaurants', 'use_case=food_service'],
-              ['โกดังสมุทรปราการ', 'Samut Prakan warehouses', 'property_type=warehouse'],
-              ['ที่ดินเชียงใหม่', 'Land in Chiang Mai', 'property_type=land'],
-            ].map(([label, labelEn, query]) => (
+              ['คอนโดใกล้รถไฟฟ้า', 'Condos near transit'],
+              ['ตึกแถวทำร้านอาหาร', 'Shophouses for restaurants'],
+              ['โกดังสมุทรปราการ', 'Samut Prakan warehouses'],
+              ['ที่ดินเชียงใหม่', 'Land in Chiang Mai'],
+            ].map(([label, labelEn]) => (
               <Link
-                key={query}
-                href={`/real-estate-categories/all?${query}`}
+                key={label}
+                href={`/real-estate-categories/all?q=${encodeURIComponent(label)}`}
                 className="hover:text-[#176b50] hover:underline dark:hover:text-emerald-300"
               >
                 {isThai ? label : labelEn}
