@@ -21,6 +21,7 @@ export type PropertySearchIntent = {
   property_groups?: string[]
   use_cases?: string[]
   offer_types?: string[]
+  space_types?: string[]
   features?: string[]
   locations?: Array<{
     id: number

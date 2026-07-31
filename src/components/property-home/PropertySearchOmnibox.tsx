@@ -18,6 +18,7 @@ type Props = {
   buildQuery?: (query: string) => string
   suggestionsMode?: 'popover' | 'inline'
   showSuggestionsOnEmpty?: boolean
+  placeholder?: string
 }
 
 const iconForSuggestion = (type: string) => {
@@ -34,6 +35,7 @@ const PropertySearchOmnibox = ({
   buildQuery,
   suggestionsMode = 'popover',
   showSuggestionsOnEmpty = true,
+  placeholder,
 }: Props) => {
   const router = useRouter()
   const { locale } = usePreferences()
@@ -107,13 +109,13 @@ const PropertySearchOmnibox = ({
             isHeader ? 'px-3 py-2 text-sm' : 'px-4 py-3 text-base min-[744px]:text-lg'
           }`}
           placeholder={
-            isHeader
+            placeholder ?? (isHeader
               ? isThai
                 ? 'ค้นหาทำเลหรืออสังหา'
                 : 'Search location or property'
               : isThai
                 ? 'ลองค้นหา “คอนโดอารีย์” หรือ “โกดังบางนา”'
-                : 'Try “condo in Ari” or “warehouse Bang Na”'
+                : 'Try “condo in Ari” or “warehouse Bang Na”')
           }
         />
         <button
