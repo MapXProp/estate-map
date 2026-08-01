@@ -491,26 +491,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-28">
             <section>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {isThai ? 'คุณกำลังมองหา' : 'What are you looking for?'}
-                </h2>
-                {hasQuickFilters && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPropertyGroup('residential')
-                      setOfferType('')
-                      setSelectedPropertyTypes([])
-                      setBudget(null)
-                    }}
-                    className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
-                  >
-                    {isThai ? 'ล้างทั้งหมด' : 'Clear all'}
-                  </button>
-                )}
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl bg-neutral-200/70 p-1 dark:bg-neutral-800/80">
+              <div className="grid grid-cols-3 gap-1 rounded-2xl bg-neutral-200/70 p-1 dark:bg-neutral-800/80">
                 {propertyGroups.map((group) => {
                   const active = propertyGroup === group.value
                   const selectedCount = selectedPropertyTypes.filter((property) =>
@@ -544,6 +525,25 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                     </button>
                   )
                 })}
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                  {isThai ? 'คุณกำลังมองหา' : 'What are you looking for?'}
+                </h2>
+                {hasQuickFilters && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPropertyGroup('residential')
+                      setOfferType('')
+                      setSelectedPropertyTypes([])
+                      setBudget(null)
+                    }}
+                    className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
+                  >
+                    {isThai ? 'ล้างทั้งหมด' : 'Clear all'}
+                  </button>
+                )}
               </div>
               <div className="mt-2 grid grid-cols-4 gap-2 pt-1 pb-1">
                 {visiblePropertyTypes.map((property) => {
