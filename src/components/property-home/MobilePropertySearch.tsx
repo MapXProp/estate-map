@@ -87,8 +87,8 @@ const rentPriceScale = buildPriceScale([
 
 const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term: string; termEn: string }> = [
   { value: '', label: 'ทั้งหมด', labelEn: 'All', term: '', termEn: '' },
-  { value: 'sale', label: 'ซื้อ', labelEn: 'Buy', term: 'ซื้อ', termEn: 'buy' },
   { value: 'rent', label: 'เช่า', labelEn: 'Rent', term: 'เช่า', termEn: 'rent' },
+  { value: 'sale', label: 'ซื้อ', labelEn: 'Buy', term: 'ซื้อ', termEn: 'buy' },
 ]
 
 const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
@@ -602,8 +602,8 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                   </span>
                   <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
                     {isThai
-                      ? 'เลือกทั้งหมด ซื้อ หรือเช่า พร้อมกำหนดช่วงราคา'
-                      : 'Choose all, buy, or rent and set a price range'}
+                      ? 'เลือกทั้งหมด เช่า หรือซื้อ พร้อมกำหนดช่วงราคา'
+                      : 'Choose all, rent, or buy and set a price range'}
                   </span>
                 </span>
                 {offerType || budget ? (
