@@ -18,9 +18,12 @@ import {
 } from 'lucide-react'
 import Slider from 'rc-slider'
 import { useMemo, useState } from 'react'
+import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
+
+type PropertyGroup = 'residential' | 'mixed' | 'commercial'
 
 type BudgetPreset = {
   label: string
@@ -69,9 +72,31 @@ const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term
   { value: 'rent', label: 'เช่า', labelEn: 'Rent', term: 'เช่า', termEn: 'rent' },
 ]
 
+const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
+  { value: 'residential', label: 'อยู่อาศัย', labelEn: 'Residential' },
+  { value: 'mixed', label: 'อยู่ + ธุรกิจ', labelEn: 'Live + business' },
+  { value: 'commercial', label: 'ธุรกิจ / ค้าขาย', labelEn: 'Business' },
+]
+
 const propertyTypes = [
-  { value: 'house', label: 'บ้าน', labelEn: 'House', term: 'บ้าน', termEn: 'house', icon: House },
-  { value: 'condo', label: 'คอนโด', labelEn: 'Condo', term: 'คอนโด', termEn: 'condo', icon: Building2 },
+  {
+    value: 'house',
+    label: 'บ้าน',
+    labelEn: 'House',
+    term: 'บ้าน',
+    termEn: 'house',
+    icon: House,
+    groups: ['residential'],
+  },
+  {
+    value: 'condo',
+    label: 'คอนโด',
+    labelEn: 'Condo',
+    term: 'คอนโด',
+    termEn: 'condo',
+    icon: Building2,
+    groups: ['residential'],
+  },
   {
     value: 'townhouse',
     label: 'ทาวน์โฮม',
@@ -79,8 +104,17 @@ const propertyTypes = [
     term: 'ทาวน์โฮม',
     termEn: 'townhome',
     icon: House,
+    groups: ['residential', 'mixed'],
   },
-  { value: 'dormitory', label: 'หอพัก', labelEn: 'Dorm', term: 'หอพัก', termEn: 'dorm', icon: Building2 },
+  {
+    value: 'dormitory',
+    label: 'หอพัก',
+    labelEn: 'Dorm',
+    term: 'หอพัก',
+    termEn: 'dorm',
+    icon: Building2,
+    groups: ['residential'],
+  },
   {
     value: 'apartment',
     label: 'อพาร์ตเมนต์',
@@ -88,9 +122,26 @@ const propertyTypes = [
     term: 'อพาร์ตเมนต์',
     termEn: 'apartment',
     icon: Building2,
+    groups: ['residential'],
   },
-  { value: 'shophouse', label: 'ตึกแถว', labelEn: 'Shophouse', term: 'ตึกแถว', termEn: 'shophouse', icon: Building2 },
-  { value: 'retail_space', label: 'ร้านค้า', labelEn: 'Shop', term: 'ร้านค้า', termEn: 'shop', icon: Store },
+  {
+    value: 'shophouse',
+    label: 'ตึกแถว',
+    labelEn: 'Shophouse',
+    term: 'ตึกแถว',
+    termEn: 'shophouse',
+    icon: Building2,
+    groups: ['mixed', 'commercial'],
+  },
+  {
+    value: 'retail_space',
+    label: 'ร้านค้า',
+    labelEn: 'Shop',
+    term: 'ร้านค้า',
+    termEn: 'shop',
+    icon: Store,
+    groups: ['mixed', 'commercial'],
+  },
   {
     value: 'market_stall',
     label: 'ล็อกในตลาด',
@@ -98,11 +149,44 @@ const propertyTypes = [
     term: 'ล็อกในตลาด',
     termEn: 'market stall',
     icon: Store,
+    groups: ['commercial'],
   },
-  { value: 'office', label: 'ออฟฟิศ', labelEn: 'Office', term: 'ออฟฟิศ', termEn: 'office', icon: Building2 },
-  { value: 'warehouse', label: 'โกดัง', labelEn: 'Warehouse', term: 'โกดัง', termEn: 'warehouse', icon: Warehouse },
-  { value: 'factory', label: 'โรงงาน', labelEn: 'Factory', term: 'โรงงาน', termEn: 'factory', icon: Factory },
-  { value: 'land', label: 'ที่ดิน', labelEn: 'Land', term: 'ที่ดิน', termEn: 'land', icon: LandPlot },
+  {
+    value: 'office',
+    label: 'ออฟฟิศ',
+    labelEn: 'Office',
+    term: 'ออฟฟิศ',
+    termEn: 'office',
+    icon: Building2,
+    groups: ['mixed', 'commercial'],
+  },
+  {
+    value: 'warehouse',
+    label: 'โกดัง',
+    labelEn: 'Warehouse',
+    term: 'โกดัง',
+    termEn: 'warehouse',
+    icon: Warehouse,
+    groups: ['commercial'],
+  },
+  {
+    value: 'factory',
+    label: 'โรงงาน',
+    labelEn: 'Factory',
+    term: 'โรงงาน',
+    termEn: 'factory',
+    icon: Factory,
+    groups: ['commercial'],
+  },
+  {
+    value: 'land',
+    label: 'ที่ดิน',
+    labelEn: 'Land',
+    term: 'ที่ดิน',
+    termEn: 'land',
+    icon: LandPlot,
+    groups: ['commercial'],
+  },
 ] as const
 
 const budgetConfigs: Record<BudgetOfferType, BudgetConfig> = {
@@ -184,6 +268,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [open, setOpen] = useState(false)
+  const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>('residential')
   const [offerType, setOfferType] = useState<OfferType>('')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<Array<(typeof propertyTypes)[number]>>([])
   const [budget, setBudget] = useState<BudgetPreset | null>(null)
@@ -192,6 +277,10 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, budgetConfigs.sale.max])
 
   const selectedOffer = useMemo(() => offerTypes.find((item) => item.value === offerType) ?? offerTypes[0], [offerType])
+  const visiblePropertyTypes = useMemo(
+    () => propertyTypes.filter((property) => (property.groups as readonly PropertyGroup[]).includes(propertyGroup)),
+    [propertyGroup]
+  )
 
   const togglePropertyType = (property: (typeof propertyTypes)[number]) => {
     setSelectedPropertyTypes((current) =>
@@ -297,35 +386,38 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
 
   return (
     <div className={`relative z-10 w-full ${className}`}>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex min-h-14 w-full items-center gap-3 rounded-full border border-neutral-200 bg-white py-2 ps-3 pe-4 text-start shadow-[0_6px_22px_rgba(15,23,42,0.10)] transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900"
-      >
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200">
-          <Search className="size-4.5" strokeWidth={2} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-neutral-950 dark:text-white">
-            {isThai ? 'ค้นหาทำเลหรืออสังหาที่ต้องการ' : 'Search location or property'}
+      <div className="flex w-full items-center gap-2.5">
+        <MobilePropertyBrandMark />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-full border border-neutral-200 bg-white py-2 ps-3 pe-4 text-start shadow-[0_6px_22px_rgba(15,23,42,0.10)] transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900"
+        >
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200">
+            <Search className="size-4.5" strokeWidth={2} />
           </span>
-          <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
-            {hasQuickFilters
-              ? [
-                  offerType ? (isThai ? selectedOffer.label : selectedOffer.labelEn) : null,
-                  selectedPropertyTypes.length
-                    ? selectedPropertyTypes.map((property) => (isThai ? property.label : property.labelEn)).join(', ')
-                    : null,
-                  budget ? (isThai ? budget.label : budget.labelEn) : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')
-              : isThai
-                ? 'พิมพ์หรือแตะตัวเลือกได้เลย'
-                : 'Type or tap a quick option'}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-neutral-950 dark:text-white">
+              {isThai ? 'ค้นหาทำเลหรืออสังหาที่ต้องการ' : 'Search location or property'}
+            </span>
+            <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
+              {hasQuickFilters
+                ? [
+                    offerType ? (isThai ? selectedOffer.label : selectedOffer.labelEn) : null,
+                    selectedPropertyTypes.length
+                      ? selectedPropertyTypes.map((property) => (isThai ? property.label : property.labelEn)).join(', ')
+                      : null,
+                    budget ? (isThai ? budget.label : budget.labelEn) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')
+                : isThai
+                  ? 'พิมพ์หรือแตะตัวเลือกได้เลย'
+                  : 'Type or tap a quick option'}
+            </span>
           </span>
-        </span>
-      </button>
+        </button>
+      </div>
 
       <Dialog open={open} onClose={setOpen} className="relative z-[100] min-[744px]:hidden">
         <DialogPanel
@@ -361,18 +453,54 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                   <button
                     type="button"
                     onClick={() => {
+                      setPropertyGroup('residential')
                       setOfferType('')
                       setSelectedPropertyTypes([])
                       setBudget(null)
                     }}
                     className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
                   >
-                    {isThai ? 'ล้างตัวเลือก' : 'Clear'}
+                    {isThai ? 'ล้างทั้งหมด' : 'Clear all'}
                   </button>
                 )}
               </div>
-              <div className="-me-4 mt-2 grid snap-x auto-cols-[88px] grid-flow-col grid-rows-2 gap-2 overflow-x-auto ps-2 pe-4 pt-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {propertyTypes.map((property) => {
+              <div className="mt-3 grid grid-cols-3 gap-1 rounded-2xl bg-neutral-200/70 p-1 dark:bg-neutral-800/80">
+                {propertyGroups.map((group) => {
+                  const active = propertyGroup === group.value
+                  const selectedCount = selectedPropertyTypes.filter((property) =>
+                    (property.groups as readonly PropertyGroup[]).includes(group.value)
+                  ).length
+
+                  return (
+                    <button
+                      key={group.value}
+                      type="button"
+                      onClick={() => setPropertyGroup(group.value)}
+                      aria-pressed={active}
+                      className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1.5 text-[11px] leading-tight font-semibold transition ${
+                        active
+                          ? 'bg-white text-[#123f32] shadow-sm ring-1 ring-black/[0.04] dark:bg-neutral-700 dark:text-emerald-100 dark:ring-white/5'
+                          : 'text-neutral-500 active:bg-white/60 dark:text-neutral-400 dark:active:bg-neutral-700/70'
+                      }`}
+                    >
+                      <span>{isThai ? group.label : group.labelEn}</span>
+                      {selectedCount > 0 && (
+                        <span
+                          className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${
+                            active
+                              ? 'bg-[#176b50] text-white'
+                              : 'bg-neutral-300 text-neutral-700 dark:bg-neutral-600 dark:text-white'
+                          }`}
+                        >
+                          {selectedCount}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="mt-2 grid grid-cols-4 gap-2 pt-1 pb-1">
+                {visiblePropertyTypes.map((property) => {
                   const Icon = property.icon
                   const active = selectedPropertyTypes.some((item) => item.value === property.value)
                   return (
@@ -381,7 +509,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                       type="button"
                       onClick={() => togglePropertyType(property)}
                       aria-pressed={active}
-                      className={`relative flex min-h-[78px] snap-start flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-2 text-[11px] leading-tight font-semibold transition ${
+                      className={`relative flex min-h-[78px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2 text-[11px] leading-tight font-semibold transition ${
                         active
                           ? 'border-[#176b50] bg-[#e7f2ed] text-[#123f32] ring-1 ring-[#176b50] ring-inset dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400'
                           : 'border-neutral-200 bg-white text-neutral-600 active:border-[#8ab6a7] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
