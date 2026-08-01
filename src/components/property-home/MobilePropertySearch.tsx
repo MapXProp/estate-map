@@ -94,7 +94,7 @@ const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term
 const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
   { value: 'residential', label: 'อยู่อาศัย', labelEn: 'Residential' },
   { value: 'mixed', label: 'อยู่ + ธุรกิจ', labelEn: 'Live + business' },
-  { value: 'commercial', label: 'ธุรกิจ / ค้าขาย', labelEn: 'Business' },
+  { value: 'commercial', label: 'ธุรกิจ', labelEn: 'Business' },
 ]
 
 const propertyTypes = [
@@ -491,7 +491,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-28">
             <section>
-              <div className="grid grid-cols-3 gap-1 rounded-2xl bg-neutral-200/70 p-1 dark:bg-neutral-800/80">
+              <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[#d4e5de] bg-[#eaf3ef] p-1 dark:border-emerald-900 dark:bg-emerald-950/60">
                 {propertyGroups.map((group) => {
                   const active = propertyGroup === group.value
                   const selectedCount = selectedPropertyTypes.filter((property) =>
@@ -506,8 +506,8 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                       aria-pressed={active}
                       className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1.5 text-[11px] leading-tight font-semibold transition ${
                         active
-                          ? 'bg-white text-[#123f32] shadow-sm ring-1 ring-black/[0.04] dark:bg-neutral-700 dark:text-emerald-100 dark:ring-white/5'
-                          : 'text-neutral-500 active:bg-white/60 dark:text-neutral-400 dark:active:bg-neutral-700/70'
+                          ? 'bg-[#176b50] text-white shadow-[0_3px_10px_rgba(23,107,80,0.20)] ring-1 ring-[#176b50] dark:bg-emerald-300 dark:text-emerald-950 dark:ring-emerald-300'
+                          : 'text-[#426458] active:bg-white/70 dark:text-emerald-200/70 dark:active:bg-emerald-900/70'
                       }`}
                     >
                       <span>{isThai ? group.label : group.labelEn}</span>
@@ -515,8 +515,8 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                         <span
                           className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${
                             active
-                              ? 'bg-[#176b50] text-white'
-                              : 'bg-neutral-300 text-neutral-700 dark:bg-neutral-600 dark:text-white'
+                              ? 'bg-white/20 text-white ring-1 ring-white/30 dark:bg-emerald-950/15 dark:text-emerald-950 dark:ring-emerald-950/20'
+                              : 'bg-[#cfe1d9] text-[#176b50] dark:bg-emerald-900 dark:text-emerald-200'
                           }`}
                         >
                           {selectedCount}
