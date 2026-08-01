@@ -1,7 +1,7 @@
 'use client'
 
-import { getCurrencies, getLanguages } from '@/data/navigation'
 import { AppCurrency, AppLocale, usePreferences } from '@/components/preferences/PreferencesProvider'
+import { getCurrencies, getLanguages } from '@/data/navigation'
 import { CloseButton, Popover, PopoverButton, PopoverPanel, PopoverPanelProps } from '@headlessui/react'
 import { BanknotesIcon, CheckIcon, ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
@@ -79,13 +79,13 @@ const CurrLangDropdown: FC<Props> = ({
             ? `ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`
             : `Language ${languageCode}, currency ${selectedCurrency}`
         }
-        className="flex h-10 items-center rounded-full border border-neutral-200 bg-white p-1.5 text-neutral-700 shadow-sm transition duration-200 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-[#125640] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30 group-data-open:border-emerald-300 group-data-open:bg-emerald-50 group-data-open:text-[#125640] min-[1200px]:h-11 min-[1200px]:px-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
+        className="flex h-10 items-center rounded-full border border-neutral-200 bg-white p-1.5 text-neutral-700 shadow-sm transition duration-200 group-data-open:border-emerald-300 group-data-open:bg-emerald-50 group-data-open:text-[#125640] hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-[#125640] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30 min-[1200px]:h-11 min-[1200px]:px-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#eaf5f0] text-[#176b50] min-[1200px]:size-8 dark:bg-emerald-900/50 dark:text-emerald-300">
           <GlobeAltIcon className="size-4.5" />
         </span>
 
-        <span className="hidden items-center min-[900px]:flex">
+        <span className="hidden items-center min-[768px]:flex">
           <span className="px-1.5 text-[11px] font-semibold tracking-wide min-[1200px]:px-2 min-[1200px]:text-xs">
             {languageCode}
           </span>
@@ -106,7 +106,7 @@ const CurrLangDropdown: FC<Props> = ({
         anchor={panelAnchor}
         transition
         className={clsx(
-          'z-50 w-[calc(100vw-1rem)] max-w-[27rem] rounded-[24px] border border-neutral-200/80 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.32)] transition duration-200 ease-out data-closed:translate-y-2 data-closed:scale-[0.98] data-closed:opacity-0 min-[480px]:w-[27rem] min-[480px]:rounded-[28px] min-[480px]:p-5 min-[1280px]:w-[34rem] min-[1280px]:max-w-[34rem] min-[1280px]:p-6 dark:border-neutral-700 dark:bg-neutral-900',
+          'z-50 w-[calc(100vw-1rem)] max-w-[27rem] rounded-[24px] border border-neutral-200/80 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.32)] transition duration-200 ease-out min-[480px]:w-[27rem] min-[480px]:rounded-[28px] min-[480px]:p-5 min-[1280px]:w-[34rem] min-[1280px]:max-w-[34rem] min-[1280px]:p-6 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-2 data-closed:scale-[0.98] data-closed:opacity-0',
           panelClassName
         )}
       >
@@ -153,7 +153,7 @@ const CurrLangDropdown: FC<Props> = ({
                     aria-pressed={isSelected}
                     onClick={() => selectLanguage(language)}
                     className={clsx(
-                      'relative flex min-h-17 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition min-[400px]:min-h-18 min-[400px]:gap-3 min-[400px]:p-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30',
+                      'relative flex min-h-17 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30 min-[400px]:min-h-18 min-[400px]:gap-3 min-[400px]:p-3',
                       isSelected
                         ? 'border-[#176b50] bg-[#f0f8f4] text-[#124e3c] shadow-sm dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-200'
                         : 'border-neutral-200 bg-white text-neutral-700 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30'
@@ -213,7 +213,7 @@ const CurrLangDropdown: FC<Props> = ({
                     aria-pressed={isSelected}
                     onClick={() => selectCurrency(currency)}
                     className={clsx(
-                      'relative flex min-h-16 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition min-[400px]:gap-3 min-[400px]:p-3 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/30',
+                      'relative flex min-h-16 items-center gap-2.5 rounded-2xl border p-2.5 text-left transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/30 min-[400px]:gap-3 min-[400px]:p-3',
                       isSelected
                         ? 'border-orange-400 bg-orange-50 text-orange-950 shadow-sm dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-100'
                         : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 hover:bg-orange-50/60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-orange-800 dark:hover:bg-orange-950/20'
@@ -249,9 +249,7 @@ const CurrLangDropdown: FC<Props> = ({
 
         <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
           <p className="font-sarabun text-[11px] leading-4 text-neutral-500 dark:text-neutral-400">
-            {locale === 'th'
-              ? 'ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้'
-              : 'Your choices are saved on this device'}
+            {locale === 'th' ? 'ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้' : 'Your choices are saved on this device'}
           </p>
           <CloseButton
             as="button"

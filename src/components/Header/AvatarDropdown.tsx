@@ -20,9 +20,17 @@ import { useRouter } from 'next/navigation'
 
 interface Props {
   className?: string
+  avatarClassName?: string
+  buttonClassName?: string
+  showGuestIcon?: boolean
 }
 
-export default function AvatarDropdown({ className }: Props) {
+export default function AvatarDropdown({
+  avatarClassName = 'size-8',
+  buttonClassName,
+  className,
+  showGuestIcon = false,
+}: Props) {
   const router = useRouter()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const displayName = [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || 'Guest'
@@ -36,8 +44,21 @@ export default function AvatarDropdown({ className }: Props) {
   return (
     <div className={className}>
       <Popover>
-        <PopoverButton className="-m-1.5 flex cursor-pointer items-center justify-center rounded-full p-1.5 hover:bg-neutral-100 focus-visible:outline-hidden dark:hover:bg-neutral-800">
-          <Avatar src={avatarImage.src} className="size-8" />
+        <PopoverButton
+          className={
+            buttonClassName ??
+            '-m-1.5 flex cursor-pointer items-center justify-center rounded-full p-1.5 hover:bg-neutral-100 focus-visible:outline-hidden dark:hover:bg-neutral-800'
+          }
+        >
+          {showGuestIcon && !isAuthenticated ? (
+            <span
+              className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
+            >
+              <HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.7} />
+            </span>
+          ) : (
+            <Avatar src={avatarImage.src} className={avatarClassName} />
+          )}
         </PopoverButton>
 
         <PopoverPanel
@@ -46,7 +67,7 @@ export default function AvatarDropdown({ className }: Props) {
             to: 'bottom end',
             gap: 16,
           }}
-          className="z-40 w-80 rounded-3xl shadow-lg ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0"
+          className="z-40 w-[calc(100vw-1rem)] max-w-80 rounded-3xl shadow-lg ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0"
         >
           <div className="relative grid grid-cols-1 gap-6 bg-white px-6 py-7 dark:bg-neutral-800">
             <div className="flex items-center space-x-3">
@@ -88,40 +109,40 @@ export default function AvatarDropdown({ className }: Props) {
 
             {isAuthenticated && (
               <>
-            {/* ------------------ 1 --------------------- */}
-            <Link
-              href={'/account'}
-              className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
-            >
-              <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                <HugeiconsIcon icon={UserIcon} size={24} strokeWidth={1.5} />
-              </div>
-              <p className="ms-4 text-sm font-medium">{'My Account'}</p>
-            </Link>
+                {/* ------------------ 1 --------------------- */}
+                <Link
+                  href={'/account'}
+                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+                >
+                  <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                    <HugeiconsIcon icon={UserIcon} size={24} strokeWidth={1.5} />
+                  </div>
+                  <p className="ms-4 text-sm font-medium">{'My Account'}</p>
+                </Link>
 
-            {/* ------------------ 2 --------------------- */}
-            <Link
-              href={'/add-listing/1'}
-              className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
-            >
-              <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                <HugeiconsIcon icon={Task01Icon} size={24} strokeWidth={1.5} />
-              </div>
-              <p className="ms-4 text-sm font-medium">My Listings</p>
-            </Link>
+                {/* ------------------ 2 --------------------- */}
+                <Link
+                  href={'/add-listing/1'}
+                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+                >
+                  <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                    <HugeiconsIcon icon={Task01Icon} size={24} strokeWidth={1.5} />
+                  </div>
+                  <p className="ms-4 text-sm font-medium">My Listings</p>
+                </Link>
 
-            {/* ------------------ 2 --------------------- */}
-            <Link
-              href={'/account-savelists'}
-              className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
-            >
-              <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                <HugeiconsIcon icon={FavouriteIcon} size={24} strokeWidth={1.5} />
-              </div>
-              <p className="ms-4 text-sm font-medium">Wishlist</p>
-            </Link>
+                {/* ------------------ 2 --------------------- */}
+                <Link
+                  href={'/account-savelists'}
+                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
+                >
+                  <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
+                    <HugeiconsIcon icon={FavouriteIcon} size={24} strokeWidth={1.5} />
+                  </div>
+                  <p className="ms-4 text-sm font-medium">Wishlist</p>
+                </Link>
 
-            <Divider />
+                <Divider />
               </>
             )}
 
