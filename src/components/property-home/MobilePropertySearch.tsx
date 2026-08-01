@@ -4,26 +4,45 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Banknote,
+  BedDouble,
+  Building,
   Building2,
   Check,
   ChevronRight,
   Factory,
+  Hotel,
   House,
   LandPlot,
   MapPin,
   Search,
   Store,
+  Tent,
   Warehouse,
   X,
 } from 'lucide-react'
 import Slider from 'rc-slider'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type SVGProps } from 'react'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
 
 type PropertyGroup = 'residential' | 'mixed' | 'commercial'
+
+const RowHouseIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M2.5 20.5h19" />
+    <path d="M3.5 20.5v-13L6 5l2.5 2.5v13M8.5 20.5v-13L11 5l2.5 2.5v13M13.5 20.5v-13L16 5l2.5 2.5v13M18.5 20.5V8.5h2v12" />
+    <path d="M5 11h2M10 11h2M15 11h2M5.25 20.5v-5h1.5v5M10.25 20.5v-5h1.5v5M15.25 20.5v-5h1.5v5" />
+  </svg>
+)
+
+const MallKioskIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M4 20.5v-16h16v16M2.5 20.5h19M7 8h10" />
+    <path d="m7 8 1 3 2-3 2 3 2-3 2 3 1-3M8 11v6.5h8V11M8 15h8" />
+  </svg>
+)
 
 type BudgetPreset = {
   label: string
@@ -103,7 +122,7 @@ const propertyTypes = [
     labelEn: 'Townhome',
     term: 'ทาวน์โฮม',
     termEn: 'townhome',
-    icon: House,
+    icon: Building,
     groups: ['residential', 'mixed'],
   },
   {
@@ -112,7 +131,7 @@ const propertyTypes = [
     labelEn: 'Dorm',
     term: 'หอพัก',
     termEn: 'dorm',
-    icon: Building2,
+    icon: BedDouble,
     groups: ['residential'],
   },
   {
@@ -121,7 +140,7 @@ const propertyTypes = [
     labelEn: 'Apartment',
     term: 'อพาร์ตเมนต์',
     termEn: 'apartment',
-    icon: Building2,
+    icon: Hotel,
     groups: ['residential'],
   },
   {
@@ -130,25 +149,52 @@ const propertyTypes = [
     labelEn: 'Shophouse',
     term: 'ตึกแถว',
     termEn: 'shophouse',
-    icon: Building2,
-    groups: ['mixed', 'commercial'],
+    icon: RowHouseIcon,
+    groups: ['mixed'],
   },
   {
     value: 'retail_space',
-    label: 'ร้านค้า',
-    labelEn: 'Shop',
-    term: 'ร้านค้า',
-    termEn: 'shop',
+    label: 'พื้นที่ค้าขาย',
+    labelEn: 'Retail space',
+    term: 'พื้นที่ค้าขาย',
+    termEn: 'retail space',
     icon: Store,
-    groups: ['mixed', 'commercial'],
+    groups: ['mixed'],
+  },
+  {
+    value: 'rowhouse_shop',
+    label: 'ร้านค้าในตึกแถว',
+    labelEn: 'Shophouse shop',
+    term: 'ร้านค้าในตึกแถว',
+    termEn: 'shop in shophouse',
+    icon: RowHouseIcon,
+    groups: ['commercial'],
+  },
+  {
+    value: 'standalone_shop',
+    label: 'ร้านค้า Standalone',
+    labelEn: 'Standalone shop',
+    term: 'ร้านค้า standalone',
+    termEn: 'standalone shop',
+    icon: Store,
+    groups: ['commercial'],
   },
   {
     value: 'market_stall',
-    label: 'ล็อกในตลาด',
+    label: 'ล็อคในตลาด',
     labelEn: 'Market stall',
     term: 'ล็อกในตลาด',
     termEn: 'market stall',
-    icon: Store,
+    icon: Tent,
+    groups: ['commercial'],
+  },
+  {
+    value: 'mall_kiosk',
+    label: 'ล็อคในห้าง',
+    labelEn: 'Mall kiosk',
+    term: 'ล็อกในห้าง',
+    termEn: 'mall kiosk',
+    icon: MallKioskIcon,
     groups: ['commercial'],
   },
   {
@@ -523,7 +569,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                       <span
                         className={`grid size-8 place-items-center rounded-full ${active ? 'bg-white/80 dark:bg-emerald-900' : 'bg-neutral-100 dark:bg-neutral-800'}`}
                       >
-                        <Icon className="size-4" strokeWidth={1.8} />
+                        <Icon className="size-[18px]" strokeWidth={1.8} />
                       </span>
                       <span className="line-clamp-2">{isThai ? property.label : property.labelEn}</span>
                     </button>
