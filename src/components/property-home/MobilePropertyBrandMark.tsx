@@ -25,7 +25,7 @@ const mobileSites = [
     href: '/rent',
     titleTh: 'เช่าที่อยู่อาศัย',
     titleEn: 'Rent a home',
-    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ และหอพัก',
+    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ ตึกแถว และหอพัก',
     descriptionEn: 'Rental homes, condos and monthly stays',
     icon: KeyRound,
     iconTone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
