@@ -101,11 +101,11 @@ const MobilePropertyBrandMark = () => {
                 <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${site.iconTone}`}>
                   <Icon className="size-[18px]" strokeWidth={1.9} />
                 </span>
-                <span className="min-w-0 flex-1">
+                <span className="w-0 min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
                     {locale === 'th' ? site.titleTh : site.titleEn}
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
+                  <span className="mt-0.5 block max-w-full break-words whitespace-normal text-xs leading-4 text-neutral-500 [overflow-wrap:anywhere] [word-break:break-word] dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}
                   </span>
                 </span>
