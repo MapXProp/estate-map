@@ -14,7 +14,7 @@ const sites = [
     labelEn: 'Buy',
     titleTh: 'ซื้อที่อยู่อาศัย',
     titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดินเพื่ออยู่อาศัย',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว ที่ดิน ฯลฯ',
     descriptionEn: 'Homes, condos, townhouses and residential land',
     icon: House,
     tone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950/60 dark:text-emerald-200',
@@ -29,7 +29,7 @@ const sites = [
     labelEn: 'Rent',
     titleTh: 'เช่าที่อยู่อาศัย',
     titleEn: 'Rent a home',
-    descriptionTh: 'บ้านเช่า คอนโด อพาร์ตเมนต์ และที่พักรายเดือน',
+    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ หอพัก ฯลฯ',
     descriptionEn: 'Rental homes, condos, apartments and monthly stays',
     icon: KeyRound,
     tone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950/60 dark:text-emerald-200',
@@ -42,9 +42,9 @@ const sites = [
     href: '/business',
     labelTh: 'ธุรกิจ',
     labelEn: 'Business',
-    titleTh: 'พื้นที่ทำธุรกิจ',
+    titleTh: 'หาพื้นที่ค้าขาย',
     titleEn: 'Business spaces',
-    descriptionTh: 'ร้านค้า ล็อกตลาด ออฟฟิศ โกดัง และพื้นที่ออกบูธ',
+    descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ โกดัง ฯลฯ',
     descriptionEn: 'Shops, market stalls, offices, warehouses and event spaces',
     icon: Store,
     tone: 'bg-[#ffe8df] text-[#f04b2f] dark:bg-orange-950/50 dark:text-orange-200',
@@ -86,12 +86,12 @@ const PropertySiteSwitcher = () => {
       >
         <div className="px-3 pt-2 pb-2">
           <p className="text-sm font-semibold text-neutral-950 dark:text-white">
-            {locale === 'th' ? 'คุณต้องการหาอะไร' : 'What are you looking for?'}
+            {locale === 'th' ? 'ท่านกำลังมองหา?' : 'What are you looking for?'}
           </p>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="font-sarabun mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             {locale === 'th'
-              ? 'เลือกส่วนของ MapxProp ให้ตรงกับเป้าหมาย'
-              : 'Choose the MapxProp section that fits your goal'}
+              ? 'เลือกสิ่งที่ต้องการค้นหาตามหมวด'
+              : 'Choose what you want to find by category'}
           </p>
         </div>
 
@@ -114,7 +114,7 @@ const PropertySiteSwitcher = () => {
                   <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
                     {locale === 'th' ? site.titleTh : site.titleEn}
                   </span>
-                  <span className="mt-0.5 block text-xs/5 text-neutral-500 dark:text-neutral-400">
+                  <span className="font-sarabun mt-0.5 block text-xs/5 text-neutral-500 dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}
                   </span>
                 </span>

@@ -12,7 +12,7 @@ const mobileSites = [
     href: '/buy',
     titleTh: 'ซื้อที่อยู่อาศัย',
     titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับสร้างบ้าน',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว ที่ดิน ฯลฯ',
     descriptionEn: 'Homes, condos and residential land',
     icon: House,
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
@@ -25,7 +25,7 @@ const mobileSites = [
     href: '/rent',
     titleTh: 'เช่าที่อยู่อาศัย',
     titleEn: 'Rent a home',
-    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ และที่พักระยะยาว',
+    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ หอพัก ฯลฯ',
     descriptionEn: 'Rental homes, condos and monthly stays',
     icon: KeyRound,
     iconTone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
@@ -38,7 +38,7 @@ const mobileSites = [
     href: '/business',
     titleTh: 'หาพื้นที่ค้าขาย',
     titleEn: 'Business spaces',
-    descriptionTh: 'ร้านค้า ล็อคในตลาด ออฟฟิศ โกดัง โรงงาน และพื้นที่ค้าขาย',
+    descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ โกดัง ฯลฯ',
     descriptionEn: 'Shops, stalls, offices, warehouses and event spaces',
     icon: Store,
     iconTone: 'bg-[#ffe8df] text-[#f04b2f] dark:bg-orange-950 dark:text-orange-200',
@@ -78,8 +78,8 @@ const MobilePropertyBrandMark = () => {
           <p className="text-sm font-semibold text-neutral-950 dark:text-white">
             {locale === 'th' ? 'ท่านกำลังมองหา?' : 'What are you looking for?'}
           </p>
-          <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
-            {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหา' : 'Choose what you want to find'}
+          <p className="font-sarabun mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+            {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหาตามหมวด' : 'Choose what you want to find by category'}
           </p>
         </div>
 
@@ -105,7 +105,7 @@ const MobilePropertyBrandMark = () => {
                   <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
                     {locale === 'th' ? site.titleTh : site.titleEn}
                   </span>
-                  <span className="mt-0.5 block max-w-full break-words whitespace-normal text-xs leading-4 text-neutral-500 [overflow-wrap:anywhere] [word-break:break-word] dark:text-neutral-400">
+                  <span className="font-sarabun mt-0.5 block max-w-full break-words whitespace-normal text-xs leading-4 text-neutral-500 [overflow-wrap:anywhere] [word-break:break-word] dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}
                   </span>
                 </span>
