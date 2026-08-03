@@ -10,9 +10,9 @@ const mobileSites = [
   {
     id: 'buy',
     href: '/buy',
-    titleTh: 'ซื้อบ้านและที่อยู่อาศัย',
+    titleTh: 'ซื้อที่อยู่อาศัย',
     titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับสร้างบ้าน',
     descriptionEn: 'Homes, condos and residential land',
     icon: House,
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
@@ -23,9 +23,9 @@ const mobileSites = [
   {
     id: 'rent',
     href: '/rent',
-    titleTh: 'เช่าบ้านและที่พัก',
+    titleTh: 'เช่าที่อยู่อาศัย',
     titleEn: 'Rent a home',
-    descriptionTh: 'บ้านเช่า คอนโด อพาร์ตเมนต์ และที่พักรายเดือน',
+    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ และที่พักระยะยาว',
     descriptionEn: 'Rental homes, condos and monthly stays',
     icon: KeyRound,
     iconTone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
@@ -36,9 +36,9 @@ const mobileSites = [
   {
     id: 'business',
     href: '/business',
-    titleTh: 'หาพื้นที่ทำธุรกิจ',
+    titleTh: 'หาพื้นที่ค้าขาย',
     titleEn: 'Business spaces',
-    descriptionTh: 'ร้านค้า ล็อกตลาด ออฟฟิศ โกดัง และพื้นที่ออกบูธ',
+    descriptionTh: 'ร้านค้า ล็อคในตลาด ออฟฟิศ โกดัง โรงงาน และพื้นที่ค้าขาย',
     descriptionEn: 'Shops, stalls, offices, warehouses and event spaces',
     icon: Store,
     iconTone: 'bg-[#ffe8df] text-[#f04b2f] dark:bg-orange-950 dark:text-orange-200',
@@ -74,8 +74,11 @@ const MobilePropertyBrandMark = () => {
           className="pointer-events-none absolute -top-[5px] left-[20px] z-20 size-[10px] rotate-45 border-t border-l border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
         />
 
-        <div className="relative px-3 pt-2 pb-1.5">
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+        <div className="relative px-3 pt-2 pb-2">
+          <p className="text-sm font-semibold text-neutral-950 dark:text-white">
+            {locale === 'th' ? 'ท่านกำลังมองหา?' : 'What are you looking for?'}
+          </p>
+          <p className="mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
             {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหา' : 'Choose what you want to find'}
           </p>
         </div>
