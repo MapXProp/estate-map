@@ -2,7 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
-import avatarImage from '@/images/avatars/Image-1.png'
+import avatarImage from '@/images/avatars/Image-1-small.webp'
 import Avatar from '@/shared/Avatar'
 import { Divider } from '@/shared/divider'
 import { Link } from '@/shared/link'

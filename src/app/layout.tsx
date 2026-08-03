@@ -1,9 +1,9 @@
-import { ThemeProvider } from '@/components/theme-provider'
+import DeferredGoogleAnalytics from '@/components/analytics/DeferredGoogleAnalytics'
 import { PreferencesProvider } from '@/components/preferences/PreferencesProvider'
+import { ThemeProvider } from '@/components/theme-provider'
 import { DirectionProvider } from '@/components/ui/direction'
 import { cn } from '@/lib/utils'
 import '@/styles/tailwind.css'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import { Metadata } from 'next'
 import { Inter, Noto_Sans_Thai, Sarabun } from 'next/font/google'
 import 'rc-slider/assets/index.css'
@@ -34,8 +34,33 @@ export const metadata: Metadata = {
     template: '%s - MapxProp',
     default: 'MapxProp - Online property listing',
   },
-  description: 'ศูนย์รวมพื้นที่และประกาศอสังหาริมทรัพย์ พื้นที่เช่า ที่ดิน ตลาด ตึกแถว คอนโด อพาทเม้นท์ บ้าน - Online property listing with innovation | Area, Land, House, Rowhouse, Condo, Apartment - MapxProp',
-  keywords: ['MapxProp','หาที่ดิน','หาบ้าน','หาที่เช่าอยู่','หาพื้นที่เช่า','หาล็อคในตลาด','หาคอนโด','หาอพาทเม้นท์','หาตึกแถว','หาออฟฟิส','หาที่ทำธุรกิจ','Property finding','Property listing','Find property','Area','Land','House','Rowhouse','Condo','Apartment','Residence','Street market','Business area'],
+  description:
+    'ศูนย์รวมพื้นที่และประกาศอสังหาริมทรัพย์ พื้นที่เช่า ที่ดิน ตลาด ตึกแถว คอนโด อพาทเม้นท์ บ้าน - Online property listing with innovation | Area, Land, House, Rowhouse, Condo, Apartment - MapxProp',
+  keywords: [
+    'MapxProp',
+    'หาที่ดิน',
+    'หาบ้าน',
+    'หาที่เช่าอยู่',
+    'หาพื้นที่เช่า',
+    'หาล็อคในตลาด',
+    'หาคอนโด',
+    'หาอพาทเม้นท์',
+    'หาตึกแถว',
+    'หาออฟฟิส',
+    'หาที่ทำธุรกิจ',
+    'Property finding',
+    'Property listing',
+    'Find property',
+    'Area',
+    'Land',
+    'House',
+    'Rowhouse',
+    'Condo',
+    'Apartment',
+    'Residence',
+    'Street market',
+    'Business area',
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -63,7 +88,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </PreferencesProvider>
         </ThemeProvider>
       </body>
-      {process.env.NODE_ENV === 'production' && googleAnalyticsId ? <GoogleAnalytics gaId={googleAnalyticsId} /> : null}
+      {process.env.NODE_ENV === 'production' && googleAnalyticsId ? (
+        <DeferredGoogleAnalytics gaId={googleAnalyticsId} />
+      ) : null}
     </html>
   )
 }

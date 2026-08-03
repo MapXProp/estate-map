@@ -18,7 +18,7 @@ import {
   Utensils,
   Warehouse,
 } from 'lucide-react'
-import Image from 'next/image'
+import Image, { getImageProps } from 'next/image'
 import Link from 'next/link'
 
 const propertyGroups = [
@@ -255,6 +255,15 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
   const isThai = locale === 'th'
   const content = heroContent[mode]
   const theme = siteThemes[mode]
+  const {
+    props: { srcSet: desktopHeroSrcSet },
+  } = getImageProps({
+    alt: '',
+    fill: true,
+    quality: 78,
+    sizes: '(max-width: 1024px) 50vw, 620px',
+    src: heroImage,
+  })
 
   return (
     <main className="overflow-hidden bg-white dark:bg-neutral-900">
@@ -286,14 +295,16 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
             </div>
 
             <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
-              <Image
-                fill
-                priority
-                src={heroImage}
-                alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
-              />
+              <picture>
+                <source media="(min-width: 744px)" srcSet={desktopHeroSrcSet} sizes="(max-width: 1024px) 50vw, 620px" />
+                {/* The transparent fallback prevents phones from downloading this desktop-only image. */}
+                <img
+                  src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+                  alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
+                  fetchPriority="high"
+                  className="absolute inset-0 size-full object-cover object-center"
+                />
+              </picture>
               <div className={`absolute inset-0 bg-gradient-to-r via-transparent to-transparent ${theme.gradient}`} />
             </div>
           </div>

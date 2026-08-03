@@ -4,7 +4,7 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type ListingGroup = 'residential' | 'mixed_use' | 'commercial' | 'land'
 
@@ -21,6 +21,44 @@ type PrototypeListing = {
   image: string
   badge?: string
   verified?: boolean
+}
+
+const DeferredListingImage = ({ alt, eager, src }: { alt: string; eager: boolean; src: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [shouldLoad, setShouldLoad] = useState(eager)
+
+  useEffect(() => {
+    if (shouldLoad || !containerRef.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return
+        setShouldLoad(true)
+        observer.disconnect()
+      },
+      { rootMargin: '240px' }
+    )
+
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [shouldLoad])
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      {shouldLoad ? (
+        <Image
+          fill
+          src={src}
+          alt={alt}
+          sizes="(max-width: 402px) 82vw, (max-width: 640px) 330px, (max-width: 1280px) 50vw, 25vw"
+          loading={eager ? 'eager' : 'lazy'}
+          fetchPriority={eager ? 'high' : 'low'}
+          preload={eager}
+          className="object-cover transition duration-500 group-hover:scale-[1.035]"
+        />
+      ) : null}
+    </div>
+  )
 }
 
 const filters: { value: 'all' | ListingGroup; label: string; labelEn: string }[] = [
@@ -268,7 +306,7 @@ const PropertyListingShowcase = () => {
         </div>
 
         <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-          {visibleListings.map((listing) => {
+          {visibleListings.map((listing, index) => {
             const liked = likedIds.includes(listing.id)
             const displayListing = isThai ? listing : { ...listing, ...englishListings[listing.id] }
             const price = Number(listing.price.replace(/,/g, ''))
@@ -278,13 +316,7 @@ const PropertyListingShowcase = () => {
                 className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
-                  <Image
-                    fill
-                    src={listing.image}
-                    alt={displayListing.title}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                    className="object-cover transition duration-500 group-hover:scale-[1.035]"
-                  />
+                  <DeferredListingImage src={listing.image} alt={displayListing.title} eager={index === 0} />
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
                     <div className="flex flex-wrap gap-1.5">
                       <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">

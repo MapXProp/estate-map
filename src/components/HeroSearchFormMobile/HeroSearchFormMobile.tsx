@@ -18,15 +18,19 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, IconSvgElement } from '@hugeicons/react'
 import clsx from 'clsx'
+import dynamic from 'next/dynamic'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useTimeoutFn } from 'react-use'
 import MobilePropertySearch from '../property-home/MobilePropertySearch'
-import CarSearchFormMobile from './car-search-form/CarSearchFormMobile'
-import ExperienceSearchFormMobile from './experience-search-form/ExperienceSearchFormMobile'
-import FlightSearchFormMobile from './flight-search-form/FlightSearchFormMobile'
-import RealestateSearchFormMobile from './real-estate-search-form/RealestateSearchFormMobile'
-import StaySearchFormMobile from './stay-search-form/StaySearchFormMobile'
+
+// The property homepage is the primary route. Keep its search available immediately,
+// while loading the legacy travel forms only when a visitor actually opens those routes.
+const CarSearchFormMobile = dynamic(() => import('./car-search-form/CarSearchFormMobile'))
+const ExperienceSearchFormMobile = dynamic(() => import('./experience-search-form/ExperienceSearchFormMobile'))
+const FlightSearchFormMobile = dynamic(() => import('./flight-search-form/FlightSearchFormMobile'))
+const RealestateSearchFormMobile = dynamic(() => import('./real-estate-search-form/RealestateSearchFormMobile'))
+const StaySearchFormMobile = dynamic(() => import('./stay-search-form/StaySearchFormMobile'))
 
 const formTabs: { name: ListingType; icon: IconSvgElement; formComponent: React.ComponentType<{}> }[] = [
   { name: 'Stays', icon: House03Icon, formComponent: StaySearchFormMobile },
