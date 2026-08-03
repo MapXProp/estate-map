@@ -78,7 +78,7 @@ const MobilePropertyBrandMark = () => {
 
       <PopoverPanel
         transition
-        anchor={{ to: 'bottom start', gap: 7 }}
+        anchor={{ to: 'bottom', gap: 7, padding: 8 }}
         className="z-[80] w-[calc(100vw-1rem)] max-w-sm origin-top-left rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1.5 data-closed:scale-[0.98] data-closed:opacity-0"
       >
         <div className="relative px-3 pt-2 pb-1.5">
