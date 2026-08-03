@@ -64,23 +64,23 @@ const MobilePropertyBrandMark = () => {
         <span className={`absolute end-1.5 top-1.5 size-1.5 rounded-full ring-1 ring-white/80 ${activeSite.dotTone}`} />
       </PopoverButton>
 
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 14 8"
+        className="pointer-events-none absolute top-full left-1/2 z-30 hidden h-2 w-3.5 -translate-x-1/2 group-data-open:block"
+      >
+        <path
+          d="M1 8 7 1 13 8"
+          className="fill-white stroke-neutral-300 stroke-1 dark:fill-neutral-900 dark:stroke-neutral-600"
+          strokeLinejoin="round"
+        />
+      </svg>
+
       <PopoverPanel
         transition
         anchor={{ to: 'bottom start', gap: 7 }}
-        className="z-[80] w-[calc(100vw-1rem)] max-w-sm origin-top-left overflow-visible! rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1.5 data-closed:scale-[0.98] data-closed:opacity-0"
+        className="z-[80] w-[calc(100vw-1rem)] max-w-sm origin-top-left rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1.5 data-closed:scale-[0.98] data-closed:opacity-0"
       >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 14 8"
-          className="pointer-events-none absolute -top-[7px] left-[25px] z-20 h-2 w-3.5 overflow-visible"
-        >
-          <path
-            d="M1 8 7 1 13 8"
-            className="fill-white stroke-neutral-300 stroke-1 dark:fill-neutral-900 dark:stroke-neutral-600"
-            strokeLinejoin="round"
-          />
-        </svg>
-
         <div className="relative px-3 pt-2 pb-1.5">
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
             {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหา' : 'Choose what you want to find'}
