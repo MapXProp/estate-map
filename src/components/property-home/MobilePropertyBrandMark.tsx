@@ -69,16 +69,10 @@ const MobilePropertyBrandMark = () => {
         anchor={{ to: 'bottom', gap: 7, padding: 8 }}
         className="z-[80] w-[calc(100vw-1rem)] max-w-none! origin-top-left overflow-visible! rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1.5 data-closed:scale-[0.98] data-closed:opacity-0"
       >
-        <span aria-hidden="true" className="pointer-events-none absolute -top-[7px] left-[19px] z-20 h-2 w-3.5">
-          <span className="absolute inset-x-0 bottom-[-1px] h-[3px] bg-white dark:bg-neutral-900" />
-          <svg viewBox="0 0 14 8" className="relative z-10 size-full overflow-visible">
-            <path
-              d="M1 8 7 1 13 8"
-              className="fill-white stroke-neutral-300 stroke-1 dark:fill-neutral-900 dark:stroke-neutral-600"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-[5px] left-[20px] z-20 size-[10px] rotate-45 border-t border-l border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
+        />
 
         <div className="relative px-3 pt-2 pb-1.5">
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
