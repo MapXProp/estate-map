@@ -27,6 +27,7 @@ interface Props {
   buttonClassName?: string
   showGuestIcon?: boolean
   showMobileActions?: boolean
+  showPreferencesAction?: boolean
 }
 
 export default function AvatarDropdown({
@@ -35,11 +36,13 @@ export default function AvatarDropdown({
   className,
   showGuestIcon = false,
   showMobileActions = false,
+  showPreferencesAction = false,
 }: Props) {
   const router = useRouter()
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const { currency, locale, setCurrency, setLocale } = usePreferences()
+  const showPreferences = showMobileActions || showPreferencesAction
   const displayName =
     [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || (locale === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')
 
@@ -79,7 +82,7 @@ export default function AvatarDropdown({
         >
           <div
             className={`relative grid grid-cols-1 bg-white dark:bg-neutral-800 ${
-              showMobileActions ? 'gap-5 px-5 py-6' : 'gap-6 px-6 py-7'
+              showPreferences ? 'gap-5 px-5 py-6' : 'gap-6 px-6 py-7'
             }`}
           >
             <div className="flex items-center space-x-3">
@@ -186,7 +189,11 @@ export default function AvatarDropdown({
                     {locale === 'th' ? 'ฟรี' : 'Free'}
                   </span>
                 </Link>
+              </>
+            )}
 
+            {showPreferences && (
+              <>
                 <CloseButton
                   as="button"
                   type="button"
@@ -251,7 +258,7 @@ export default function AvatarDropdown({
         </PopoverPanel>
       </Popover>
 
-      {showMobileActions && (
+      {showPreferences && (
         <Dialog open={preferencesOpen} onClose={setPreferencesOpen} className="relative z-[70]">
           <div className="fixed inset-0 bg-black/25" aria-hidden="true" />
           <div className="fixed inset-0 flex items-end justify-center p-2">

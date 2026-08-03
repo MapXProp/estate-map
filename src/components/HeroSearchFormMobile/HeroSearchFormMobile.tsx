@@ -21,12 +21,12 @@ import clsx from 'clsx'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { useTimeoutFn } from 'react-use'
+import MobilePropertySearch from '../property-home/MobilePropertySearch'
 import CarSearchFormMobile from './car-search-form/CarSearchFormMobile'
 import ExperienceSearchFormMobile from './experience-search-form/ExperienceSearchFormMobile'
 import FlightSearchFormMobile from './flight-search-form/FlightSearchFormMobile'
 import RealestateSearchFormMobile from './real-estate-search-form/RealestateSearchFormMobile'
 import StaySearchFormMobile from './stay-search-form/StaySearchFormMobile'
-import MobilePropertySearch from '../property-home/MobilePropertySearch'
 
 const formTabs: { name: ListingType; icon: IconSvgElement; formComponent: React.ComponentType<{}> }[] = [
   { name: 'Stays', icon: House03Icon, formComponent: StaySearchFormMobile },
@@ -48,6 +48,9 @@ const HeroSearchFormMobile = ({ className }: { className?: string }) => {
   const isPropertyHome =
     pathname === '/' ||
     pathname === '/property-home' ||
+    pathname === '/buy' ||
+    pathname === '/rent' ||
+    pathname === '/business' ||
     pathname.startsWith('/real-estate-categories') ||
     pathname.startsWith('/real-estate-listings')
 

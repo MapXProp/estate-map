@@ -342,9 +342,7 @@ const PropertyListingShowcase = () => {
                     ))}
                   </div>
                   <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                    <span className="text-lg font-bold text-neutral-950 dark:text-white">
-                      {formatCurrency(price)}
-                    </span>{' '}
+                    <span className="text-lg font-bold text-neutral-950 dark:text-white">{formatCurrency(price)}</span>{' '}
                     <span className="text-sm text-neutral-500 dark:text-neutral-400">
                       {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
                     </span>
