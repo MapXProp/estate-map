@@ -10,9 +10,9 @@ const mobileSites = [
   {
     id: 'buy',
     href: '/buy',
-    titleTh: 'ซื้อที่อยู่อาศัย',
+    titleTh: 'ซื้อบ้านและที่อยู่อาศัย',
     titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด และที่ดินสำหรับอยู่อาศัย',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย',
     descriptionEn: 'Homes, condos and residential land',
     icon: House,
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
@@ -23,9 +23,9 @@ const mobileSites = [
   {
     id: 'rent',
     href: '/rent',
-    titleTh: 'เช่าที่อยู่อาศัย',
+    titleTh: 'เช่าบ้านและที่พัก',
     titleEn: 'Rent a home',
-    descriptionTh: 'บ้านเช่า คอนโด และที่พักรายเดือน',
+    descriptionTh: 'บ้านเช่า คอนโด อพาร์ตเมนต์ และที่พักรายเดือน',
     descriptionEn: 'Rental homes, condos and monthly stays',
     icon: KeyRound,
     iconTone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
@@ -36,7 +36,7 @@ const mobileSites = [
   {
     id: 'business',
     href: '/business',
-    titleTh: 'พื้นที่ทำธุรกิจ',
+    titleTh: 'หาพื้นที่ทำธุรกิจ',
     titleEn: 'Business spaces',
     descriptionTh: 'ร้านค้า ล็อกตลาด ออฟฟิศ โกดัง และพื้นที่ออกบูธ',
     descriptionEn: 'Shops, stalls, offices, warehouses and event spaces',
@@ -55,10 +55,10 @@ const MobilePropertyBrandMark = () => {
   const activeSite = mobileSites.find((site) => site.id === activeId) ?? mobileSites[0]
 
   return (
-    <Popover className="relative shrink-0">
+    <Popover className="group relative shrink-0">
       <PopoverButton
         aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
-        className="relative grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a] bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.20)] transition focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 dark:border-emerald-800 dark:bg-emerald-200"
+        className="relative grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a] bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.20)] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 dark:border-emerald-800 dark:bg-emerald-200 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.25)] data-open:ring-4 data-open:ring-[#176b50]/10"
       >
         <span className="font-serif text-[20px] leading-none font-bold text-white dark:text-emerald-950">M</span>
         <span className={`absolute end-1.5 top-1.5 size-1.5 rounded-full ring-1 ring-white/80 ${activeSite.dotTone}`} />
@@ -66,19 +66,28 @@ const MobilePropertyBrandMark = () => {
 
       <PopoverPanel
         transition
-        anchor={{ to: 'bottom start', gap: 12 }}
-        className="z-[80] w-[calc(100vw-1rem)] max-w-sm rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1 data-closed:opacity-0"
+        anchor={{ to: 'bottom start', gap: 7 }}
+        className="z-[80] w-[calc(100vw-1rem)] max-w-sm origin-top-left overflow-visible! rounded-[26px] border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-18px_rgba(15,23,42,0.32)] transition duration-200 ease-out dark:border-neutral-700 dark:bg-neutral-900 data-closed:-translate-y-1.5 data-closed:scale-[0.98] data-closed:opacity-0"
       >
-        <div className="px-3 pt-2 pb-2.5">
-          <p className="text-sm font-semibold text-neutral-950 dark:text-white">
-            {locale === 'th' ? 'อยากค้นหาพื้นที่แบบไหน?' : 'What kind of space do you need?'}
-          </p>
-          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {locale === 'th' ? 'เลือกโซนให้ตรงกับสิ่งที่กำลังหา' : 'Choose the section that matches your goal'}
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 14 8"
+          className="pointer-events-none absolute -top-[7px] left-[25px] z-20 h-2 w-3.5 overflow-visible"
+        >
+          <path
+            d="M1 8 7 1 13 8"
+            className="fill-white stroke-neutral-300 stroke-1 dark:fill-neutral-900 dark:stroke-neutral-600"
+            strokeLinejoin="round"
+          />
+        </svg>
+
+        <div className="relative px-3 pt-2 pb-1.5">
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหา' : 'Choose what you want to find'}
           </p>
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="relative grid gap-1.5">
           {mobileSites.map((site) => {
             const Icon = site.icon
             const isActive = site.id === activeId
@@ -87,8 +96,10 @@ const MobilePropertyBrandMark = () => {
                 key={site.id}
                 as={Link}
                 href={site.href}
-                className={`flex min-h-[68px] items-center gap-3 rounded-[19px] border px-3 py-2.5 text-start transition active:scale-[0.99] ${
-                  isActive ? site.activeTone : 'border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                className={`flex min-h-[72px] items-center gap-3 rounded-[19px] border px-3 py-2.5 text-start transition duration-150 active:scale-[0.99] ${
+                  isActive
+                    ? site.activeTone
+                    : 'border-neutral-100 bg-white hover:border-neutral-200 hover:bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800'
                 }`}
               >
                 <span className={`grid size-10 shrink-0 place-items-center rounded-2xl ${site.iconTone}`}>
