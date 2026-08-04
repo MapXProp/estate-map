@@ -11,9 +11,11 @@ import { FC } from 'react'
 interface Props {
   className?: string
   data: TRealEstateListing
+  autoPlayGallery?: boolean
+  autoPlayDelay?: number
 }
 
-const PropertyCard: FC<Props> = ({ className = '', data }) => {
+const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false, autoPlayDelay = 0 }) => {
   const {
     galleryImgs,
     listingCategory,
@@ -37,7 +39,14 @@ const PropertyCard: FC<Props> = ({ className = '', data }) => {
   const renderSliderGallery = () => {
     return (
       <div className="relative w-full">
-        <GallerySlider ratioClass="aspect-w-4 aspect-h-3" galleryImgs={galleryImgs} href={listingHref} />
+        <GallerySlider
+          ratioClass="aspect-w-4 aspect-h-3"
+          galleryImgs={galleryImgs}
+          href={listingHref}
+          autoPlay={autoPlayGallery}
+          autoPlayInterval={2500}
+          autoPlayDelay={autoPlayDelay}
+        />
         <BtnLikeIcon isLiked={like} className="absolute end-3 top-3 z-1" />
         {saleOff && <SaleOffBadge className="absolute start-3 top-3" />}
       </div>

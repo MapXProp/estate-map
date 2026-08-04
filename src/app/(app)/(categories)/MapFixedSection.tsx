@@ -1,5 +1,6 @@
 import CarCard from '@/components/CarCard'
 import ExperiencesCard from '@/components/ExperiencesCard'
+import LongdoPropertyMap from '@/components/map/LongdoPropertyMap'
 import PropertyCard from '@/components/PropertyCard'
 import StayCard from '@/components/StayCard'
 import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
@@ -31,6 +32,7 @@ const MapFixedSection = ({
   splitAtLg = false,
 }: Props) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
+  const longdoMapKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
 
   useEffect(() => {
     setCurrentHoverID(selectedID)
@@ -40,7 +42,7 @@ const MapFixedSection = ({
     <div
       className={
         splitAtLg
-          ? 'fixed inset-0 top-0 z-40 lg:static lg:z-0 lg:flex-[38_1_0%] xl:flex-1'
+          ? 'fixed inset-0 top-0 z-40 lg:static lg:z-0 lg:flex-[38_1_0%] xl:flex-[32_1_0%]'
           : 'fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0'
       }
     >
@@ -51,41 +53,49 @@ const MapFixedSection = ({
             : 'fixed start-0 top-0 size-full overflow-hidden xl:sticky xl:top-0 xl:h-screen'
         }
       >
-        <Map center={listings[0].map} zoom={11}>
-          <MapControls position="bottom-right" showZoom showFullscreen />
-          {listings.map((listing) => (
-            <MapMarker key={listing.id} longitude={listing.map.lng} latitude={listing.map.lat}>
-              <MarkerContent>
-                <p
-                  className={`flex min-w-max items-center justify-center rounded-lg px-3.5 py-1.5 text-sm font-medium shadow-lg transition-all ${
-                    currentHoverID === listing.id
-                      ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                      : 'bg-white text-neutral-900 hover:scale-110 dark:bg-neutral-600 dark:text-white'
-                  }`}
-                >
-                  {listing.price}
-                </p>
-              </MarkerContent>
-              <MarkerPopup className="rounded-2xl! p-0!">
-                <div className="w-60 focus:outline-none sm:w-80">
-                  {listingType === 'Stays' && <StayCard size="small" data={listing as TStayListing} />}
-                  {listingType === 'Experiences' && (
-                    <ExperiencesCard
-                      size="small"
-                      data={listing as TExperienceListing}
-                      ratioClass="aspect-w-12 aspect-h-10"
-                      className="rounded-3xl bg-white dark:bg-neutral-900"
-                    />
-                  )}
-                  {listingType === 'Cars' && (
-                    <CarCard className="border-0!" size="small" data={listing as TCarListing} />
-                  )}
-                  {listingType === 'RealEstates' && <PropertyCard data={listing as TRealEstateListing} />}
-                </div>
-              </MarkerPopup>
-            </MapMarker>
-          ))}
-        </Map>
+        {listingType === 'RealEstates' && longdoMapKey ? (
+          <LongdoPropertyMap
+            apiKey={longdoMapKey}
+            currentHoverID={currentHoverID}
+            listings={listings as TRealEstateListing[]}
+          />
+        ) : (
+          <Map center={listings[0].map} zoom={11}>
+            <MapControls position="bottom-right" showZoom showFullscreen />
+            {listings.map((listing) => (
+              <MapMarker key={listing.id} longitude={listing.map.lng} latitude={listing.map.lat}>
+                <MarkerContent>
+                  <p
+                    className={`flex min-w-max items-center justify-center rounded-lg px-3.5 py-1.5 text-sm font-medium shadow-lg transition-all ${
+                      currentHoverID === listing.id
+                        ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                        : 'bg-white text-neutral-900 hover:scale-110 dark:bg-neutral-600 dark:text-white'
+                    }`}
+                  >
+                    {listing.price}
+                  </p>
+                </MarkerContent>
+                <MarkerPopup className="rounded-2xl! p-0!">
+                  <div className="w-60 focus:outline-none sm:w-80">
+                    {listingType === 'Stays' && <StayCard size="small" data={listing as TStayListing} />}
+                    {listingType === 'Experiences' && (
+                      <ExperiencesCard
+                        size="small"
+                        data={listing as TExperienceListing}
+                        ratioClass="aspect-w-12 aspect-h-10"
+                        className="rounded-3xl bg-white dark:bg-neutral-900"
+                      />
+                    )}
+                    {listingType === 'Cars' && (
+                      <CarCard className="border-0!" size="small" data={listing as TCarListing} />
+                    )}
+                    {listingType === 'RealEstates' && <PropertyCard data={listing as TRealEstateListing} />}
+                  </div>
+                </MarkerPopup>
+              </MapMarker>
+            ))}
+          </Map>
+        )}
 
         <div className="absolute top-3 left-3">
           <ButtonClose color="white" href={closeButtonHref} />

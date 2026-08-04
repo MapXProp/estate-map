@@ -96,6 +96,7 @@ const colors = {
     '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-green-600)] [--checkbox-checked-border:var(--color-green-700)]/90',
   emerald:
     '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-emerald-600)] [--checkbox-checked-border:var(--color-emerald-700)]/90',
+  mapx: '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:#176b50] [--checkbox-checked-border:#12513f] group-data-focus:outline-[#176b50] dark:[--checkbox-checked-bg:#2a8063] dark:[--checkbox-checked-border:#4b9a7d]',
   teal: '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-teal-600)] [--checkbox-checked-border:var(--color-teal-700)]/90',
   cyan: '[--checkbox-check:var(--color-cyan-950)] [--checkbox-checked-bg:var(--color-cyan-300)] [--checkbox-checked-border:var(--color-cyan-400)]/80',
   sky: '[--checkbox-check:var(--color-white)] [--checkbox-checked-bg:var(--color-sky-500)] [--checkbox-checked-border:var(--color-sky-600)]/80',

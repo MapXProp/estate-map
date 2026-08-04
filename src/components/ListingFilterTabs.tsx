@@ -267,13 +267,26 @@ const demo_filters_options: ListingFilterOption[] = [
   },
 ]
 
-const CheckboxPanel = ({ filterOption, className }: { filterOption: CheckboxFilter; className?: string }) => {
+const CheckboxPanel = ({
+  filterOption,
+  className,
+  isPropertyMap = false,
+}: {
+  filterOption: CheckboxFilter
+  className?: string
+  isPropertyMap?: boolean
+}) => {
   return (
     <Fieldset>
       <CheckboxGroup className={className}>
         {filterOption.options.map((option) => (
           <CheckboxField key={option.name}>
-            <Checkbox name={`${filterOption.name}[]`} value={option.name} defaultChecked={!!option.defaultChecked} />
+            <Checkbox
+              color={isPropertyMap ? 'mapx' : 'dark/zinc'}
+              name={`${filterOption.name}[]`}
+              value={option.value || option.name}
+              defaultChecked={!!option.defaultChecked}
+            />
             <Label>{option.name}</Label>
             {option.description && <Description>{option.description}</Description>}
           </CheckboxField>
@@ -373,7 +386,7 @@ const ListingFilterTabs = ({
           <div className="fixed inset-0 flex max-h-screen w-screen items-center justify-center pt-3">
             <DialogPanel
               className={clsx(
-                'flex max-h-full w-full max-w-3xl flex-col overflow-hidden bg-white text-left align-middle shadow-xl duration-200 ease-out data-closed:translate-y-16 data-closed:opacity-0 dark:border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100',
+                'flex max-h-full w-full max-w-3xl flex-col overflow-hidden bg-white text-left align-middle shadow-xl duration-200 ease-out dark:border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 data-closed:translate-y-16 data-closed:opacity-0',
                 isPropertyMap ? 'rounded-3xl' : 'rounded-t-2xl'
               )}
               transition
@@ -395,7 +408,10 @@ const ListingFilterTabs = ({
                         <h3 className="text-xl font-medium">{filterOption.label}</h3>
                         <div className="relative mt-6">
                           {filterOption.tabUIType === 'checkbox' && (
-                            <CheckboxPanel filterOption={filterOption as CheckboxFilter} />
+                            <CheckboxPanel
+                              filterOption={filterOption as CheckboxFilter}
+                              isPropertyMap={isPropertyMap}
+                            />
                           )}
                           {filterOption.tabUIType === 'price-range' && (
                             <PriceRagePanel key={index} filterOption={filterOption as PriceRangeFilter} />
@@ -414,7 +430,14 @@ const ListingFilterTabs = ({
                 <ButtonThird className="-mx-3" onClick={() => setShowAllFilter(false)} type="button">
                   {isPropertyMap ? 'ล้างทั้งหมด' : T['common']['Clear All']}
                 </ButtonThird>
-                <ButtonPrimary type="submit" onClick={() => setShowAllFilter(false)}>
+                <ButtonPrimary
+                  type="submit"
+                  onClick={() => setShowAllFilter(false)}
+                  className={clsx(
+                    isPropertyMap &&
+                      '[--btn-bg:#123f32] [--btn-border:#0d3429] data-focus:outline-[#176b50] dark:[--btn-bg:#176b50]'
+                  )}
+                >
                   {isPropertyMap ? 'ดูผลลัพธ์' : T['common']['Apply filters']}
                 </ButtonPrimary>
               </div>
@@ -430,12 +453,7 @@ const ListingFilterTabs = ({
   }
 
   return (
-    <div
-      className={clsx(
-        'flex',
-        isPropertyMap ? 'flex-nowrap gap-2 pb-1' : 'flex-wrap md:gap-x-4 md:gap-y-2'
-      )}
-    >
+    <div className={clsx('flex', isPropertyMap ? 'flex-nowrap gap-2 pb-1' : 'flex-wrap md:gap-x-4 md:gap-y-2')}>
       {renderTabAllFilters()}
       <PopoverGroup
         className={clsx('hidden md:flex', isPropertyMap ? 'flex-nowrap gap-2' : 'flex-wrap gap-x-4 gap-y-2')}
@@ -493,7 +511,7 @@ const ListingFilterTabs = ({
                 >
                   <div className="hidden-scrollbar max-h-[28rem] overflow-y-auto px-5 py-6">
                     {filterOption.tabUIType === 'checkbox' && (
-                      <CheckboxPanel filterOption={filterOption as CheckboxFilter} />
+                      <CheckboxPanel filterOption={filterOption as CheckboxFilter} isPropertyMap={isPropertyMap} />
                     )}
                     {filterOption.tabUIType === 'price-range' && (
                       <PriceRagePanel key={index} filterOption={filterOption as PriceRangeFilter} />
@@ -507,7 +525,14 @@ const ListingFilterTabs = ({
                     <CloseButton className="-mx-3" as={ButtonThird} type="button">
                       {isPropertyMap ? 'ล้าง' : T['common']['Clear']}
                     </CloseButton>
-                    <CloseButton type="submit" as={ButtonPrimary}>
+                    <CloseButton
+                      type="submit"
+                      as={ButtonPrimary}
+                      className={clsx(
+                        isPropertyMap &&
+                          '[--btn-bg:#123f32] [--btn-border:#0d3429] data-focus:outline-[#176b50] dark:[--btn-bg:#176b50]'
+                      )}
+                    >
                       {isPropertyMap ? 'ดูผลลัพธ์' : T['common']['Apply']}
                     </CloseButton>
                   </div>

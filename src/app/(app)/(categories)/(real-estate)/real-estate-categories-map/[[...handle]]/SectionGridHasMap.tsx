@@ -25,7 +25,7 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
 
   return (
     <div className={clsx('relative flex min-h-screen gap-4 xl:gap-6', className)}>
-      <div className="flex w-full flex-col gap-y-5 pt-6 pb-20 lg:flex-[62_1_0%] xl:flex-1">
+      <div className="flex w-full flex-col gap-y-5 pt-6 pb-20 lg:flex-[62_1_0%] xl:flex-[68_1_0%]">
         <div id="heading" className="flex items-end justify-between gap-4 pe-5 xl:pe-0">
           <div>
             <p className="text-xs font-semibold tracking-wide text-[#176b50]">ค้นหาอสังหาบนแผนที่</p>
@@ -50,14 +50,14 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
           <ListingFilterTabs filterOptions={filterOptions} variant="property-map" visibleFilterCount={4} />
         </div>
         <Divider />
-        <div className="grid grid-cols-1 gap-x-3 gap-y-8 pe-5 lg:grid-cols-3 xl:gap-x-5 xl:pe-0">
-          {listings.map((listing) => (
+        <div className="grid grid-cols-1 gap-x-3 gap-y-8 pe-5 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-4 xl:pe-0">
+          {listings.map((listing, index) => (
             <div
               key={listing.id}
               onMouseEnter={() => setCurrentHoverID(listing.id)}
               onMouseLeave={() => setCurrentHoverID('')}
             >
-              <PropertyCard data={listing} />
+              <PropertyCard data={listing} autoPlayGallery autoPlayDelay={(index % 4) * 320} />
             </div>
           ))}
         </div>
