@@ -320,7 +320,13 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
             ref={searchContainerRef}
             className="absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2"
             onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) setIsSearchFocused(false)
+              const nextTarget = event.relatedTarget
+              if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
+
+              window.setTimeout(() => {
+                const container = searchContainerRef.current
+                if (container && !container.contains(document.activeElement)) setIsSearchFocused(false)
+              }, 150)
             }}
           >
             <div className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35">
@@ -381,7 +387,7 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
                     type="button"
                     role="option"
                     aria-selected={index === activeSuggestionIndex}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
+                  className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
                       index === activeSuggestionIndex
                         ? 'bg-[#edf6f1] text-[#124d3c]'
                         : 'text-neutral-700 hover:bg-neutral-50'
