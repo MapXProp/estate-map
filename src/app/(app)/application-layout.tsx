@@ -6,7 +6,7 @@ import HeroSearchFormMobile from '@/components/HeroSearchFormMobile/HeroSearchFo
 import Aside from '@/components/aside'
 import AsideSidebarNavigation from '@/components/aside-sidebar-navigation'
 import 'rc-slider/assets/index.css'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, Suspense } from 'react'
 
 interface Props {
   children: ReactNode
@@ -23,7 +23,11 @@ const ApplicationLayout: React.FC<Props> = ({ children, header, footer }) => {
       <div className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">
         <div className="container flex h-20 items-center gap-2.5">
           <div className="min-w-0 flex-1">
-            <HeroSearchFormMobile />
+            <Suspense
+              fallback={<div className="h-14 w-full animate-pulse rounded-full bg-neutral-100 dark:bg-neutral-800" />}
+            >
+              <HeroSearchFormMobile />
+            </Suspense>
           </div>
           <AvatarDropdown
             className="shrink-0"

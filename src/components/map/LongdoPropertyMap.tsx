@@ -3,6 +3,7 @@
 import { TRealEstateListing } from '@/data/listings'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import Script from 'next/script'
+import { usePathname, useRouter } from 'next/navigation'
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type LongdoLocation = { lon: number; lat: number }
@@ -108,13 +109,13 @@ const getMarkerHtml = (price: string, active: boolean) => `
   ">${escapeHtml(price)}</div>`
 
 const getPopupHtml = (listing: TRealEstateListing) => `
-  <article style="width:260px;padding:14px 16px;font-family:Sarabun,Arial,sans-serif;color:#171717;">
+  <article style="width:260px;box-sizing:border-box;padding:14px 16px;border:1px solid rgba(18,63,50,.12);border-radius:18px;background:#ffffff;color:#171717;font-family:Sarabun,Arial,sans-serif;box-shadow:0 14px 36px rgba(18,63,50,.2);overflow:hidden;">
     <p style="margin:0 0 4px;color:#176b50;font-size:12px;font-weight:700;">อสังหาริมทรัพย์</p>
     <h3 style="margin:0;font-size:16px;line-height:1.35;font-weight:700;">${escapeHtml(listing.title)}</h3>
     <p style="margin:7px 0 0;color:#737373;font-size:13px;line-height:1.4;">${escapeHtml(listing.address)}</p>
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eeeeee;display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(listing.price)}</strong>
-      <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;">ดูประกาศ</a>
+      <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" target="_blank" rel="noopener noreferrer" style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;">ดูประกาศ</a>
     </div>
   </article>`
 
@@ -122,9 +123,12 @@ interface Props {
   apiKey: string
   currentHoverID: string
   listings: TRealEstateListing[]
+  mobileControlsVisible?: boolean
 }
 
-const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
+const LongdoPropertyMap = ({ apiKey, currentHoverID, listings, mobileControlsVisible = true }: Props) => {
+  const pathname = usePathname()
+  const router = useRouter()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -219,6 +223,10 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
         setSearchText(place.name || keyword)
         setIsSearchFocused(false)
         searchInputRef.current?.blur()
+
+        const nextSearchParams = new URLSearchParams(window.location.search)
+        nextSearchParams.set('q', place.name || keyword)
+        router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false })
       } catch {
         setSearchMessage('ค้นหาสถานที่ไม่สำเร็จ กรุณาลองอีกครั้ง')
         setIsSearchFocused(true)
@@ -226,7 +234,7 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
         setIsSearching(false)
       }
     },
-    [apiKey]
+    [apiKey, pathname, router]
   )
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -318,7 +326,9 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
         <>
           <div
             ref={searchContainerRef}
-            className="absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2"
+            className={`absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2 ${
+              mobileControlsVisible ? '' : 'max-lg:hidden'
+            }`}
             onBlur={(event) => {
               const nextTarget = event.relatedTarget
               if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
@@ -334,9 +344,9 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
               <input
                 ref={searchInputRef}
                 value={searchText}
-              type="text"
-              inputMode="search"
-              enterKeyHint="search"
+                type="text"
+                inputMode="search"
+                enterKeyHint="search"
                 role="combobox"
                 aria-label="ค้นหาสถานที่บนแผนที่"
                 aria-autocomplete="list"
@@ -387,7 +397,7 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
                     type="button"
                     role="option"
                     aria-selected={index === activeSuggestionIndex}
-                  className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
+                    className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
                       index === activeSuggestionIndex
                         ? 'bg-[#edf6f1] text-[#124d3c]'
                         : 'text-neutral-700 hover:bg-neutral-50'
@@ -410,7 +420,9 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
           </div>
 
           <div
-            className="absolute end-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)]"
+            className={`absolute end-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)] ${
+              mobileControlsVisible ? '' : 'max-lg:hidden'
+            }`}
             aria-label="ควบคุมระดับการซูมแผนที่"
           >
             <button

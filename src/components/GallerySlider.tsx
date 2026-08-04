@@ -28,6 +28,7 @@ interface GallerySliderProps {
   autoPlay?: boolean
   autoPlayInterval?: number
   autoPlayDelay?: number
+  openInNewTab?: boolean
 }
 
 export default function GallerySlider({
@@ -41,6 +42,7 @@ export default function GallerySlider({
   autoPlay = false,
   autoPlayInterval = 2500,
   autoPlayDelay = 0,
+  openInNewTab = false,
 }: GallerySliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null)
   const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -199,7 +201,12 @@ export default function GallerySlider({
       >
         {/* Main image */}
         <div className={clsx(`w-full overflow-hidden rounded-xl`, galleryClass)}>
-          <Link href={href} className={clsx(`relative flex items-center justify-center`, ratioClass)}>
+          <Link
+            href={href}
+            target={openInNewTab ? '_blank' : undefined}
+            rel={openInNewTab ? 'noopener noreferrer' : undefined}
+            className={clsx(`relative flex items-center justify-center`, ratioClass)}
+          >
             <AnimatePresence initial={false} custom={direction}>
               <motion.div
                 key={index}

@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import Slider from 'rc-slider'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useMemo, useState, type SVGProps } from 'react'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
@@ -313,6 +314,10 @@ const formatPrice = (value: number, isThai: boolean) => {
 const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const isMapResults = pathname === '/properties/map'
+  const mapQuery = searchParams.get('q')?.trim() || ''
   const [open, setOpen] = useState(false)
   const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>('residential')
   const [offerType, setOfferType] = useState<OfferType>('')
@@ -444,7 +449,11 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-neutral-950 dark:text-white">
-              {isThai ? 'ค้นหาทำเลหรืออสังหาที่ต้องการ' : 'Search location or property'}
+              {isMapResults && mapQuery
+                ? mapQuery
+                : isThai
+                  ? 'ค้นหาทำเลหรืออสังหาที่ต้องการ'
+                  : 'Search location or property'}
             </span>
             <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
               {hasQuickFilters
@@ -458,8 +467,12 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                     .filter(Boolean)
                     .join(' · ')
                 : isThai
-                  ? 'พิมพ์หรือแตะตัวเลือกได้เลย'
-                  : 'Type or tap a quick option'}
+                  ? isMapResults
+                    ? 'ทุกประเภท · ไม่จำกัดงบ'
+                    : 'พิมพ์หรือแตะตัวเลือกได้เลย'
+                  : isMapResults
+                    ? 'All properties · Any budget'
+                    : 'Type or tap a quick option'}
             </span>
           </span>
         </button>

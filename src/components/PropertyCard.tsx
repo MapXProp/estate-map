@@ -13,9 +13,16 @@ interface Props {
   data: TRealEstateListing
   autoPlayGallery?: boolean
   autoPlayDelay?: number
+  compactMobile?: boolean
 }
 
-const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false, autoPlayDelay = 0 }) => {
+const PropertyCard: FC<Props> = ({
+  className = '',
+  data,
+  autoPlayGallery = false,
+  autoPlayDelay = 0,
+  compactMobile = false,
+}) => {
   const {
     galleryImgs,
     listingCategory,
@@ -46,8 +53,9 @@ const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false
           autoPlay={autoPlayGallery}
           autoPlayInterval={2500}
           autoPlayDelay={autoPlayDelay}
+          openInNewTab
         />
-        <BtnLikeIcon isLiked={like} className="absolute end-3 top-3 z-1" />
+        <BtnLikeIcon isLiked={like} className={compactMobile ? 'absolute end-2 top-2 z-1 lg:end-3 lg:top-3' : 'absolute end-3 top-3 z-1'} />
         {saleOff && <SaleOffBadge className="absolute start-3 top-3" />}
       </div>
     )
@@ -55,9 +63,14 @@ const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false
 
   const renderContent = () => {
     return (
-      <div className={clsx('mt-2 flex flex-col gap-y-2 p-3')}>
+      <div className={clsx('flex flex-col', compactMobile ? 'mt-1 gap-y-1 p-1.5 sm:p-2 lg:mt-2 lg:gap-y-2 lg:p-3' : 'mt-2 gap-y-2 p-3')}>
         <div className="flex flex-col gap-y-2">
-          <div className="flex flex-wrap gap-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <div
+            className={clsx(
+              'flex flex-wrap gap-1 text-sm text-neutral-500 dark:text-neutral-400',
+              compactMobile && 'max-lg:hidden'
+            )}
+          >
             <span>{bedrooms} beds</span>
             <span>·</span>
             <span>{bathrooms} baths</span>
@@ -67,18 +80,34 @@ const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false
 
           <div className="flex items-center gap-x-2">
             {isAds && <Badge color="green">ADS</Badge>}
-            <h2 className={`text-base font-semibold text-neutral-900 capitalize dark:text-white`}>
-              <span className="line-clamp-1">{title}</span>
+            <h2
+              className={clsx(
+                'font-semibold text-neutral-900 capitalize dark:text-white',
+                compactMobile ? 'text-sm leading-snug lg:text-base' : 'text-base'
+              )}
+            >
+              <span className={compactMobile ? 'line-clamp-2 lg:line-clamp-1' : 'line-clamp-1'}>{title}</span>
             </h2>
           </div>
-          <div className="flex items-center gap-x-1.5 text-sm text-neutral-500 dark:text-neutral-400">{address}</div>
+          <div
+            className={clsx(
+              'flex items-center gap-x-1.5 text-neutral-500 dark:text-neutral-400',
+              compactMobile ? 'line-clamp-1 text-xs lg:text-sm' : 'text-sm'
+            )}
+          >
+            {address}
+          </div>
         </div>
-        <div className="w-14 border-b border-neutral-100 dark:border-neutral-800"></div>
+        <div className={clsx('w-14 border-b border-neutral-100 dark:border-neutral-800', compactMobile && 'max-lg:hidden')}></div>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <span className="text-base font-semibold"> {price}</span>
+            <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}> {price}</span>
           </div>
-          {!!reviewStart && <StartRating reviewCount={reviewCount} point={reviewStart} />}
+          {!!reviewStart && (
+            <span className={compactMobile ? 'max-lg:hidden' : ''}>
+              <StartRating reviewCount={reviewCount} point={reviewStart} />
+            </span>
+          )}
         </div>
       </div>
     )
@@ -87,7 +116,9 @@ const PropertyCard: FC<Props> = ({ className = '', data, autoPlayGallery = false
   return (
     <div className={`group relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 ${className}`}>
       {renderSliderGallery()}
-      <Link href={listingHref}>{renderContent()}</Link>
+      <Link href={listingHref} target="_blank" rel="noopener noreferrer">
+        {renderContent()}
+      </Link>
     </div>
   )
 }
