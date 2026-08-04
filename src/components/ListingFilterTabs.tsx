@@ -33,6 +33,7 @@ type CheckboxFilter = {
   tabUIType: 'checkbox'
   options: {
     name: string
+    value?: string
     description?: string
     defaultChecked?: boolean
   }[]
@@ -43,6 +44,8 @@ type PriceRangeFilter = {
   tabUIType: 'price-range'
   min: number
   max: number
+  step?: number
+  currency?: 'USD' | 'THB'
 }
 type SelectNumberFilter = {
   name: string
@@ -54,7 +57,25 @@ type SelectNumberFilter = {
   }[]
 }
 
-const demo_filters_options = [
+type ListingFilterOption = {
+  label: string
+  name: string
+  tabUIType: string
+  min?: number
+  max?: number
+  step?: number
+  currency?: 'USD' | 'THB'
+  options?: {
+    name: string
+    value?: string
+    description?: string
+    defaultChecked?: boolean
+    max?: number
+  }[]
+}
+type ListingFilterVariant = 'default' | 'property-map'
+
+const demo_filters_options: ListingFilterOption[] = [
   {
     name: 'type-of-place',
     label: 'Type of place',
@@ -261,10 +282,24 @@ const CheckboxPanel = ({ filterOption, className }: { filterOption: CheckboxFilt
     </Fieldset>
   )
 }
-const PriceRagePanel = ({ filterOption: { min, max, name } }: { filterOption: PriceRangeFilter }) => {
+const PriceRagePanel = ({
+  filterOption: { min, max, name, label, currency, step },
+}: {
+  filterOption: PriceRangeFilter
+}) => {
   const [rangePrices, setRangePrices] = useState([min, max])
 
-  return <PriceRangeSlider defaultValue={rangePrices} onChange={setRangePrices} min={min} max={max} />
+  return (
+    <PriceRangeSlider
+      defaultValue={rangePrices}
+      onChange={setRangePrices}
+      min={min}
+      max={max}
+      name={label || name}
+      currency={currency}
+      step={step}
+    />
+  )
 }
 const NumberSelectPanel = ({ filterOption: { name, options } }: { filterOption: SelectNumberFilter }) => {
   return (
@@ -278,10 +313,19 @@ const NumberSelectPanel = ({ filterOption: { name, options } }: { filterOption: 
 
 const ListingFilterTabs = ({
   filterOptions = demo_filters_options,
+  variant = 'default',
+  visibleFilterCount = 3,
 }: {
-  filterOptions?: Partial<typeof demo_filters_options>
+  filterOptions?: ListingFilterOption[]
+  variant?: ListingFilterVariant
+  visibleFilterCount?: number
 }) => {
   const [showAllFilter, setShowAllFilter] = useState(false)
+  const isPropertyMap = variant === 'property-map'
+  const activeFilterCount = filterOptions.reduce((total, filterOption) => {
+    if (filterOption.tabUIType !== 'checkbox') return total
+    return total + (filterOption.options?.filter((option) => !!option.defaultChecked).length || 0)
+  }, 0)
 
   const handleFormSubmit = async (formData: FormData) => {
     const formDataObject = Object.fromEntries(formData.entries())
@@ -294,13 +338,25 @@ const ListingFilterTabs = ({
         <Button
           outline
           onClick={() => setShowAllFilter(true)}
-          className="w-full border-black! ring-1 ring-black ring-inset md:w-auto dark:border-neutral-200! dark:ring-neutral-200"
+          className={clsx(
+            'w-full md:w-auto',
+            isPropertyMap
+              ? 'border-[#dbe7e2]! bg-white! text-[#173f34] shadow-[0_3px_12px_rgba(18,63,50,0.06)] ring-0! hover:border-[#9fc7b7]! hover:bg-[#f5faf7]! dark:border-neutral-700! dark:bg-neutral-900! dark:text-neutral-100'
+              : 'border-black! ring-1 ring-black ring-inset dark:border-neutral-200! dark:ring-neutral-200'
+          )}
         >
           <HugeiconsIcon icon={FilterVerticalIcon} size={16} color="currentColor" strokeWidth={1.5} />
-          <span>{T['common']['All filters']}</span>
-          <span className="absolute top-0 -right-0.5 flex size-5 items-center justify-center rounded-full bg-black text-[0.65rem] font-semibold text-white ring-2 ring-white dark:bg-neutral-200 dark:text-neutral-900 dark:ring-neutral-900">
-            4
-          </span>
+          <span>{isPropertyMap ? 'ตัวกรองทั้งหมด' : T['common']['All filters']}</span>
+          {activeFilterCount > 0 && (
+            <span
+              className={clsx(
+                'absolute top-0 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.65rem] font-semibold text-white ring-2 ring-white dark:ring-neutral-900',
+                isPropertyMap ? 'bg-[#176b50]' : 'bg-black dark:bg-neutral-200 dark:text-neutral-900'
+              )}
+            >
+              {activeFilterCount}
+            </span>
+          )}
         </Button>
 
         <Dialog
@@ -312,16 +368,19 @@ const ListingFilterTabs = ({
         >
           <DialogBackdrop
             transition
-            className="fixed inset-0 bg-black/50 duration-200 ease-out data-closed:opacity-0"
+            className="fixed inset-0 bg-black/35 duration-200 ease-out data-closed:opacity-0"
           />
           <div className="fixed inset-0 flex max-h-screen w-screen items-center justify-center pt-3">
             <DialogPanel
-              className="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-t-2xl bg-white text-left align-middle shadow-xl duration-200 ease-out data-closed:translate-y-16 data-closed:opacity-0 dark:border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+              className={clsx(
+                'flex max-h-full w-full max-w-3xl flex-col overflow-hidden bg-white text-left align-middle shadow-xl duration-200 ease-out data-closed:translate-y-16 data-closed:opacity-0 dark:border dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100',
+                isPropertyMap ? 'rounded-3xl' : 'rounded-t-2xl'
+              )}
               transition
             >
               <div className="relative shrink-0 border-b border-neutral-200 p-4 text-center sm:px-8 dark:border-neutral-800">
                 <DialogTitle as="h3" className="text-lg leading-6 font-medium text-gray-900">
-                  {T['common']['Filters']}
+                  {isPropertyMap ? 'ตัวกรองทั้งหมด' : T['common']['Filters']}
                 </DialogTitle>
                 <div className="absolute end-2 top-2">
                   <ButtonClose plain onClick={() => setShowAllFilter(false)} />
@@ -353,10 +412,10 @@ const ListingFilterTabs = ({
 
               <div className="flex shrink-0 items-center justify-between bg-neutral-50 p-4 sm:px-8 dark:border-t dark:border-neutral-800 dark:bg-neutral-900">
                 <ButtonThird className="-mx-3" onClick={() => setShowAllFilter(false)} type="button">
-                  {T['common']['Clear All']}
+                  {isPropertyMap ? 'ล้างทั้งหมด' : T['common']['Clear All']}
                 </ButtonThird>
                 <ButtonPrimary type="submit" onClick={() => setShowAllFilter(false)}>
-                  {T['common']['Apply filters']}
+                  {isPropertyMap ? 'ดูผลลัพธ์' : T['common']['Apply filters']}
                 </ButtonPrimary>
               </div>
             </DialogPanel>
@@ -371,13 +430,21 @@ const ListingFilterTabs = ({
   }
 
   return (
-    <div className="flex flex-wrap md:gap-x-4 md:gap-y-2">
+    <div
+      className={clsx(
+        'flex',
+        isPropertyMap ? 'flex-nowrap gap-2 pb-1' : 'flex-wrap md:gap-x-4 md:gap-y-2'
+      )}
+    >
       {renderTabAllFilters()}
-      <PopoverGroup className="hidden flex-wrap gap-x-4 gap-y-2 md:flex" as={Form} action={handleFormSubmit}>
+      <PopoverGroup
+        className={clsx('hidden md:flex', isPropertyMap ? 'flex-nowrap gap-2' : 'flex-wrap gap-x-4 gap-y-2')}
+        as={Form}
+        action={handleFormSubmit}
+      >
         <div className="h-auto w-px bg-neutral-200 dark:bg-neutral-700"></div>
         {filterOptions.map((filterOption, index) => {
-          // only show 3 filters in the tab. Other filters will be shown in the All-filters-popover
-          if (index > 2 || !filterOption) {
+          if (index >= visibleFilterCount || !filterOption) {
             return null
           }
 
@@ -390,15 +457,24 @@ const ListingFilterTabs = ({
                 as={Button}
                 outline
                 className={clsx(
-                  'md:px-4',
+                  isPropertyMap
+                    ? 'border-[#dbe7e2]! bg-white! px-3.5! text-[#284d43] shadow-[0_3px_12px_rgba(18,63,50,0.05)] ring-0! hover:border-[#9fc7b7]! hover:bg-[#f5faf7]!'
+                    : 'md:px-4',
                   checkedNumber &&
-                    'border-black! ring-1 ring-black ring-inset dark:border-neutral-200! dark:ring-neutral-200'
+                    (isPropertyMap
+                      ? 'border-[#8bbba8]! bg-[#eef7f3]! text-[#12513f] ring-1 ring-[#176b50]/15 ring-inset'
+                      : 'border-black! ring-1 ring-black ring-inset dark:border-neutral-200! dark:ring-neutral-200')
                 )}
               >
                 <span>{filterOption.label}</span>
                 <ChevronDownIcon className="size-4" />
                 {checkedNumber ? (
-                  <span className="absolute top-0 -right-0.5 flex size-5 items-center justify-center rounded-full bg-black text-[0.65rem] font-semibold text-white ring-2 ring-white dark:bg-neutral-200 dark:text-neutral-900 dark:ring-neutral-900">
+                  <span
+                    className={clsx(
+                      'absolute top-0 -right-0.5 flex size-5 items-center justify-center rounded-full text-[0.65rem] font-semibold text-white ring-2 ring-white dark:ring-neutral-900',
+                      isPropertyMap ? 'bg-[#176b50]' : 'bg-black dark:bg-neutral-200 dark:text-neutral-900'
+                    )}
+                  >
                     {checkedNumber}
                   </span>
                 ) : null}
@@ -407,9 +483,14 @@ const ListingFilterTabs = ({
               <PopoverPanel
                 transition
                 unmount={false}
-                className="absolute -start-5 top-full z-10 mt-3 w-sm transition data-closed:translate-y-1 data-closed:opacity-0"
+                className="absolute -start-5 top-full z-30 mt-3 w-sm transition data-closed:translate-y-1 data-closed:opacity-0"
               >
-                <div className="rounded-2xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900">
+                <div
+                  className={clsx(
+                    'border bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900',
+                    isPropertyMap ? 'rounded-3xl border-[#dfe9e5]' : 'rounded-2xl border-neutral-200'
+                  )}
+                >
                   <div className="hidden-scrollbar max-h-[28rem] overflow-y-auto px-5 py-6">
                     {filterOption.tabUIType === 'checkbox' && (
                       <CheckboxPanel filterOption={filterOption as CheckboxFilter} />
@@ -424,10 +505,10 @@ const ListingFilterTabs = ({
 
                   <div className="flex items-center justify-between rounded-b-2xl bg-neutral-50 p-5 dark:border-t dark:border-neutral-800 dark:bg-neutral-900">
                     <CloseButton className="-mx-3" as={ButtonThird} type="button">
-                      {T['common']['Clear']}
+                      {isPropertyMap ? 'ล้าง' : T['common']['Clear']}
                     </CloseButton>
                     <CloseButton type="submit" as={ButtonPrimary}>
-                      {T['common']['Apply']}
+                      {isPropertyMap ? 'ดูผลลัพธ์' : T['common']['Apply']}
                     </CloseButton>
                   </div>
                 </div>

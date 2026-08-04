@@ -344,7 +344,7 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
             </h2>
           </div>
           <Link
-            href="/real-estate-categories-map/all"
+            href="/properties/map"
             className="hidden items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:inline-flex dark:text-neutral-300 dark:hover:text-emerald-300"
           >
             {isThai ? 'ดูบนแผนที่' : 'View map'} <ArrowRight className="size-4" />
@@ -381,7 +381,7 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
         </div>
 
         <Link
-          href="/real-estate-categories-map/all"
+          href="/properties/map"
           className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:hidden dark:text-neutral-300 dark:hover:text-emerald-300"
         >
           {isThai ? 'ดูบนแผนที่' : 'View map'} <ArrowRight className="size-4" />

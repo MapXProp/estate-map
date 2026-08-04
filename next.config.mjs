@@ -2,6 +2,15 @@
 const nextConfig = {
   allowedDevOrigins: ['192.168.1.45'],
   reactStrictMode: false,
+  async redirects() {
+    return [
+      {
+        source: '/real-estate-categories-map/all',
+        destination: '/properties/map',
+        permanent: true,
+      },
+    ]
+  },
   images: {
     minimumCacheTTL: 2678400 * 6, // 3 months
     remotePatterns: [

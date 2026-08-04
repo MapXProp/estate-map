@@ -203,7 +203,7 @@ const PropertyMegaMenu = () => {
               </div>
               <CloseButton
                 as={Link}
-                href="/real-estate-categories-map/all"
+                href="/properties/map"
                 className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 p-3 text-sm font-semibold text-neutral-700 transition hover:border-[#176b50] hover:bg-[#edf6f1] hover:text-[#176b50] dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40"
               >
                 <Map className="size-5" />

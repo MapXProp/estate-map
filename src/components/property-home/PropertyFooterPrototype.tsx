@@ -14,7 +14,7 @@ const footerNavigation = [
       ['เช่าอสังหา', 'Rent property', '/real-estate-categories/all?offer_type=rent'],
       ['เซ้งกิจการ', 'Business transfers', '/real-estate-categories/all?offer_type=business_transfer'],
       ['ประกาศใหม่', 'New listings', '/real-estate-categories/all?sort=newest'],
-      ['ดูบนแผนที่', 'View on map', '/real-estate-categories-map/all'],
+      ['ดูบนแผนที่', 'View on map', '/properties/map'],
     ],
   },
   {

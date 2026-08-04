@@ -1,5 +1,6 @@
 import { getRealEstateCategoryByHandle } from '@/data/categories'
-import { getRealEstateListingFilterOptions, getRealEstateListings } from '@/data/listings'
+import { getRealEstateListings } from '@/data/listings'
+import { getPropertyMapFilterOptions } from '@/data/propertyMapFilters'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import SectionGridHasMap from './SectionGridHasMap'
@@ -17,19 +18,27 @@ export async function generateMetadata({ params }: { params: Promise<{ handle?: 
   return { title: name, description }
 }
 
-const Page = async ({ params }: { params: Promise<{ handle?: string[] }> }) => {
+const Page = async ({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ handle?: string[] }>
+  searchParams: Promise<{ q?: string | string[] }>
+}) => {
   const { handle } = await params
+  const search = await searchParams
+  const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim() || ''
   const category = await getRealEstateCategoryByHandle(handle?.[0])
   const listings = await getRealEstateListings()
-  const filterOptions = await getRealEstateListingFilterOptions()
+  const filterOptions = await getPropertyMapFilterOptions()
 
   if (!category?.id) {
     return redirect('/real-estate-categories/all')
   }
 
   return (
-    <div className="container xl:max-w-none xl:pe-0 2xl:ps-10">
-      <SectionGridHasMap listings={listings} category={category} filterOptions={filterOptions} />
+    <div className="container lg:max-w-none lg:pe-0 lg:ps-5 xl:ps-8 2xl:ps-10">
+      <SectionGridHasMap listings={listings} category={category} filterOptions={filterOptions} query={query} />
     </div>
   )
 }

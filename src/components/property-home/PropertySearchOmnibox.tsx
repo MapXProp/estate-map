@@ -1,7 +1,12 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { fetchPropertySearchSuggestions, getPropertySearchUrl, PropertySearchSuggestion } from '@/lib/propertySearch'
+import {
+  fetchPropertySearchSuggestions,
+  getPropertyMapSearchUrl,
+  getPropertySearchUrl,
+  PropertySearchSuggestion,
+} from '@/lib/propertySearch'
 import { Building2, Clock3, MapPin, Search, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useEffect, useRef, useState } from 'react'
@@ -80,7 +85,8 @@ const PropertySearchOmnibox = ({
     }
     setFocused(false)
     onSubmitQuery?.(value)
-    router.push(getPropertySearchUrl(value))
+    const useMapResults = window.matchMedia('(min-width: 1024px)').matches
+    router.push(useMapResults ? getPropertyMapSearchUrl(value) : getPropertySearchUrl(value))
   }
 
   const isHeader = variant === 'header'

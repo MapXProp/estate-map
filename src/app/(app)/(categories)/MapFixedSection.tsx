@@ -20,9 +20,16 @@ interface Props {
   // The href for the close button, which will redirect to the category page.
   // This is used to close the map and return to the category listings.
   closeButtonHref: string
+  splitAtLg?: boolean
 }
 
-const MapFixedSection = ({ closeButtonHref, currentHoverID: selectedID, listings, listingType }: Props) => {
+const MapFixedSection = ({
+  closeButtonHref,
+  currentHoverID: selectedID,
+  listings,
+  listingType,
+  splitAtLg = false,
+}: Props) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
 
   useEffect(() => {
@@ -30,8 +37,20 @@ const MapFixedSection = ({ closeButtonHref, currentHoverID: selectedID, listings
   }, [selectedID])
 
   return (
-    <div className="fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0">
-      <div className="fixed start-0 top-0 size-full overflow-hidden xl:sticky xl:top-0 xl:h-screen">
+    <div
+      className={
+        splitAtLg
+          ? 'fixed inset-0 top-0 z-40 lg:static lg:z-0 lg:flex-[38_1_0%] xl:flex-1'
+          : 'fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0'
+      }
+    >
+      <div
+        className={
+          splitAtLg
+            ? 'fixed start-0 top-0 size-full overflow-hidden lg:sticky lg:top-0 lg:h-screen'
+            : 'fixed start-0 top-0 size-full overflow-hidden xl:sticky xl:top-0 xl:h-screen'
+        }
+      >
         <Map center={listings[0].map} zoom={11}>
           <MapControls position="bottom-right" showZoom showFullscreen />
           {listings.map((listing) => (

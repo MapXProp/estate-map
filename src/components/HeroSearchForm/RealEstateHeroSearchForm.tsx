@@ -33,7 +33,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({ className, formStyle = 'de
 
   // Prefetch the stay categories page to improve performance
   useEffect(() => {
-    router.prefetch('/real-estate-categories-map/all')
+    router.prefetch('/properties/map')
   }, [router])
 
   const handleFormSubmit = (formData: FormData) => {
@@ -43,7 +43,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({ className, formStyle = 'de
 
     // example: add location to the URL
     const location = formDataEntries['location'] as string
-    let url = '/real-estate-categories-map/all'
+    let url = '/properties/map'
 
     if (location) {
       url = url + `?location=${encodeURIComponent(location)}`

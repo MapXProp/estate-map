@@ -85,6 +85,9 @@ const fallbackSuggestions: PropertySearchSuggestion[] = [
 export const getPropertySearchUrl = (query: string) =>
   `/real-estate-categories/all?q=${encodeURIComponent(query.trim())}`
 
+export const getPropertyMapSearchUrl = (query: string) =>
+  `/properties/map?q=${encodeURIComponent(query.trim())}`
+
 export const fetchPropertySearchSuggestions = async (
   query: string,
   signal?: AbortSignal
