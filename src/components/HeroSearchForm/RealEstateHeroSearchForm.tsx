@@ -46,7 +46,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({ className, formStyle = 'de
     let url = '/properties/map'
 
     if (location) {
-      url = url + `?location=${encodeURIComponent(location)}`
+      url = url + `?q=${encodeURIComponent(location)}`
     }
     router.push(url)
   }

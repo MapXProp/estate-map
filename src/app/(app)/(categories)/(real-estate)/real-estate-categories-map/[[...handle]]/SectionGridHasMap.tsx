@@ -50,7 +50,7 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
           <ListingFilterTabs filterOptions={filterOptions} variant="property-map" visibleFilterCount={4} />
         </div>
         <Divider />
-        <div className="grid grid-cols-2 gap-x-2 gap-y-6 lg:grid-cols-3 lg:gap-x-3 lg:gap-y-8 lg:pe-5 xl:grid-cols-4 xl:gap-x-4 xl:pe-0">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-6 min-[744px]:grid-cols-3 min-[744px]:gap-x-3 lg:gap-y-8 lg:pe-5 xl:grid-cols-4 xl:gap-x-4 xl:pe-0">
           {listings.map((listing, index) => (
             <div
               key={listing.id}

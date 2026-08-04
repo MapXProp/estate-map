@@ -314,6 +314,8 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings, mobileControlsVis
 
   return (
     <div className="relative size-full overflow-hidden bg-[#eef3f0]">
+      <link rel="preconnect" href="https://api.longdo.com" />
+      <link rel="preconnect" href="https://search.longdo.com" />
       <Script
         id="longdo-map-sdk"
         src={`https://api.longdo.com/map/?key=${encodeURIComponent(apiKey)}`}

@@ -4,7 +4,6 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   fetchPropertySearchSuggestions,
   getPropertyMapSearchUrl,
-  getPropertySearchUrl,
   PropertySearchSuggestion,
 } from '@/lib/propertySearch'
 import { Building2, Clock3, MapPin, Search, Sparkles } from 'lucide-react'
@@ -85,8 +84,7 @@ const PropertySearchOmnibox = ({
     }
     setFocused(false)
     onSubmitQuery?.(value)
-    const useMapResults = window.matchMedia('(min-width: 1024px)').matches
-    router.push(useMapResults ? getPropertyMapSearchUrl(value) : getPropertySearchUrl(value))
+    router.push(getPropertyMapSearchUrl(value))
   }
 
   const isHeader = variant === 'header'

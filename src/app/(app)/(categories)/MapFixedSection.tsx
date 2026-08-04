@@ -82,7 +82,7 @@ const MapFixedSection = ({
   }, [mobileSheetState])
 
   useEffect(() => {
-    if (mobileSheetState === 'collapsed' || window.innerWidth >= 1024) return
+    if (mobileSheetState !== 'expanded' || window.innerWidth >= 1024) return
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -140,7 +140,10 @@ const MapFixedSection = ({
     snapMobileSheet(mobileSheetState === 'collapsed' ? 'half' : mobileSheetState === 'half' ? 'expanded' : 'half')
   }
 
-  const sheetStyle = { '--mobile-map-sheet-height': `${mobileSheetHeight}px` } as CSSProperties
+  const sheetStyle = {
+    '--mobile-map-sheet-height': `${mobileSheetHeight}px`,
+    '--mobile-map-preload-height': `${Math.max(252, getMobileSheetHeights().half - 48)}px`,
+  } as CSSProperties
   const mobileMapControlsVisible = mobileSheetState !== 'collapsed'
 
   return (
@@ -190,7 +193,15 @@ const MapFixedSection = ({
           </button>
         )}
 
-        <div className={splitAtLg && listingType === 'RealEstates' ? 'absolute inset-x-0 bottom-0 top-12 lg:inset-0' : 'size-full'}>
+        <div
+          className={
+            splitAtLg && listingType === 'RealEstates'
+              ? `absolute inset-x-0 top-12 lg:inset-0 lg:h-auto ${
+                  mobileSheetState === 'collapsed' ? 'h-[var(--mobile-map-preload-height)]' : 'bottom-0'
+                }`
+              : 'size-full'
+          }
+        >
           {listingType === 'RealEstates' && longdoMapKey ? (
             <LongdoPropertyMap
               apiKey={longdoMapKey}
