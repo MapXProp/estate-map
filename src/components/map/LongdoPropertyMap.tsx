@@ -1,7 +1,7 @@
 'use client'
 
 import { TRealEstateListing } from '@/data/listings'
-import { LoaderCircle, MapPin, Search, X } from 'lucide-react'
+import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import Script from 'next/script'
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -18,6 +18,7 @@ type LongdoMapInstance = {
   zoom: (level?: number, animate?: boolean) => number
 }
 type LongdoNamespace = {
+  UiComponent: { None: unknown }
   Map: new (options: {
     placeholder: HTMLElement
     language?: string
@@ -25,6 +26,7 @@ type LongdoNamespace = {
     zoom?: number
     lastView?: boolean
     autoResize?: boolean
+    ui?: unknown
   }) => LongdoMapInstance
   Marker: new (
     location: LongdoLocation,
@@ -261,6 +263,7 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
       zoom: 12,
       lastView: false,
       autoResize: true,
+      ui: window.longdo.UiComponent.None,
     })
 
     mapRef.current = map
@@ -312,90 +315,123 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings }: Props) => {
       />
       <div ref={placeholderRef} className="size-full" aria-label="แผนที่ประกาศอสังหาริมทรัพย์" />
       {mapReady && (
-        <div
-          ref={searchContainerRef}
-          className="absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2"
-          onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setIsSearchFocused(false)
-          }}
-        >
-          <div className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35">
-            <Search className="me-2.5 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
-            <input
-              ref={searchInputRef}
-              value={searchText}
-              type="search"
-              role="combobox"
-              aria-label="ค้นหาสถานที่บนแผนที่"
-              aria-autocomplete="list"
-              aria-expanded={isSearchFocused && (suggestions.length > 0 || !!searchMessage)}
-              aria-controls="longdo-location-suggestions"
-              aria-activedescendant={
-                activeSuggestionIndex >= 0 ? `longdo-location-suggestion-${activeSuggestionIndex}` : undefined
-              }
-              placeholder="ค้นหาเขต ย่าน ถนน หรือสถานที่"
-              className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400"
-              onChange={(event) => {
-                setSearchText(event.target.value)
-                setSearchMessage('')
-              }}
-              onFocus={() => setIsSearchFocused(true)}
-              onKeyDown={handleSearchKeyDown}
-            />
-            {(isSuggesting || isSearching) && (
-              <LoaderCircle className="ms-2 size-4 shrink-0 animate-spin text-[#176b50]" aria-label="กำลังค้นหา" />
-            )}
-            {searchText && !isSuggesting && !isSearching && (
-              <button
-                type="button"
-                aria-label="ล้างคำค้น"
-                className="ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                onClick={() => {
-                  setSearchText('')
-                  setSuggestions([])
+        <>
+          <div
+            ref={searchContainerRef}
+            className="absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2"
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setIsSearchFocused(false)
+            }}
+          >
+            <div className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35">
+              <Search className="me-2.5 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
+              <input
+                ref={searchInputRef}
+                value={searchText}
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
+                role="combobox"
+                aria-label="ค้นหาสถานที่บนแผนที่"
+                aria-autocomplete="list"
+                aria-expanded={isSearchFocused && (suggestions.length > 0 || !!searchMessage)}
+                aria-controls="longdo-location-suggestions"
+                aria-activedescendant={
+                  activeSuggestionIndex >= 0 ? `longdo-location-suggestion-${activeSuggestionIndex}` : undefined
+                }
+                placeholder="ค้นหาเขต ย่าน ถนน หรือสถานที่"
+                className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400"
+                onChange={(event) => {
+                  setSearchText(event.target.value)
                   setSearchMessage('')
-                  searchInputRef.current?.focus()
                 }}
+                onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={handleSearchKeyDown}
+              />
+              {(isSuggesting || isSearching) && (
+                <LoaderCircle className="ms-2 size-4 shrink-0 animate-spin text-[#176b50]" aria-label="กำลังค้นหา" />
+              )}
+              {searchText && !isSuggesting && !isSearching && (
+                <button
+                  type="button"
+                  aria-label="ล้างคำค้น"
+                  className="ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  onClick={() => {
+                    setSearchText('')
+                    setSuggestions([])
+                    setSearchMessage('')
+                    searchInputRef.current?.focus()
+                  }}
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+
+            {isSearchFocused && (suggestions.length > 0 || searchMessage) && (
+              <div
+                id="longdo-location-suggestions"
+                role="listbox"
+                className="mt-2 overflow-hidden rounded-2xl border border-[#dfe9e5] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,63,50,0.2)]"
               >
-                <X className="size-4" />
-              </button>
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    id={`longdo-location-suggestion-${index}`}
+                    key={`${suggestion.w}-${index}`}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeSuggestionIndex}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
+                      index === activeSuggestionIndex
+                        ? 'bg-[#edf6f1] text-[#124d3c]'
+                        : 'text-neutral-700 hover:bg-neutral-50'
+                    }`}
+                    onMouseEnter={() => setActiveSuggestionIndex(index)}
+                    onClick={() => void searchLocation(suggestion.w)}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf6f1] text-[#176b50]">
+                      <MapPin className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{suggestion.w}</span>
+                      <span className="block text-xs text-neutral-400">สถานที่จาก Longdo Map</span>
+                    </span>
+                  </button>
+                ))}
+                {searchMessage && <p className="px-3 py-3 text-sm text-neutral-500">{searchMessage}</p>}
+              </div>
             )}
           </div>
 
-          {isSearchFocused && (suggestions.length > 0 || searchMessage) && (
-            <div
-              id="longdo-location-suggestions"
-              role="listbox"
-              className="mt-2 overflow-hidden rounded-2xl border border-[#dfe9e5] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,63,50,0.2)]"
+          <div
+            className="absolute end-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)]"
+            aria-label="ควบคุมระดับการซูมแผนที่"
+          >
+            <button
+              type="button"
+              className="flex size-10 items-center justify-center text-[#174d3e] transition hover:bg-[#edf6f1] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#176b50]"
+              aria-label="ขยายแผนที่"
+              onClick={() => {
+                const map = mapRef.current
+                if (map) map.zoom(Math.min(map.zoom() + 1, 20), true)
+              }}
             >
-              {suggestions.map((suggestion, index) => (
-                <button
-                  id={`longdo-location-suggestion-${index}`}
-                  key={`${suggestion.w}-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={index === activeSuggestionIndex}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
-                    index === activeSuggestionIndex
-                      ? 'bg-[#edf6f1] text-[#124d3c]'
-                      : 'text-neutral-700 hover:bg-neutral-50'
-                  }`}
-                  onMouseEnter={() => setActiveSuggestionIndex(index)}
-                  onClick={() => void searchLocation(suggestion.w)}
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf6f1] text-[#176b50]">
-                    <MapPin className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{suggestion.w}</span>
-                    <span className="block text-xs text-neutral-400">สถานที่จาก Longdo Map</span>
-                  </span>
-                </button>
-              ))}
-              {searchMessage && <p className="px-3 py-3 text-sm text-neutral-500">{searchMessage}</p>}
-            </div>
-          )}
-        </div>
+              <ZoomIn className="size-5" aria-hidden="true" />
+            </button>
+            <span className="mx-2 h-px bg-[#e3ebe7]" aria-hidden="true" />
+            <button
+              type="button"
+              className="flex size-10 items-center justify-center text-[#174d3e] transition hover:bg-[#edf6f1] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#176b50]"
+              aria-label="ย่อแผนที่"
+              onClick={() => {
+                const map = mapRef.current
+                if (map) map.zoom(Math.max(map.zoom() - 1, 1), true)
+              }}
+            >
+              <ZoomOut className="size-5" aria-hidden="true" />
+            </button>
+          </div>
+        </>
       )}
       {!mapReady && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#eef3f0] text-sm font-medium text-[#31594e]">

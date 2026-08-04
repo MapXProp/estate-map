@@ -97,9 +97,11 @@ const MapFixedSection = ({
           </Map>
         )}
 
-        <div className="absolute top-3 left-3">
-          <ButtonClose color="white" href={closeButtonHref} />
-        </div>
+        {listingType !== 'RealEstates' && (
+          <div className="absolute top-3 left-3">
+            <ButtonClose color="white" href={closeButtonHref} />
+          </div>
+        )}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 shadow-2xl">
           <Button color="white" href={closeButtonHref}>
             <XMarkIcon className="size-6" />
