@@ -1,6 +1,6 @@
 import CarCard from '@/components/CarCard'
 import ExperiencesCard from '@/components/ExperiencesCard'
-import LongdoPropertyMap from '@/components/map/LongdoPropertyMap'
+import LongdoPropertyMap, { PropertyMapAreaSearch } from '@/components/map/LongdoPropertyMap'
 import PropertyCard from '@/components/PropertyCard'
 import StayCard from '@/components/StayCard'
 import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
@@ -8,10 +8,9 @@ import { TCarListing, TExperienceListing, TRealEstateListing, TStayListing } fro
 import { Button } from '@/shared/Button'
 import ButtonClose from '@/shared/ButtonClose'
 import { ListingType } from '@/type'
-import convertNumbThousand from '@/utils/convertNumbThousand'
 import T from '@/utils/getT'
 import { XMarkIcon } from '@heroicons/react/24/solid'
-import { ChevronUp, List, MapIcon } from 'lucide-react'
+import { ChevronUp, LoaderCircle, MapIcon, Search } from 'lucide-react'
 import { CSSProperties, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 type MobileMapSheetState = 'collapsed' | 'half' | 'expanded'
@@ -40,6 +39,8 @@ interface Props {
   closeButtonHref: string
   splitAtLg?: boolean
   resultCount?: number
+  searchSourceListings?: TRealEstateListing[]
+  onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
 }
 
 const MapFixedSection = ({
@@ -48,12 +49,16 @@ const MapFixedSection = ({
   listings,
   listingType,
   splitAtLg = false,
-  resultCount,
+  searchSourceListings,
+  onSearchArea,
 }: Props) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const [mobileSheetState, setMobileSheetState] = useState<MobileMapSheetState>('collapsed')
   const [mobileSheetHeight, setMobileSheetHeight] = useState(MOBILE_SHEET_PEEK_HEIGHT)
   const [isDraggingSheet, setIsDraggingSheet] = useState(false)
+  const [areaSearchRequestId, setAreaSearchRequestId] = useState(0)
+  const [isAreaSearching, setIsAreaSearching] = useState(false)
+  const [areaResultCount, setAreaResultCount] = useState<number | null>(null)
   const dragStartRef = useRef<{ y: number; height: number; state: MobileMapSheetState } | null>(null)
   const didDragRef = useRef(false)
   const longdoMapKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
@@ -146,6 +151,25 @@ const MapFixedSection = ({
   } as CSSProperties
   const mobileMapControlsVisible = mobileSheetState !== 'collapsed'
 
+  const handleAreaSearchResult = useCallback(
+    async (search: PropertyMapAreaSearch, listingIds: string[]) => {
+      try {
+        const resultCount = await onSearchArea?.(search, listingIds)
+        setAreaResultCount(resultCount ?? listingIds.length)
+      } finally {
+        setIsAreaSearching(false)
+      }
+    },
+    [onSearchArea]
+  )
+
+  const requestAreaSearch = () => {
+    if (isAreaSearching) return
+    setIsAreaSearching(true)
+    setAreaResultCount(null)
+    setAreaSearchRequestId((requestId) => requestId + 1)
+  }
+
   return (
     <div
       className={
@@ -207,6 +231,9 @@ const MapFixedSection = ({
               apiKey={longdoMapKey}
               currentHoverID={currentHoverID}
               listings={listings as TRealEstateListing[]}
+              searchSourceListings={searchSourceListings}
+              areaSearchRequestId={areaSearchRequestId}
+              onSearchArea={handleAreaSearchResult}
               mobileControlsVisible={mobileMapControlsVisible}
             />
           ) : (
@@ -248,15 +275,31 @@ const MapFixedSection = ({
           )}
         </div>
 
-        {splitAtLg && listingType === 'RealEstates' && mobileSheetState !== 'collapsed' && (
-          <button
-            type="button"
-            onClick={() => snapMobileSheet('collapsed')}
-            className="absolute bottom-3 left-1/2 z-30 flex min-h-11 -translate-x-1/2 items-center gap-2 rounded-full bg-[#123f32] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_10px_26px_rgba(18,63,50,0.3)] transition active:scale-[0.98] lg:hidden"
+        {listingType === 'RealEstates' && (
+          <div
+            className={`absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 ${
+              splitAtLg && mobileSheetState === 'collapsed' ? 'max-lg:hidden' : ''
+            }`}
           >
-            <List className="size-4.5" aria-hidden="true" />
-            ดูประกาศ {convertNumbThousand(resultCount ?? listings.length)} รายการ
-          </button>
+            {areaResultCount !== null && (
+              <span className="rounded-full border border-[#dbe8e2] bg-white/95 px-3 py-1 text-xs font-medium whitespace-nowrap text-[#31594e] shadow-sm backdrop-blur">
+                พบ {areaResultCount.toLocaleString('th-TH')} รายการในพื้นที่นี้
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={requestAreaSearch}
+              disabled={isAreaSearching}
+              className="flex min-h-11 items-center gap-2 rounded-full bg-[#123f32] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_10px_26px_rgba(18,63,50,0.3)] transition hover:bg-[#0d352a] active:scale-[0.98] disabled:cursor-wait disabled:opacity-80"
+            >
+              {isAreaSearching ? (
+                <LoaderCircle className="size-4.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Search className="size-4.5" aria-hidden="true" />
+              )}
+              {isAreaSearching ? 'กำลังค้นหา...' : 'ค้นหาอสังหาในบริเวณนี้'}
+            </button>
+          </div>
         )}
 
         {listingType !== 'RealEstates' && (

@@ -63,11 +63,28 @@ export type PropertySearchListing = {
 
 export type PropertySearchResponse = {
   query: string
+  bounds?: {
+    min_lat: number
+    min_lon: number
+    max_lat: number
+    max_lon: number
+  }
   intent: PropertySearchIntent
   listings: PropertySearchListing[]
   total: number
   limit: number
   offset: number
+}
+
+export type PropertyMapAreaSearchRequest = {
+  query?: string
+  minLat: number
+  minLon: number
+  maxLat: number
+  maxLon: number
+  limit?: number
+  offset?: number
+  signal?: AbortSignal
 }
 
 const fallbackSuggestions: PropertySearchSuggestion[] = [
@@ -114,5 +131,34 @@ export const fetchPropertySearch = async (
     { signal, cache: 'no-store', credentials: 'include' }
   )
   if (!response.ok) throw new Error('property search failed')
+  return response.json() as Promise<PropertySearchResponse>
+}
+
+export const fetchPropertyMapArea = async ({
+  query = '',
+  minLat,
+  minLon,
+  maxLat,
+  maxLon,
+  limit = 24,
+  offset = 0,
+  signal,
+}: PropertyMapAreaSearchRequest): Promise<PropertySearchResponse> => {
+  const params = new URLSearchParams({
+    min_lat: String(minLat),
+    min_lon: String(minLon),
+    max_lat: String(maxLat),
+    max_lon: String(maxLon),
+    limit: String(limit),
+    offset: String(offset),
+  })
+  if (query.trim()) params.set('q', query.trim())
+
+  const response = await fetch(`${getAuthApiUrl('properties/search')}?${params}`, {
+    signal,
+    cache: 'no-store',
+    credentials: 'include',
+  })
+  if (!response.ok) throw new Error('property map area search failed')
   return response.json() as Promise<PropertySearchResponse>
 }

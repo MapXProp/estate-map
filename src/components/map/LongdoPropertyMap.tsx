@@ -7,6 +7,18 @@ import { usePathname, useRouter } from 'next/navigation'
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type LongdoLocation = { lon: number; lat: number }
+export type PropertyMapBounds = {
+  minLon: number
+  minLat: number
+  maxLon: number
+  maxLat: number
+}
+export type PropertyMapAreaSearch = {
+  bounds: PropertyMapBounds
+  center: LongdoLocation
+  zoom: number
+  filters: Record<string, string>
+}
 type LongdoOverlay = object
 type LongdoMapInstance = {
   Event: { bind: (event: string, callback: () => void) => void }
@@ -17,6 +29,7 @@ type LongdoMapInstance = {
   }
   location: (location?: LongdoLocation, animate?: boolean) => LongdoLocation
   zoom: (level?: number, animate?: boolean) => number
+  bound: (bounds?: PropertyMapBounds) => PropertyMapBounds
 }
 type LongdoNamespace = {
   UiComponent: { None: unknown }
@@ -82,10 +95,16 @@ const escapeHtml = (value: string | number) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 
-const getListingLocation = (listing: TRealEstateListing, index: number): LongdoLocation =>
+const getDemoLocationIndex = (id: string) => {
+  let hash = 0
+  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0
+  return hash % thailandDemoLocations.length
+}
+
+const getListingLocation = (listing: TRealEstateListing): LongdoLocation =>
   isInThailand(listing.map)
     ? { lon: listing.map.lng, lat: listing.map.lat }
-    : thailandDemoLocations[index % thailandDemoLocations.length]
+    : thailandDemoLocations[getDemoLocationIndex(listing.id)]
 
 const getMarkerHtml = (price: string, active: boolean) => `
   <div style="
@@ -123,10 +142,21 @@ interface Props {
   apiKey: string
   currentHoverID: string
   listings: TRealEstateListing[]
+  searchSourceListings?: TRealEstateListing[]
+  areaSearchRequestId?: number
+  onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
   mobileControlsVisible?: boolean
 }
 
-const LongdoPropertyMap = ({ apiKey, currentHoverID, listings, mobileControlsVisible = true }: Props) => {
+const LongdoPropertyMap = ({
+  apiKey,
+  currentHoverID,
+  listings,
+  searchSourceListings = listings,
+  areaSearchRequestId = 0,
+  onSearchArea,
+  mobileControlsVisible = true,
+}: Props) => {
   const pathname = usePathname()
   const router = useRouter()
   const placeholderRef = useRef<HTMLDivElement>(null)
@@ -144,7 +174,11 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings, mobileControlsVis
   const [isSuggesting, setIsSuggesting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [searchMessage, setSearchMessage] = useState('')
-  const locations = useMemo(() => listings.map((listing, index) => getListingLocation(listing, index)), [listings])
+  const locations = useMemo(() => listings.map((listing) => getListingLocation(listing)), [listings])
+  const searchSourceLocations = useMemo(
+    () => searchSourceListings.map((listing) => getListingLocation(listing)),
+    [searchSourceListings]
+  )
   const center = useMemo(() => locations[0] || { lon: 100.5018, lat: 13.7563 }, [locations])
 
   useEffect(() => {
@@ -311,6 +345,37 @@ const LongdoPropertyMap = ({ apiKey, currentHoverID, listings, mobileControlsVis
     })
     listingMarkersRef.current = nextMarkers
   }, [currentHoverID, listings, locations, mapReady])
+
+  useEffect(() => {
+    if (!areaSearchRequestId || !mapReady || !onSearchArea) return
+
+    const map = mapRef.current
+    if (!map) return
+
+    const bounds = map.bound()
+    const listingIds = searchSourceListings
+      .filter((_, index) => {
+        const location = searchSourceLocations[index]
+        return (
+          location.lat >= bounds.minLat &&
+          location.lat <= bounds.maxLat &&
+          location.lon >= bounds.minLon &&
+          location.lon <= bounds.maxLon
+        )
+      })
+      .map((listing) => listing.id)
+
+    const filters = Object.fromEntries(new URLSearchParams(window.location.search).entries())
+    void onSearchArea(
+      {
+        bounds,
+        center: map.location(),
+        zoom: map.zoom(),
+        filters,
+      },
+      listingIds
+    )
+  }, [areaSearchRequestId, mapReady, onSearchArea, searchSourceListings, searchSourceLocations])
 
   return (
     <div className="relative size-full overflow-hidden bg-[#eef3f0]">

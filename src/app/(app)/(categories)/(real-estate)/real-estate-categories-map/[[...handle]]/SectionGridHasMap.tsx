@@ -1,6 +1,7 @@
 'use client'
 
 import ListingFilterTabs from '@/components/ListingFilterTabs'
+import type { PropertyMapAreaSearch } from '@/components/map/LongdoPropertyMap'
 import PropertyCard from '@/components/PropertyCard'
 import { TRealEstateCategory } from '@/data/categories'
 import { TRealEstateListing } from '@/data/listings'
@@ -8,8 +9,9 @@ import { TPropertyMapFilterOptions } from '@/data/propertyMapFilters'
 import { Divider } from '@/shared/divider'
 import Pagination from '@/shared/Pagination'
 import convertNumbThousand from '@/utils/convertNumbThousand'
+import { fetchPropertyMapArea, PropertySearchListing } from '@/lib/propertySearch'
 import clsx from 'clsx'
-import { FC, useState } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 import MapFixedSection from '../../../MapFixedSection'
 
 interface Props {
@@ -22,6 +24,63 @@ interface Props {
 
 const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOptions, query = '' }) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
+  const [areaResults, setAreaResults] = useState<TRealEstateListing[] | null>(null)
+  const [areaSearch, setAreaSearch] = useState<PropertyMapAreaSearch | null>(null)
+  const visibleListings = useMemo(() => areaResults ?? listings, [areaResults, listings])
+
+  const mapDatabaseListing = useCallback(
+    (listing: PropertySearchListing, index: number): TRealEstateListing => {
+      const fallback = listings[index % listings.length]
+      const amount = listing.rent_price_monthly ?? listing.sale_price
+      return {
+        ...fallback,
+        id: `property-listing://${listing.id}`,
+        title: listing.title,
+        handle: listing.slug || listing.public_listing_id,
+        description: listing.description,
+        date: listing.published_at || new Date().toISOString(),
+        listingCategory: listing.property_type_code,
+        address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
+        price: amount ? `฿${amount.toLocaleString('th-TH')}${listing.rent_price_monthly ? ' / เดือน' : ''}` : 'ติดต่อผู้ลงประกาศ',
+        bedrooms: listing.bedroom_count || 0,
+        bathrooms: listing.bathroom_count || 0,
+        acreage: listing.usable_area_sqm || 0,
+        map: { lat: listing.latitude!, lng: listing.longitude! },
+      }
+    },
+    [listings]
+  )
+
+  const handleSearchArea = useCallback(
+    async (search: PropertyMapAreaSearch, listingIds: string[]) => {
+      const matches = new Set(listingIds)
+      const demoResults = listings.filter((listing) => matches.has(listing.id))
+      let nextResults = demoResults
+
+      try {
+        const response = await fetchPropertyMapArea({
+          query: search.filters.q || query,
+          minLat: search.bounds.minLat,
+          minLon: search.bounds.minLon,
+          maxLat: search.bounds.maxLat,
+          maxLon: search.bounds.maxLon,
+          limit: 40,
+        })
+        const databaseResults = response.listings
+          .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
+          .map(mapDatabaseListing)
+        if (databaseResults.length > 0) nextResults = databaseResults
+      } catch {
+        // The database is intentionally allowed to be empty/offline while the map flow is being built.
+      }
+
+      setAreaResults(nextResults)
+      setAreaSearch(search)
+      setCurrentHoverID('')
+      return nextResults.length
+    },
+    [listings, mapDatabaseListing, query]
+  )
 
   return (
     <div className={clsx('relative flex min-h-screen gap-4 xl:gap-6', className)}>
@@ -33,11 +92,15 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
               {query ? `ผลการค้นหา “${query}”` : `พบ ${convertNumbThousand(category.count)} ประกาศ`}
               {!query && category.handle !== 'all' ? ` ใน ${category.name}` : null}
             </h1>
-            {query && (
+            {areaSearch ? (
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                พบ {convertNumbThousand(visibleListings.length)} รายการภายในขอบเขตแผนที่ปัจจุบัน
+              </p>
+            ) : query ? (
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 พบ {convertNumbThousand(category.count)} ประกาศที่อาจตรงกับคำค้น
               </p>
-            )}
+            ) : null}
           </div>
           <button
             type="button"
@@ -51,7 +114,7 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
         </div>
         <Divider />
         <div className="grid grid-cols-2 gap-x-2 gap-y-6 min-[744px]:grid-cols-3 min-[744px]:gap-x-3 lg:gap-y-8 lg:pe-5 xl:grid-cols-4 xl:gap-x-4 xl:pe-0">
-          {listings.map((listing, index) => (
+          {visibleListings.map((listing, index) => (
             <div
               key={listing.id}
               onMouseEnter={() => setCurrentHoverID(listing.id)}
@@ -61,6 +124,12 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
             </div>
           ))}
         </div>
+        {areaSearch && visibleListings.length === 0 && (
+          <div className="rounded-3xl border border-[#dbe7e2] bg-[#f7faf8] px-6 py-10 text-center">
+            <h2 className="text-lg font-semibold text-[#173f34]">ยังไม่พบประกาศในบริเวณนี้</h2>
+            <p className="mt-1 text-sm text-neutral-500">ลองเลื่อนหรือซูมแผนที่ออก แล้วกดค้นหาในบริเวณนี้อีกครั้ง</p>
+          </div>
+        )}
         <div className="mt-16 flex items-center">
           <Pagination />
         </div>
@@ -69,7 +138,9 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
       <MapFixedSection
         closeButtonHref={`/real-estate-categories/${category.handle}#heading`}
         currentHoverID={currentHoverID}
-        listings={listings}
+        listings={visibleListings}
+        searchSourceListings={listings}
+        onSearchArea={handleSearchArea}
         listingType="RealEstates"
         splitAtLg
         resultCount={category.count}
