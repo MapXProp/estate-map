@@ -191,7 +191,7 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: P
   const [startIndex, setStartIndex] = useState(0)
 
   const handleOpenDialog = (index = 0) => {
-    if (window.matchMedia('(max-width: 767px)').matches) {
+    if (window.matchMedia('(max-width: 743px)').matches) {
       setIsMobileGalleryOpen(true)
       return
     }
@@ -290,14 +290,16 @@ const HeaderGalleryGrid2 = ({
   images: string[]
   handleOpenDialog: (index?: number) => void
 }) => {
-  const previewImages = images.slice(0, 5)
+  const mobilePreviewImages = images.slice(0, 5)
+  const tabletSideImages = images.slice(1, 3)
+  const tabletThumbnailImages = images.slice(3, 8)
 
   return (
     <header className="relative">
-      <div className="grid grid-cols-6 gap-1 overflow-hidden rounded-2xl bg-neutral-100 md:hidden">
-        {previewImages.map((image, index) => {
+      <div className="grid grid-cols-6 gap-1 overflow-hidden rounded-2xl bg-neutral-100 min-[744px]:hidden">
+        {mobilePreviewImages.map((image, index) => {
           const isTopRow = index < 2
-          const isLast = index === previewImages.length - 1
+          const isLast = index === mobilePreviewImages.length - 1
 
           return (
             <button
@@ -328,41 +330,80 @@ const HeaderGalleryGrid2 = ({
         })}
       </div>
 
-      <div className="hidden md:grid md:grid-cols-4">
-        <div className="relative col-span-3 aspect-5/4 size-full" onClick={() => handleOpenDialog(0)}>
-          {images[0] && (
-            <Image
-              alt=""
-              src={images[0]}
-              fill
-              className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
-              sizes="(max-width: 1200px) 80vw, 80vw"
-              priority
-            />
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 gap-y-2 ps-2">
-          {images.slice(1, 4).map((item, index) => (
-            <div className="relative aspect-3/2 size-full" key={index} onClick={() => handleOpenDialog(index + 1)}>
+      <div className="hidden min-[744px]:block">
+        <div className="grid grid-cols-12 gap-2">
+          <button
+            type="button"
+            onClick={() => handleOpenDialog(0)}
+            aria-label="เปิดรูปหลักของอสังหาริมทรัพย์"
+            className="relative col-span-8 aspect-[3/2] overflow-hidden rounded-s-2xl bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
+          >
+            {images[0] && (
               <Image
-                alt=""
-                src={item}
+                alt="รูปหลักของอสังหาริมทรัพย์"
+                src={images[0]}
                 fill
-                className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
-                sizes="33vw"
+                className="object-cover transition duration-300 hover:brightness-90"
+                sizes="(max-width: 1100px) 66vw, 55vw"
                 priority
               />
-            </div>
-          ))}
-        </div>
-      </div>
+            )}
+          </button>
 
-      <div className="absolute bottom-3 left-3 hidden md:block">
-        <Button color="light" onClick={() => handleOpenDialog()}>
-          <Squares2X2Icon className="h-5 w-5" />
-          <span>{T['common']['Show all photos']}</span>
-        </Button>
+          <div className="col-span-4 grid grid-rows-2 gap-2">
+            {tabletSideImages.map((image, index) => (
+              <button
+                key={`${image}-side-${index}`}
+                type="button"
+                onClick={() => handleOpenDialog(index + 1)}
+                aria-label={`เปิดรูปที่ ${index + 2}`}
+                className={clsx(
+                  'relative overflow-hidden bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
+                  index === 0 ? 'rounded-tr-2xl' : 'rounded-br-2xl'
+                )}
+              >
+                <Image
+                  alt={`รูปอสังหาริมทรัพย์ ${index + 2}`}
+                  src={image}
+                  fill
+                  className="object-cover transition duration-300 hover:brightness-90"
+                  sizes="(max-width: 1100px) 34vw, 28vw"
+                  priority
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-2 grid grid-cols-5 gap-2">
+          {tabletThumbnailImages.map((image, index) => {
+            const imageIndex = index + 3
+            const isLast = index === tabletThumbnailImages.length - 1
+
+            return (
+              <button
+                key={`${image}-thumbnail-${index}`}
+                type="button"
+                onClick={() => handleOpenDialog(imageIndex)}
+                aria-label={isLast ? `ดูรูปภาพทั้งหมด ${images.length} รูป` : `เปิดรูปที่ ${imageIndex + 1}`}
+                className="relative aspect-[16/9] overflow-hidden rounded-lg bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
+              >
+              <Image
+                alt={`รูปอสังหาริมทรัพย์ ${imageIndex + 1}`}
+                src={image}
+                fill
+                className="object-cover transition duration-300 hover:brightness-90"
+                sizes="20vw"
+              />
+                {isLast && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/52 text-base font-semibold text-white lg:text-lg">
+                    +{Math.max(images.length - 7, 1)} รูป
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </header>
   )
