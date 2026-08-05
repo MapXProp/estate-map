@@ -11,8 +11,17 @@ import Pagination from '@/shared/Pagination'
 import convertNumbThousand from '@/utils/convertNumbThousand'
 import { fetchPropertyMapArea, PropertySearchListing } from '@/lib/propertySearch'
 import clsx from 'clsx'
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import MapFixedSection from '../../../MapFixedSection'
+
+const GALLERY_AUTOPLAY_QUERY = '(min-width: 744px) and (min-height: 600px)'
+const subscribeGalleryAutoPlay = (callback: () => void) => {
+  const mediaQuery = window.matchMedia(GALLERY_AUTOPLAY_QUERY)
+  mediaQuery.addEventListener('change', callback)
+  return () => mediaQuery.removeEventListener('change', callback)
+}
+const getGalleryAutoPlaySnapshot = () => window.matchMedia(GALLERY_AUTOPLAY_QUERY).matches
+const getGalleryAutoPlayServerSnapshot = () => false
 
 interface Props {
   className?: string
@@ -24,6 +33,11 @@ interface Props {
 
 const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOptions, query = '' }) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
+  const enableGalleryAutoPlay = useSyncExternalStore(
+    subscribeGalleryAutoPlay,
+    getGalleryAutoPlaySnapshot,
+    getGalleryAutoPlayServerSnapshot
+  )
   const [areaResults, setAreaResults] = useState<TRealEstateListing[] | null>(null)
   const [areaSearch, setAreaSearch] = useState<PropertyMapAreaSearch | null>(null)
   const visibleListings = useMemo(() => areaResults ?? listings, [areaResults, listings])
@@ -120,7 +134,12 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
               onMouseEnter={() => setCurrentHoverID(listing.id)}
               onMouseLeave={() => setCurrentHoverID('')}
             >
-              <PropertyCard data={listing} autoPlayGallery autoPlayDelay={(index % 4) * 320} compactMobile />
+              <PropertyCard
+                data={listing}
+                autoPlayGallery={enableGalleryAutoPlay}
+                autoPlayDelay={(index % 4) * 320}
+                compactMobile
+              />
             </div>
           ))}
         </div>
