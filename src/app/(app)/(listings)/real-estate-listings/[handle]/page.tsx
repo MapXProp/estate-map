@@ -37,6 +37,7 @@ import { redirect } from 'next/navigation'
 import { Fragment } from 'react'
 import HeaderGallery from '../../components/HeaderGallery'
 import HostAvatar from '../../components/HostAvatar'
+import MobilePropertyOverview from '../../components/MobilePropertyOverview'
 import SectionHeader from '../../components/SectionHeader'
 import { SectionHeading, SectionSubheading } from '../../components/SectionHeading'
 import SectionHost from '../../components/SectionHost'
@@ -126,76 +127,67 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const renderSectionInfo = () => {
     const highlights = [
       {
-        title: 'Near school & amenities',
-        description: 'Near school bus, Southport Hotel, beach, and village; 20-minute drive to Dover.',
+        title: 'ทำเลเดินทางสะดวก',
+        description: 'อยู่ใกล้บริการและสิ่งอำนวยความสะดวกที่จำเป็นต่อการใช้ชีวิตประจำวัน',
       },
       {
-        title: 'Spacious and modern',
-        description: 'Spacious 3-bedroom, 2-bathroom home with modern amenities and a large backyard.',
+        title: 'พื้นที่ใช้งานลงตัว',
+        description: 'จัดสรรพื้นที่ภายในให้ใช้งานง่าย พร้อมพื้นที่สำหรับการอยู่อาศัยอย่างเป็นสัดส่วน',
       },
       {
-        title: 'Perfect for families',
-        description: 'Ideal for families with children, offering a safe and friendly neighborhood.',
+        title: 'เหมาะกับการอยู่อาศัย',
+        description: 'ตอบโจทย์ทั้งการอยู่อาศัยด้วยตัวเองและการวางแผนสำหรับครอบครัว',
       },
       {
-        title: 'Great investment opportunity',
-        description: 'A great investment opportunity with potential for rental income or future resale.',
+        title: 'มีโอกาสต่อยอดในอนาคต',
+        description: 'สามารถพิจารณาเพื่ออยู่อาศัย ปล่อยเช่า หรือถือครองระยะยาวได้',
       },
     ]
     return (
       <div className="listingSection__wrap">
-        <SectionHeading>Stay information</SectionHeading>
+        <SectionHeading>รายละเอียดอสังหา</SectionHeading>
         <div className="leading-relaxed text-neutral-700 dark:text-neutral-300">
-          <span>
-            Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool,
-            a bar, a shared lounge, a garden and barbecue facilities. Complimentary WiFi is provided.
-          </span>
-          <br />
-          <br />
-          <span>There is a private bathroom with bidet in all units, along with a hairdryer and free toiletries.</span>
-          <br /> <br />
-          <span>
-            The Symphony 9 Tam Coc offers a terrace. Both a bicycle rental service and a car rental service are
-            available at the accommodation, while cycling can be enjoyed nearby.
-          </span>
+          <span>{description}</span>
         </div>
 
-        <Divider />
+        <div className="hidden min-[744px]:contents">
+          <Divider />
 
-        <SectionHeading>Property highlights </SectionHeading>
-        <DescriptionList>
-          {highlights.map((item, index) => (
-            <Fragment key={index}>
-              <DescriptionTerm>{item.title}</DescriptionTerm>
-              <DescriptionDetails>{item.description}</DescriptionDetails>
-            </Fragment>
-          ))}
-        </DescriptionList>
+          <SectionHeading>จุดเด่นของอสังหา</SectionHeading>
+          <DescriptionList>
+            {highlights.map((item, index) => (
+              <Fragment key={index}>
+                <DescriptionTerm>{item.title}</DescriptionTerm>
+                <DescriptionDetails>{item.description}</DescriptionDetails>
+              </Fragment>
+            ))}
+          </DescriptionList>
+        </div>
       </div>
     )
   }
 
   const renderSectionAmenities = () => {
     const Amenities_demos = [
-      { name: '3 Fast wifi', icon: Wifi01Icon },
-      { name: '4 Bathtub', icon: Bathtub02Icon },
-      { name: '4 Hair dryer', icon: HairDryerIcon },
-      { name: '2 Sound system', icon: Speaker01Icon },
-      { name: '2 Shampoo', icon: ShampooIcon },
-      { name: '2 Body soap', icon: BodySoapIcon },
-      { name: '1 Water Energy ', icon: WaterEnergyIcon },
-      { name: '1 Water Polo', icon: WaterPoloIcon },
-      { name: '2 Cable Car', icon: CableCarIcon },
-      { name: '5 Tv Smart', icon: TvSmartIcon },
-      { name: '5 Cctv Camera', icon: CctvCameraIcon },
-      { name: '4 Virtual Reality Vr', icon: VirtualRealityVr01Icon },
+      { name: 'Wi-Fi ความเร็วสูง', icon: Wifi01Icon },
+      { name: 'อ่างอาบน้ำ', icon: Bathtub02Icon },
+      { name: 'ไดร์เป่าผม', icon: HairDryerIcon },
+      { name: 'เครื่องเสียง', icon: Speaker01Icon },
+      { name: 'แชมพู', icon: ShampooIcon },
+      { name: 'สบู่อาบน้ำ', icon: BodySoapIcon },
+      { name: 'ระบบน้ำพร้อมใช้งาน', icon: WaterEnergyIcon },
+      { name: 'สระว่ายน้ำ', icon: WaterPoloIcon },
+      { name: 'เดินทางสะดวก', icon: CableCarIcon },
+      { name: 'สมาร์ตทีวี', icon: TvSmartIcon },
+      { name: 'กล้องวงจรปิด', icon: CctvCameraIcon },
+      { name: 'รองรับการชมทรัพย์ออนไลน์', icon: VirtualRealityVr01Icon },
     ]
 
     return (
       <div className="listingSection__wrap">
         <div>
-          <SectionHeading>Property features</SectionHeading>
-          <SectionSubheading>About the property&apos;s amenities and services</SectionSubheading>
+          <SectionHeading>สิ่งอำนวยความสะดวก</SectionHeading>
+          <SectionSubheading>รายละเอียดอุปกรณ์และบริการที่มีในอสังหานี้</SectionSubheading>
         </div>
         <Divider className="w-14!" />
 
@@ -211,7 +203,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
         {/* ----- */}
         <div className="w-14 border-b border-neutral-200"></div>
         <div>
-          <ButtonSecondary>View more 20 features</ButtonSecondary>
+          <ButtonSecondary>ดูสิ่งอำนวยความสะดวกทั้งหมด</ButtonSecondary>
         </div>
       </div>
     )
@@ -289,21 +281,32 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   }
 
   return (
-    <div>
+    <div className="pb-24 min-[744px]:pb-0">
       {/*  HEADER */}
-      <HeaderGallery gridType="grid2" images={galleryImgs} />
+      <HeaderGallery gridType="grid2" images={galleryImgs} initiallySaved={like} />
+      <MobilePropertyOverview
+        title={title}
+        category={listingCategory}
+        price={price}
+        address={address}
+        bedrooms={bedrooms}
+        bathrooms={bathrooms}
+        area={acreage}
+        maxGuests={maxGuests}
+        phone={host.phone}
+      />
 
       {/* MAIN */}
-      <main className="relative z-[1] mt-10 flex flex-col gap-8 lg:flex-row xl:gap-10">
+      <main className="relative z-[1] mt-0 flex flex-col gap-8 min-[744px]:mt-10 lg:flex-row xl:gap-10">
         {/* CONTENT */}
         <div className="flex w-full flex-col gap-y-8 lg:w-3/5 xl:w-[64%] xl:gap-y-10">
-          {renderSectionHeader()}
+          <div className="hidden min-[744px]:block">{renderSectionHeader()}</div>
           {renderSectionInfo()}
           {renderSectionAmenities()}
         </div>
 
         {/* SIDEBAR */}
-        <div className="grow">
+        <div id="contact-owner-desktop" className="hidden grow min-[744px]:block">
           <div className="sticky top-5">{renderSidebarPriceAndForm()}</div>
         </div>
       </main>
@@ -312,7 +315,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
 
       <div className="flex flex-col gap-y-10">
         <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
-          <div className="w-full lg:w-4/9 xl:w-1/3">
+          <div id="contact-owner" className="w-full scroll-mt-24 lg:w-4/9 xl:w-1/3">
             <SectionHost {...host} />
           </div>
           <div className="w-full lg:w-2/3">
@@ -320,7 +323,9 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
           </div>
         </div>
 
-        <SectionMap />
+        <div id="property-location">
+          <SectionMap />
+        </div>
       </div>
     </div>
   )

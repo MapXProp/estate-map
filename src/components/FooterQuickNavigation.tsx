@@ -37,7 +37,9 @@ const FooterQuickNavigation = () => {
   const lastScrollY = useRef<number>(0)
   const pathname = usePathname()
   const hideOnPropertyMap =
-    pathname === '/properties/map' || pathname.startsWith('/real-estate-categories-map')
+    pathname === '/properties/map' ||
+    pathname.startsWith('/real-estate-categories-map') ||
+    pathname.startsWith('/real-estate-listings/')
   const { open: openAside } = useAside()
   const intersection = useIntersection(containerRef as RefObject<HTMLDivElement>, {
     root: null,
