@@ -8,11 +8,12 @@ import { Squares2X2Icon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
+import { ChevronLeft, Share2 } from 'lucide-react'
 import Image from 'next/image'
 import { useCallback, useEffect, useState } from 'react'
 
 const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOptionsType }) => {
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(option.startIndex ?? 0)
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel({
     ...option,
     direction: process.env.NEXT_PUBLIC_THEME_DIR,
@@ -40,9 +41,10 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
 
   useEffect(() => {
     if (!emblaMainApi) return
-    onSelect()
-
     emblaMainApi.on('select', onSelect).on('reInit', onSelect)
+    return () => {
+      emblaMainApi.off('select', onSelect).off('reInit', onSelect)
+    }
   }, [emblaMainApi, onSelect])
 
   return (
@@ -50,13 +52,14 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
       <div className="embla__viewport relative mx-auto size-full overflow-hidden" ref={emblaMainRef}>
         <div className="embla__container size-full">
           {images.map((image, index) => (
-            <div className="relative z-50 flex embla__slide basis-full items-center justify-center" key={index}>
+            <div className="relative z-50 flex embla__slide basis-full items-center justify-center px-3 py-16 sm:px-10" key={index}>
               <Image
-                alt="Slide image"
+                alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
                 src={image}
                 width={1280}
                 height={853}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                className="max-h-[calc(100dvh-8rem)] w-auto max-w-full object-contain"
               />
             </div>
           ))}
@@ -68,10 +71,13 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
               <span className="sr-only">Close</span>
             </CloseButton>
           </div>
+          <div className="absolute top-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-white/12 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
+            {selectedIndex + 1} / {images.length}
+          </div>
         </div>
       </div>
 
-      <div className="embla-thumbs fixed inset-x-0 bottom-5 z-10">
+      <div className="embla-thumbs fixed inset-x-0 bottom-5 z-10 hidden sm:block">
         <div className="embla-thumbs__viewport mx-auto max-w-28" ref={emblaThumbsRef}>
           <div className="embla-thumbs__container flex">
             {images.map((image, index) => (
@@ -95,15 +101,104 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
   )
 }
 
+const MobilePhotoGallery = ({
+  images,
+  open,
+  onClose,
+  onOpenImage,
+}: {
+  images: string[]
+  open: boolean
+  onClose: () => void
+  onOpenImage: (index: number) => void
+}) => {
+  const handleShare = async () => {
+    const shareData = { title: document.title, url: window.location.href }
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => undefined)
+      return
+    }
+    await navigator.clipboard?.writeText(shareData.url).catch(() => undefined)
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} className="relative z-50 md:hidden">
+      <DialogBackdrop className="fixed inset-0 bg-white" />
+      <div className="fixed inset-0 overflow-y-auto bg-white">
+        <DialogPanel className="min-h-full bg-white text-neutral-950">
+          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-neutral-200 bg-white/95 px-3 backdrop-blur">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="กลับไปหน้ารายละเอียดอสังหา"
+              className="flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
+            >
+              <ChevronLeft className="size-6" aria-hidden="true" />
+            </button>
+            <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold whitespace-nowrap">
+              รูปภาพทั้งหมด
+            </h2>
+            <button
+              type="button"
+              onClick={() => void handleShare()}
+              className="flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition hover:bg-neutral-100 active:bg-neutral-200"
+            >
+              <Share2 className="size-4.5" aria-hidden="true" />
+              <span>แชร์</span>
+            </button>
+          </header>
+
+          <main className="px-2.5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <h3 className="mb-4 px-0.5 text-lg font-semibold">แกลเลอรีรูปภาพ</h3>
+            <div className="columns-2 gap-2">
+              {images.map((image, index) => (
+                <button
+                  key={`${image}-${index}`}
+                  type="button"
+                  onClick={() => onOpenImage(index)}
+                  aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
+                  className={clsx(
+                    'relative mb-2 block w-full break-inside-avoid overflow-hidden rounded-xl bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+                    index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]'
+                  )}
+                >
+                  <Image
+                    src={image}
+                    alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
+                    fill
+                    sizes="50vw"
+                    priority={index < 4}
+                    className="object-cover transition duration-200 active:scale-[0.98]"
+                  />
+                </button>
+              ))}
+            </div>
+          </main>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  )
+}
+
 interface Props {
   images: string[]
   gridType?: 'grid1' | 'grid2' | 'grid3' | 'grid4'
 }
 const HeaderGallery = ({ images, gridType = 'grid1' }: Props) => {
-  let [isOpen, setIsOpen] = useState(false)
-  let [startIndex, setStartIndex] = useState(0)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
+  const [startIndex, setStartIndex] = useState(0)
 
   const handleOpenDialog = (index = 0) => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setIsMobileGalleryOpen(true)
+      return
+    }
+    setStartIndex(index)
+    setIsOpen(true)
+  }
+
+  const handleOpenMobileImage = (index: number) => {
     setStartIndex(index)
     setIsOpen(true)
   }
@@ -115,8 +210,15 @@ const HeaderGallery = ({ images, gridType = 'grid1' }: Props) => {
       {gridType === 'grid3' && <HeaderGalleryGrid3 images={images} handleOpenDialog={handleOpenDialog} />}
       {gridType === 'grid4' && <HeaderGalleryGrid4 images={images} handleOpenDialog={handleOpenDialog} />}
 
+      <MobilePhotoGallery
+        images={images}
+        open={isMobileGalleryOpen}
+        onClose={() => setIsMobileGalleryOpen(false)}
+        onOpenImage={handleOpenMobileImage}
+      />
+
       {/* Dialog for full-screen image gallery */}
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
+      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-[60]">
         {/* The backdrop, rendered as a fixed sibling to the panel container */}
         <DialogBackdrop className="fixed inset-0 bg-black" />
 
@@ -124,7 +226,7 @@ const HeaderGallery = ({ images, gridType = 'grid1' }: Props) => {
         <div className="fixed inset-0 flex w-screen items-center justify-center">
           <DialogPanel
             transition
-            className="relative mx-auto aspect-[3/2] max-h-full w-full max-w-7xl flex-1 transition data-closed:opacity-0"
+            className="relative mx-auto h-full w-full max-w-7xl flex-1 transition data-closed:opacity-0"
           >
             <EmblaCarousel images={images} option={{ startIndex, slidesToScroll: 1 }} />
           </DialogPanel>

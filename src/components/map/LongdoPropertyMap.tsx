@@ -180,6 +180,7 @@ const LongdoPropertyMap = ({
     [searchSourceListings]
   )
   const center = useMemo(() => locations[0] || { lon: 100.5018, lat: 13.7563 }, [locations])
+  const initialCenterRef = useRef<LongdoLocation>(center)
 
   useEffect(() => {
     const keyword = searchText.trim()
@@ -301,7 +302,7 @@ const LongdoPropertyMap = ({
     const map = new window.longdo.Map({
       placeholder: placeholderRef.current,
       language: 'th',
-      location: center,
+      location: initialCenterRef.current,
       zoom: 12,
       lastView: false,
       autoResize: true,
@@ -317,7 +318,7 @@ const LongdoPropertyMap = ({
       searchMarkerRef.current = null
       mapRef.current = null
     }
-  }, [center, sdkReady])
+  }, [sdkReady])
 
   useEffect(() => {
     const map = mapRef.current
