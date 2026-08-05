@@ -10,7 +10,7 @@ import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
 import { ChevronLeft, Heart } from 'lucide-react'
 import Image from 'next/image'
-import { useCallback, useEffect, useState } from 'react'
+import { type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOptionsType }) => {
   const [selectedIndex, setSelectedIndex] = useState(option.startIndex ?? 0)
@@ -115,16 +115,111 @@ const MobilePhotoGallery = ({
   initiallySaved: boolean
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isDismissing, setIsDismissing] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const touchStartYRef = useRef(0)
+  const touchStartXRef = useRef(0)
+  const touchStartTimeRef = useRef(0)
+  const canStartDragRef = useRef(false)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const resetDrag = useCallback(() => {
+    setDragOffset(0)
+    setIsDragging(false)
+    setIsDismissing(false)
+    canStartDragRef.current = false
+  }, [])
+
+  const handleClose = useCallback(() => {
+    resetDrag()
+    onClose()
+  }, [onClose, resetDrag])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
+
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1 || isDismissing) return
+
+    const touch = event.touches[0]
+    touchStartYRef.current = touch.clientY
+    touchStartXRef.current = touch.clientX
+    touchStartTimeRef.current = performance.now()
+    canStartDragRef.current = (scrollContainerRef.current?.scrollTop ?? 0) <= 1
+  }
+
+  const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (!canStartDragRef.current || event.touches.length !== 1 || isDismissing) return
+
+    const touch = event.touches[0]
+    const deltaY = touch.clientY - touchStartYRef.current
+    const deltaX = touch.clientX - touchStartXRef.current
+
+    if (deltaY <= 0 || Math.abs(deltaX) > deltaY) return
+    if (deltaY > 6) setIsDragging(true)
+
+    event.preventDefault()
+    setDragOffset(Math.min(deltaY * 0.88, window.innerHeight))
+  }
+
+  const handleTouchEnd = () => {
+    if (!isDragging || isDismissing) {
+      canStartDragRef.current = false
+      return
+    }
+
+    const elapsed = Math.max(performance.now() - touchStartTimeRef.current, 1)
+    const velocity = dragOffset / elapsed
+    const shouldDismiss = dragOffset > 110 || velocity > 0.55
+
+    if (shouldDismiss) {
+      setIsDragging(false)
+      setIsDismissing(true)
+      setDragOffset(window.innerHeight)
+      closeTimerRef.current = setTimeout(handleClose, 220)
+      return
+    }
+
+    setIsDragging(false)
+    setDragOffset(0)
+    canStartDragRef.current = false
+  }
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50 md:hidden">
-      <DialogBackdrop className="fixed inset-0 bg-white" />
-      <div className="fixed inset-0 overflow-y-auto bg-white">
-        <DialogPanel className="min-h-full bg-white text-neutral-950">
+    <Dialog open={open} onClose={handleClose} className="relative z-50 md:hidden">
+      <DialogBackdrop
+        className="fixed inset-0 bg-neutral-950/25 transition-opacity duration-200"
+        style={{ opacity: Math.max(0, 1 - dragOffset / 360) }}
+      />
+      <div
+        ref={scrollContainerRef}
+        className="fixed inset-0 overflow-y-auto overscroll-y-contain"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
+        <DialogPanel
+          className="min-h-full bg-white text-neutral-950 shadow-2xl will-change-transform"
+          style={{
+            transform: `translate3d(0, ${dragOffset}px, 0)`,
+            borderRadius: dragOffset > 6 ? '20px 20px 0 0' : '0px',
+            transition: isDragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 180ms',
+          }}
+        >
           <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-neutral-200 bg-white/95 px-3 backdrop-blur">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300"
+            />
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="กลับไปหน้ารายละเอียดอสังหา"
               className="flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
             >
