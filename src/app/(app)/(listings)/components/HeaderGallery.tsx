@@ -275,6 +275,73 @@ const MobilePhotoGallery = ({
   )
 }
 
+const DesktopPhotoGallery = ({
+  images,
+  open,
+  onClose,
+  onOpenImage,
+}: {
+  images: string[]
+  open: boolean
+  onClose: () => void
+  onOpenImage: (index: number) => void
+}) => {
+  return (
+    <Dialog open={open} onClose={onClose} className="relative z-50 hidden min-[744px]:block">
+      <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
+        <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-neutral-900 lg:max-h-[calc(100dvh-2.5rem)]">
+          <header className="relative z-10 flex min-h-20 shrink-0 items-center justify-between gap-4 border-b border-neutral-200 bg-white px-6 dark:border-neutral-800 dark:bg-neutral-900 lg:px-8">
+            <div className="min-w-0">
+              <h2 className="truncate text-xl font-semibold text-neutral-950 dark:text-white">รูปภาพทั้งหมด</h2>
+              <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+                เลือกรูปเพื่อดูภาพขนาดใหญ่ · {images.length} รูป
+              </p>
+            </div>
+
+            <CloseButton
+              as="button"
+              type="button"
+              aria-label="ปิดแกลเลอรีรูปภาพ"
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            >
+              <span aria-hidden="true" className="text-2xl leading-none">
+                ×
+              </span>
+            </CloseButton>
+          </header>
+
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 dark:bg-neutral-950/60 lg:p-4">
+            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3 lg:gap-3">
+              {images.map((image, index) => (
+                <button
+                  key={`${image}-desktop-gallery-${index}`}
+                  type="button"
+                  onClick={() => onOpenImage(index)}
+                  aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
+                  className="group relative aspect-[4/3] min-w-0 overflow-hidden rounded-xl bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
+                >
+                  <Image
+                    src={image}
+                    alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
+                    fill
+                    sizes="(max-width: 1023px) 50vw, 33vw"
+                    priority={index < 6}
+                    className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
+                  />
+                  <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                    {index + 1} / {images.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>
+  )
+}
+
 interface Props {
   images: string[]
   gridType?: 'grid1' | 'grid2' | 'grid3' | 'grid4'
@@ -283,6 +350,7 @@ interface Props {
 const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
+  const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
   const [startIndex, setStartIndex] = useState(0)
 
   const handleOpenDialog = (index = 0) => {
@@ -290,11 +358,22 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: P
       setIsMobileGalleryOpen(true)
       return
     }
+
+    if (gridType === 'grid2') {
+      setIsDesktopGalleryOpen(true)
+      return
+    }
+
     setStartIndex(index)
     setIsOpen(true)
   }
 
   const handleOpenMobileImage = (index: number) => {
+    setStartIndex(index)
+    setIsOpen(true)
+  }
+
+  const handleOpenDesktopImage = (index: number) => {
     setStartIndex(index)
     setIsOpen(true)
   }
@@ -313,6 +392,15 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: P
         onOpenImage={handleOpenMobileImage}
         initiallySaved={initiallySaved}
       />
+
+      {gridType === 'grid2' && (
+        <DesktopPhotoGallery
+          images={images}
+          open={isDesktopGalleryOpen}
+          onClose={() => setIsDesktopGalleryOpen(false)}
+          onOpenImage={handleOpenDesktopImage}
+        />
+      )}
 
       {/* Dialog for full-screen image gallery */}
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-[60]">
