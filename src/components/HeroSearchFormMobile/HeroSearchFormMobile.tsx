@@ -56,6 +56,7 @@ const HeroSearchFormMobile = ({ className }: { className?: string }) => {
     pathname === '/rent' ||
     pathname === '/business' ||
     pathname === '/properties/map' ||
+    pathname.startsWith('/add-listing') ||
     pathname.startsWith('/real-estate-categories') ||
     pathname.startsWith('/real-estate-listings')
 

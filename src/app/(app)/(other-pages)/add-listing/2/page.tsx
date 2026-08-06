@@ -146,7 +146,7 @@ const Page = () => {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700">
-              <div className="h-72">
+              <div className="h-72 lg:h-96 xl:h-[26rem]">
                 <Map center={[marker.lng, marker.lat]} zoom={14}>
                   <MapMarker
                     draggable

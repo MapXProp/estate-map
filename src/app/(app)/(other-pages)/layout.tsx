@@ -1,6 +1,6 @@
-import Header from '@/components/Header/Header'
 import { Metadata } from 'next'
 import { ApplicationLayout } from '../application-layout'
+import OtherPagesHeader from './OtherPagesHeader'
 
 export const metadata: Metadata = {
   title: 'Home',
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 }
 
 export default function Layout({ children, params }: { children: React.ReactNode; params: any }) {
-  return <ApplicationLayout header={<Header hasBorderBottom={true} />}>{children}</ApplicationLayout>
+  return <ApplicationLayout header={<OtherPagesHeader />}>{children}</ApplicationLayout>
 }

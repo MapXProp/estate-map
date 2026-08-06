@@ -31,7 +31,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <RequireAuth>
-      <div className="mx-auto max-w-3xl px-4 pt-8 pb-24 min-[744px]:px-8 sm:pt-12 lg:pb-32">
+      <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-24 min-[744px]:px-8 sm:pt-12 lg:max-w-4xl lg:pb-32 xl:max-w-5xl 2xl:max-w-6xl">
         <ProgressHeader pathname={pathname} />
         <div className="mt-8 listingSection__wrap">{children}</div>
         <Pagination pathname={pathname} />

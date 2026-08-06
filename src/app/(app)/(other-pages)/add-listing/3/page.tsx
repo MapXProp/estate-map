@@ -110,7 +110,7 @@ const Page = () => {
           </label>
 
           {previewUrls.length ? (
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
               {previewUrls.map((url, index) => (
                 <div
                   key={url}
