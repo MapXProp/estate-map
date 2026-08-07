@@ -14,6 +14,7 @@ interface Props {
   autoPlayGallery?: boolean
   autoPlayDelay?: number
   compactMobile?: boolean
+  openInNewTab?: boolean
 }
 
 const PropertyCard: FC<Props> = ({
@@ -22,6 +23,7 @@ const PropertyCard: FC<Props> = ({
   autoPlayGallery = false,
   autoPlayDelay = 0,
   compactMobile = false,
+  openInNewTab = true,
 }) => {
   const {
     galleryImgs,
@@ -53,7 +55,7 @@ const PropertyCard: FC<Props> = ({
           autoPlay={autoPlayGallery}
           autoPlayInterval={2500}
           autoPlayDelay={autoPlayDelay}
-          openInNewTab
+          openInNewTab={openInNewTab}
         />
         <BtnLikeIcon isLiked={like} className={compactMobile ? 'absolute end-2 top-2 z-1 lg:end-3 lg:top-3' : 'absolute end-3 top-3 z-1'} />
         {saleOff && <SaleOffBadge className="absolute start-3 top-3" />}
@@ -116,7 +118,11 @@ const PropertyCard: FC<Props> = ({
   return (
     <div className={`group relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 ${className}`}>
       {renderSliderGallery()}
-      <Link href={listingHref} target="_blank" rel="noopener noreferrer">
+      <Link
+        href={listingHref}
+        target={openInNewTab ? '_blank' : undefined}
+        rel={openInNewTab ? 'noopener noreferrer' : undefined}
+      >
         {renderContent()}
       </Link>
     </div>
