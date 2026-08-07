@@ -283,7 +283,21 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   return (
     <div className="pb-24 min-[744px]:pb-0">
       {/*  HEADER */}
-      <HeaderGallery gridType="grid2" images={galleryImgs} initiallySaved={like} />
+      <HeaderGallery
+        gridType="grid2"
+        images={galleryImgs}
+        initiallySaved={like}
+        propertyDetails={{
+          title,
+          category: listingCategory,
+          price,
+          address,
+          bedrooms,
+          bathrooms,
+          area: acreage,
+          phone: host.phone,
+        }}
+      />
       <MobilePropertyOverview
         title={title}
         category={listingCategory}

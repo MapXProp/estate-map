@@ -8,7 +8,7 @@ import { Squares2X2Icon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
-import { ChevronLeft, Heart } from 'lucide-react'
+import { Bath, BedDouble, ChevronLeft, Heart, MapPin, Maximize2, Phone, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import { type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -280,12 +280,25 @@ const DesktopPhotoGallery = ({
   open,
   onClose,
   onOpenImage,
+  initiallySaved,
+  propertyDetails,
 }: {
   images: string[]
   open: boolean
   onClose: () => void
   onOpenImage: (index: number) => void
+  initiallySaved: boolean
+  propertyDetails?: PropertyGalleryDetails
 }) => {
+  const [isSaved, setIsSaved] = useState(initiallySaved)
+
+  const handleRequestViewing = () => {
+    onClose()
+    window.setTimeout(() => {
+      document.getElementById('contact-owner-desktop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 180)
+  }
+
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50 hidden min-[744px]:block">
       <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
@@ -311,30 +324,124 @@ const DesktopPhotoGallery = ({
             </CloseButton>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 dark:bg-neutral-950/60 lg:p-4">
-            <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3 lg:gap-3">
-              {images.map((image, index) => (
-                <button
-                  key={`${image}-desktop-gallery-${index}`}
-                  type="button"
-                  onClick={() => onOpenImage(index)}
-                  aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
-                  className="group relative aspect-[4/3] min-w-0 overflow-hidden rounded-xl bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
-                >
-                  <Image
-                    src={image}
-                    alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
-                    fill
-                    sizes="(max-width: 1023px) 50vw, 33vw"
-                    priority={index < 6}
-                    className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
-                  />
-                  <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                    {index + 1} / {images.length}
-                  </span>
-                </button>
-              ))}
+          <div className="flex min-h-0 flex-1">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 dark:bg-neutral-950/60 lg:p-4">
+              <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3">
+                {images.map((image, index) => (
+                  <button
+                    key={`${image}-desktop-gallery-${index}`}
+                    type="button"
+                    onClick={() => onOpenImage(index)}
+                    aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
+                    className="group relative aspect-[4/3] min-w-0 overflow-hidden rounded-xl bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
+                  >
+                    <Image
+                      src={image}
+                      alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
+                      fill
+                      sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw"
+                      priority={index < 6}
+                      className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
+                    />
+                    <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                      {index + 1} / {images.length}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {propertyDetails && (
+              <aside className="hidden w-[310px] shrink-0 flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:flex xl:w-[350px]">
+                <div className="min-h-0 flex-1 overflow-y-auto p-5 xl:p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff7f3] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
+                      <ShieldCheck className="size-4" />
+                      ตรวจสอบแล้ว
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSaved((saved) => !saved)}
+                      aria-pressed={isSaved}
+                      aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
+                      className={clsx(
+                        'grid size-10 shrink-0 place-items-center rounded-full border border-neutral-200 transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800',
+                        isSaved ? 'text-rose-600' : 'text-neutral-700 dark:text-neutral-200'
+                      )}
+                    >
+                      <Heart className={clsx('size-5', isSaved && 'fill-current')} />
+                    </button>
+                  </div>
+
+                  <p className="mt-5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    {propertyDetails.category}
+                  </p>
+                  <h3 className="mt-1 text-xl font-semibold leading-snug text-neutral-950 dark:text-white">
+                    {propertyDetails.title}
+                  </h3>
+                  <div className="mt-3 flex items-start gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                    <MapPin className="mt-0.5 size-4 shrink-0 text-[#176b50]" />
+                    <span>{propertyDetails.address}</span>
+                  </div>
+
+                  <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
+
+                  <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">ราคาเสนอ</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">{propertyDetails.price}</p>
+
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    <div className="rounded-2xl bg-neutral-50 p-3 text-center dark:bg-neutral-800/70">
+                      <BedDouble className="mx-auto size-5 text-[#176b50]" />
+                      <p className="mt-2 text-sm font-semibold">{propertyDetails.bedrooms}</p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">ห้องนอน</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3 text-center dark:bg-neutral-800/70">
+                      <Bath className="mx-auto size-5 text-[#176b50]" />
+                      <p className="mt-2 text-sm font-semibold">{propertyDetails.bathrooms}</p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">ห้องน้ำ</p>
+                    </div>
+                    <div className="rounded-2xl bg-neutral-50 p-3 text-center dark:bg-neutral-800/70">
+                      <Maximize2 className="mx-auto size-5 text-[#176b50]" />
+                      <p className="mt-2 truncate text-sm font-semibold">{propertyDetails.area}</p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">ตร.ม.</p>
+                    </div>
+                  </div>
+
+                  <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
+
+                  <h4 className="text-sm font-semibold text-neutral-950 dark:text-white">จุดเด่นของอสังหา</h4>
+                  <ul className="mt-3 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
+                    {['ข้อมูลตรงตามประเภททรัพย์', 'ดูรูปภาพจริงได้ครบทุกมุม', 'ติดต่อเจ้าของประกาศได้โดยตรง'].map(
+                      (highlight) => (
+                        <li key={highlight} className="flex items-start gap-2.5">
+                          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#176b50]" />
+                          <span>{highlight}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+
+                <div className="shrink-0 border-t border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900 xl:p-6">
+                  <button
+                    type="button"
+                    onClick={handleRequestViewing}
+                    className="min-h-12 w-full rounded-full bg-[#124e3c] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d3d2f] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]/40"
+                  >
+                    นัดดูสถานที่
+                  </button>
+                  {propertyDetails.phone && (
+                    <a
+                      href={`tel:${propertyDetails.phone}`}
+                      className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-800"
+                    >
+                      <Phone className="size-4" />
+                      โทรหาเจ้าของ
+                    </a>
+                  )}
+                </div>
+              </aside>
+            )}
           </div>
         </DialogPanel>
       </div>
@@ -346,8 +453,21 @@ interface Props {
   images: string[]
   gridType?: 'grid1' | 'grid2' | 'grid3' | 'grid4'
   initiallySaved?: boolean
+  propertyDetails?: PropertyGalleryDetails
 }
-const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: Props) => {
+
+interface PropertyGalleryDetails {
+  title: string
+  category: string
+  price: string
+  address: string
+  bedrooms: number | string
+  bathrooms: number | string
+  area: number | string
+  phone?: string
+}
+
+const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false, propertyDetails }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
   const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
@@ -399,6 +519,8 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false }: P
           open={isDesktopGalleryOpen}
           onClose={() => setIsDesktopGalleryOpen(false)}
           onOpenImage={handleOpenDesktopImage}
+          initiallySaved={initiallySaved}
+          propertyDetails={propertyDetails}
         />
       )}
 
