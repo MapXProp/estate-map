@@ -34,6 +34,7 @@ interface Props {
   clearDataButtonClassName?: string
   min?: number
   max?: number
+  currency?: 'USD' | 'THB'
 }
 
 export const PriceRangeInputField: FC<Props> = ({
@@ -43,8 +44,16 @@ export const PriceRangeInputField: FC<Props> = ({
   clearDataButtonClassName,
   min = 0,
   max = 1000000,
+  currency = 'USD',
 }) => {
-  const [rangePrices, setRangePrices] = useState([90000, 800000])
+  const [rangePrices, setRangePrices] = useState([
+    min,
+    Math.min(max, currency === 'THB' ? (max <= 200_000 ? 30_000 : 5_000_000) : 800_000),
+  ])
+  const formattedRange =
+    currency === 'THB'
+      ? `฿${rangePrices[0].toLocaleString('th-TH')} – ฿${rangePrices[1].toLocaleString('th-TH')}`
+      : `$${convertNumbThousand(rangePrices[0] / 1000)}k ~ $${convertNumbThousand(rangePrices[1] / 1000)}k`
 
   return (
     <>
@@ -59,9 +68,7 @@ export const PriceRangeInputField: FC<Props> = ({
               )}
 
               <div className="flex-1 text-start">
-                <span className={clsx('block font-semibold', styles.mainText[fieldStyle])}>
-                  {`$${convertNumbThousand(rangePrices[0] / 1000)}k ~ $${convertNumbThousand(rangePrices[1] / 1000)}k`}
-                </span>
+                <span className={clsx('block font-semibold', styles.mainText[fieldStyle])}>{formattedRange}</span>
                 <span className="mt-1 block text-sm leading-none font-light text-neutral-400">
                   {T['HeroSearchForm']['Choose price range']}
                 </span>
@@ -75,13 +82,14 @@ export const PriceRangeInputField: FC<Props> = ({
 
             <PopoverPanel transition className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle])}>
               <PriceRangeSlider
-                name={T['HeroSearchForm']['Price range']}
+                name={currency === 'THB' ? 'งบประมาณ' : T['HeroSearchForm']['Price range']}
                 min={min}
                 max={max}
                 defaultValue={rangePrices}
                 onChange={(value) => {
                   setRangePrices(value)
                 }}
+                currency={currency}
               />
             </PopoverPanel>
           </>

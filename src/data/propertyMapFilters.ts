@@ -1,21 +1,36 @@
 export async function getPropertyMapFilterOptions() {
   return [
     {
-      label: 'ซื้อ / เช่า',
-      name: 'transactionType',
+      label: 'พื้นที่ที่กำลังมองหา',
+      name: 'discoveryChannel',
       tabUIType: 'checkbox',
       options: [
         {
-          name: 'ซื้อ',
-          value: 'buy',
-          description: 'บ้าน คอนโด ที่ดิน และอสังหาสำหรับซื้อ',
-          defaultChecked: true,
+          name: 'บ้านและที่อยู่อาศัย',
+          value: 'homes',
+          description: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย',
         },
         {
-          name: 'เช่า',
-          value: 'rent',
-          description: 'บ้านเช่า คอนโด อพาร์ตเมนต์ และหอพัก',
+          name: 'ห้องเช่าและที่พักรายเดือน',
+          value: 'rooms',
+          description: 'อพาร์ตเมนต์ หอพัก แฟลต และห้องเช่าระยะยาว',
         },
+        {
+          name: 'พื้นที่ทำธุรกิจ',
+          value: 'business',
+          description: 'ร้านค้า ล็อคตลาด ออฟฟิศ โกดัง โรงงาน และพื้นที่ออกบูธ',
+        },
+      ],
+    },
+    {
+      label: 'รูปแบบประกาศ',
+      name: 'offerType',
+      tabUIType: 'checkbox',
+      options: [
+        { name: 'ซื้อ', value: 'sale', description: 'ซื้อหรือรับโอนกรรมสิทธิ์' },
+        { name: 'เช่า', value: 'rent', description: 'เช่ารายเดือนหรือเช่าระยะยาว' },
+        { name: 'เซ้งสิทธิ์', value: 'sublease', description: 'รับช่วงสิทธิ์เช่าพื้นที่เดิม' },
+        { name: 'รับโอนกิจการ', value: 'business_transfer', description: 'รับช่วงร้าน อุปกรณ์ หรือกิจการ' },
       ],
     },
     {
@@ -29,10 +44,17 @@ export async function getPropertyMapFilterOptions() {
         { name: 'ตึกแถว', value: 'rowhouse' },
         { name: 'อพาร์ตเมนต์', value: 'apartment' },
         { name: 'หอพัก', value: 'dormitory' },
+        { name: 'แฟลต', value: 'flat' },
+        { name: 'ห้องเช่ารายเดือน', value: 'monthly_room' },
         { name: 'ที่ดิน', value: 'land' },
-        { name: 'ร้านค้า / พื้นที่ขายของ', value: 'retail' },
+        { name: 'ร้านค้า Standalone', value: 'standalone_retail' },
+        { name: 'ล็อคในตลาด', value: 'market_stall' },
+        { name: 'ล็อคในห้าง / คีออส', value: 'mall_kiosk' },
         { name: 'ออฟฟิศ', value: 'office' },
-        { name: 'โกดัง / โรงงาน', value: 'warehouse_factory' },
+        { name: 'Co-working space', value: 'coworking' },
+        { name: 'โกดัง', value: 'warehouse' },
+        { name: 'โรงงาน', value: 'factory' },
+        { name: 'พื้นที่งานอีเวนต์ / ออกบูธ', value: 'event_space' },
       ],
     },
     {

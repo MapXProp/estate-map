@@ -15,6 +15,7 @@ import HeroSearchFormSmall from '../HeroSearchForm/HeroSearchFormSmall'
 import AvatarDropdown from './AvatarDropdown'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import NotifyDropdown from './NotifyDropdown'
+import PropertyListingCta from './PropertyListingCta'
 
 interface Header3Props {
   hasBorderBottom?: boolean
@@ -55,6 +56,10 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
     locationText = 'Real Estates in Bali'
     dateText = 'Rent'
     guestsText = '$10k - $1M'
+  } else if (pathname.startsWith('/properties/map') && initSearchFormTab === 'RealEstates') {
+    locationText = 'ค้นหาทำเลหรืออสังหา'
+    dateText = 'ทุกหมวด'
+    guestsText = 'ตัวกรอง'
   }
 
   // for memoization of the close function
@@ -157,7 +162,12 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   </div>
 
                   <div className="ms-auto shrink-0 cursor-pointer pe-2">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-primary-600 text-white">
+                    <span
+                      className={clsx(
+                        'flex size-8 items-center justify-center rounded-full text-white',
+                        initSearchFormTab === 'RealEstates' ? 'bg-[#123f32]' : 'bg-primary-600'
+                      )}
+                    >
                       <HugeiconsIcon icon={Search01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                     </span>
                   </div>
@@ -184,18 +194,28 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
             </div>
 
             {/* NAVIGATIONS */}
-            <div className="relative z-10 flex flex-1/2 items-center justify-end gap-x-2.5 text-neutral-700 sm:gap-x-6 dark:text-neutral-100">
-              <div className="hidden xl:block">
-                <Button color="light" className="-mx-1 py-1.75!" href={'/add-listing/1'}>
-                  {T['Header']['List your property']}
-                </Button>
-              </div>
+            <div className="relative z-10 flex flex-1/2 items-center justify-end gap-x-2.5 text-neutral-700 sm:gap-x-3 dark:text-neutral-100">
+              {initSearchFormTab === 'RealEstates' ? (
+                <>
+                  <PropertyListingCta label="ลงประกาศ" freeLabel="ฟรี" />
+                  <NotifyDropdown />
+                  <AvatarDropdown showPreferencesAction />
+                </>
+              ) : (
+                <>
+                  <div className="hidden xl:block">
+                    <Button color="light" className="-mx-1 py-1.75!" href={'/add-listing/1'}>
+                      {T['Header']['List your property']}
+                    </Button>
+                  </div>
 
-              <NotifyDropdown />
-              <AvatarDropdown />
-              <div className="hidden min-[744px]:block">
-                <HamburgerBtnMenu />
-              </div>
+                  <NotifyDropdown />
+                  <AvatarDropdown />
+                  <div className="hidden min-[744px]:block">
+                    <HamburgerBtnMenu />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -61,6 +61,9 @@ interface Props {
   propertyTypes?: PropertyType[]
   description?: string
   placeholder?: string
+  defaultSelected?: string[]
+  panelTitle?: string
+  tone?: 'default' | 'mapx'
 }
 
 export const PropertyTypeSelectField: FC<Props> = ({
@@ -69,8 +72,13 @@ export const PropertyTypeSelectField: FC<Props> = ({
   propertyTypes = defaultPropertyTypes,
   description = T['HeroSearchForm']['Property type'],
   placeholder = T['HeroSearchForm']['Type'],
+  defaultSelected,
+  panelTitle,
+  tone = 'default',
 }) => {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([propertyTypes[0].name])
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(
+    defaultSelected ?? (propertyTypes[0]?.name ? [propertyTypes[0].name] : [])
+  )
   let typeStringConverted = selectedTypes.join(', ')
   return (
     <Popover className={`group relative z-10 flex ${className}`}>
@@ -91,11 +99,34 @@ export const PropertyTypeSelectField: FC<Props> = ({
             </div>
           </PopoverButton>
 
-          <PopoverPanel unmount={false} transition className={clsx(styles.panel.base, styles.panel[fieldStyle])}>
-            <CheckboxGroup>
+          <PopoverPanel
+            unmount={false}
+            transition
+            className={clsx(
+              styles.panel.base,
+              styles.panel[fieldStyle],
+              tone === 'mapx' && 'w-[34rem] max-w-[calc(100vw-2rem)] border border-[#dfe9e5] p-5 shadow-xl ring-0'
+            )}
+          >
+            {panelTitle && (
+              <div className="mb-4">
+                <p className="text-base font-semibold text-neutral-950 dark:text-white">{panelTitle}</p>
+                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                  เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด
+                </p>
+              </div>
+            )}
+            <CheckboxGroup className={clsx(tone === 'mapx' && 'grid grid-cols-2 gap-2.5 space-y-0')}>
               {propertyTypes.map((item) => (
-                <CheckboxField key={item.value}>
+                <CheckboxField
+                  key={item.value}
+                  className={clsx(
+                    tone === 'mapx' &&
+                      'cursor-pointer rounded-2xl border border-neutral-200 px-3.5 py-3 transition hover:border-[#9fc7b7] hover:bg-[#f5faf7] has-data-checked:border-[#7fb39f] has-data-checked:bg-[#eef7f3] dark:border-neutral-700'
+                  )}
+                >
                   <Checkbox
+                    color={tone === 'mapx' ? 'mapx' : 'dark/zinc'}
                     name="property_type"
                     value={item.value}
                     checked={selectedTypes.includes(item.name)}
@@ -106,8 +137,10 @@ export const PropertyTypeSelectField: FC<Props> = ({
                       setSelectedTypes(newState)
                     }}
                   />
-                  <Label>{item.name}</Label>
-                  <Description>{item.description}</Description>
+                  <Label className={clsx(tone === 'mapx' && 'cursor-pointer text-sm font-semibold!')}>
+                    {item.name}
+                  </Label>
+                  <Description className={clsx(tone === 'mapx' && 'text-xs/5')}>{item.description}</Description>
                 </CheckboxField>
               ))}
             </CheckboxGroup>

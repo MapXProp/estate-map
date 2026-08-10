@@ -276,19 +276,39 @@ const CheckboxPanel = ({
   className?: string
   isPropertyMap?: boolean
 }) => {
+  const hasDescriptions = filterOption.options.some((option) => Boolean(option.description))
+
   return (
     <Fieldset>
-      <CheckboxGroup className={className}>
+      <CheckboxGroup
+        className={clsx(
+          className,
+          isPropertyMap &&
+            (hasDescriptions
+              ? 'grid grid-cols-1 gap-2.5 space-y-0 sm:grid-cols-2'
+              : 'grid grid-cols-2 gap-2.5 space-y-0 sm:grid-cols-3')
+        )}
+      >
         {filterOption.options.map((option) => (
-          <CheckboxField key={option.name}>
+          <CheckboxField
+            key={option.name}
+            className={clsx(
+              isPropertyMap &&
+                'cursor-pointer rounded-2xl border border-neutral-200 bg-white px-3.5 py-3 transition hover:border-[#9fc7b7] hover:bg-[#f5faf7] has-data-checked:border-[#7fb39f] has-data-checked:bg-[#eef7f3] dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20 dark:has-data-checked:border-emerald-700 dark:has-data-checked:bg-emerald-950/35'
+            )}
+          >
             <Checkbox
               color={isPropertyMap ? 'mapx' : 'dark/zinc'}
               name={`${filterOption.name}[]`}
               value={option.value || option.name}
               defaultChecked={!!option.defaultChecked}
             />
-            <Label>{option.name}</Label>
-            {option.description && <Description>{option.description}</Description>}
+            <Label className={clsx(isPropertyMap && 'cursor-pointer text-[0.9rem]/5 font-semibold!')}>
+              {option.name}
+            </Label>
+            {option.description && (
+              <Description className={clsx(isPropertyMap && 'mt-0.5 text-xs/5')}>{option.description}</Description>
+            )}
           </CheckboxField>
         ))}
       </CheckboxGroup>
@@ -501,7 +521,15 @@ const ListingFilterTabs = ({
               <PopoverPanel
                 transition
                 unmount={false}
-                className="absolute -start-5 top-full z-30 mt-3 w-sm transition data-closed:translate-y-1 data-closed:opacity-0"
+                className={clsx(
+                  'absolute start-1/2 top-full z-30 mt-3 -translate-x-1/2 transition data-closed:translate-y-1 data-closed:opacity-0',
+                  filterOption.name === 'propertyType'
+                    ? 'w-[32rem]'
+                    : filterOption.name === 'discoveryChannel' || filterOption.name === 'offerType'
+                      ? 'w-[27rem]'
+                      : 'w-sm',
+                  'max-w-[calc(100vw-2rem)]'
+                )}
               >
                 <div
                   className={clsx(
@@ -509,7 +537,23 @@ const ListingFilterTabs = ({
                     isPropertyMap ? 'rounded-3xl border-[#dfe9e5]' : 'rounded-2xl border-neutral-200'
                   )}
                 >
-                  <div className="hidden-scrollbar max-h-[28rem] overflow-y-auto px-5 py-6">
+                  <div className="hidden-scrollbar max-h-[28rem] overflow-y-auto px-5 py-5">
+                    {isPropertyMap && (
+                      <div className="mb-4">
+                        <h3 className="text-base font-semibold text-neutral-950 dark:text-white">
+                          {filterOption.label}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                          {filterOption.name === 'discoveryChannel'
+                            ? 'เลือกได้มากกว่าหนึ่งหมวด พื้นที่เดียวอาจตอบโจทย์ได้หลายแบบ'
+                            : filterOption.name === 'offerType'
+                              ? 'เลือกรูปแบบข้อเสนอที่คุณยอมรับได้'
+                              : filterOption.name === 'propertyType'
+                                ? 'เลือกเฉพาะประเภทที่สนใจ หรือเว้นไว้เพื่อดูทั้งหมด'
+                                : 'กำหนดช่วงที่เหมาะกับความต้องการของคุณ'}
+                        </p>
+                      </div>
+                    )}
                     {filterOption.tabUIType === 'checkbox' && (
                       <CheckboxPanel filterOption={filterOption as CheckboxFilter} isPropertyMap={isPropertyMap} />
                     )}
