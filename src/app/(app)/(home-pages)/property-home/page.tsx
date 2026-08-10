@@ -6,8 +6,8 @@ import PropertyListingShowcase from '@/components/property-home/PropertyListingS
 import heroImage from '@/images/hero-right-3.png'
 import {
   ArrowRight,
+  BedDouble,
   Briefcase,
-  Building2,
   CheckCircle2,
   Factory,
   House,
@@ -21,42 +21,33 @@ import {
 import Image, { getImageProps } from 'next/image'
 import Link from 'next/link'
 
-const propertyGroups = [
+const discoveryModes = [
   {
-    title: 'ที่อยู่อาศัย',
-    titleEn: 'Residential',
-    description: 'บ้าน คอนโด ทาวน์เฮาส์ อพาร์ตเมนต์ และหอพัก',
-    descriptionEn: 'Houses, condos, townhouses, apartments and dorms',
-    href: '/real-estate-categories/all?property_group=residential',
+    title: 'บ้านและที่อยู่อาศัย',
+    titleEn: 'Homes & residential',
+    description: 'ค้นหาบ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งประกาศขายและให้เช่า',
+    descriptionEn: 'Find homes, condos, townhouses and land, for sale or rent',
+    href: '/homes',
     icon: House,
     tone: 'bg-[#edf6f1] text-[#176b50] dark:bg-emerald-950/60 dark:text-emerald-200',
   },
   {
-    title: 'อยู่และทำธุรกิจ',
-    titleEn: 'Live and work',
-    description: 'ตึกแถว อาคารพาณิชย์ และโฮมออฟฟิศ',
-    descriptionEn: 'Shophouses, commercial buildings and home offices',
-    href: '/real-estate-categories/all?property_group=mixed_use',
-    icon: Building2,
-    tone: 'bg-[#f4f1e7] text-[#78672f] dark:bg-yellow-950/50 dark:text-yellow-200',
+    title: 'ห้องเช่าและที่พักรายเดือน',
+    titleEn: 'Rooms & monthly stays',
+    description: 'ค้นหาอพาร์ตเมนต์ หอพัก แฟลต ห้องเช่า และที่พักระยะยาว',
+    descriptionEn: 'Find apartments, dorms, flats, rooms and long-stay accommodation',
+    href: '/rooms',
+    icon: BedDouble,
+    tone: 'bg-[#e6f4ee] text-[#2a8063] dark:bg-emerald-950/60 dark:text-emerald-200',
   },
   {
-    title: 'ธุรกิจและอุตสาหกรรม',
-    titleEn: 'Business and industrial',
-    description: 'พื้นที่ค้าขาย สำนักงาน โกดัง และโรงงาน',
-    descriptionEn: 'Retail spaces, offices, warehouses and factories',
-    href: '/real-estate-categories/all?property_group=commercial',
-    icon: Warehouse,
-    tone: 'bg-[#eef1f7] text-[#455a82] dark:bg-blue-950/50 dark:text-blue-200',
-  },
-  {
-    title: 'ที่ดิน',
-    titleEn: 'Land',
-    description: 'ที่ดินเปล่า หรือที่ดินพร้อมสิ่งปลูกสร้าง',
-    descriptionEn: 'Vacant land or land with existing buildings',
-    href: '/real-estate-categories/all?property_group=land',
-    icon: LandPlot,
-    tone: 'bg-[#f6eee7] text-[#8a5e3a] dark:bg-orange-950/50 dark:text-orange-200',
+    title: 'พื้นที่ทำธุรกิจ',
+    titleEn: 'Business spaces',
+    description: 'ค้นหาร้านค้า ล็อกตลาด ออฟฟิศ โกดัง โรงงาน และพื้นที่ชั่วคราว',
+    descriptionEn: 'Find shops, stalls, offices, warehouses, factories and temporary spaces',
+    href: '/business',
+    icon: Store,
+    tone: 'bg-[#fff0e9] text-[#f04b2f] dark:bg-orange-950/60 dark:text-orange-200',
   },
 ]
 
@@ -155,27 +146,27 @@ const heroContent = {
       ['ที่ดินเชียงใหม่', 'Land in Chiang Mai'],
     ],
   },
-  buy: {
+  homes: {
     titleTh: 'บ้านที่ใช่',
     titleEn: 'A home that feels right',
-    accentTh: 'สำหรับเป็นของคุณ',
-    accentEn: 'made to be yours',
-    descriptionTh: 'ค้นหาบ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย จากทำเลและงบที่คุณต้องการ',
-    descriptionEn: 'Find homes, condos, townhouses and residential land in the location and budget that fit you.',
+    accentTh: 'ไม่ว่าจะซื้อหรือเช่า',
+    accentEn: 'whether buying or renting',
+    descriptionTh: 'ค้นหาบ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย โดยยังไม่ต้องตัดสินใจก่อนว่าจะซื้อหรือเช่า',
+    descriptionEn: 'Find homes, condos, townhouses and residential land without deciding whether to buy or rent first.',
     popular: [
-      ['ซื้อคอนโดใกล้รถไฟฟ้า', 'Buy a condo near transit'],
+      ['คอนโดใกล้รถไฟฟ้า', 'Condos near transit'],
       ['บ้านเดี่ยวเชียงใหม่', 'Houses in Chiang Mai'],
       ['ทาวน์โฮมกรุงเทพ', 'Bangkok townhouses'],
       ['ที่ดินสร้างบ้าน', 'Land for building a home'],
     ],
   },
-  rent: {
-    titleTh: 'ที่อยู่ที่พอดี',
-    titleEn: 'A place that fits',
-    accentTh: 'กับทุกช่วงชีวิต',
-    accentEn: 'every stage of life',
-    descriptionTh: 'ค้นหาบ้านเช่า คอนโด อพาร์ตเมนต์ และห้องพักรายเดือน รวมถึงโรงแรมที่เปิดให้เช่าระยะยาว',
-    descriptionEn: 'Find rental homes, condos, apartments, monthly rooms and hotels offering longer stays.',
+  rooms: {
+    titleTh: 'ห้องที่พอดี',
+    titleEn: 'A room that fits',
+    accentTh: 'สำหรับอยู่เป็นเดือน',
+    accentEn: 'for monthly living',
+    descriptionTh: 'ค้นหาห้องเช่า อพาร์ตเมนต์ หอพัก แฟลต เซอร์วิสอพาร์ตเมนต์ และโรงแรมรายเดือน',
+    descriptionEn: 'Find rental rooms, apartments, dorms, flats, serviced apartments and monthly hotels.',
     popular: [
       ['คอนโดเช่าอารีย์', 'Condos for rent in Ari'],
       ['ห้องพักรายเดือน', 'Monthly rooms'],
@@ -218,14 +209,14 @@ const siteThemes = {
     gradient: 'from-[#edf4f0] dark:from-[#10231d]',
     link: 'hover:text-[#176b50] dark:hover:text-emerald-300',
   },
-  buy: {
+  homes: {
     hero: 'bg-[#edf4f0] dark:bg-[#10231d]',
     glow: 'bg-emerald-200/35 dark:bg-emerald-700/15',
     accent: 'text-[#176b50] dark:text-emerald-300',
     gradient: 'from-[#edf4f0] dark:from-[#10231d]',
     link: 'hover:text-[#176b50] dark:hover:text-emerald-300',
   },
-  rent: {
+  rooms: {
     hero: 'bg-[#eef7f3] dark:bg-[#11251e]',
     glow: 'bg-emerald-200/50 dark:bg-emerald-700/18',
     accent: 'text-[#2a8063] dark:text-emerald-300',
@@ -250,7 +241,7 @@ const siteThemes = {
   }
 >
 
-const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) => {
+const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const content = heroContent[mode]
@@ -351,7 +342,7 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
           </Link>
         </div>
 
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {locations.map((location) => (
             <Link
               key={location.name}
@@ -392,21 +383,21 @@ const PropertyHomePrototype = ({ mode = 'buy' }: { mode?: PropertySiteMode }) =>
         <div className="mb-7 flex items-end justify-between gap-5">
           <div>
             <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
-              {isThai ? 'เริ่มจากภาพใหญ่ก่อน' : 'Start with the big picture'}
+              {isThai ? 'เลือกตามสิ่งที่ต้องการจริง' : 'Start with what you really need'}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {isThai ? 'คุณกำลังมองหาพื้นที่แบบไหน' : 'What kind of space are you looking for?'}
+              {isThai ? 'เริ่มค้นหาจาก 3 เส้นทางหลัก' : 'Start with three clear paths'}
             </h2>
           </div>
           <p className="hidden max-w-md text-right text-sm text-neutral-500 lg:block dark:text-neutral-400">
             {isThai
-              ? 'เราแสดงเพียง 4 กลุ่มหลัก แล้วค่อยเปิดรายละเอียดเมื่อคุณต้องการ'
-              : 'We start with four clear groups, then reveal the details when you need them.'}
+              ? 'ทรัพย์หนึ่งรายการอาจอยู่ได้มากกว่าหนึ่งเส้นทาง เพื่อให้คุณพบสิ่งที่ตรงใจเร็วขึ้น'
+              : 'One property can appear in more than one path, helping you find the right fit faster.'}
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {propertyGroups.map((group) => {
+        <div className="grid gap-3 md:grid-cols-3">
+          {discoveryModes.map((group) => {
             const Icon = group.icon
             return (
               <Link

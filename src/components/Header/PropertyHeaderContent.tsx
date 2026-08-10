@@ -13,16 +13,21 @@ const PropertyHeaderContent = () => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const pathname = usePathname()
-  const siteMode = pathname.startsWith('/rent') ? 'rent' : pathname.startsWith('/business') ? 'business' : 'buy'
+  const siteMode =
+    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
+      ? 'rooms'
+      : pathname.startsWith('/business')
+        ? 'business'
+        : 'homes'
   const searchPlaceholder = {
-    buy: isThai ? 'ค้นหาบ้าน คอนโด หรือทำเล' : 'Search homes, condos or locations',
-    rent: isThai ? 'ค้นหาที่เช่า หรือทำเล' : 'Search rentals or locations',
+    homes: isThai ? 'ค้นหาบ้าน คอนโด หรือทำเล' : 'Search homes, condos or locations',
+    rooms: isThai ? 'ค้นหาห้องเช่า หอพัก หรือทำเล' : 'Search rooms, dorms or locations',
     business: isThai ? 'ค้นหาพื้นที่ทำธุรกิจ' : 'Search business spaces',
   }[siteMode]
-  const searchTone = siteMode === 'rent' ? 'mint' : siteMode === 'business' ? 'commerce' : 'green'
+  const searchTone = siteMode === 'rooms' ? 'mint' : siteMode === 'business' ? 'commerce' : 'green'
   const buildSearchQuery = (query: string) => {
-    if (siteMode === 'buy') return `${isThai ? 'ซื้อ' : 'buy'} ${query}`
-    if (siteMode === 'rent') return `${isThai ? 'เช่า' : 'rent'} ${query}`
+    if (siteMode === 'rooms') return `${isThai ? 'ห้องเช่ารายเดือน' : 'monthly rental'} ${query}`
+    if (siteMode === 'homes') return query
     return `${isThai ? 'พื้นที่ทำธุรกิจ' : 'business space'} ${query}`
   }
 

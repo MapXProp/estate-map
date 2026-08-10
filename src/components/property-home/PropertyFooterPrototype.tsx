@@ -10,9 +10,11 @@ const footerNavigation = [
     title: 'ค้นหาอสังหา',
     titleEn: 'Find property',
     links: [
-      ['ซื้ออสังหา', 'Buy property', '/real-estate-categories/all?offer_type=sale'],
-      ['เช่าอสังหา', 'Rent property', '/real-estate-categories/all?offer_type=rent'],
-      ['เซ้งกิจการ', 'Business transfers', '/real-estate-categories/all?offer_type=business_transfer'],
+      ['บ้านและที่อยู่อาศัย', 'Homes & residential', '/homes'],
+      ['ห้องเช่าและที่พักรายเดือน', 'Rooms & monthly stays', '/rooms'],
+      ['พื้นที่ทำธุรกิจ', 'Business spaces', '/business'],
+      ['ประกาศขาย', 'Properties for sale', '/real-estate-categories/all?offer_type=sale'],
+      ['ประกาศเช่า', 'Properties for rent', '/real-estate-categories/all?offer_type=rent'],
       ['ประกาศใหม่', 'New listings', '/real-estate-categories/all?sort=newest'],
       ['ดูบนแผนที่', 'View on map', '/properties/map'],
     ],
@@ -48,13 +50,7 @@ const popularLocations = [
   ['นครราชสีมา', 'Nakhon Ratchasima'],
 ] as const
 
-const NavigationLinks = ({
-  links,
-  isThai,
-}: {
-  links: (typeof footerNavigation)[number]['links']
-  isThai: boolean
-}) => (
+const NavigationLinks = ({ links, isThai }: { links: (typeof footerNavigation)[number]['links']; isThai: boolean }) => (
   <ul className="space-y-3">
     {links.map(([label, labelEn, href]) => (
       <li key={href}>

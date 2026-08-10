@@ -2,18 +2,18 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Check, House, KeyRound, Store } from 'lucide-react'
+import { BedDouble, Check, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const mobileSites = [
   {
-    id: 'buy',
-    href: '/buy',
-    titleTh: 'ซื้อที่อยู่อาศัย',
-    titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว และที่ดิน',
-    descriptionEn: 'Homes, condos and residential land',
+    id: 'homes',
+    href: '/homes',
+    titleTh: 'บ้านและที่อยู่อาศัย',
+    titleEn: 'Homes & residential',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งซื้อและเช่า',
+    descriptionEn: 'Homes, condos and land, for sale or rent',
     icon: House,
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
     activeTone: 'border-[#acd0c2] bg-[#f2f8f5] dark:border-emerald-800 dark:bg-emerald-950/35',
@@ -21,13 +21,13 @@ const mobileSites = [
     dotTone: 'bg-[#176b50]',
   },
   {
-    id: 'rent',
-    href: '/rent',
-    titleTh: 'เช่าที่อยู่อาศัย',
-    titleEn: 'Rent a home',
-    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ ตึกแถว และหอพัก',
-    descriptionEn: 'Rental homes, condos and monthly stays',
-    icon: KeyRound,
+    id: 'rooms',
+    href: '/rooms',
+    titleTh: 'ห้องเช่าและที่พักรายเดือน',
+    titleEn: 'Rooms & monthly stays',
+    descriptionTh: 'อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
+    descriptionEn: 'Apartments, dorms, flats and long-stay rooms',
+    icon: BedDouble,
     iconTone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
     activeTone: 'border-[#9acdb9] bg-[#eff8f4] dark:border-emerald-700 dark:bg-emerald-950/35',
     checkTone: 'bg-[#2a8063] text-white dark:bg-emerald-200 dark:text-emerald-950',
@@ -36,7 +36,7 @@ const mobileSites = [
   {
     id: 'business',
     href: '/business',
-    titleTh: 'หาพื้นที่ค้าขาย',
+    titleTh: 'พื้นที่ทำธุรกิจ',
     titleEn: 'Business spaces',
     descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ และที่ดิน',
     descriptionEn: 'Shops, stalls, offices, warehouses and event spaces',
@@ -51,7 +51,12 @@ const mobileSites = [
 const MobilePropertyBrandMark = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
-  const activeId = pathname.startsWith('/rent') ? 'rent' : pathname.startsWith('/business') ? 'business' : 'buy'
+  const activeId =
+    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
+      ? 'rooms'
+      : pathname.startsWith('/business')
+        ? 'business'
+        : 'homes'
   const activeSite = mobileSites.find((site) => site.id === activeId) ?? mobileSites[0]
 
   return (
@@ -78,7 +83,7 @@ const MobilePropertyBrandMark = () => {
           <p className="text-sm font-semibold text-neutral-950 dark:text-white">
             {locale === 'th' ? 'ท่านกำลังมองหา?' : 'What are you looking for?'}
           </p>
-          <p className="font-sarabun mt-0.5 text-xs text-neutral-400 dark:text-neutral-500">
+          <p className="mt-0.5 font-sarabun text-xs text-neutral-400 dark:text-neutral-500">
             {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหาตามหมวด' : 'Choose what you want to find by category'}
           </p>
         </div>
@@ -105,7 +110,7 @@ const MobilePropertyBrandMark = () => {
                   <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
                     {locale === 'th' ? site.titleTh : site.titleEn}
                   </span>
-                  <span className="font-sarabun mt-0.5 block max-w-full break-words whitespace-normal text-xs leading-4 text-neutral-500 [overflow-wrap:anywhere] [word-break:break-word] dark:text-neutral-400">
+                  <span className="mt-0.5 block max-w-full font-sarabun text-xs leading-4 [overflow-wrap:anywhere] break-words [word-break:break-word] whitespace-normal text-neutral-500 dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}
                   </span>
                 </span>

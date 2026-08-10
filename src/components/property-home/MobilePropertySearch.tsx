@@ -20,15 +20,15 @@ import {
   Warehouse,
   X,
 } from 'lucide-react'
-import Slider from 'rc-slider'
 import { usePathname, useSearchParams } from 'next/navigation'
+import Slider from 'rc-slider'
 import { useMemo, useState, type SVGProps } from 'react'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
 
-type PropertyGroup = 'residential' | 'mixed' | 'commercial'
+type PropertyGroup = 'homes' | 'rooms' | 'business'
 
 const RowHouseIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -93,9 +93,9 @@ const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term
 ]
 
 const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
-  { value: 'residential', label: 'อยู่อาศัย', labelEn: 'Residential' },
-  { value: 'mixed', label: 'อยู่ + ธุรกิจ', labelEn: 'Live + business' },
-  { value: 'commercial', label: 'ธุรกิจ', labelEn: 'Business' },
+  { value: 'homes', label: 'บ้าน / ที่อยู่อาศัย', labelEn: 'Homes' },
+  { value: 'rooms', label: 'ห้องเช่า / รายเดือน', labelEn: 'Monthly rooms' },
+  { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelEn: 'Business' },
 ]
 
 const propertyTypes = [
@@ -106,7 +106,7 @@ const propertyTypes = [
     term: 'บ้าน',
     termEn: 'house',
     icon: House,
-    groups: ['residential'],
+    groups: ['homes'],
   },
   {
     value: 'condo',
@@ -115,7 +115,7 @@ const propertyTypes = [
     term: 'คอนโด',
     termEn: 'condo',
     icon: Building2,
-    groups: ['residential'],
+    groups: ['homes', 'rooms'],
   },
   {
     value: 'townhouse',
@@ -124,7 +124,7 @@ const propertyTypes = [
     term: 'ทาวน์โฮม',
     termEn: 'townhome',
     icon: Building,
-    groups: ['residential', 'mixed'],
+    groups: ['homes'],
   },
   {
     value: 'dormitory',
@@ -133,7 +133,7 @@ const propertyTypes = [
     term: 'หอพัก',
     termEn: 'dorm',
     icon: BedDouble,
-    groups: ['residential'],
+    groups: ['rooms'],
   },
   {
     value: 'apartment',
@@ -142,7 +142,43 @@ const propertyTypes = [
     term: 'อพาร์ตเมนต์',
     termEn: 'apartment',
     icon: Hotel,
-    groups: ['residential'],
+    groups: ['rooms'],
+  },
+  {
+    value: 'rental_room',
+    label: 'ห้องเช่า',
+    labelEn: 'Rental room',
+    term: 'ห้องเช่า',
+    termEn: 'rental room',
+    icon: BedDouble,
+    groups: ['rooms'],
+  },
+  {
+    value: 'flat',
+    label: 'แฟลต',
+    labelEn: 'Flat',
+    term: 'แฟลต',
+    termEn: 'flat',
+    icon: Building,
+    groups: ['rooms'],
+  },
+  {
+    value: 'serviced_apartment',
+    label: 'เซอร์วิสอพาร์ตเมนต์',
+    labelEn: 'Serviced apartment',
+    term: 'เซอร์วิสอพาร์ตเมนต์',
+    termEn: 'serviced apartment',
+    icon: Hotel,
+    groups: ['rooms'],
+  },
+  {
+    value: 'monthly_hotel',
+    label: 'โรงแรมรายเดือน',
+    labelEn: 'Monthly hotel',
+    term: 'โรงแรมรายเดือน',
+    termEn: 'monthly hotel',
+    icon: Hotel,
+    groups: ['rooms'],
   },
   {
     value: 'shophouse',
@@ -151,7 +187,7 @@ const propertyTypes = [
     term: 'ตึกแถว',
     termEn: 'shophouse',
     icon: RowHouseIcon,
-    groups: ['mixed'],
+    groups: ['homes', 'business'],
   },
   {
     value: 'retail_space',
@@ -160,7 +196,7 @@ const propertyTypes = [
     term: 'พื้นที่ค้าขาย',
     termEn: 'retail space',
     icon: Store,
-    groups: ['mixed'],
+    groups: ['business'],
   },
   {
     value: 'rowhouse_shop',
@@ -169,7 +205,7 @@ const propertyTypes = [
     term: 'ร้านค้าในตึกแถว',
     termEn: 'shop in shophouse',
     icon: RowHouseIcon,
-    groups: ['commercial'],
+    groups: ['business'],
   },
   {
     value: 'standalone_shop',
@@ -178,7 +214,7 @@ const propertyTypes = [
     term: 'ร้านค้า standalone',
     termEn: 'standalone shop',
     icon: Store,
-    groups: ['commercial'],
+    groups: ['business'],
   },
   {
     value: 'market_stall',
@@ -187,7 +223,7 @@ const propertyTypes = [
     term: 'ล็อกในตลาด',
     termEn: 'market stall',
     icon: Tent,
-    groups: ['commercial'],
+    groups: ['business'],
   },
   {
     value: 'mall_kiosk',
@@ -205,7 +241,7 @@ const propertyTypes = [
     term: 'ออฟฟิศ',
     termEn: 'office',
     icon: Building2,
-    groups: ['mixed', 'commercial'],
+    groups: ['business'],
   },
   {
     value: 'warehouse',
@@ -214,7 +250,7 @@ const propertyTypes = [
     term: 'โกดัง',
     termEn: 'warehouse',
     icon: Warehouse,
-    groups: ['commercial'],
+    groups: ['business'],
   },
   {
     value: 'factory',
@@ -223,7 +259,7 @@ const propertyTypes = [
     term: 'โรงงาน',
     termEn: 'factory',
     icon: Factory,
-    groups: ['commercial'],
+    groups: ['business'],
   },
   {
     value: 'land',
@@ -232,7 +268,7 @@ const propertyTypes = [
     term: 'ที่ดิน',
     termEn: 'land',
     icon: LandPlot,
-    groups: ['commercial'],
+    groups: ['homes', 'business'],
   },
 ] as const
 
@@ -318,9 +354,15 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
   const searchParams = useSearchParams()
   const isMapResults = pathname === '/properties/map'
   const mapQuery = searchParams.get('q')?.trim() || ''
+  const initialPropertyGroup: PropertyGroup =
+    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
+      ? 'rooms'
+      : pathname.startsWith('/business')
+        ? 'business'
+        : 'homes'
   const [open, setOpen] = useState(false)
-  const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>('residential')
-  const [offerType, setOfferType] = useState<OfferType>('')
+  const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(initialPropertyGroup)
+  const [offerType, setOfferType] = useState<OfferType>(initialPropertyGroup === 'rooms' ? 'rent' : '')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<Array<(typeof propertyTypes)[number]>>([])
   const [budget, setBudget] = useState<BudgetPreset | null>(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
@@ -408,6 +450,15 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
           .trim()
       : input.trim()
     const terms = [
+      propertyGroup === 'rooms'
+        ? isThai
+          ? 'ห้องเช่ารายเดือน'
+          : 'monthly rental'
+        : propertyGroup === 'business'
+          ? isThai
+            ? 'พื้นที่ทำธุรกิจ'
+            : 'business space'
+          : '',
       offerType ? (isThai ? selectedOffer.term : selectedOffer.termEn) : '',
       ...selectedPropertyTypes.map((property) => (isThai ? property.term : property.termEn)),
       budget ? (isThai ? budget.term : budget.termEn) : '',
@@ -486,10 +537,10 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
           <div className="flex items-center justify-between border-b border-neutral-200/80 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
             <div>
               <DialogTitle className="text-lg font-semibold">
-                {isThai ? 'อยากได้พื้นที่แบบไหน?' : 'What space are you looking for?'}
+                {isThai ? 'วันนี้กำลังมองหาอะไร?' : 'What are you looking for today?'}
               </DialogTitle>
               <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai ? 'เลือกประเภท งบประมาณ และทำเลที่ต้องการ' : 'Choose a property type, budget, and location'}
+                {isThai ? 'เลือกเส้นทาง ประเภท งบประมาณ และทำเล' : 'Choose a path, property type, budget, and location'}
               </p>
             </div>
             <button
@@ -515,7 +566,12 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                     <button
                       key={group.value}
                       type="button"
-                      onClick={() => setPropertyGroup(group.value)}
+                      onClick={() => {
+                        setPropertyGroup(group.value)
+                        setSelectedPropertyTypes([])
+                        setBudget(null)
+                        setOfferType(group.value === 'rooms' ? 'rent' : '')
+                      }}
                       aria-pressed={active}
                       className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1.5 text-[11px] leading-tight font-semibold transition ${
                         active
@@ -541,14 +597,14 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {isThai ? 'คุณกำลังมองหา' : 'What are you looking for?'}
+                  {isThai ? 'เลือกประเภทที่สนใจ' : 'Choose property types'}
                 </h2>
                 {hasQuickFilters && (
                   <button
                     type="button"
                     onClick={() => {
-                      setPropertyGroup('residential')
-                      setOfferType('')
+                      setPropertyGroup(initialPropertyGroup)
+                      setOfferType(initialPropertyGroup === 'rooms' ? 'rent' : '')
                       setSelectedPropertyTypes([])
                       setBudget(null)
                     }}
@@ -668,24 +724,28 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                   </button>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-[20px] border border-[#d6e4df] bg-[#f1f7f4] p-1.5 dark:border-emerald-900/70 dark:bg-emerald-950/25">
-                  {offerTypes.map((offer) => {
-                    const active = budgetOfferType === offer.value
-                    return (
-                      <button
-                        key={offer.value || 'all'}
-                        type="button"
-                        onClick={() => chooseBudgetOffer(offer.value)}
-                        className={`min-h-11 rounded-2xl px-2 text-sm font-semibold transition ${
-                          active
-                            ? 'bg-[#176b50] text-white shadow-[0_7px_18px_rgba(23,107,80,0.18)] dark:bg-emerald-200 dark:text-emerald-950'
-                            : 'text-neutral-500 active:bg-white/80 dark:text-neutral-400 dark:active:bg-neutral-800'
-                        }`}
-                      >
-                        {isThai ? offer.label : offer.labelEn}
-                      </button>
-                    )
-                  })}
+                <div
+                  className={`mt-4 grid gap-1.5 rounded-[20px] border border-[#d6e4df] bg-[#f1f7f4] p-1.5 dark:border-emerald-900/70 dark:bg-emerald-950/25 ${propertyGroup === 'rooms' ? 'grid-cols-1' : 'grid-cols-3'}`}
+                >
+                  {offerTypes
+                    .filter((offer) => propertyGroup !== 'rooms' || offer.value === 'rent')
+                    .map((offer) => {
+                      const active = budgetOfferType === offer.value
+                      return (
+                        <button
+                          key={offer.value || 'all'}
+                          type="button"
+                          onClick={() => chooseBudgetOffer(offer.value)}
+                          className={`min-h-11 rounded-2xl px-2 text-sm font-semibold transition ${
+                            active
+                              ? 'bg-[#176b50] text-white shadow-[0_7px_18px_rgba(23,107,80,0.18)] dark:bg-emerald-200 dark:text-emerald-950'
+                              : 'text-neutral-500 active:bg-white/80 dark:text-neutral-400 dark:active:bg-neutral-800'
+                          }`}
+                        >
+                          {isThai ? offer.label : offer.labelEn}
+                        </button>
+                      )
+                    })}
                 </div>
 
                 {budgetOfferType ? (

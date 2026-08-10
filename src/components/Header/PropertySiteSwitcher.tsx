@@ -2,20 +2,20 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Check, ChevronDown, House, KeyRound, Store } from 'lucide-react'
+import { BedDouble, Check, ChevronDown, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const sites = [
   {
-    id: 'buy',
-    href: '/buy',
-    labelTh: 'ซื้อ',
-    labelEn: 'Buy',
-    titleTh: 'ซื้อที่อยู่อาศัย',
-    titleEn: 'Buy a home',
-    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว และที่ดิน',
-    descriptionEn: 'Homes, condos, townhouses and residential land',
+    id: 'homes',
+    href: '/homes',
+    labelTh: 'บ้าน',
+    labelEn: 'Homes',
+    titleTh: 'บ้านและที่อยู่อาศัย',
+    titleEn: 'Homes & residential',
+    descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งซื้อและเช่า',
+    descriptionEn: 'Homes, condos, townhouses and land, for sale or rent',
     icon: House,
     tone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950/60 dark:text-emerald-200',
     activeTone: 'bg-[#f0f7f4] dark:bg-emerald-950/35',
@@ -23,15 +23,15 @@ const sites = [
     triggerTone: 'hover:border-[#a8c8bc] hover:bg-[#f7fbf9] dark:hover:border-emerald-700',
   },
   {
-    id: 'rent',
-    href: '/rent',
-    labelTh: 'เช่า',
-    labelEn: 'Rent',
-    titleTh: 'เช่าที่อยู่อาศัย',
-    titleEn: 'Rent a home',
-    descriptionTh: 'บ้าน คอนโด อพาร์ตเมนต์ ตึกแถว และหอพัก',
-    descriptionEn: 'Rental homes, condos, apartments and monthly stays',
-    icon: KeyRound,
+    id: 'rooms',
+    href: '/rooms',
+    labelTh: 'ห้องเช่า',
+    labelEn: 'Rooms',
+    titleTh: 'ห้องเช่าและที่พักรายเดือน',
+    titleEn: 'Rooms & monthly stays',
+    descriptionTh: 'อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
+    descriptionEn: 'Apartments, dorms, flats and long-stay rooms',
+    icon: BedDouble,
     tone: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950/60 dark:text-emerald-200',
     activeTone: 'bg-[#eff8f4] dark:bg-emerald-950/35',
     checkTone: 'text-[#2a8063] dark:text-emerald-300',
@@ -42,7 +42,7 @@ const sites = [
     href: '/business',
     labelTh: 'ธุรกิจ',
     labelEn: 'Business',
-    titleTh: 'หาพื้นที่ค้าขาย',
+    titleTh: 'พื้นที่ทำธุรกิจ',
     titleEn: 'Business spaces',
     descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ และที่ดิน',
     descriptionEn: 'Shops, market stalls, offices, warehouses and event spaces',
@@ -57,7 +57,12 @@ const sites = [
 const PropertySiteSwitcher = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
-  const activeId = pathname.startsWith('/rent') ? 'rent' : pathname.startsWith('/business') ? 'business' : 'buy'
+  const activeId =
+    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
+      ? 'rooms'
+      : pathname.startsWith('/business')
+        ? 'business'
+        : 'homes'
   const activeSite = sites.find((site) => site.id === activeId) ?? sites[0]
   const ActiveIcon = activeSite.icon
 
@@ -88,10 +93,8 @@ const PropertySiteSwitcher = () => {
           <p className="text-sm font-semibold text-neutral-950 dark:text-white">
             {locale === 'th' ? 'ท่านกำลังมองหา?' : 'What are you looking for?'}
           </p>
-          <p className="font-sarabun mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-            {locale === 'th'
-              ? 'เลือกสิ่งที่ต้องการค้นหาตามหมวด'
-              : 'Choose what you want to find by category'}
+          <p className="mt-0.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+            {locale === 'th' ? 'เลือกสิ่งที่ต้องการค้นหาตามหมวด' : 'Choose what you want to find by category'}
           </p>
         </div>
 
@@ -114,7 +117,7 @@ const PropertySiteSwitcher = () => {
                   <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
                     {locale === 'th' ? site.titleTh : site.titleEn}
                   </span>
-                  <span className="font-sarabun mt-0.5 block text-xs/5 text-neutral-500 dark:text-neutral-400">
+                  <span className="mt-0.5 block font-sarabun text-xs/5 text-neutral-500 dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}
                   </span>
                 </span>

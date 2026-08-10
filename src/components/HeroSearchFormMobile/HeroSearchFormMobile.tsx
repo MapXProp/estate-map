@@ -52,6 +52,8 @@ const HeroSearchFormMobile = ({ className }: { className?: string }) => {
   const isPropertyHome =
     pathname === '/' ||
     pathname === '/property-home' ||
+    pathname === '/homes' ||
+    pathname === '/rooms' ||
     pathname === '/buy' ||
     pathname === '/rent' ||
     pathname === '/business' ||
