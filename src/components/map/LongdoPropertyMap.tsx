@@ -145,6 +145,7 @@ interface Props {
   searchSourceListings?: TRealEstateListing[]
   areaSearchRequestId?: number
   onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
+  onViewportChange?: () => void
   mobileControlsVisible?: boolean
 }
 
@@ -155,6 +156,7 @@ const LongdoPropertyMap = ({
   searchSourceListings = listings,
   areaSearchRequestId = 0,
   onSearchArea,
+  onViewportChange,
   mobileControlsVisible = true,
 }: Props) => {
   const pathname = usePathname()
@@ -165,6 +167,8 @@ const LongdoPropertyMap = ({
   const mapRef = useRef<LongdoMapInstance | null>(null)
   const listingMarkersRef = useRef<LongdoOverlay[]>([])
   const searchMarkerRef = useRef<LongdoOverlay | null>(null)
+  const onViewportChangeRef = useRef(onViewportChange)
+  const viewportEventsEnabledRef = useRef(false)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -179,6 +183,10 @@ const LongdoPropertyMap = ({
     () => searchSourceListings.map((listing) => getListingLocation(listing)),
     [searchSourceListings]
   )
+
+  useEffect(() => {
+    onViewportChangeRef.current = onViewportChange
+  }, [onViewportChange])
   const center = useMemo(() => locations[0] || { lon: 100.5018, lat: 13.7563 }, [locations])
   const initialCenterRef = useRef<LongdoLocation>(center)
 
@@ -342,10 +350,24 @@ const LongdoPropertyMap = ({
       ui: window.longdo.UiComponent.None,
     })
 
+    let enableViewportEventsTimer: ReturnType<typeof setTimeout> | undefined
+    const notifyViewportChange = () => {
+      if (viewportEventsEnabledRef.current) onViewportChangeRef.current?.()
+    }
+
     mapRef.current = map
-    map.Event.bind('ready', () => setMapReady(true))
+    map.Event.bind('ready', () => {
+      setMapReady(true)
+      enableViewportEventsTimer = setTimeout(() => {
+        viewportEventsEnabledRef.current = true
+      }, 600)
+    })
+    map.Event.bind('location', notifyViewportChange)
+    map.Event.bind('zoom', notifyViewportChange)
 
     return () => {
+      if (enableViewportEventsTimer) clearTimeout(enableViewportEventsTimer)
+      viewportEventsEnabledRef.current = false
       map.Overlays.clear()
       listingMarkersRef.current = []
       searchMarkerRef.current = null

@@ -13,19 +13,22 @@ import { XMarkIcon } from '@heroicons/react/24/solid'
 import { ChevronUp, LoaderCircle, MapIcon, Search } from 'lucide-react'
 import { CSSProperties, PointerEvent as ReactPointerEvent, useCallback, useEffect, useRef, useState } from 'react'
 
-type MobileMapSheetState = 'collapsed' | 'half' | 'expanded'
+type MobileMapSheetState = 'collapsed' | 'open'
 
 const MOBILE_SHEET_PEEK_HEIGHT = 88
 
 const getMobileSheetHeights = () => {
   if (typeof window === 'undefined') {
-    return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, half: 420, expanded: 620 }
+    return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open: 480 }
   }
 
-  const fixedUiHeight = 80
-  const expanded = Math.max(300, window.innerHeight - fixedUiHeight)
-  const half = Math.min(expanded, Math.max(300, Math.round(window.innerHeight * 0.56)))
-  return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, half, expanded }
+  const isPortraitTablet = window.innerWidth >= 744
+  const openRatio = isPortraitTablet ? 0.56 : 0.6
+  const maxOpenHeight = isPortraitTablet ? 620 : 560
+  const availableHeight = Math.max(340, window.innerHeight - 80)
+  const open = Math.min(availableHeight, maxOpenHeight, Math.max(340, Math.round(window.innerHeight * openRatio)))
+
+  return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open }
 }
 
 interface Props {
@@ -55,15 +58,18 @@ const MapFixedSection = ({
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const [mobileSheetState, setMobileSheetState] = useState<MobileMapSheetState>('collapsed')
   const [mobileSheetHeight, setMobileSheetHeight] = useState(MOBILE_SHEET_PEEK_HEIGHT)
+  const [hasRequestedMap, setHasRequestedMap] = useState(false)
   const [isDraggingSheet, setIsDraggingSheet] = useState(false)
   const [areaSearchRequestId, setAreaSearchRequestId] = useState(0)
   const [isAreaSearching, setIsAreaSearching] = useState(false)
+  const [hasPendingAreaChange, setHasPendingAreaChange] = useState(false)
   const [areaResultCount, setAreaResultCount] = useState<number | null>(null)
   const dragStartRef = useRef<{ y: number; height: number; state: MobileMapSheetState } | null>(null)
   const didDragRef = useRef(false)
   const longdoMapKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
 
   const snapMobileSheet = useCallback((state: MobileMapSheetState) => {
+    if (state === 'open') setHasRequestedMap(true)
     setMobileSheetState(state)
     setMobileSheetHeight(getMobileSheetHeights()[state])
   }, [])
@@ -74,9 +80,12 @@ const MapFixedSection = ({
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024 && mobileSheetState !== 'collapsed') {
-        setMobileSheetState('collapsed')
-        setMobileSheetHeight(MOBILE_SHEET_PEEK_HEIGHT)
+      if (window.innerWidth >= 1024) {
+        setHasRequestedMap(true)
+        if (mobileSheetState !== 'collapsed') {
+          setMobileSheetState('collapsed')
+          setMobileSheetHeight(MOBILE_SHEET_PEEK_HEIGHT)
+        }
         return
       }
       setMobileSheetHeight(getMobileSheetHeights()[mobileSheetState])
@@ -84,16 +93,6 @@ const MapFixedSection = ({
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [mobileSheetState])
-
-  useEffect(() => {
-    if (mobileSheetState !== 'expanded' || window.innerWidth >= 1024) return
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
   }, [mobileSheetState])
 
   const handleSheetPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -111,7 +110,7 @@ const MapFixedSection = ({
     const deltaY = event.clientY - dragStart.y
     if (Math.abs(deltaY) > 5) didDragRef.current = true
     const heights = getMobileSheetHeights()
-    setMobileSheetHeight(Math.min(heights.expanded, Math.max(heights.collapsed, dragStart.height - deltaY)))
+    setMobileSheetHeight(Math.min(heights.open, Math.max(heights.collapsed, dragStart.height - deltaY)))
   }
 
   const finishSheetDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -119,12 +118,11 @@ const MapFixedSection = ({
     if (!dragStart) return
 
     const deltaY = event.clientY - dragStart.y
-    const states: MobileMapSheetState[] = ['collapsed', 'half', 'expanded']
-    const currentIndex = states.indexOf(dragStart.state)
+    const states: MobileMapSheetState[] = ['collapsed', 'open']
     let nextState = dragStart.state
 
-    if (deltaY < -42) nextState = states[Math.min(currentIndex + 1, states.length - 1)]
-    else if (deltaY > 42) nextState = states[Math.max(currentIndex - 1, 0)]
+    if (deltaY < -42) nextState = 'open'
+    else if (deltaY > 42) nextState = 'collapsed'
     else {
       const heights = getMobileSheetHeights()
       nextState = states.reduce((nearest, state) =>
@@ -142,14 +140,19 @@ const MapFixedSection = ({
       didDragRef.current = false
       return
     }
-    snapMobileSheet(mobileSheetState === 'collapsed' ? 'half' : mobileSheetState === 'half' ? 'expanded' : 'half')
+    snapMobileSheet(mobileSheetState === 'collapsed' ? 'open' : 'collapsed')
   }
 
   const sheetStyle = {
     '--mobile-map-sheet-height': `${mobileSheetHeight}px`,
-    '--mobile-map-preload-height': `${Math.max(252, getMobileSheetHeights().half - 48)}px`,
+    '--mobile-map-preload-height': `${Math.max(252, getMobileSheetHeights().open - 48)}px`,
   } as CSSProperties
-  const mobileMapControlsVisible = mobileSheetState !== 'collapsed'
+  const mobileMapControlsVisible = mobileSheetState === 'open'
+  const shouldRenderMap = !splitAtLg || listingType !== 'RealEstates' || hasRequestedMap
+
+  const handleMapViewportChange = useCallback(() => {
+    setHasPendingAreaChange(true)
+  }, [])
 
   const handleAreaSearchResult = useCallback(
     async (search: PropertyMapAreaSearch, listingIds: string[]) => {
@@ -158,6 +161,7 @@ const MapFixedSection = ({
         setAreaResultCount(resultCount ?? listingIds.length)
       } finally {
         setIsAreaSearching(false)
+        setHasPendingAreaChange(false)
       }
     },
     [onSearchArea]
@@ -184,7 +188,7 @@ const MapFixedSection = ({
       <div
         className={
           splitAtLg
-            ? 'relative size-full overflow-hidden rounded-t-[28px] border border-[#dbe7e2] bg-white shadow-[0_-14px_40px_rgba(18,63,50,0.18)] lg:sticky lg:top-0 lg:h-screen lg:rounded-none lg:border-0 lg:shadow-none'
+            ? 'relative size-full overflow-hidden rounded-t-[28px] border border-[#dbe7e2] bg-white shadow-[0_-14px_40px_rgba(18,63,50,0.18)] lg:sticky lg:top-0 lg:h-[calc(100dvh-5rem)] lg:rounded-none lg:border-0 lg:shadow-none'
             : 'fixed start-0 top-0 size-full overflow-hidden xl:sticky xl:top-0 xl:h-screen'
         }
       >
@@ -192,8 +196,8 @@ const MapFixedSection = ({
           <button
             type="button"
             className="absolute inset-x-0 top-0 z-30 flex h-12 touch-none select-none flex-col items-center justify-center border-b border-[#dfe9e5] bg-white/95 px-4 backdrop-blur lg:hidden"
-            aria-label={mobileSheetState === 'collapsed' ? 'เปิดแผนที่' : 'ปรับขนาดแผนที่'}
-            aria-expanded={mobileSheetState !== 'collapsed'}
+            aria-label={mobileSheetState === 'collapsed' ? 'เปิดแผนที่' : 'ปิดแผนที่'}
+            aria-expanded={mobileSheetState === 'open'}
             onPointerDown={handleSheetPointerDown}
             onPointerMove={handleSheetPointerMove}
             onPointerUp={finishSheetDrag}
@@ -207,9 +211,9 @@ const MapFixedSection = ({
                 แผนที่
               </span>
               <span className="flex items-center gap-1 text-xs font-normal text-neutral-500">
-                {mobileSheetState === 'collapsed' ? 'ลากขึ้นเพื่อสำรวจทำเล' : 'ลากเพื่อปรับขนาด'}
+                {mobileSheetState === 'collapsed' ? 'ลากขึ้นเพื่อดูแผนที่' : 'ลากลงเพื่อปิด'}
                 <ChevronUp
-                  className={`size-4 transition-transform ${mobileSheetState === 'expanded' ? 'rotate-180' : ''}`}
+                  className={`size-4 transition-transform ${mobileSheetState === 'open' ? 'rotate-180' : ''}`}
                   aria-hidden="true"
                 />
               </span>
@@ -226,7 +230,9 @@ const MapFixedSection = ({
               : 'size-full'
           }
         >
-          {listingType === 'RealEstates' && longdoMapKey ? (
+          {!shouldRenderMap ? (
+            <div className="size-full bg-[#eef3f0]" aria-hidden="true" />
+          ) : listingType === 'RealEstates' && longdoMapKey ? (
             <LongdoPropertyMap
               apiKey={longdoMapKey}
               currentHoverID={currentHoverID}
@@ -234,6 +240,7 @@ const MapFixedSection = ({
               searchSourceListings={searchSourceListings}
               areaSearchRequestId={areaSearchRequestId}
               onSearchArea={handleAreaSearchResult}
+              onViewportChange={handleMapViewportChange}
               mobileControlsVisible={mobileMapControlsVisible}
             />
           ) : (
@@ -277,7 +284,7 @@ const MapFixedSection = ({
 
         {listingType === 'RealEstates' && (
           <div
-            className={`absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 ${
+            className={`absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 lg:bottom-6 ${
               splitAtLg && mobileSheetState === 'collapsed' ? 'max-lg:hidden' : ''
             }`}
           >
@@ -290,7 +297,13 @@ const MapFixedSection = ({
               type="button"
               onClick={requestAreaSearch}
               disabled={isAreaSearching}
-              className="flex min-h-11 items-center gap-2 rounded-full bg-[#123f32] px-5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_10px_26px_rgba(18,63,50,0.3)] transition hover:bg-[#0d352a] active:scale-[0.98] disabled:cursor-wait disabled:opacity-80"
+              className={`flex min-h-11 items-center gap-2 rounded-full border px-5 text-sm font-semibold whitespace-nowrap backdrop-blur transition active:scale-[0.98] disabled:cursor-wait disabled:opacity-80 ${
+                isAreaSearching
+                  ? 'border-[#a9c9ba] bg-white text-[#176b50] shadow-sm'
+                  : hasPendingAreaChange
+                    ? 'border-[#9fc4b2] bg-white text-[#174d3e] shadow-[0_6px_16px_rgba(18,63,50,0.12)] hover:border-[#7eae97]'
+                    : 'border-[#c9ddd4] bg-white/92 text-[#31594e] shadow-sm hover:border-[#a9c9ba] hover:bg-white hover:text-[#174d3e]'
+              }`}
             >
               {isAreaSearching ? (
                 <LoaderCircle className="size-4.5 animate-spin" aria-hidden="true" />
