@@ -4,7 +4,6 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
-  ArrowLeft,
   Banknote,
   BedDouble,
   Building,
@@ -27,6 +26,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import Slider from 'rc-slider'
 import { useMemo, useState, type SVGProps } from 'react'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
+import MobileProjectSearchDialog from './MobileProjectSearchDialog'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
@@ -370,6 +370,7 @@ const MobilePropertySearch = ({
         ? 'business'
         : 'homes'
   const [open, setOpen] = useState(false)
+  const [projectSearchOpen, setProjectSearchOpen] = useState(false)
   const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(initialPropertyGroup)
   const [offerType, setOfferType] = useState<OfferType>(initialPropertyGroup === 'rooms' ? 'rent' : '')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<Array<(typeof propertyTypes)[number]>>([])
@@ -502,21 +503,7 @@ const MobilePropertySearch = ({
   return (
     <div className={`relative z-10 w-full ${className}`}>
       <div className={`flex w-full items-center ${compactMapHeader && isMapResults ? 'gap-1.5' : 'gap-2.5'}`}>
-        {compactMapHeader && isMapResults ? (
-          <button
-            type="button"
-            aria-label={isThai ? 'กลับหน้าก่อนหน้า' : 'Go back'}
-            className="grid size-10 shrink-0 place-items-center rounded-full text-neutral-600 transition hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-neutral-800"
-            onClick={() => {
-              if (window.history.length > 1) window.history.back()
-              else window.location.assign('/')
-            }}
-          >
-            <ArrowLeft className="size-5" />
-          </button>
-        ) : (
-          <MobilePropertyBrandMark />
-        )}
+        <MobilePropertyBrandMark />
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -565,17 +552,31 @@ const MobilePropertySearch = ({
           </span>
         </button>
         {compactMapHeader && isMapResults && (
-          <button
-            type="button"
-            aria-label={isThai ? 'เปิดตัวกรอง' : 'Open filters'}
-            className="relative grid size-10 shrink-0 place-items-center rounded-full border border-[#d8e6df] bg-white text-[#174d3e] shadow-sm transition hover:bg-[#f3f8f5] active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-emerald-200"
-            onClick={openMapFilters}
-          >
-            <SlidersHorizontal className="size-4.5" />
-            <span className="absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-[#176b50] text-[9px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
-              3
-            </span>
-          </button>
+          <>
+            <button
+              type="button"
+              aria-label={isThai ? 'ค้นหาโครงการหรือห้าง' : 'Search projects or malls'}
+              title={isThai ? 'ค้นหาโครงการ / ห้าง' : 'Search projects / malls'}
+              className="relative grid size-10 shrink-0 place-items-center rounded-full border border-[#d8e6df] bg-white text-[#174d3e] shadow-sm transition hover:bg-[#f3f8f5] active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-emerald-200"
+              onClick={() => setProjectSearchOpen(true)}
+            >
+              <Building2 className="size-4.5" strokeWidth={1.8} />
+              <span className="absolute right-1 bottom-1 grid size-3.5 place-items-center rounded-full bg-[#176b50] text-white ring-1.5 ring-white dark:ring-neutral-900">
+                <Search className="size-2.5" strokeWidth={2.5} />
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label={isThai ? 'เปิดตัวกรอง' : 'Open filters'}
+              className="relative grid size-10 shrink-0 place-items-center rounded-full border border-[#d8e6df] bg-white text-[#174d3e] shadow-sm transition hover:bg-[#f3f8f5] active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-emerald-200"
+              onClick={openMapFilters}
+            >
+              <SlidersHorizontal className="size-4.5" />
+              <span className="absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-[#176b50] text-[9px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
+                3
+              </span>
+            </button>
+          </>
         )}
       </div>
 
@@ -947,6 +948,7 @@ const MobilePropertySearch = ({
           )}
         </DialogPanel>
       </Dialog>
+      <MobileProjectSearchDialog open={projectSearchOpen} onClose={() => setProjectSearchOpen(false)} />
     </div>
   )
 }

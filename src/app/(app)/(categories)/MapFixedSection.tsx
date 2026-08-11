@@ -15,7 +15,9 @@ import { CSSProperties, PointerEvent as ReactPointerEvent, useCallback, useEffec
 
 type MobileMapSheetState = 'collapsed' | 'open'
 
-const MOBILE_SHEET_PEEK_HEIGHT = 88
+// Keep the collapsed map as a compact, discoverable handle so the first
+// property cards remain the dominant content on phones and portrait tablets.
+const MOBILE_SHEET_PEEK_HEIGHT = 64
 
 const getMobileSheetHeights = () => {
   if (typeof window === 'undefined') {

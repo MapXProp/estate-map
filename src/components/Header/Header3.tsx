@@ -17,6 +17,7 @@ import CurrLangDropdown from './CurrLangDropdown'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import NotifyDropdown from './NotifyDropdown'
 import PropertyListingCta from './PropertyListingCta'
+import ProjectSearchPopover from './ProjectSearchPopover'
 
 interface Header3Props {
   hasBorderBottom?: boolean
@@ -154,7 +155,11 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                       {locationText}
                     </div>
                     <div className="hidden h-5 w-px bg-neutral-300 min-[744px]:block dark:bg-neutral-700"></div>
-                    <div className="hidden cursor-pointer px-4 py-3 min-[744px]:block">{dateText}</div>
+                    {isPropertyMap ? (
+                      <ProjectSearchPopover />
+                    ) : (
+                      <div className="hidden cursor-pointer px-4 py-3 min-[744px]:block">{dateText}</div>
+                    )}
                     {initSearchFormTab !== 'Cars' && (
                       <div className="hidden h-5 w-px bg-neutral-300 min-[744px]:block dark:bg-neutral-700"></div>
                     )}

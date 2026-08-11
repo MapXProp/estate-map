@@ -30,15 +30,13 @@ const ApplicationLayout: React.FC<Props> = ({ children, header, footer, compactM
               <HeroSearchFormMobile compactMapHeader={compactMobileHeader} />
             </Suspense>
           </div>
-          {!compactMobileHeader && (
-            <AvatarDropdown
-              className="shrink-0"
-              avatarClassName="size-9 shadow-[0_2px_8px_rgba(15,23,42,0.10)]"
-              buttonClassName="flex size-10 cursor-pointer items-center justify-center rounded-full transition active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#176b50]/25"
-              showGuestIcon
-              showMobileActions
-            />
-          )}
+          <AvatarDropdown
+            className="shrink-0"
+            avatarClassName={`${compactMobileHeader ? 'size-8' : 'size-9'} shadow-[0_2px_8px_rgba(15,23,42,0.10)]`}
+            buttonClassName={`flex cursor-pointer items-center justify-center rounded-full transition active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#176b50]/25 ${compactMobileHeader ? 'size-9' : 'size-10'}`}
+            showGuestIcon
+            showMobileActions
+          />
         </div>
       </div>
       {/*  */}
