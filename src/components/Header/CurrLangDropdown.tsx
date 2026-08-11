@@ -38,9 +38,19 @@ interface Props {
   panelAnchor?: PopoverPanelProps['anchor']
   panelClassName?: PopoverPanelProps['className']
   className?: string
-  currencies: Currency[]
-  languages: Language[]
+  currencies?: Currency[]
+  languages?: Language[]
 }
+
+const defaultLanguages = [
+  { id: 'English', name: 'English', description: 'US', href: '#' },
+  { id: 'Thai', name: 'ภาษาไทย', description: 'TH', href: '#', active: true },
+] as Language[]
+
+const defaultCurrencies = [
+  { id: 'USD', name: 'USD', href: '#', icon: '' },
+  { id: 'THB', name: 'THB', href: '#', icon: '', active: true },
+] as Currency[]
 
 const CurrLangDropdown: FC<Props> = ({
   panelAnchor = {
@@ -48,8 +58,8 @@ const CurrLangDropdown: FC<Props> = ({
     gap: 14,
   },
   className,
-  languages,
-  currencies,
+  languages = defaultLanguages,
+  currencies = defaultCurrencies,
   panelClassName,
 }) => {
   const { locale, currency: selectedCurrency, setLocale, setCurrency } = usePreferences()
@@ -85,7 +95,7 @@ const CurrLangDropdown: FC<Props> = ({
           <GlobeAltIcon className="size-4.5" />
         </span>
 
-        <span className="hidden items-center min-[768px]:flex">
+        <span className="hidden items-center min-[1024px]:flex">
           <span className="px-1.5 text-[11px] font-semibold tracking-wide min-[1200px]:px-2 min-[1200px]:text-xs">
             {languageCode}
           </span>

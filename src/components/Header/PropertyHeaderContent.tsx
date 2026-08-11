@@ -5,6 +5,7 @@ import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmni
 import Logo from '@/shared/Logo'
 import { usePathname } from 'next/navigation'
 import AvatarDropdown from './AvatarDropdown'
+import CurrLangDropdown from './CurrLangDropdown'
 import NotifyDropdown from './NotifyDropdown'
 import PropertyListingCta from './PropertyListingCta'
 import PropertySiteSwitcher from './PropertySiteSwitcher'
@@ -49,10 +50,11 @@ const PropertyHeaderContent = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 min-[1100px]:gap-3">
+            <CurrLangDropdown className="hidden min-[744px]:block" />
             <PropertySiteSwitcher />
             <PropertyListingCta label={isThai ? 'ลงประกาศ' : 'List property'} freeLabel={isThai ? 'ฟรี' : 'Free'} />
             <NotifyDropdown className="hidden min-[744px]:block" />
-            <AvatarDropdown showPreferencesAction />
+            <AvatarDropdown />
           </div>
         </div>
       </div>

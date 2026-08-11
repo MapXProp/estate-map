@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import { FC, useCallback, useEffect, useRef, useState } from 'react'
 import HeroSearchFormSmall from '../HeroSearchForm/HeroSearchFormSmall'
 import AvatarDropdown from './AvatarDropdown'
+import CurrLangDropdown from './CurrLangDropdown'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import NotifyDropdown from './NotifyDropdown'
 import PropertyListingCta from './PropertyListingCta'
@@ -195,11 +196,12 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
 
             {/* NAVIGATIONS */}
             <div className="relative z-10 flex flex-1/2 items-center justify-end gap-x-2.5 text-neutral-700 sm:gap-x-3 dark:text-neutral-100">
+              <CurrLangDropdown className="hidden min-[744px]:block" />
               {initSearchFormTab === 'RealEstates' ? (
                 <>
                   <PropertyListingCta label="ลงประกาศ" freeLabel="ฟรี" />
                   <NotifyDropdown />
-                  <AvatarDropdown showPreferencesAction />
+                  <AvatarDropdown />
                 </>
               ) : (
                 <>
