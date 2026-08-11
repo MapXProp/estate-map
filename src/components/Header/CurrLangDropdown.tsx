@@ -106,7 +106,7 @@ const CurrLangDropdown: FC<Props> = ({
         anchor={panelAnchor}
         transition
         className={clsx(
-          'z-50 w-[calc(100vw-1rem)] max-w-[27rem] rounded-[24px] border border-neutral-200/80 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.32)] transition duration-200 ease-out min-[480px]:w-[27rem] min-[480px]:rounded-[28px] min-[480px]:p-5 min-[1280px]:w-[34rem] min-[1280px]:max-w-[34rem] min-[1280px]:p-6 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-2 data-closed:scale-[0.98] data-closed:opacity-0',
+          'z-50 w-[calc(100vw-1rem)] max-w-[27rem] rounded-[24px] border border-neutral-200/80 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(15,23,42,0.32)] transition duration-200 ease-out min-[480px]:rounded-[28px] min-[480px]:p-5 min-[744px]:w-[34rem] min-[744px]:max-w-[34rem] min-[744px]:p-6 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-2 data-closed:scale-[0.98] data-closed:opacity-0',
           panelClassName
         )}
       >
@@ -126,8 +126,8 @@ const CurrLangDropdown: FC<Props> = ({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-5 min-[1280px]:grid-cols-2 min-[1280px]:gap-4">
-          <section aria-labelledby="language-options-title">
+        <div className="mt-5 grid grid-cols-2 gap-3 min-[744px]:gap-4">
+          <section aria-labelledby="language-options-title" className="order-2 min-w-0">
             <div className="mb-2.5 flex items-center gap-2">
               <GlobeAltIcon className="size-4 text-neutral-400" />
               <h3
@@ -137,7 +137,7 @@ const CurrLangDropdown: FC<Props> = ({
                 {locale === 'th' ? 'ภาษา' : 'Language'}
               </h3>
             </div>
-            <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
+            <div className="grid gap-2">
               {languages.map((language) => {
                 const meta = languageMeta[language.id] ?? {
                   code: language.description,
@@ -188,7 +188,7 @@ const CurrLangDropdown: FC<Props> = ({
             </div>
           </section>
 
-          <section aria-labelledby="currency-options-title">
+          <section aria-labelledby="currency-options-title" className="order-1 min-w-0">
             <div className="mb-2.5 flex items-center gap-2">
               <BanknotesIcon className="size-4 text-neutral-400" />
               <h3
@@ -198,7 +198,7 @@ const CurrLangDropdown: FC<Props> = ({
                 {locale === 'th' ? 'สกุลเงิน' : 'Currency'}
               </h3>
             </div>
-            <div className="grid gap-2 min-[360px]:grid-cols-2 min-[1280px]:grid-cols-1">
+            <div className="grid gap-2">
               {currencies.map((currency) => {
                 const meta = currencyMeta[currency.id] ?? {
                   symbol: currency.name,
@@ -248,13 +248,13 @@ const CurrLangDropdown: FC<Props> = ({
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
-          <p className="font-sarabun text-[11px] leading-4 text-neutral-500 dark:text-neutral-400">
-            {locale === 'th' ? 'ระบบจะจดจำตัวเลือกของคุณในอุปกรณ์นี้' : 'Your choices are saved on this device'}
+          <p className="font-sarabun text-[11px] font-light leading-4 text-neutral-400 dark:text-neutral-500">
+            {locale === 'th' ? 'บันทึกตัวเลือกนี้ไว้ในอุปกรณ์' : 'Save these choices on this device'}
           </p>
           <CloseButton
             as="button"
             type="button"
-            className="shrink-0 rounded-full bg-[#124e3c] px-4 py-2 font-sarabun text-xs font-semibold text-white transition hover:bg-[#0d3d2f] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30"
+            className="shrink-0 rounded-full bg-[#124e3c] px-5 py-2 font-sarabun text-xs font-semibold text-white transition hover:bg-[#0d3d2f] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30"
           >
             {locale === 'th' ? 'เสร็จสิ้น' : 'Done'}
           </CloseButton>

@@ -364,10 +364,10 @@ export default function AvatarDropdown({
       {showPreferences && (
         <Dialog open={preferencesOpen} onClose={setPreferencesOpen} className="relative z-[70]">
           <div className="fixed inset-0 bg-black/25" aria-hidden="true" />
-          <div className="fixed inset-0 flex items-end justify-center p-2">
+          <div className="fixed inset-0 flex items-end justify-center p-2 min-[744px]:items-center">
             <DialogPanel
               transition
-              className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl transition duration-200 dark:bg-neutral-900 data-closed:translate-y-8 data-closed:opacity-0"
+              className="hidden-scrollbar max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] bg-white p-5 shadow-2xl transition duration-200 min-[744px]:max-w-[36rem] min-[744px]:p-6 dark:bg-neutral-900 data-closed:translate-y-8 data-closed:opacity-0"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -388,86 +388,93 @@ export default function AvatarDropdown({
                 </button>
               </div>
 
-              <section className="mt-5">
-                <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-                  {locale === 'th' ? 'ภาษา' : 'Language'}
-                </h3>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'th' as const, label: 'ภาษาไทย', code: 'TH' },
-                    { value: 'en' as const, label: 'English', code: 'EN' },
-                  ].map((language) => {
-                    const active = locale === language.value
-                    return (
-                      <button
-                        key={language.value}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setLocale(language.value)}
-                        className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-start transition ${
-                          active
-                            ? 'border-[#176b50] bg-[#eff7f3] text-[#124e3c] dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-200'
-                            : 'border-neutral-200 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        <span
-                          className={`grid size-8 place-items-center rounded-xl text-xs font-bold ${active ? 'bg-[#176b50] text-white' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+              <div className="mt-5 grid grid-cols-2 gap-3 min-[744px]:gap-4">
+                <section className="order-2 min-w-0">
+                  <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+                    {locale === 'th' ? 'ภาษา' : 'Language'}
+                  </h3>
+                  <div className="mt-2 grid gap-2">
+                    {[
+                      { value: 'th' as const, label: 'ภาษาไทย', code: 'TH' },
+                      { value: 'en' as const, label: 'English', code: 'EN' },
+                    ].map((language) => {
+                      const active = locale === language.value
+                      return (
+                        <button
+                          key={language.value}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setLocale(language.value)}
+                          className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-start transition ${
+                            active
+                              ? 'border-[#176b50] bg-[#eff7f3] text-[#124e3c] dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-200'
+                              : 'border-neutral-200 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
+                          }`}
                         >
-                          {language.code}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{language.label}</span>
-                        {active && <CheckIcon className="size-4 shrink-0" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
+                          <span
+                            className={`grid size-8 place-items-center rounded-xl text-xs font-bold ${active ? 'bg-[#176b50] text-white' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+                          >
+                            {language.code}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">{language.label}</span>
+                          {active && <CheckIcon className="size-4 shrink-0" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
 
-              <section className="mt-5">
-                <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-                  {locale === 'th' ? 'สกุลเงิน' : 'Currency'}
-                </h3>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {[
-                    { value: 'THB' as const, label: 'บาทไทย', symbol: '฿' },
-                    { value: 'USD' as const, label: 'US Dollar', symbol: '$' },
-                  ].map((item) => {
-                    const active = currency === item.value
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setCurrency(item.value)}
-                        className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-start transition ${
-                          active
-                            ? 'border-orange-400 bg-orange-50 text-orange-950 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-100'
-                            : 'border-neutral-200 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
-                        }`}
-                      >
-                        <span
-                          className={`grid size-8 place-items-center rounded-xl text-base font-semibold ${active ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300'}`}
+                <section className="order-1 min-w-0">
+                  <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+                    {locale === 'th' ? 'สกุลเงิน' : 'Currency'}
+                  </h3>
+                  <div className="mt-2 grid gap-2">
+                    {[
+                      { value: 'THB' as const, label: 'บาทไทย', symbol: '฿' },
+                      { value: 'USD' as const, label: 'US Dollar', symbol: '$' },
+                    ].map((item) => {
+                      const active = currency === item.value
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setCurrency(item.value)}
+                          className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-start transition ${
+                            active
+                              ? 'border-orange-400 bg-orange-50 text-orange-950 dark:border-orange-700 dark:bg-orange-950/30 dark:text-orange-100'
+                              : 'border-neutral-200 text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
+                          }`}
                         >
-                          {item.symbol}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-semibold">{item.value}</span>
-                          <span className="block truncate text-[11px] opacity-70">{item.label}</span>
-                        </span>
-                        {active && <CheckIcon className="size-4 shrink-0" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
+                          <span
+                            className={`grid size-8 place-items-center rounded-xl text-base font-semibold ${active ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300'}`}
+                          >
+                            {item.symbol}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold">{item.value}</span>
+                            <span className="block truncate text-[11px] opacity-70">{item.label}</span>
+                          </span>
+                          {active && <CheckIcon className="size-4 shrink-0" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setPreferencesOpen(false)}
-                className="mt-6 min-h-12 w-full rounded-full bg-[#124e3c] text-sm font-semibold text-white shadow-sm"
-              >
-                {locale === 'th' ? 'เสร็จสิ้น' : 'Done'}
-              </button>
+              <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
+                <p className="text-[11px] font-light leading-4 text-neutral-400 dark:text-neutral-500">
+                  {locale === 'th' ? 'บันทึกตัวเลือกนี้ไว้ในอุปกรณ์' : 'Save these choices on this device'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPreferencesOpen(false)}
+                  className="shrink-0 rounded-full bg-[#124e3c] px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#0d3d2f] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600/30"
+                >
+                  {locale === 'th' ? 'เสร็จสิ้น' : 'Done'}
+                </button>
+              </div>
             </DialogPanel>
           </div>
         </Dialog>
