@@ -584,7 +584,7 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                         {isThai ? (
                           <PropertyCategoryLabel
                             label={group.label}
-                            ampersandClassName={active ? 'text-white/75' : 'text-[#426458]/70'}
+                            ampersandClassName={active ? 'text-white/55' : 'text-[#426458]/45'}
                           />
                         ) : (
                           group.labelEn

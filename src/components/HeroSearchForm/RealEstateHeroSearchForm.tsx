@@ -148,7 +148,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                         : 'border-neutral-200 text-neutral-700 data-checked:border-[#123f32] data-checked:bg-[#123f32] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-950/15'
                 )}
               >
-                <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-70" />
+                <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-55" />
               </Headless.Radio>
             </Headless.Field>
           ))}

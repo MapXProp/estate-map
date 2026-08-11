@@ -15,10 +15,7 @@ const PropertyCategoryLabel = ({ label, ampersandClassName }: Props) => {
       {before}{' '}
       <span
         aria-hidden="true"
-        className={clsx(
-          'mx-0.5 text-[0.72em] font-normal text-neutral-500/90 dark:text-neutral-400/90',
-          ampersandClassName
-        )}
+        className={clsx('mx-0.5 text-[0.72em] font-normal text-neutral-400/70', ampersandClassName)}
       >
         &amp;
       </span>{' '}

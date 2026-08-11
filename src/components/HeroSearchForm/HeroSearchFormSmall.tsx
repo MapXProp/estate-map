@@ -56,7 +56,7 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
                   {tab.labelParts ? (
                     <>
                       <span>{tab.labelParts[0]}</span>
-                      <span aria-hidden="true" className="mx-1 text-[0.72em] font-normal opacity-70">
+                      <span aria-hidden="true" className="mx-1 text-[0.72em] font-normal opacity-45">
                         &amp;
                       </span>
                       <span>{tab.labelParts[1]}</span>
