@@ -25,7 +25,7 @@ import { FilterVerticalIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import Form from 'next/form'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PriceRangeSlider } from './PriceRangeSlider'
 
 type CheckboxFilter = {
@@ -365,6 +365,14 @@ const ListingFilterTabs = ({
     return total + (filterOption.options?.filter((option) => !!option.defaultChecked).length || 0)
   }, 0)
 
+  useEffect(() => {
+    if (!isPropertyMap) return
+
+    const openPropertyFilters = () => setShowAllFilter(true)
+    window.addEventListener('mapx:open-property-filters', openPropertyFilters)
+    return () => window.removeEventListener('mapx:open-property-filters', openPropertyFilters)
+  }, [isPropertyMap])
+
   const handleFormSubmit = async (formData: FormData) => {
     const formDataObject = Object.fromEntries(formData.entries())
     console.log('Form submitted with data:', formDataObject)
@@ -481,7 +489,9 @@ const ListingFilterTabs = ({
     <div className={clsx('flex', isPropertyMap ? 'flex-nowrap gap-2 pb-1' : 'flex-wrap md:gap-x-4 md:gap-y-2')}>
       {renderTabAllFilters()}
       <PopoverGroup
-        className={clsx('hidden md:flex', isPropertyMap ? 'flex-nowrap gap-2' : 'flex-wrap gap-x-4 gap-y-2')}
+        className={clsx(
+          isPropertyMap ? 'hidden flex-nowrap gap-2 lg:flex' : 'hidden flex-wrap gap-x-4 gap-y-2 md:flex'
+        )}
         as={Form}
         action={handleFormSubmit}
       >

@@ -98,35 +98,31 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
 
   return (
     <div className={clsx('relative flex min-h-screen gap-4 xl:gap-6', className)}>
-      <div className="flex w-full flex-col gap-y-4 pt-5 pb-32 lg:flex-[62_1_0%] lg:gap-y-5 lg:pt-6 lg:pb-20 xl:flex-[68_1_0%]">
-        <div id="heading" className="flex items-end justify-between gap-4 lg:pe-5 xl:pe-0">
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-[#176b50]">ค้นหาอสังหาบนแผนที่</p>
-            <h1 className="mt-1 text-xl font-semibold text-neutral-950 dark:text-white">
-              {query ? `ผลการค้นหา “${query}”` : `พบ ${convertNumbThousand(category.count)} ประกาศ`}
-              {!query && category.handle !== 'all' ? ` ใน ${category.name}` : null}
-            </h1>
-            {areaSearch ? (
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                พบ {convertNumbThousand(visibleListings.length)} รายการภายในขอบเขตแผนที่ปัจจุบัน
-              </p>
-            ) : query ? (
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                พบ {convertNumbThousand(category.count)} ประกาศที่อาจตรงกับคำค้น
-              </p>
-            ) : null}
+      <div className="flex w-full flex-col gap-y-3 pt-3 pb-32 min-[744px]:pt-0 lg:flex-[62_1_0%] lg:pb-20 xl:flex-[68_1_0%]">
+        <div
+          id="heading"
+          className="sticky top-0 z-20 -ms-0.5 hidden min-h-14 items-center gap-3 border-b border-[#e3ebe7] bg-white/95 py-2 pe-5 ps-0.5 backdrop-blur min-[744px]:flex xl:pe-0 dark:border-neutral-800 dark:bg-neutral-950/95"
+        >
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-900 dark:text-white">
+            {query || (category.handle !== 'all' ? category.name : 'อสังหาทั้งหมด')}
+            <span className="ms-1.5 font-normal text-neutral-500 dark:text-neutral-400">
+              ·{' '}
+              {areaSearch
+                ? `${convertNumbThousand(visibleListings.length)} รายการในบริเวณนี้`
+                : `${convertNumbThousand(category.count)} รายการ`}
+            </span>
+          </p>
+          <div className="hidden-scrollbar min-w-0 max-w-[72%] shrink overflow-x-auto py-1">
+            <ListingFilterTabs filterOptions={filterOptions} variant="property-map" visibleFilterCount={4} />
           </div>
           <button
             type="button"
-            className="hidden shrink-0 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-600 transition hover:border-[#aacbbb] hover:text-[#12513f] min-[744px]:block dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+            className="hidden shrink-0 rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-600 transition hover:border-[#aacbbb] hover:text-[#12513f] 2xl:block dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
           >
             เรียง: แนะนำ
           </button>
         </div>
-        <div className="hidden pe-5 min-[744px]:block xl:pe-0">
-          <ListingFilterTabs filterOptions={filterOptions} variant="property-map" visibleFilterCount={4} />
-        </div>
-        <Divider />
+        <Divider className="min-[744px]:hidden" />
         <div className="grid grid-cols-2 gap-x-2 gap-y-6 min-[744px]:grid-cols-3 min-[744px]:gap-x-3 lg:gap-y-8 lg:pe-5 xl:grid-cols-4 xl:gap-x-4 xl:pe-0">
           {visibleListings.map((listing, index) => (
             <div

@@ -187,6 +187,27 @@ const LongdoPropertyMap = ({
   useEffect(() => {
     onViewportChangeRef.current = onViewportChange
   }, [onViewportChange])
+
+  useEffect(() => {
+    const touchSurface = placeholderRef.current
+    if (!touchSurface) return
+
+    const preventPagePinch = (event: TouchEvent) => {
+      if (event.touches.length > 1) event.preventDefault()
+    }
+    const preventSafariGesture = (event: Event) => event.preventDefault()
+
+    touchSurface.addEventListener('touchmove', preventPagePinch, { passive: false })
+    touchSurface.addEventListener('gesturestart', preventSafariGesture, { passive: false })
+    touchSurface.addEventListener('gesturechange', preventSafariGesture, { passive: false })
+
+    return () => {
+      touchSurface.removeEventListener('touchmove', preventPagePinch)
+      touchSurface.removeEventListener('gesturestart', preventSafariGesture)
+      touchSurface.removeEventListener('gesturechange', preventSafariGesture)
+    }
+  }, [])
+
   const center = useMemo(() => locations[0] || { lon: 100.5018, lat: 13.7563 }, [locations])
   const initialCenterRef = useRef<LongdoLocation>(center)
 
@@ -444,7 +465,11 @@ const LongdoPropertyMap = ({
         onLoad={() => setSdkReady(true)}
         onReady={() => setSdkReady(true)}
       />
-      <div ref={placeholderRef} className="size-full" aria-label="แผนที่ประกาศอสังหาริมทรัพย์" />
+      <div
+        ref={placeholderRef}
+        className="size-full touch-none overscroll-contain"
+        aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
+      />
       {mapReady && (
         <>
           <div

@@ -4,6 +4,7 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
+  ArrowLeft,
   Banknote,
   BedDouble,
   Building,
@@ -16,6 +17,7 @@ import {
   LandPlot,
   MapPin,
   Search,
+  SlidersHorizontal,
   Store,
   Tent,
   Warehouse,
@@ -348,7 +350,13 @@ const formatPrice = (value: number, isThai: boolean) => {
   return isThai ? `${value.toLocaleString('th-TH')} บาท` : `฿${value.toLocaleString('en-US')}`
 }
 
-const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
+const MobilePropertySearch = ({
+  className = '',
+  compactMapHeader = false,
+}: {
+  className?: string
+  compactMapHeader?: boolean
+}) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const pathname = usePathname()
@@ -485,18 +493,44 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
           ? `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(budgetRange[1], isThai)}`
           : isThai
             ? 'ไม่จำกัดงบ'
-            : 'Any budget'
+             : 'Any budget'
+
+  const openMapFilters = () => {
+    window.dispatchEvent(new Event('mapx:open-property-filters'))
+  }
 
   return (
     <div className={`relative z-10 w-full ${className}`}>
-      <div className="flex w-full items-center gap-2.5">
-        <MobilePropertyBrandMark />
+      <div className={`flex w-full items-center ${compactMapHeader && isMapResults ? 'gap-1.5' : 'gap-2.5'}`}>
+        {compactMapHeader && isMapResults ? (
+          <button
+            type="button"
+            aria-label={isThai ? 'กลับหน้าก่อนหน้า' : 'Go back'}
+            className="grid size-10 shrink-0 place-items-center rounded-full text-neutral-600 transition hover:bg-neutral-100 active:scale-95 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            onClick={() => {
+              if (window.history.length > 1) window.history.back()
+              else window.location.assign('/')
+            }}
+          >
+            <ArrowLeft className="size-5" />
+          </button>
+        ) : (
+          <MobilePropertyBrandMark />
+        )}
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-full border border-neutral-200 bg-white py-2 ps-3 pe-4 text-start shadow-[0_6px_22px_rgba(15,23,42,0.10)] transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900"
+          className={`flex min-w-0 flex-1 items-center rounded-full border border-neutral-200 bg-white text-start transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 ${
+            compactMapHeader && isMapResults
+              ? 'min-h-11 gap-2 py-1.5 ps-2.5 pe-3 shadow-sm'
+              : 'min-h-14 gap-3 py-2 ps-3 pe-4 shadow-[0_6px_22px_rgba(15,23,42,0.10)]'
+          }`}
         >
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200">
+          <span
+            className={`grid shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200 ${
+              compactMapHeader && isMapResults ? 'size-8' : 'size-9'
+            }`}
+          >
             <Search className="size-4.5" strokeWidth={2} />
           </span>
           <span className="min-w-0 flex-1">
@@ -520,7 +554,9 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                     .join(' · ')
                 : isThai
                   ? isMapResults
-                    ? 'ทุกประเภท · ไม่จำกัดงบ'
+                    ? compactMapHeader
+                      ? '20,000 รายการ · แตะเพื่อค้นหา'
+                      : 'ทุกประเภท · ไม่จำกัดงบ'
                     : 'พิมพ์หรือแตะตัวเลือกได้เลย'
                   : isMapResults
                     ? 'All properties · Any budget'
@@ -528,6 +564,19 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
             </span>
           </span>
         </button>
+        {compactMapHeader && isMapResults && (
+          <button
+            type="button"
+            aria-label={isThai ? 'เปิดตัวกรอง' : 'Open filters'}
+            className="relative grid size-10 shrink-0 place-items-center rounded-full border border-[#d8e6df] bg-white text-[#174d3e] shadow-sm transition hover:bg-[#f3f8f5] active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-emerald-200"
+            onClick={openMapFilters}
+          >
+            <SlidersHorizontal className="size-4.5" />
+            <span className="absolute -top-0.5 -right-0.5 grid size-4.5 place-items-center rounded-full bg-[#176b50] text-[9px] font-bold text-white ring-2 ring-white dark:ring-neutral-900">
+              3
+            </span>
+          </button>
+        )}
       </div>
 
       <Dialog open={open} onClose={setOpen} className="relative z-[100] min-[744px]:hidden">

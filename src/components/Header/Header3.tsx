@@ -32,6 +32,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
 
   // pathname
   const pathname = usePathname()
+  const isPropertyMap = pathname.startsWith('/properties/map') && initSearchFormTab === 'RealEstates'
 
   let locationText = 'Anywhere'
   let dateText = 'Any week'
@@ -57,9 +58,9 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
     locationText = 'Real Estates in Bali'
     dateText = 'Rent'
     guestsText = '$10k - $1M'
-  } else if (pathname.startsWith('/properties/map') && initSearchFormTab === 'RealEstates') {
+  } else if (isPropertyMap) {
     locationText = 'ค้นหาทำเลหรืออสังหา'
-    dateText = 'ทุกหมวด'
+    dateText = '20,000 รายการ'
     guestsText = 'ตัวกรอง'
   }
 
@@ -125,7 +126,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
           className
         )}
       >
-        <div className="relative flex h-20 px-4 min-[744px]:px-6 lg:px-8">
+        <div className={clsx('relative flex px-4 min-[744px]:px-6 lg:px-8', isPropertyMap ? 'h-16' : 'h-20')}>
           <div className="flex flex-1 justify-between">
             {/* Logo (lg+) */}
             <div className="relative z-11 flex flex-1/2 items-center">
@@ -158,7 +159,29 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                       <div className="hidden h-5 w-px bg-neutral-300 min-[744px]:block dark:bg-neutral-700"></div>
                     )}
                     {initSearchFormTab !== 'Cars' && (
-                      <div className="hidden cursor-pointer px-4 py-3 min-[744px]:block">{guestsText}</div>
+                      <div
+                        className="hidden cursor-pointer px-4 py-3 min-[744px]:block"
+                        role={isPropertyMap ? 'button' : undefined}
+                        tabIndex={isPropertyMap ? 0 : undefined}
+                        onClick={
+                          isPropertyMap
+                            ? (event) => {
+                                event.stopPropagation()
+                                window.dispatchEvent(new Event('mapx:open-property-filters'))
+                              }
+                            : undefined
+                        }
+                        onTouchStart={
+                          isPropertyMap
+                            ? (event) => {
+                                event.stopPropagation()
+                                window.dispatchEvent(new Event('mapx:open-property-filters'))
+                              }
+                            : undefined
+                        }
+                      >
+                        {guestsText}
+                      </div>
                     )}
                   </div>
 
@@ -198,8 +221,12 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
             <div className="relative z-10 flex flex-1/2 items-center justify-end gap-x-2.5 text-neutral-700 sm:gap-x-3 dark:text-neutral-100">
               {initSearchFormTab === 'RealEstates' ? (
                 <>
-                  <PropertyListingCta label="ลงประกาศ" freeLabel="ฟรี" />
-                  <NotifyDropdown />
+                  <div className={clsx(isPropertyMap && 'hidden min-[1100px]:block')}>
+                    <PropertyListingCta label="ลงประกาศ" freeLabel="ฟรี" />
+                  </div>
+                  <div className={clsx(isPropertyMap && 'hidden min-[900px]:block')}>
+                    <NotifyDropdown />
+                  </div>
                   <AvatarDropdown />
                 </>
               ) : (
@@ -217,7 +244,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   </div>
                 </>
               )}
-              <CurrLangDropdown className="hidden min-[744px]:block" />
+              <CurrLangDropdown className={clsx('hidden min-[744px]:block', isPropertyMap && 'max-[1099px]:hidden')} />
             </div>
           </div>
         </div>

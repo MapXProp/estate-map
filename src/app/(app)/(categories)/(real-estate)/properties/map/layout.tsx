@@ -4,7 +4,7 @@ import { ReactNode } from 'react'
 
 const Layout = async ({ children, modal }: { children: ReactNode; modal: ReactNode }) => {
   return (
-    <ApplicationLayout header={<Header3 initSearchFormTab="RealEstates" />}>
+    <ApplicationLayout header={<Header3 initSearchFormTab="RealEstates" />} compactMobileHeader>
       {children}
       {modal}
     </ApplicationLayout>
