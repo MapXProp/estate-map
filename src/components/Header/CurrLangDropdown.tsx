@@ -84,10 +84,10 @@ const CurrLangDropdown: FC<Props> = ({
             ? `ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`
             : `Language ${languageCode}, currency ${selectedCurrency}`
         }
-        className="flex size-9 items-center justify-center bg-transparent text-neutral-400 shadow-none transition duration-200 group-data-open:text-neutral-600 hover:text-neutral-600 focus:outline-hidden focus-visible:rounded-full focus-visible:ring-2 focus-visible:ring-neutral-400/25 dark:text-neutral-500 dark:group-data-open:text-neutral-300 dark:hover:text-neutral-300"
+        className="flex size-10 appearance-none items-center justify-center border-0 bg-transparent p-0 text-neutral-400 shadow-none ring-0 outline-none transition duration-200 group-data-open:text-neutral-600 hover:text-neutral-600 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none data-focus:ring-0 data-focus:outline-none dark:text-neutral-500 dark:group-data-open:text-neutral-300 dark:hover:text-neutral-300"
       >
-        <span className="grid size-8 shrink-0 place-items-center">
-          <GlobeAltIcon className="size-4" />
+        <span className="grid size-9 shrink-0 place-items-center">
+          <GlobeAltIcon className="size-5" />
         </span>
       </PopoverButton>
 
