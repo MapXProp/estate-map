@@ -44,10 +44,10 @@ const Header: FC<HeaderProps> = async ({ hasBorderBottom = true, className }) =>
               <HamburgerBtnMenu />
             </div>
             <MegaMenuPopover megamenu={megamenu} featuredCategory={featuredCategory} />
-            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[744px]:block" />
             <PropertyListingCta className="min-[744px]:-mx-1" />
             <NotifyDropdown className="hidden min-[744px]:block" />
             <AvatarDropdown />
+            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden min-[744px]:block" />
           </div>
         </div>
       </div>

@@ -389,7 +389,7 @@ export default function AvatarDropdown({
               </div>
 
               <div className="mt-5 grid grid-cols-2 gap-3 min-[744px]:gap-4">
-                <section className="order-2 min-w-0">
+                <section className="order-1 min-w-0">
                   <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                     {locale === 'th' ? 'ภาษา' : 'Language'}
                   </h3>
@@ -424,7 +424,7 @@ export default function AvatarDropdown({
                   </div>
                 </section>
 
-                <section className="order-1 min-w-0">
+                <section className="order-2 min-w-0">
                   <h3 className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                     {locale === 'th' ? 'สกุลเงิน' : 'Currency'}
                   </h3>

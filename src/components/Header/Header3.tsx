@@ -196,7 +196,6 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
 
             {/* NAVIGATIONS */}
             <div className="relative z-10 flex flex-1/2 items-center justify-end gap-x-2.5 text-neutral-700 sm:gap-x-3 dark:text-neutral-100">
-              <CurrLangDropdown className="hidden min-[744px]:block" />
               {initSearchFormTab === 'RealEstates' ? (
                 <>
                   <PropertyListingCta label="ลงประกาศ" freeLabel="ฟรี" />
@@ -218,6 +217,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   </div>
                 </>
               )}
+              <CurrLangDropdown className="hidden min-[744px]:block" />
             </div>
           </div>
         </div>

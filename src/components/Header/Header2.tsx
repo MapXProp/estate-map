@@ -43,9 +43,9 @@ const Header2: FC<Props> = async ({ hasBorder = true, className }) => {
           </div>
 
           <div className="flex flex-1 items-center justify-end gap-x-2.5 sm:gap-x-6">
-            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden md:block" />
             <NotifyDropdown />
             <AvatarDropdown />
+            <CurrLangDropdown currencies={currencies} languages={languages} className="hidden md:block" />
           </div>
         </div>
       </div>
