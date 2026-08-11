@@ -6,12 +6,12 @@ export async function getPropertyMapFilterOptions() {
       tabUIType: 'checkbox',
       options: [
         {
-          name: 'บ้านและที่อยู่อาศัย',
+          name: 'บ้าน คอนโด & ที่อยู่อาศัย',
           value: 'homes',
           description: 'บ้าน คอนโด ทาวน์โฮม และที่ดินสำหรับอยู่อาศัย',
         },
         {
-          name: 'ห้องเช่าและที่พักรายเดือน',
+          name: 'ห้องเช่า & ที่พักรายเดือน',
           value: 'rooms',
           description: 'อพาร์ตเมนต์ หอพัก แฟลต และห้องเช่าระยะยาว',
         },

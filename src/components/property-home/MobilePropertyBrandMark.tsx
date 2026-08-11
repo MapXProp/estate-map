@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, House, Store } from 'lucide-react'
 import Link from 'next/link'
@@ -10,7 +11,7 @@ const mobileSites = [
   {
     id: 'homes',
     href: '/homes',
-    titleTh: 'บ้านและที่อยู่อาศัย',
+    titleTh: 'บ้าน คอนโด & ที่อยู่อาศัย',
     titleEn: 'Homes & residential',
     descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งซื้อและเช่า',
     descriptionEn: 'Homes, condos and land, for sale or rent',
@@ -23,7 +24,7 @@ const mobileSites = [
   {
     id: 'rooms',
     href: '/rooms',
-    titleTh: 'ห้องเช่าและที่พักรายเดือน',
+    titleTh: 'ห้องเช่า & ที่พักรายเดือน',
     titleEn: 'Rooms & monthly stays',
     descriptionTh: 'อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
     descriptionEn: 'Apartments, dorms, flats and long-stay rooms',
@@ -108,7 +109,7 @@ const MobilePropertyBrandMark = () => {
                 </span>
                 <span className="w-0 min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                    {locale === 'th' ? site.titleTh : site.titleEn}
+                    {locale === 'th' ? <PropertyCategoryLabel label={site.titleTh} /> : site.titleEn}
                   </span>
                   <span className="mt-0.5 block max-w-full font-sarabun text-xs leading-4 [overflow-wrap:anywhere] break-words [word-break:break-word] whitespace-normal text-neutral-500 dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}

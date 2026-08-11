@@ -1,5 +1,6 @@
 'use client'
 
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import * as Headless from '@headlessui/react'
 import clsx from 'clsx'
 import Form from 'next/form'
@@ -25,9 +26,9 @@ interface Props {
 
 const tabs = [
   { value: 'all', label: 'ทั้งหมด' },
-  { value: 'homes', label: 'ที่อยู่อาศัย' },
-  { value: 'rooms', label: 'ห้องเช่ารายเดือน' },
-  { value: 'business', label: 'พื้นที่ธุรกิจ' },
+  { value: 'homes', label: 'บ้าน คอนโด & ที่อยู่อาศัย' },
+  { value: 'rooms', label: 'ห้องเช่า & ที่พักรายเดือน' },
+  { value: 'business', label: 'พื้นที่ทำธุรกิจ' },
 ] as const
 
 const propertyTypesByTab = {
@@ -147,7 +148,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                         : 'border-neutral-200 text-neutral-700 data-checked:border-[#123f32] data-checked:bg-[#123f32] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-950/15'
                 )}
               >
-                {tab.label}
+                <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-70" />
               </Headless.Radio>
             </Headless.Field>
           ))}

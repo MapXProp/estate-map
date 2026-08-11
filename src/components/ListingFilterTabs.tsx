@@ -1,6 +1,7 @@
 'use client'
 
 import NcInputNumber from '@/components/NcInputNumber'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Button } from '@/shared/Button'
 import ButtonClose from '@/shared/ButtonClose'
 import ButtonPrimary from '@/shared/ButtonPrimary'
@@ -304,7 +305,11 @@ const CheckboxPanel = ({
               defaultChecked={!!option.defaultChecked}
             />
             <Label className={clsx(isPropertyMap && 'cursor-pointer text-[0.9rem]/5 font-semibold!')}>
-              {option.name}
+              {filterOption.name === 'discoveryChannel' ? (
+                <PropertyCategoryLabel label={option.name} />
+              ) : (
+                option.name
+              )}
             </Label>
             {option.description && (
               <Description className={clsx(isPropertyMap && 'mt-0.5 text-xs/5')}>{option.description}</Description>

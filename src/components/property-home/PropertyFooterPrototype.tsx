@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import Logo from '@/shared/Logo'
 import { ArrowRight, CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
@@ -10,8 +11,8 @@ const footerNavigation = [
     title: 'ค้นหาอสังหา',
     titleEn: 'Find property',
     links: [
-      ['บ้านและที่อยู่อาศัย', 'Homes & residential', '/homes'],
-      ['ห้องเช่าและที่พักรายเดือน', 'Rooms & monthly stays', '/rooms'],
+      ['บ้าน คอนโด & ที่อยู่อาศัย', 'Homes & residential', '/homes'],
+      ['ห้องเช่า & ที่พักรายเดือน', 'Rooms & monthly stays', '/rooms'],
       ['พื้นที่ทำธุรกิจ', 'Business spaces', '/business'],
       ['ประกาศขาย', 'Properties for sale', '/real-estate-categories/all?offer_type=sale'],
       ['ประกาศเช่า', 'Properties for rent', '/real-estate-categories/all?offer_type=rent'],
@@ -58,7 +59,7 @@ const NavigationLinks = ({ links, isThai }: { links: (typeof footerNavigation)[n
           href={href}
           className="text-sm text-neutral-600 transition hover:text-[#176b50] dark:text-neutral-400 dark:hover:text-emerald-300"
         >
-          {isThai ? label : labelEn}
+          {isThai ? <PropertyCategoryLabel label={label} /> : labelEn}
         </Link>
       </li>
     ))}

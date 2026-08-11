@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, ChevronDown, House, Store } from 'lucide-react'
 import Link from 'next/link'
@@ -12,7 +13,7 @@ const sites = [
     href: '/homes',
     labelTh: 'บ้าน',
     labelEn: 'Homes',
-    titleTh: 'บ้านและที่อยู่อาศัย',
+    titleTh: 'บ้าน คอนโด & ที่อยู่อาศัย',
     titleEn: 'Homes & residential',
     descriptionTh: 'บ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งซื้อและเช่า',
     descriptionEn: 'Homes, condos, townhouses and land, for sale or rent',
@@ -27,7 +28,7 @@ const sites = [
     href: '/rooms',
     labelTh: 'ห้องเช่า',
     labelEn: 'Rooms',
-    titleTh: 'ห้องเช่าและที่พักรายเดือน',
+    titleTh: 'ห้องเช่า & ที่พักรายเดือน',
     titleEn: 'Rooms & monthly stays',
     descriptionTh: 'อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
     descriptionEn: 'Apartments, dorms, flats and long-stay rooms',
@@ -79,7 +80,7 @@ const PropertySiteSwitcher = () => {
           {locale === 'th' ? activeSite.labelTh : activeSite.labelEn}
         </span>
         <span className="hidden text-sm font-semibold whitespace-nowrap text-neutral-800 min-[1100px]:inline dark:text-neutral-100">
-          {locale === 'th' ? activeSite.titleTh : activeSite.titleEn}
+          {locale === 'th' ? <PropertyCategoryLabel label={activeSite.titleTh} /> : activeSite.titleEn}
         </span>
         <ChevronDown className="hidden size-3.5 text-neutral-400 transition group-data-open:rotate-180 min-[900px]:block" />
       </PopoverButton>
@@ -115,7 +116,7 @@ const PropertySiteSwitcher = () => {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
-                    {locale === 'th' ? site.titleTh : site.titleEn}
+                    {locale === 'th' ? <PropertyCategoryLabel label={site.titleTh} /> : site.titleEn}
                   </span>
                   <span className="mt-0.5 block font-sarabun text-xs/5 text-neutral-500 dark:text-neutral-400">
                     {locale === 'th' ? site.descriptionTh : site.descriptionEn}

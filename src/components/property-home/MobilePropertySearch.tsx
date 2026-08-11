@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Banknote,
@@ -93,8 +94,8 @@ const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term
 ]
 
 const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
-  { value: 'homes', label: 'บ้าน / ที่อยู่อาศัย', labelEn: 'Homes' },
-  { value: 'rooms', label: 'ห้องเช่า / รายเดือน', labelEn: 'Monthly rooms' },
+  { value: 'homes', label: 'บ้าน คอนโด & ที่อยู่อาศัย', labelEn: 'Homes' },
+  { value: 'rooms', label: 'ห้องเช่า & ที่พักรายเดือน', labelEn: 'Monthly rooms' },
   { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelEn: 'Business' },
 ]
 
@@ -573,13 +574,22 @@ const MobilePropertySearch = ({ className = '' }: { className?: string }) => {
                         setOfferType(group.value === 'rooms' ? 'rent' : '')
                       }}
                       aria-pressed={active}
-                      className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1.5 text-[11px] leading-tight font-semibold transition ${
+                      className={`flex min-h-12 items-center justify-center gap-1 rounded-xl px-1 text-[10px] leading-tight font-semibold transition min-[390px]:text-[11px] ${
                         active
                           ? 'bg-[#176b50] text-white shadow-[0_3px_10px_rgba(23,107,80,0.20)] ring-1 ring-[#176b50] dark:bg-emerald-300 dark:text-emerald-950 dark:ring-emerald-300'
                           : 'text-[#426458] active:bg-white/70 dark:text-emerald-200/70 dark:active:bg-emerald-900/70'
                       }`}
                     >
-                      <span>{isThai ? group.label : group.labelEn}</span>
+                      <span className="text-center">
+                        {isThai ? (
+                          <PropertyCategoryLabel
+                            label={group.label}
+                            ampersandClassName={active ? 'text-white/75' : 'text-[#426458]/70'}
+                          />
+                        ) : (
+                          group.labelEn
+                        )}
+                      </span>
                       {selectedCount > 0 && (
                         <span
                           className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${

@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
 import heroImage from '@/images/hero-right-3.png'
@@ -23,7 +24,7 @@ import Link from 'next/link'
 
 const discoveryModes = [
   {
-    title: 'บ้านและที่อยู่อาศัย',
+    title: 'บ้าน คอนโด & ที่อยู่อาศัย',
     titleEn: 'Homes & residential',
     description: 'ค้นหาบ้าน คอนโด ทาวน์โฮม และที่ดิน ทั้งประกาศขายและให้เช่า',
     descriptionEn: 'Find homes, condos, townhouses and land, for sale or rent',
@@ -32,7 +33,7 @@ const discoveryModes = [
     tone: 'bg-[#edf6f1] text-[#176b50] dark:bg-emerald-950/60 dark:text-emerald-200',
   },
   {
-    title: 'ห้องเช่าและที่พักรายเดือน',
+    title: 'ห้องเช่า & ที่พักรายเดือน',
     titleEn: 'Rooms & monthly stays',
     description: 'ค้นหาอพาร์ตเมนต์ หอพัก แฟลต ห้องเช่า และที่พักระยะยาว',
     descriptionEn: 'Find apartments, dorms, flats, rooms and long-stay accommodation',
@@ -409,7 +410,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
                   <Icon className="size-6" strokeWidth={1.6} />
                 </span>
                 <h3 className="mt-5 text-lg font-semibold text-neutral-950 dark:text-white">
-                  {isThai ? group.title : group.titleEn}
+                  {isThai ? <PropertyCategoryLabel label={group.title} /> : group.titleEn}
                 </h3>
                 <p className="mt-1 text-sm/6 text-neutral-500 dark:text-neutral-400">
                   {isThai ? group.description : group.descriptionEn}

@@ -10,10 +10,22 @@ import { formTabs } from './HeroSearchForm'
 import { RealEstateHeroSearchForm, RealEstateSearchTab } from './RealEstateHeroSearchForm'
 
 const propertyTabs = [
-  { value: 'all', label: 'ทั้งหมด', icon: Grid2X2, tone: 'text-[#123f32]' },
-  { value: 'homes', label: 'ที่อยู่อาศัย', icon: House, tone: 'text-[#176b50]' },
-  { value: 'rooms', label: 'ห้องเช่ารายเดือน', icon: BedDouble, tone: 'text-[#2a8063]' },
-  { value: 'business', label: 'พื้นที่ธุรกิจ', icon: Store, tone: 'text-[#f04b2f]' },
+  { value: 'all', label: 'ทั้งหมด', labelParts: null, icon: Grid2X2, tone: 'text-[#123f32]' },
+  {
+    value: 'homes',
+    label: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    labelParts: ['บ้าน คอนโด', 'ที่อยู่อาศัย'],
+    icon: House,
+    tone: 'text-[#176b50]',
+  },
+  {
+    value: 'rooms',
+    label: 'ห้องเช่า & ที่พักรายเดือน',
+    labelParts: ['ห้องเช่า', 'ที่พักรายเดือน'],
+    icon: BedDouble,
+    tone: 'text-[#2a8063]',
+  },
+  { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelParts: null, icon: Store, tone: 'text-[#f04b2f]' },
 ] as const
 
 const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: string; initTab: ListingType }) => {
@@ -40,7 +52,19 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
                 )}
               >
                 <Icon className="size-6" strokeWidth={isActive ? 2 : 1.7} />
-                <span className="text-[11px] font-medium whitespace-nowrap">{tab.label}</span>
+                <span className="flex items-baseline text-[11px] font-medium whitespace-nowrap">
+                  {tab.labelParts ? (
+                    <>
+                      <span>{tab.labelParts[0]}</span>
+                      <span aria-hidden="true" className="mx-1 text-[0.72em] font-normal opacity-70">
+                        &amp;
+                      </span>
+                      <span>{tab.labelParts[1]}</span>
+                    </>
+                  ) : (
+                    tab.label
+                  )}
+                </span>
                 <span
                   className={clsx(
                     'absolute inset-x-1 bottom-1 h-0.5 rounded-full transition',
