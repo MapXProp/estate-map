@@ -39,7 +39,7 @@ const discoveryModes = [
     descriptionEn: 'Find apartments, dorms, flats, rooms and long-stay accommodation',
     href: '/rooms',
     icon: BedDouble,
-    tone: 'bg-[#e6f4ee] text-[#2a8063] dark:bg-emerald-950/60 dark:text-emerald-200',
+    tone: 'bg-[#EFF8FD] text-[#2D8FC7] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
   },
   {
     title: 'พื้นที่ทำธุรกิจ',
@@ -48,7 +48,7 @@ const discoveryModes = [
     descriptionEn: 'Find shops, stalls, offices, warehouses, factories and temporary spaces',
     href: '/business',
     icon: Store,
-    tone: 'bg-[#fff0e9] text-[#f04b2f] dark:bg-orange-950/60 dark:text-orange-200',
+    tone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
   },
 ]
 
@@ -218,18 +218,18 @@ const siteThemes = {
     link: 'hover:text-[#176b50] dark:hover:text-emerald-300',
   },
   rooms: {
-    hero: 'bg-[#eef7f3] dark:bg-[#11251e]',
-    glow: 'bg-emerald-200/50 dark:bg-emerald-700/18',
-    accent: 'text-[#2a8063] dark:text-emerald-300',
-    gradient: 'from-[#eef7f3] dark:from-[#11251e]',
-    link: 'hover:text-[#2a8063] dark:hover:text-emerald-300',
+    hero: 'bg-[#EFF8FD] dark:bg-[#102b3a]',
+    glow: 'bg-sky-200/55 dark:bg-sky-700/18',
+    accent: 'text-[#2D8FC7] dark:text-[#8fd4f4]',
+    gradient: 'from-[#EFF8FD] dark:from-[#102b3a]',
+    link: 'hover:text-[#1676AE] dark:hover:text-[#8fd4f4]',
   },
   business: {
-    hero: 'bg-[#fff0e9] dark:bg-[#301915]',
-    glow: 'bg-orange-300/60 dark:bg-orange-700/20',
-    accent: 'text-[#f04b2f] dark:text-orange-300',
-    gradient: 'from-[#fff0e9] dark:from-[#301915]',
-    link: 'hover:text-[#f04b2f] dark:hover:text-orange-300',
+    hero: 'bg-[#FFF2EC] dark:bg-[#351B14]',
+    glow: 'bg-[#FFD0BE]/70 dark:bg-[#BE3E1B]/20',
+    accent: 'text-[#E65A2F] dark:text-[#FFC2AD]',
+    gradient: 'from-[#FFF2EC] dark:from-[#351B14]',
+    link: 'hover:text-[#D94A22] dark:hover:text-[#FFC2AD]',
   },
 } satisfies Record<
   PropertySiteMode,

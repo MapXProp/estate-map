@@ -101,6 +101,39 @@ const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: stri
   { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelEn: 'Business' },
 ]
 
+const propertyGroupTones: Record<
+  PropertyGroup,
+  { activeTab: string; inactiveCount: string; activeCard: string; check: string; activeIcon: string }
+> = {
+  homes: {
+    activeTab:
+      'bg-[#176B50] text-white shadow-[0_3px_10px_rgba(23,107,80,0.20)] ring-1 ring-[#176B50] dark:bg-emerald-300 dark:text-emerald-950 dark:ring-emerald-300',
+    inactiveCount: 'bg-[#cfe1d9] text-[#176B50] dark:bg-emerald-900 dark:text-emerald-200',
+    activeCard:
+      'border-[#176B50] bg-[#F0F7F4] text-[#123F32] ring-1 ring-[#176B50] ring-inset dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400',
+    check: 'bg-[#176B50] text-white dark:bg-emerald-300 dark:text-emerald-950',
+    activeIcon: 'bg-white/80 dark:bg-emerald-900',
+  },
+  rooms: {
+    activeTab:
+      'bg-[#2D8FC7] text-white shadow-[0_3px_10px_rgba(45,143,199,0.22)] ring-1 ring-[#2D8FC7] dark:bg-[#8fd4f4] dark:text-[#102b3a] dark:ring-[#8fd4f4]',
+    inactiveCount: 'bg-[#E0F2FC] text-[#1676AE] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
+    activeCard:
+      'border-[#2D8FC7] bg-[#E0F2FC] text-[#155C82] ring-1 ring-[#2D8FC7] ring-inset dark:border-[#8fd4f4] dark:bg-[#102b3a] dark:text-[#d8f2ff] dark:ring-[#8fd4f4]',
+    check: 'bg-[#2D8FC7] text-white dark:bg-[#8fd4f4] dark:text-[#102b3a]',
+    activeIcon: 'bg-white/80 dark:bg-[#173747]',
+  },
+  business: {
+    activeTab:
+      'bg-[#E65A2F] text-white shadow-[0_3px_10px_rgba(230,90,47,0.22)] ring-1 ring-[#E65A2F] dark:bg-[#FFC2AD] dark:text-[#351B14] dark:ring-[#FFC2AD]',
+    inactiveCount: 'bg-[#FFE7DC] text-[#D94A22] dark:bg-[#351B14] dark:text-[#FFC2AD]',
+    activeCard:
+      'border-[#E65A2F] bg-[#FFF2EC] text-[#8C321D] ring-1 ring-[#E65A2F] ring-inset dark:border-[#FFC2AD] dark:bg-[#351B14] dark:text-[#FFE8DF] dark:ring-[#FFC2AD]',
+    check: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
+    activeIcon: 'bg-white/80 dark:bg-[#4A251C]',
+  },
+}
+
 const propertyTypes = [
   {
     value: 'house',
@@ -606,9 +639,10 @@ const MobilePropertySearch = ({
 
           <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-28">
             <section>
-              <div className="grid grid-cols-3 gap-1 rounded-2xl border border-[#d4e5de] bg-[#eaf3ef] p-1 dark:border-emerald-900 dark:bg-emerald-950/60">
+              <div className="grid grid-cols-3 gap-1 rounded-2xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-800">
                 {propertyGroups.map((group) => {
                   const active = propertyGroup === group.value
+                  const tone = propertyGroupTones[group.value]
                   const selectedCount = selectedPropertyTypes.filter((property) =>
                     (property.groups as readonly PropertyGroup[]).includes(group.value)
                   ).length
@@ -626,15 +660,15 @@ const MobilePropertySearch = ({
                       aria-pressed={active}
                       className={`flex min-h-12 items-center justify-center gap-1 rounded-xl px-1 text-[10px] leading-tight font-semibold transition min-[390px]:text-[11px] ${
                         active
-                          ? 'bg-[#176b50] text-white shadow-[0_3px_10px_rgba(23,107,80,0.20)] ring-1 ring-[#176b50] dark:bg-emerald-300 dark:text-emerald-950 dark:ring-emerald-300'
-                          : 'text-[#426458] active:bg-white/70 dark:text-emerald-200/70 dark:active:bg-emerald-900/70'
+                          ? tone.activeTab
+                          : 'text-neutral-600 hover:bg-white/55 active:bg-white/80 dark:text-neutral-300 dark:hover:bg-neutral-700/60 dark:active:bg-neutral-700'
                       }`}
                     >
                       <span className="text-center">
                         {isThai ? (
                           <PropertyCategoryLabel
                             label={group.label}
-                            ampersandClassName={active ? 'text-white/55' : 'text-[#426458]/45'}
+                            ampersandClassName={active ? 'text-white/55' : 'text-neutral-400'}
                           />
                         ) : (
                           group.labelEn
@@ -645,7 +679,7 @@ const MobilePropertySearch = ({
                           className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${
                             active
                               ? 'bg-white/20 text-white ring-1 ring-white/30 dark:bg-emerald-950/15 dark:text-emerald-950 dark:ring-emerald-950/20'
-                              : 'bg-[#cfe1d9] text-[#176b50] dark:bg-emerald-900 dark:text-emerald-200'
+                              : tone.inactiveCount
                           }`}
                         >
                           {selectedCount}
@@ -678,6 +712,7 @@ const MobilePropertySearch = ({
                 {visiblePropertyTypes.map((property) => {
                   const Icon = property.icon
                   const active = selectedPropertyTypes.some((item) => item.value === property.value)
+                  const tone = propertyGroupTones[propertyGroup]
                   return (
                     <button
                       key={property.value}
@@ -686,17 +721,17 @@ const MobilePropertySearch = ({
                       aria-pressed={active}
                       className={`relative flex min-h-[78px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2 text-[11px] leading-tight font-semibold transition ${
                         active
-                          ? 'border-[#176b50] bg-[#e7f2ed] text-[#123f32] ring-1 ring-[#176b50] ring-inset dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400'
+                          ? tone.activeCard
                           : 'border-neutral-200 bg-white text-neutral-600 active:border-[#8ab6a7] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
                       }`}
                     >
                       {active && (
-                        <span className="absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-[#176b50] text-white dark:bg-emerald-300 dark:text-emerald-950">
+                        <span className={`absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full ${tone.check}`}>
                           <Check className="size-2.5" strokeWidth={3} />
                         </span>
                       )}
                       <span
-                        className={`grid size-8 place-items-center rounded-full ${active ? 'bg-white/80 dark:bg-emerald-900' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+                        className={`grid size-8 place-items-center rounded-full ${active ? tone.activeIcon : 'bg-neutral-100 dark:bg-neutral-800'}`}
                       >
                         <Icon className="size-[18px]" strokeWidth={1.8} />
                       </span>

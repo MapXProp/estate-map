@@ -100,21 +100,21 @@ const PropertySearchOmnibox = ({
     },
     mint: {
       headerFocus:
-        'focus-within:border-[#8bc9b2] focus-within:shadow-[0_5px_18px_rgba(42,128,99,0.15)] dark:focus-within:border-emerald-600',
-      heroFocus: 'focus-within:border-[#8bc9b2] focus-within:shadow-[0_26px_75px_-18px_rgba(42,128,99,0.38)]',
-      accent: 'text-[#2a8063] dark:text-emerald-300',
-      button: 'bg-[#247357] shadow-[#247357]/24 hover:bg-[#195b45] dark:bg-emerald-200 dark:text-emerald-950',
-      suggestion: 'hover:bg-[#eff8f4] dark:hover:bg-emerald-950/40',
-      suggestionIcon: 'bg-[#e5f3ed] text-[#2a8063] dark:bg-emerald-950 dark:text-emerald-200',
+        'focus-within:border-[#9ED4ED] focus-within:shadow-[0_5px_18px_rgba(45,143,199,0.18)] dark:focus-within:border-[#356d89]',
+      heroFocus: 'focus-within:border-[#9ED4ED] focus-within:shadow-[0_26px_75px_-18px_rgba(45,143,199,0.36)]',
+      accent: 'text-[#2D8FC7] dark:text-[#8fd4f4]',
+      button: 'bg-[#1676AE] shadow-[#1676AE]/24 hover:bg-[#0D6398] dark:bg-[#8fd4f4] dark:text-[#102b3a]',
+      suggestion: 'hover:bg-[#EFF8FD] dark:hover:bg-[#102b3a]',
+      suggestionIcon: 'bg-[#EFF8FD] text-[#2D8FC7] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
     },
     commerce: {
       headerFocus:
-        'focus-within:border-[#f59a80] focus-within:shadow-[0_5px_18px_rgba(240,75,47,0.18)] dark:focus-within:border-orange-600',
-      heroFocus: 'focus-within:border-[#f59a80] focus-within:shadow-[0_26px_75px_-18px_rgba(240,75,47,0.46)]',
-      accent: 'text-[#f04b2f] dark:text-orange-300',
-      button: 'bg-[#e33f24] shadow-[#e33f24]/30 hover:bg-[#c5321b] dark:bg-orange-200 dark:text-orange-950',
-      suggestion: 'hover:bg-[#fff2ed] dark:hover:bg-orange-950/40',
-      suggestionIcon: 'bg-[#ffe8df] text-[#f04b2f] dark:bg-orange-950 dark:text-orange-200',
+        'focus-within:border-[#F2A086] focus-within:shadow-[0_5px_18px_rgba(230,90,47,0.18)] dark:focus-within:border-[#754032]',
+      heroFocus: 'focus-within:border-[#F2A086] focus-within:shadow-[0_26px_75px_-18px_rgba(230,90,47,0.36)]',
+      accent: 'text-[#E65A2F] dark:text-[#FFC2AD]',
+      button: 'bg-[#D94A22] shadow-[#D94A22]/26 hover:bg-[#BE3E1B] dark:bg-[#FFC2AD] dark:text-[#351B14]',
+      suggestion: 'hover:bg-[#FFF2EC] dark:hover:bg-[#351B14]',
+      suggestionIcon: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
     },
   }[tone]
 

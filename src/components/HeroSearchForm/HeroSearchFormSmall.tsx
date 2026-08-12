@@ -23,9 +23,9 @@ const propertyTabs = [
     label: 'ห้องเช่า & ที่พักรายเดือน',
     labelParts: ['ห้องเช่า', 'ที่พักรายเดือน'],
     icon: BedDouble,
-    tone: 'text-[#2a8063]',
+    tone: 'text-[#2D8FC7]',
   },
-  { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelParts: null, icon: Store, tone: 'text-[#f04b2f]' },
+  { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelParts: null, icon: Store, tone: 'text-[#E65A2F]' },
 ] as const
 
 const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: string; initTab: ListingType }) => {
@@ -68,7 +68,13 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
                 <span
                   className={clsx(
                     'absolute inset-x-1 bottom-1 h-0.5 rounded-full transition',
-                    isActive ? (tab.value === 'business' ? 'bg-[#f04b2f]' : 'bg-[#176b50]') : 'bg-transparent'
+                    isActive
+                      ? tab.value === 'business'
+                        ? 'bg-[#E65A2F]'
+                        : tab.value === 'rooms'
+                          ? 'bg-[#2D8FC7]'
+                          : 'bg-[#176B50]'
+                      : 'bg-transparent'
                   )}
                 />
               </button>

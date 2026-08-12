@@ -140,9 +140,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                 className={clsx(
                   'flex cursor-pointer items-center rounded-full border px-4 py-1.5 text-xs font-semibold transition dark:border-neutral-700',
                   tab.value === 'business'
-                    ? 'border-orange-200 text-[#b73a25] data-checked:border-[#f04b2f] data-checked:bg-[#f04b2f] data-checked:text-white data-checked:shadow-lg data-checked:shadow-orange-500/20'
+                    ? 'border-[#F2A086] text-[#D94A22] data-checked:border-[#E65A2F] data-checked:bg-[#E65A2F] data-checked:text-white data-checked:shadow-lg data-checked:shadow-[#E65A2F]/20'
                     : tab.value === 'rooms'
-                      ? 'border-emerald-100 text-[#247357] data-checked:border-[#247357] data-checked:bg-[#247357] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-900/15'
+                      ? 'border-[#9ED4ED] text-[#1676AE] data-checked:border-[#2D8FC7] data-checked:bg-[#2D8FC7] data-checked:text-white data-checked:shadow-lg data-checked:shadow-[#2D8FC7]/20'
                       : tab.value === 'homes'
                         ? 'border-emerald-100 text-[#176b50] data-checked:border-[#176b50] data-checked:bg-[#176b50] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-950/15'
                         : 'border-neutral-200 text-neutral-700 data-checked:border-[#123f32] data-checked:bg-[#123f32] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-950/15'
@@ -188,7 +188,13 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
 
         <ButtonSubmit
           fieldStyle={formStyle}
-          className={tabType === 'business' ? 'bg-[#f04b2f]! hover:bg-[#d83c24]!' : 'bg-[#123f32]! hover:bg-[#0b3227]!'}
+          className={
+            tabType === 'business'
+              ? 'bg-[#D94A22]! hover:bg-[#BE3E1B]!'
+              : tabType === 'rooms'
+                ? 'bg-[#1676AE]! hover:bg-[#0D6398]!'
+                : 'bg-[#123F32]! hover:bg-[#0B3227]!'
+          }
         />
       </div>
     </Form>
