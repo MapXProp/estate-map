@@ -6,6 +6,7 @@ import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/r
 import { BedDouble, Check, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 
 const mobileSites = [
   {
@@ -51,13 +52,8 @@ const mobileSites = [
 
 const MobilePropertyBrandMark = () => {
   const pathname = usePathname()
-  const { locale } = usePreferences()
-  const activeId =
-    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
-      ? 'rooms'
-      : pathname.startsWith('/business')
-        ? 'business'
-        : 'homes'
+  const { locale, propertyZone, setPropertyZone } = usePreferences()
+  const activeId = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const activeSite = mobileSites.find((site) => site.id === activeId) ?? mobileSites[0]
 
   return (
@@ -98,6 +94,7 @@ const MobilePropertyBrandMark = () => {
                 key={site.id}
                 as={Link}
                 href={site.href}
+                onClick={() => setPropertyZone(site.id)}
                 className={`flex min-h-[72px] items-center gap-3 rounded-[19px] border px-3 py-2.5 text-start transition duration-150 active:scale-[0.99] ${
                   isActive
                     ? site.activeTone

@@ -1,6 +1,14 @@
 'use client'
 
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react'
+import {
+  getPropertyZoneFromPathname,
+  isPropertyZone,
+  PROPERTY_ZONE_COOKIE,
+  PROPERTY_ZONE_STORAGE_KEY,
+  PropertyZone,
+} from '@/lib/propertyZone'
+import { usePathname } from 'next/navigation'
 
 export type AppLocale = 'th' | 'en'
 export type AppCurrency = 'THB' | 'USD'
@@ -13,10 +21,12 @@ type ExchangeRateResponse = {
 type PreferencesContextValue = {
   locale: AppLocale
   currency: AppCurrency
+  propertyZone: PropertyZone
   usdPerThb: number
   rateDate: string
   setLocale: (locale: AppLocale) => void
   setCurrency: (currency: AppCurrency) => void
+  setPropertyZone: (zone: PropertyZone) => void
   formatCurrency: (amountInThb: number, options?: { compact?: boolean; approximate?: boolean }) => string
   convertFromThb: (amountInThb: number) => number
   convertToThb: (displayAmount: number) => number
@@ -42,8 +52,13 @@ const subscribeToPreferences = (onStoreChange: () => void) => {
 const getStoredLocale = (): AppLocale => (window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === 'English' ? 'en' : 'th')
 const getStoredCurrency = (): AppCurrency =>
   window.localStorage.getItem(CURRENCY_STORAGE_KEY) === 'USD' ? 'USD' : 'THB'
+const getStoredPropertyZone = (): PropertyZone => {
+  const storedZone = window.localStorage.getItem(PROPERTY_ZONE_STORAGE_KEY)
+  return isPropertyZone(storedZone) ? storedZone : 'homes'
+}
 const getServerLocale = (): AppLocale => 'th'
 const getServerCurrency = (): AppCurrency => 'THB'
+const getServerPropertyZone = (): PropertyZone => 'homes'
 
 const writeCookie = (name: string, value: string) => {
   window.document.cookie = `${name}=${value}; path=/; max-age=31536000; SameSite=Lax`
@@ -54,8 +69,10 @@ const notifyPreferenceChange = () => {
 }
 
 export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname()
   const locale = useSyncExternalStore(subscribeToPreferences, getStoredLocale, getServerLocale)
   const currency = useSyncExternalStore(subscribeToPreferences, getStoredCurrency, getServerCurrency)
+  const propertyZone = useSyncExternalStore(subscribeToPreferences, getStoredPropertyZone, getServerPropertyZone)
   const exchangeRateSnapshot = useSyncExternalStore(
     subscribeToPreferences,
     () => window.localStorage.getItem('mapxprop_usd_rate') ?? `${DEFAULT_USD_PER_THB}|`,
@@ -103,6 +120,17 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
     notifyPreferenceChange()
   }, [])
 
+  const setPropertyZone = useCallback((nextZone: PropertyZone) => {
+    window.localStorage.setItem(PROPERTY_ZONE_STORAGE_KEY, nextZone)
+    writeCookie(PROPERTY_ZONE_COOKIE, nextZone)
+    notifyPreferenceChange()
+  }, [])
+
+  useEffect(() => {
+    const pathnameZone = getPropertyZoneFromPathname(pathname)
+    if (pathnameZone && pathnameZone !== propertyZone) setPropertyZone(pathnameZone)
+  }, [pathname, propertyZone, setPropertyZone])
+
   const convertFromThb = useCallback(
     (amountInThb: number) => (currency === 'USD' ? amountInThb * usdPerThb : amountInThb),
     [currency, usdPerThb]
@@ -133,10 +161,12 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       locale,
       currency,
+      propertyZone,
       usdPerThb,
       rateDate,
       setLocale,
       setCurrency,
+      setPropertyZone,
       formatCurrency,
       convertFromThb,
       convertToThb,
@@ -147,9 +177,11 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
       currency,
       formatCurrency,
       locale,
+      propertyZone,
       rateDate,
       setCurrency,
       setLocale,
+      setPropertyZone,
       usdPerThb,
     ]
   )

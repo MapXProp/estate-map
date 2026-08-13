@@ -9,17 +9,13 @@ import CurrLangDropdown from './CurrLangDropdown'
 import NotifyDropdown from './NotifyDropdown'
 import PropertyListingCta from './PropertyListingCta'
 import PropertySiteSwitcher from './PropertySiteSwitcher'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 
 const PropertyHeaderContent = () => {
-  const { locale } = usePreferences()
+  const { locale, propertyZone } = usePreferences()
   const isThai = locale === 'th'
   const pathname = usePathname()
-  const siteMode =
-    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
-      ? 'rooms'
-      : pathname.startsWith('/business')
-        ? 'business'
-        : 'homes'
+  const siteMode = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const searchPlaceholder = {
     homes: isThai ? 'ค้นหาบ้าน คอนโด หรือทำเล' : 'Search homes, condos or locations',
     rooms: isThai ? 'ค้นหาห้องเช่า หอพัก หรือทำเล' : 'Search rooms, dorms or locations',

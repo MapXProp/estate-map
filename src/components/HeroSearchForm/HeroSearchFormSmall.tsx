@@ -5,7 +5,8 @@ import * as Headless from '@headlessui/react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
 import { BedDouble, Grid2X2, House, Store } from 'lucide-react'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { formTabs } from './HeroSearchForm'
 import { RealEstateHeroSearchForm, RealEstateSearchTab } from './RealEstateHeroSearchForm'
 
@@ -29,7 +30,17 @@ const propertyTabs = [
 ] as const
 
 const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: string; initTab: ListingType }) => {
-  const [propertyTab, setPropertyTab] = useState<RealEstateSearchTab>('all')
+  const { propertyZone, setPropertyZone } = usePreferences()
+  const [propertyTab, setPropertyTab] = useState<RealEstateSearchTab>(propertyZone)
+
+  const selectPropertyTab = (tab: RealEstateSearchTab) => {
+    setPropertyTab(tab)
+    if (tab !== 'all') setPropertyZone(tab)
+  }
+
+  useEffect(() => {
+    setPropertyTab(propertyZone)
+  }, [propertyZone])
 
   if (initTab === 'RealEstates') {
     return (
@@ -45,7 +56,7 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
                 title={tab.label}
                 aria-label={tab.label}
                 aria-pressed={isActive}
-                onClick={() => setPropertyTab(tab.value)}
+                onClick={() => selectPropertyTab(tab.value)}
                 className={clsx(
                   'group relative flex h-full min-w-12 flex-col items-center justify-center gap-1 text-neutral-400 transition hover:text-neutral-700 focus-visible:outline-none',
                   isActive && tab.tone
@@ -86,7 +97,7 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
           <RealEstateHeroSearchForm
             formStyle="small"
             selectedTab={propertyTab}
-            onSelectedTabChange={setPropertyTab}
+            onSelectedTabChange={selectPropertyTab}
             showTabs={false}
           />
         </div>

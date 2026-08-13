@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Slider from 'rc-slider'
-import { useMemo, useState, type SVGProps } from 'react'
+import { useEffect, useMemo, useState, type SVGProps } from 'react'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import MobileProjectSearchDialog from './MobileProjectSearchDialog'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
@@ -390,27 +391,29 @@ const MobilePropertySearch = ({
   className?: string
   compactMapHeader?: boolean
 }) => {
-  const { locale } = usePreferences()
+  const { locale, propertyZone, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isMapResults = pathname === '/properties/map'
   const mapQuery = searchParams.get('q')?.trim() || ''
-  const initialPropertyGroup: PropertyGroup =
-    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
-      ? 'rooms'
-      : pathname.startsWith('/business')
-        ? 'business'
-        : 'homes'
+  const activePropertyGroup: PropertyGroup = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const [open, setOpen] = useState(false)
   const [projectSearchOpen, setProjectSearchOpen] = useState(false)
-  const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(initialPropertyGroup)
-  const [offerType, setOfferType] = useState<OfferType>(initialPropertyGroup === 'rooms' ? 'rent' : '')
+  const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(activePropertyGroup)
+  const [offerType, setOfferType] = useState<OfferType>(activePropertyGroup === 'rooms' ? 'rent' : '')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<Array<(typeof propertyTypes)[number]>>([])
   const [budget, setBudget] = useState<BudgetPreset | null>(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [budgetOfferType, setBudgetOfferType] = useState<OfferType>('')
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, budgetConfigs.sale.max])
+
+  useEffect(() => {
+    setPropertyGroup(activePropertyGroup)
+    setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
+    setSelectedPropertyTypes([])
+    setBudget(null)
+  }, [activePropertyGroup])
 
   const selectedOffer = useMemo(() => offerTypes.find((item) => item.value === offerType) ?? offerTypes[0], [offerType])
   const visiblePropertyTypes = useMemo(
@@ -653,6 +656,7 @@ const MobilePropertySearch = ({
                       type="button"
                       onClick={() => {
                         setPropertyGroup(group.value)
+                        setPropertyZone(group.value)
                         setSelectedPropertyTypes([])
                         setBudget(null)
                         setOfferType(group.value === 'rooms' ? 'rent' : '')
@@ -697,8 +701,8 @@ const MobilePropertySearch = ({
                   <button
                     type="button"
                     onClick={() => {
-                      setPropertyGroup(initialPropertyGroup)
-                      setOfferType(initialPropertyGroup === 'rooms' ? 'rent' : '')
+                      setPropertyGroup(activePropertyGroup)
+                      setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
                       setSelectedPropertyTypes([])
                       setBudget(null)
                     }}

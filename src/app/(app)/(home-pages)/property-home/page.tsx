@@ -243,7 +243,7 @@ const siteThemes = {
 >
 
 const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) => {
-  const { locale } = usePreferences()
+  const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
   const content = heroContent[mode]
   const theme = siteThemes[mode]
@@ -404,6 +404,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
               <Link
                 key={group.title}
                 href={group.href}
+                onClick={() => setPropertyZone(group.href.slice(1) as 'homes' | 'rooms' | 'business')}
                 className="group flex min-h-44 flex-col rounded-3xl border border-neutral-200 p-5 transition hover:-translate-y-1 hover:border-neutral-300 hover:shadow-xl hover:shadow-neutral-200/50 dark:border-neutral-800 dark:hover:border-neutral-700 dark:hover:shadow-black/20"
               >
                 <span className={`flex size-12 items-center justify-center rounded-2xl ${group.tone}`}>

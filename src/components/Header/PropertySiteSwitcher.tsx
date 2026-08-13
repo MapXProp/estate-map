@@ -6,6 +6,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, ChevronDown, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 
 const sites = [
   {
@@ -57,13 +58,8 @@ const sites = [
 
 const PropertySiteSwitcher = () => {
   const pathname = usePathname()
-  const { locale } = usePreferences()
-  const activeId =
-    pathname.startsWith('/rooms') || pathname.startsWith('/rent')
-      ? 'rooms'
-      : pathname.startsWith('/business')
-        ? 'business'
-        : 'homes'
+  const { locale, propertyZone, setPropertyZone } = usePreferences()
+  const activeId = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const activeSite = sites.find((site) => site.id === activeId) ?? sites[0]
   const ActiveIcon = activeSite.icon
 
@@ -107,6 +103,7 @@ const PropertySiteSwitcher = () => {
               <Link
                 key={site.id}
                 href={site.href}
+                onClick={() => setPropertyZone(site.id)}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition ${
                   isActive ? site.activeTone : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'
                 }`}

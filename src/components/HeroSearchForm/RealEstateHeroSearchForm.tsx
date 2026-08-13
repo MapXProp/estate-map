@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { FC, useEffect, useState } from 'react'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   ButtonSubmit,
   LocationInputField,
@@ -74,14 +75,20 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
   onSelectedTabChange,
   showTabs = true,
 }) => {
-  const [internalTab, setInternalTab] = useState<RealEstateSearchTab>('all')
+  const { propertyZone, setPropertyZone } = usePreferences()
+  const [internalTab, setInternalTab] = useState<RealEstateSearchTab>(propertyZone)
   const tabType = selectedTab ?? internalTab
   const router = useRouter()
 
   const handleTabChange = (tab: RealEstateSearchTab) => {
     if (selectedTab === undefined) setInternalTab(tab)
+    if (tab !== 'all') setPropertyZone(tab)
     onSelectedTabChange?.(tab)
   }
+
+  useEffect(() => {
+    if (selectedTab === undefined) setInternalTab(propertyZone)
+  }, [propertyZone, selectedTab])
 
   // Prefetch the stay categories page to improve performance
   useEffect(() => {
