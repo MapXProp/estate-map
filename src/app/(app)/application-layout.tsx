@@ -13,13 +13,22 @@ interface Props {
   header?: ReactNode
   footer?: ReactNode
   compactMobileHeader?: boolean
+  stickyDesktopHeader?: boolean
 }
 
-const ApplicationLayout: React.FC<Props> = ({ children, header, footer, compactMobileHeader = false }) => {
+const ApplicationLayout: React.FC<Props> = ({
+  children,
+  header,
+  footer,
+  compactMobileHeader = false,
+  stickyDesktopHeader = false,
+}) => {
   return (
     <Aside.Provider>
       {/* Compact desktop header starts at iPad mini portrait width (744px). */}
-      <div className="relative z-20 hidden min-[744px]:block">{header ? header : <Header />}</div>
+      <div className={`${stickyDesktopHeader ? 'sticky top-0 z-40' : 'relative z-20'} hidden min-[744px]:block`}>
+        {header ? header : <Header />}
+      </div>
       {/* Keep the mobile search header for phones only. */}
       <div className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">
         <div className={`container flex items-center ${compactMobileHeader ? 'h-16 gap-2 px-3' : 'h-20 gap-2.5'}`}>

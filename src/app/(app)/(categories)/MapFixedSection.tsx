@@ -60,12 +60,16 @@ const MapFixedSection = ({
   const [isAreaSearching, setIsAreaSearching] = useState(false)
   const [hasPendingAreaChange, setHasPendingAreaChange] = useState(false)
   const [areaResultCount, setAreaResultCount] = useState<number | null>(null)
+  const [mapResizeRequestId, setMapResizeRequestId] = useState(0)
   const dragStartRef = useRef<{ y: number; height: number; state: MobileMapSheetState } | null>(null)
   const didDragRef = useRef(false)
   const longdoMapKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
 
   const snapMobileSheet = useCallback((state: MobileMapSheetState) => {
-    if (state === 'open') setHasRequestedMap(true)
+    if (state === 'open') {
+      setHasRequestedMap(true)
+      setMapResizeRequestId((requestId) => requestId + 1)
+    }
     setMobileSheetState(state)
     setMobileSheetHeight(getMobileSheetHeights()[state])
   }, [])
@@ -142,6 +146,9 @@ const MapFixedSection = ({
 
     dragStartRef.current = null
     setIsDraggingSheet(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
     snapMobileSheet(nextState)
   }
 
@@ -258,6 +265,7 @@ const MapFixedSection = ({
               onSearchArea={handleAreaSearchResult}
               onViewportChange={handleMapViewportChange}
               mobileControlsVisible={mobileMapControlsVisible}
+              resizeRequestId={mapResizeRequestId}
             />
           ) : (
             <Map center={listings[0].map} zoom={11}>

@@ -30,6 +30,8 @@ type LongdoMapInstance = {
   location: (location?: LongdoLocation, animate?: boolean) => LongdoLocation
   zoom: (level?: number, animate?: boolean) => number
   bound: (bounds?: PropertyMapBounds) => PropertyMapBounds
+  resize: () => LongdoMapInstance
+  repaint: () => LongdoMapInstance
 }
 type LongdoNamespace = {
   UiComponent: { None: unknown }
@@ -147,6 +149,7 @@ interface Props {
   onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
   onViewportChange?: () => void
   mobileControlsVisible?: boolean
+  resizeRequestId?: number
 }
 
 const LongdoPropertyMap = ({
@@ -158,6 +161,7 @@ const LongdoPropertyMap = ({
   onSearchArea,
   onViewportChange,
   mobileControlsVisible = true,
+  resizeRequestId = 0,
 }: Props) => {
   const pathname = usePathname()
   const router = useRouter()
@@ -398,6 +402,24 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     const map = mapRef.current
+    if (!mapReady || !map || resizeRequestId === 0) return
+
+    const refreshMap = () => {
+      map.resize()
+      map.repaint()
+      placeholderRef.current?.focus({ preventScroll: true })
+    }
+    const animationFrame = window.requestAnimationFrame(refreshMap)
+    const transitionTimer = window.setTimeout(refreshMap, 340)
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      window.clearTimeout(transitionTimer)
+    }
+  }, [mapReady, resizeRequestId])
+
+  useEffect(() => {
+    const map = mapRef.current
     const longdo = window.longdo
     if (!mapReady || !map || !longdo) return
 
@@ -467,6 +489,7 @@ const LongdoPropertyMap = ({
       />
       <div
         ref={placeholderRef}
+        tabIndex={-1}
         className="size-full touch-none overscroll-contain"
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />

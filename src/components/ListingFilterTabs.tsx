@@ -353,10 +353,12 @@ const ListingFilterTabs = ({
   filterOptions = demo_filters_options,
   variant = 'default',
   visibleFilterCount = 3,
+  hideInlineControls = false,
 }: {
   filterOptions?: ListingFilterOption[]
   variant?: ListingFilterVariant
   visibleFilterCount?: number
+  hideInlineControls?: boolean
 }) => {
   const [showAllFilter, setShowAllFilter] = useState(false)
   const isPropertyMap = variant === 'property-map'
@@ -380,7 +382,7 @@ const ListingFilterTabs = ({
 
   const renderTabAllFilters = () => {
     return (
-      <div className="shrink-0 grow md:grow-0">
+      <div className={clsx('shrink-0 grow md:grow-0', hideInlineControls && 'hidden')}>
         <Button
           outline
           onClick={() => setShowAllFilter(true)}
@@ -490,7 +492,11 @@ const ListingFilterTabs = ({
       {renderTabAllFilters()}
       <PopoverGroup
         className={clsx(
-          isPropertyMap ? 'hidden flex-nowrap gap-2 lg:flex' : 'hidden flex-wrap gap-x-4 gap-y-2 md:flex'
+          hideInlineControls
+            ? 'hidden!'
+            : isPropertyMap
+              ? 'hidden flex-nowrap gap-2 lg:flex'
+              : 'hidden flex-wrap gap-x-4 gap-y-2 md:flex'
         )}
         as={Form}
         action={handleFormSubmit}
