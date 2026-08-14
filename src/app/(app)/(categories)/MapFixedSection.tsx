@@ -15,22 +15,16 @@ import { CSSProperties, PointerEvent as ReactPointerEvent, useCallback, useEffec
 
 type MobileMapSheetState = 'collapsed' | 'open'
 
-// Keep the collapsed map as a compact, discoverable handle so the first
-// property cards remain the dominant content on phones and portrait tablets.
-const MOBILE_SHEET_PEEK_HEIGHT = 64
+// Keep the first view light: only show a low sheet handle at the bottom.
+// The map SDK is requested only when the user expands the sheet.
+const MOBILE_SHEET_PEEK_HEIGHT = 62
 
 const getMobileSheetHeights = () => {
   if (typeof window === 'undefined') {
-    return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open: 480 }
+    return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open: 720 }
   }
 
-  const isPortraitTablet = window.innerWidth >= 744
-  const openRatio = isPortraitTablet ? 0.56 : 0.6
-  const maxOpenHeight = isPortraitTablet ? 620 : 560
-  const availableHeight = Math.max(340, window.innerHeight - 80)
-  const open = Math.min(availableHeight, maxOpenHeight, Math.max(340, Math.round(window.innerHeight * openRatio)))
-
-  return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open }
+  return { collapsed: MOBILE_SHEET_PEEK_HEIGHT, open: window.innerHeight }
 }
 
 interface Props {
@@ -96,6 +90,20 @@ const MapFixedSection = ({
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [mobileSheetState])
+
+  useEffect(() => {
+    if (!splitAtLg || mobileSheetState !== 'open' || window.innerWidth >= 1024) return
+
+    const previousBodyOverflow = document.body.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
+    }
+  }, [mobileSheetState, splitAtLg])
 
   const handleSheetPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (window.innerWidth >= 1024) return
@@ -180,7 +188,9 @@ const MapFixedSection = ({
     <div
       className={
         splitAtLg
-          ? `fixed inset-x-2 bottom-0 z-20 h-[var(--mobile-map-sheet-height)] lg:static lg:z-0 lg:h-auto lg:flex-[38_1_0%] xl:flex-[32_1_0%] ${
+          ? `fixed inset-x-0 bottom-0 h-[var(--mobile-map-sheet-height)] lg:static lg:z-0 lg:h-auto lg:flex-[38_1_0%] xl:flex-[32_1_0%] ${
+              mobileSheetState === 'open' ? 'z-50' : 'z-20'
+            } ${
               isDraggingSheet ? '' : 'transition-[height] duration-300 ease-out'
             }`
           : 'fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0'
@@ -190,14 +200,18 @@ const MapFixedSection = ({
       <div
         className={
           splitAtLg
-            ? 'relative size-full overflow-hidden rounded-t-[28px] border border-[#dbe7e2] bg-white shadow-[0_-14px_40px_rgba(18,63,50,0.18)] lg:sticky lg:top-0 lg:h-[calc(100dvh-5rem)] lg:rounded-none lg:border-0 lg:shadow-none'
+            ? `relative size-full overflow-hidden bg-white lg:sticky lg:top-0 lg:h-[calc(100dvh-5rem)] lg:rounded-none lg:border-0 lg:shadow-none ${
+                mobileSheetState === 'open'
+                  ? 'rounded-none border-0 shadow-none'
+                  : 'rounded-t-[24px] border border-x-0 border-b-0 border-[#dbe7e2] shadow-[0_-10px_30px_rgba(18,63,50,0.14)]'
+              }`
             : 'fixed start-0 top-0 size-full overflow-hidden xl:sticky xl:top-0 xl:h-screen'
         }
       >
         {splitAtLg && listingType === 'RealEstates' && (
           <button
             type="button"
-            className="absolute inset-x-0 top-0 z-30 flex h-12 touch-none select-none flex-col items-center justify-center border-b border-[#dfe9e5] bg-white/95 px-4 backdrop-blur lg:hidden"
+            className="absolute inset-x-0 top-0 z-30 flex h-11 touch-none select-none flex-col items-center justify-center border-b border-[#dfe9e5] bg-white/95 px-4 backdrop-blur lg:hidden"
             aria-label={mobileSheetState === 'collapsed' ? 'เปิดแผนที่' : 'ปิดแผนที่'}
             aria-expanded={mobileSheetState === 'open'}
             onPointerDown={handleSheetPointerDown}
@@ -206,14 +220,14 @@ const MapFixedSection = ({
             onPointerCancel={finishSheetDrag}
             onClick={handleSheetClick}
           >
-            <span className="absolute top-1.5 h-1.5 w-11 rounded-full bg-neutral-300" aria-hidden="true" />
-            <span className="mt-2 flex w-full items-center justify-between gap-3 text-sm font-semibold text-[#173f34]">
+            <span className="absolute top-1.5 h-1 w-10 rounded-full bg-neutral-300" aria-hidden="true" />
+            <span className="mt-1.5 flex w-full items-center justify-between gap-3 text-sm font-semibold text-[#173f34]">
               <span className="flex items-center gap-2">
                 <MapIcon className="size-4.5" aria-hidden="true" />
                 แผนที่
               </span>
               <span className="flex items-center gap-1 text-xs font-normal text-neutral-500">
-                {mobileSheetState === 'collapsed' ? 'ลากขึ้นเพื่อดูแผนที่' : 'ลากลงเพื่อปิด'}
+                {mobileSheetState === 'collapsed' ? 'ลากขึ้นเพื่อดูเต็มจอ' : 'ลากลงเพื่อย่อแผนที่'}
                 <ChevronUp
                   className={`size-4 transition-transform ${mobileSheetState === 'open' ? 'rotate-180' : ''}`}
                   aria-hidden="true"
@@ -226,7 +240,7 @@ const MapFixedSection = ({
         <div
           className={
             splitAtLg && listingType === 'RealEstates'
-              ? `absolute inset-x-0 top-12 lg:inset-0 lg:h-auto ${
+              ? `absolute inset-x-0 top-11 lg:inset-0 lg:h-auto ${
                   mobileSheetState === 'collapsed' ? 'h-[var(--mobile-map-preload-height)]' : 'bottom-0'
                 }`
               : 'size-full'
