@@ -131,7 +131,7 @@ export default function AuthModal({
 
   const title = isListing
     ? isSignup
-      ? 'ลงทะเบียนเพื่อลงประกาศต่อ'
+      ? 'ลงทะเบียน เพื่อลงประกาศ'
       : 'เข้าสู่ระบบเพื่อลงประกาศต่อ'
     : isSignup
       ? 'สร้างบัญชี MapxProp'
@@ -160,11 +160,11 @@ export default function AuthModal({
             <DialogTitle className="mt-5 px-8 text-center font-sarabun text-xl font-semibold text-neutral-900 dark:text-neutral-50">{title}</DialogTitle>
 
             <div className="mt-7 grid gap-2">
-              <a href={socialAuthUrl('google')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-800">
+              <a href={socialAuthUrl('google')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200">
                 <GoogleIcon className="size-5 shrink-0" />
                 {isSignup ? 'ลงทะเบียนด้วย Google' : 'เข้าสู่ระบบด้วย Google'}
               </a>
-              <a href={socialAuthUrl('line')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-800">
+              <a href={socialAuthUrl('line')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200">
                 <LineIcon className="size-5 shrink-0" />
                 {isSignup ? 'ลงทะเบียนด้วย LINE' : 'เข้าสู่ระบบด้วย LINE'}
               </a>
@@ -205,7 +205,7 @@ export default function AuthModal({
                 {error ? <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 font-sarabun text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
               </div>
 
-              <button type="submit" disabled={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#124e3c] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_22px_rgba(18,78,60,0.20)] transition-colors hover:bg-[#0d3d2f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2a8063] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65">
+              <button type="submit" disabled={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_20px_rgba(23,107,80,0.18)] transition-colors hover:bg-[#125b44] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c9c87] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65">
                 {submitting ? 'กำลังดำเนินการ...' : submitLabel}{!submitting ? <ArrowRightIcon className="size-4" /> : null}
               </button>
             </form>
