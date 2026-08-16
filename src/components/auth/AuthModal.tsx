@@ -4,7 +4,7 @@ import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ArrowRightIcon, CheckIcon, EyeIcon, EyeSlashIcon, UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export type AuthMode = 'signup' | 'login'
 export type AuthPurpose = 'default' | 'listing'
@@ -43,6 +43,12 @@ export default function AuthModal({
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [socialSubmitting, setSocialSubmitting] = useState<'google' | 'line' | null>(null)
+
+  useEffect(() => {
+    const resetSocialSubmitting = () => setSocialSubmitting(null)
+    window.addEventListener('pageshow', resetSocialSubmitting)
+    return () => window.removeEventListener('pageshow', resetSocialSubmitting)
+  }, [])
 
   const handleClose = () => {
     if (submitting || socialSubmitting) return
