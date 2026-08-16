@@ -42,13 +42,15 @@ export default function AuthModal({
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [socialSubmitting, setSocialSubmitting] = useState<'google' | 'line' | null>(null)
 
   const handleClose = () => {
-    if (submitting) return
+    if (submitting || socialSubmitting) return
     setMode(initialMode)
     setError('')
     setPassword('')
     setShowPassword(false)
+    setSocialSubmitting(null)
     onClose()
   }
 
@@ -57,6 +59,7 @@ export default function AuthModal({
     setError('')
     setPassword('')
     setShowPassword(false)
+    setSocialSubmitting(null)
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -129,6 +132,16 @@ export default function AuthModal({
     return url.toString()
   }
 
+  const handleSocialAuth = (event: React.MouseEvent<HTMLAnchorElement>, provider: 'google' | 'line') => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    if (socialSubmitting) return
+    setError('')
+    setSocialSubmitting(provider)
+    const destination = event.currentTarget.href
+    window.setTimeout(() => window.location.assign(destination), 120)
+  }
+
   const title = isListing
     ? isSignup
       ? 'ลงทะเบียน เพื่อลงประกาศ'
@@ -150,7 +163,7 @@ export default function AuthModal({
       <div className="fixed inset-0 overflow-y-auto p-3 sm:p-6">
         <div className="flex min-h-full items-center justify-center">
           <DialogPanel transition className="relative w-full max-w-md rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_28px_90px_rgba(15,23,42,0.24)] transition duration-200 sm:p-7 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-3 data-closed:scale-[0.98] data-closed:opacity-0">
-            <button type="button" onClick={handleClose} disabled={submitting} aria-label="ปิด" className="absolute end-4 top-4 grid size-9 place-items-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300">
+            <button type="button" onClick={handleClose} disabled={submitting || Boolean(socialSubmitting)} aria-label="ปิด" className="absolute end-4 top-4 grid size-9 place-items-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300">
               <XMarkIcon className="size-5" />
             </button>
 
@@ -160,13 +173,13 @@ export default function AuthModal({
             <DialogTitle className="mt-5 px-8 text-center font-sarabun text-xl font-semibold text-neutral-900 dark:text-neutral-50">{title}</DialogTitle>
 
             <div className="mt-7 grid gap-2">
-              <a href={socialAuthUrl('google')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200">
-                <GoogleIcon className="size-5 shrink-0" />
-                {isSignup ? 'ลงทะเบียนด้วย Google' : 'เข้าสู่ระบบด้วย Google'}
+              <a href={socialAuthUrl('google')} onClick={(event) => handleSocialAuth(event, 'google')} aria-busy={socialSubmitting === 'google'} aria-disabled={Boolean(socialSubmitting)} className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-3 font-sarabun text-sm font-medium transition duration-150 active:scale-[0.985] ${socialSubmitting === 'google' ? 'border-[#9bcabb] bg-[#e8f4ef] text-[#176b50]' : 'border-neutral-200 bg-white text-neutral-700 hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200'} ${socialSubmitting && socialSubmitting !== 'google' ? 'pointer-events-none opacity-50' : ''}`}>
+                {socialSubmitting === 'google' ? <LoadingSpinner /> : <GoogleIcon className="size-5 shrink-0" />}
+                {socialSubmitting === 'google' ? 'กำลังเชื่อมต่อ Google…' : isSignup ? 'ลงทะเบียนด้วย Google' : 'เข้าสู่ระบบด้วย Google'}
               </a>
-              <a href={socialAuthUrl('line')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200">
-                <LineIcon className="size-5 shrink-0" />
-                {isSignup ? 'ลงทะเบียนด้วย LINE' : 'เข้าสู่ระบบด้วย LINE'}
+              <a href={socialAuthUrl('line')} onClick={(event) => handleSocialAuth(event, 'line')} aria-busy={socialSubmitting === 'line'} aria-disabled={Boolean(socialSubmitting)} className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-3 font-sarabun text-sm font-medium transition duration-150 active:scale-[0.985] ${socialSubmitting === 'line' ? 'border-[#9bcabb] bg-[#e8f4ef] text-[#176b50]' : 'border-neutral-200 bg-white text-neutral-700 hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200'} ${socialSubmitting && socialSubmitting !== 'line' ? 'pointer-events-none opacity-50' : ''}`}>
+                {socialSubmitting === 'line' ? <LoadingSpinner /> : <LineIcon className="size-5 shrink-0" />}
+                {socialSubmitting === 'line' ? 'กำลังเชื่อมต่อ LINE…' : isSignup ? 'ลงทะเบียนด้วย LINE' : 'เข้าสู่ระบบด้วย LINE'}
               </a>
             </div>
 
@@ -224,6 +237,8 @@ export default function AuthModal({
 }
 
 const isStrongPassword = (password: string) => password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)
+
+const LoadingSpinner = () => <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
 
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
