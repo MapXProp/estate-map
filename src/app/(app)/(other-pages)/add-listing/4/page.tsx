@@ -1,6 +1,11 @@
 'use client'
 
-import { clearListingDraft, getListingDraftSummary, publishListingDraft } from '@/lib/listingDraft'
+import {
+  clearCloudListingDraft,
+  clearListingDraft,
+  getListingDraftSummary,
+  publishListingDraft,
+} from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import {
@@ -34,6 +39,7 @@ const Page = () => {
 
     try {
       const data = await publishListingDraft()
+      await clearCloudListingDraft().catch(() => undefined)
       clearListingDraft()
       setSuccessId(data.public_listing_id || data.slug || 'created')
     } catch (err) {

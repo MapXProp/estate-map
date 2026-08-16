@@ -232,7 +232,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   <div className={clsx(isPropertyMap && 'hidden min-[900px]:block')}>
                     <NotifyDropdown />
                   </div>
-                  <AvatarDropdown />
+                  <AvatarDropdown showListingActionWhenCtaHidden={isPropertyMap} />
                 </>
               ) : (
                 <>

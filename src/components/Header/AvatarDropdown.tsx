@@ -27,6 +27,7 @@ interface Props {
   buttonClassName?: string
   showGuestIcon?: boolean
   showMobileActions?: boolean
+  showListingActionWhenCtaHidden?: boolean
   showPreferencesAction?: boolean
 }
 
@@ -36,6 +37,7 @@ export default function AvatarDropdown({
   className,
   showGuestIcon = false,
   showMobileActions = false,
+  showListingActionWhenCtaHidden = false,
   showPreferencesAction = false,
 }: Props) {
   const router = useRouter()
@@ -200,11 +202,13 @@ export default function AvatarDropdown({
 
             <Divider />
 
-            {showMobileActions && (
+            {(showMobileActions || showListingActionWhenCtaHidden) && (
               <>
                 <Link
                   href="/add-listing/1"
-                  className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-orange-50 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/40 dark:hover:bg-orange-950/20"
+                  className={`-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-orange-50 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/40 dark:hover:bg-orange-950/20 ${
+                    showListingActionWhenCtaHidden ? 'min-[1100px]:hidden' : ''
+                  }`}
                 >
                   <div className="flex shrink-0 items-center justify-center text-orange-600 dark:text-orange-300">
                     <HugeiconsIcon icon={Task01Icon} size={24} strokeWidth={1.5} />

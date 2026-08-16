@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
+import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
@@ -95,11 +96,14 @@ const Page = () => {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [redirectPath, setRedirectPath] = useState('')
   const emailInputRef = useRef<HTMLInputElement>(null)
   const passwordInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+    const nextRedirect = params.get('redirect') || ''
+    setRedirectPath(nextRedirect.startsWith('/') && !nextRedirect.startsWith('//') ? nextRedirect : '')
     let shouldSanitizeUrl = false
     if (params.get('logout') === 'success') {
       setSuccessMessage(T['login']['Logout successfully'])
@@ -184,6 +188,7 @@ const Page = () => {
       }
 
       setStoredAuth({ ...data, email: data?.email || trimmedEmail })
+      await syncListingDraftAfterAuth().catch(() => undefined)
 
       const redirectPath = new URLSearchParams(window.location.search).get('redirect')
       if (redirectPath?.startsWith('/') && !redirectPath.startsWith('//')) {
@@ -210,8 +215,7 @@ const Page = () => {
 
     const url = new URL(getAuthApiUrl(`auth/${item.provider}/start`))
     if (typeof window !== 'undefined') {
-      const redirectPath = new URLSearchParams(window.location.search).get('redirect')
-      if (redirectPath?.startsWith('/') && !redirectPath.startsWith('//')) {
+      if (redirectPath) {
         url.searchParams.set('redirect', redirectPath)
       }
     }
@@ -299,7 +303,10 @@ const Page = () => {
         {/* ==== */}
         <div className="block text-center text-sm text-neutral-700 dark:text-neutral-300">
           {T['login']['New user?']} {` `}
-          <Link href="/signup" className="font-medium underline">
+          <Link
+            href={redirectPath ? `/signup?redirect=${encodeURIComponent(redirectPath)}` : '/signup'}
+            className="font-medium underline"
+          >
             {T['login']['Create an account']}
           </Link>
         </div>

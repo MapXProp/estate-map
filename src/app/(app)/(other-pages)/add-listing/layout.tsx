@@ -1,5 +1,6 @@
 'use client'
 
+import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSync'
 import RequireAuth from '@/components/auth/RequireAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
@@ -21,6 +22,7 @@ const getStepIndex = (pathname: string) => {
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname()
+  const index = getStepIndex(pathname)
 
   React.useEffect(() => {
     document.documentElement.scrollTo({
@@ -29,13 +31,19 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     })
   }, [pathname])
 
-  return (
+  const content = (
+    <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-24 min-[744px]:px-8 sm:pt-12 lg:max-w-4xl lg:pb-32 xl:max-w-5xl 2xl:max-w-6xl">
+      <ProgressHeader pathname={pathname} />
+      <div className="mt-8 listingSection__wrap">{children}</div>
+      <Pagination pathname={pathname} />
+    </div>
+  )
+
+  return index === 1 ? (
+    content
+  ) : (
     <RequireAuth>
-      <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-24 min-[744px]:px-8 sm:pt-12 lg:max-w-4xl lg:pb-32 xl:max-w-5xl 2xl:max-w-6xl">
-        <ProgressHeader pathname={pathname} />
-        <div className="mt-8 listingSection__wrap">{children}</div>
-        <Pagination pathname={pathname} />
-      </div>
+      <ListingDraftCloudSync>{content}</ListingDraftCloudSync>
     </RequireAuth>
   )
 }

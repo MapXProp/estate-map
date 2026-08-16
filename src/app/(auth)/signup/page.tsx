@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
+import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
@@ -8,7 +9,7 @@ import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 
 const socials: {
   labelKey: 'Continue with Google' | 'Continue with Facebook' | 'Continue with LINE'
@@ -93,6 +94,12 @@ const Page = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [redirectPath, setRedirectPath] = useState('')
+
+  useEffect(() => {
+    const nextRedirect = new URLSearchParams(window.location.search).get('redirect') || ''
+    setRedirectPath(nextRedirect.startsWith('/') && !nextRedirect.startsWith('//') ? nextRedirect : '')
+  }, [])
 
   const validatePassword = (pass: string) => {
     const hasUpper = /[A-Z]/.test(pass)
@@ -136,7 +143,8 @@ const Page = () => {
       }
 
       setStoredAuth({ ...data, email: data?.email || trimmedEmail })
-      router.push('/account?login=success')
+      await syncListingDraftAfterAuth().catch(() => undefined)
+      router.push(redirectPath || '/account?login=success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถสร้างบัญชีได้')
     } finally {
@@ -149,7 +157,9 @@ const Page = () => {
       return item.href
     }
 
-    return getAuthApiUrl(`auth/${item.provider}/start`)
+    const url = new URL(getAuthApiUrl(`auth/${item.provider}/start`))
+    if (redirectPath) url.searchParams.set('redirect', redirectPath)
+    return url.toString()
   }
 
   return (
@@ -234,7 +244,10 @@ const Page = () => {
 
         <div className="block text-center text-sm text-neutral-700 dark:text-neutral-300">
           {T['login']['Already have an account?']} {` `}
-          <Link href="/login" className="font-medium underline">
+          <Link
+            href={redirectPath ? `/login?redirect=${encodeURIComponent(redirectPath)}` : '/login'}
+            className="font-medium underline"
+          >
             {T['login']['Sign in']}
           </Link>
         </div>

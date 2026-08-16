@@ -2,7 +2,7 @@
 
 import { Map, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
 import { getPropertyGroup, getPropertyType } from '@/data/propertyTaxonomy'
-import { getListingDraft, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
+import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import { BuildingOffice2Icon, CheckIcon, HomeModernIcon, MapPinIcon, SparklesIcon } from '@heroicons/react/24/outline'
@@ -63,7 +63,8 @@ const Page = () => {
   }
 
   const handleSubmitForm = async (formData: FormData) => {
-    saveListingStep(2, formData)
+    const savedDraft = saveListingStep(2, formData)
+    await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/3')
   }
 

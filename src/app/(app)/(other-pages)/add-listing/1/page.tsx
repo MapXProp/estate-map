@@ -1,5 +1,6 @@
 'use client'
 
+import ListingAuthCheckpoint from '@/components/add-listing/ListingAuthCheckpoint'
 import {
   businessSpaceTypes,
   getListingScope,
@@ -21,7 +22,8 @@ import {
   type PropertyTypeCode,
   type UseCaseCode,
 } from '@/data/propertyTaxonomy'
-import { getListingDraft, saveListingStep, type ListingDraftValue } from '@/lib/listingDraft'
+import { useAuth } from '@/hooks/useAuth'
+import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraftValue } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import Textarea from '@/shared/Textarea'
@@ -58,6 +60,8 @@ const Page = () => {
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
+  const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
+  const { isAuthenticated, isLoading, refresh } = useAuth()
 
   const propertyType = getPropertyType(selectedPropertyType) ?? getPropertyType('detached_house')!
   const propertyTypesForGroup = useMemo(() => getPropertyTypesForGroup(selectedGroup), [selectedGroup])
@@ -160,7 +164,15 @@ const Page = () => {
     formData.set('listing_scope', selectedScope)
     formData.set('usage_type', mapUseCasesToLegacyUsage(selectedUseCases))
     formData.set('listing_type', offersToLegacyListingType(selectedOffers))
-    saveListingStep(1, formData)
+    const savedDraft = saveListingStep(1, formData)
+    const authenticated = isAuthenticated || (isLoading ? Boolean(await refresh()) : false)
+
+    if (!authenticated) {
+      setAuthCheckpointOpen(true)
+      return
+    }
+
+    await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/2')
   }
 
@@ -183,6 +195,10 @@ const Page = () => {
       </div>
 
       <div className="h-px w-16 bg-gradient-to-r from-orange-400 via-orange-200 to-transparent" />
+
+      <div className="rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-3 font-sarabun text-sm leading-6 text-neutral-600 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-neutral-300">
+        เริ่มกรอกได้ทันที เราจะขอให้เข้าสู่ระบบเมื่อคุณต้องการบันทึกร่างและไปขั้นตอนถัดไป
+      </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-7">
         <input type="hidden" name="property_group_code" value={selectedGroup} />
@@ -398,6 +414,12 @@ const Page = () => {
           </div>
         ) : null}
       </Form>
+
+      <ListingAuthCheckpoint
+        open={authCheckpointOpen}
+        onClose={() => setAuthCheckpointOpen(false)}
+        onAuthenticated={() => router.push('/add-listing/2')}
+      />
     </>
   )
 }

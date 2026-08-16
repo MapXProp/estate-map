@@ -6,6 +6,14 @@ export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
 export type ListingDraftValue = string | string[]
 export type ListingDraft = Record<string, ListingDraftValue>
 
+type CloudListingDraftResponse = {
+  draft?: {
+    data?: ListingDraft
+    current_step?: number
+    updated_at?: string
+  } | null
+}
+
 export type CreateListingPayload = {
   property_group_code?: string
   property_type_code: string
@@ -86,13 +94,13 @@ export const clearListingDraft = () => {
   localStorage.removeItem(LISTING_DRAFT_KEY)
 }
 
-export const saveListingStep = (step: number, formData: FormData) => {
+export const saveListingStep = (step: number, formData: FormData): ListingDraft => {
   if (typeof window === 'undefined') {
-    return
+    return {}
   }
 
   const current = getListingDraft()
-  const next: ListingDraft = { ...current, lastStep: String(step) }
+  const next: ListingDraft = { ...current, lastStep: String(step), updatedAt: new Date().toISOString() }
 
   for (const key of Array.from(formData.keys())) {
     const values = formData
@@ -110,6 +118,74 @@ export const saveListingStep = (step: number, formData: FormData) => {
   }
 
   localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(next))
+  return next
+}
+
+export const saveListingDraftToCloud = async (draft: ListingDraft = getListingDraft()) => {
+  if (Object.keys(draft).length === 0) {
+    return null
+  }
+
+  const response = await fetch(getAuthApiUrl('listing-draft'), {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      data: draft,
+      current_step: Number(text(draft.lastStep) || '1'),
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Cannot save listing draft right now')
+  }
+
+  return (await response.json().catch(() => ({}))) as CloudListingDraftResponse
+}
+
+export const loadListingDraftFromCloud = async () => {
+  const response = await fetch(getAuthApiUrl('listing-draft'), {
+    cache: 'no-store',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error('Cannot load listing draft right now')
+  }
+
+  const result = (await response.json()) as CloudListingDraftResponse
+  return result.draft ?? null
+}
+
+export const syncListingDraftAfterAuth = async () => {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+
+  const localDraft = getListingDraft()
+  if (Object.keys(localDraft).length > 0) {
+    await saveListingDraftToCloud(localDraft)
+    return localDraft
+  }
+
+  const cloudDraft = await loadListingDraftFromCloud()
+  if (!cloudDraft?.data || Object.keys(cloudDraft.data).length === 0) {
+    return {}
+  }
+
+  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(cloudDraft.data))
+  return cloudDraft.data
+}
+
+export const clearCloudListingDraft = async () => {
+  const response = await fetch(getAuthApiUrl('listing-draft'), {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Cannot clear listing draft right now')
+  }
 }
 
 export const publishListingDraft = async () => {

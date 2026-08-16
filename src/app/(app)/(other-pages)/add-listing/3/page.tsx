@@ -1,7 +1,13 @@
 'use client'
 
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
-import { getListingDraft, saveListingStep, type ListingDraft, type ListingDraftValue } from '@/lib/listingDraft'
+import {
+  getListingDraft,
+  saveListingDraftToCloud,
+  saveListingStep,
+  type ListingDraft,
+  type ListingDraftValue,
+} from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import { BanknotesIcon, InformationCircleIcon, PhoneIcon, PhotoIcon } from '@heroicons/react/24/outline'
@@ -60,7 +66,8 @@ const Page = () => {
     if (!hasRent && !hasTransfer) formData.set('rentPriceMonthly', '')
     if (!hasTransfer) formData.set('keyMoneyAmount', '')
     formData.set('selectedPhotoCount', String(photos.length))
-    saveListingStep(3, formData)
+    const savedDraft = saveListingStep(3, formData)
+    await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/4')
   }
 
