@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl } from '@/lib/auth'
+import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
@@ -36,8 +37,15 @@ const Page = () => {
     setToken(params.get('token') || '')
   }, [])
 
+  useEffect(() => {
+    const resetPendingState = () => setIsLoading(false)
+    window.addEventListener('pageshow', resetPendingState)
+    return () => window.removeEventListener('pageshow', resetPendingState)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setError(null)
 
     if (!token) {
@@ -138,8 +146,9 @@ const Page = () => {
 
             {error && <p className="text-sm font-medium text-red-500">{error}</p>}
 
-            <ButtonPrimary type="submit" disabled={isLoading} className="h-12 text-base font-semibold">
-              {isLoading ? 'กำลังบันทึก...' : 'ตั้งรหัสผ่านใหม่'}
+            <ButtonPrimary type="submit" disabled={isLoading} aria-busy={isLoading} className="h-12 text-base font-semibold">
+              {isLoading ? <AuthLoadingSpinner /> : null}
+              {isLoading ? 'กำลังบันทึก…' : 'ตั้งรหัสผ่านใหม่'}
             </ButtonPrimary>
           </form>
         )}

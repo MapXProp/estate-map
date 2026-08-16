@@ -5,6 +5,7 @@ import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ArrowRightIcon, CheckIcon, EyeIcon, EyeSlashIcon, UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
+import AuthLoadingSpinner from './AuthLoadingSpinner'
 
 export type AuthMode = 'signup' | 'login'
 export type AuthPurpose = 'default' | 'listing'
@@ -73,6 +74,7 @@ export default function AuthModal({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (submitting || socialSubmitting) return
     setError('')
     const normalizedEmail = email.trim().toLowerCase()
 
@@ -144,7 +146,7 @@ export default function AuthModal({
   const handleSocialAuth = (event: React.MouseEvent<HTMLAnchorElement>, provider: 'google' | 'line') => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    if (socialSubmitting) return
+    if (submitting || socialSubmitting) return
     setError('')
     setSocialSubmitting(provider)
     const destination = event.currentTarget.href
@@ -184,11 +186,11 @@ export default function AuthModal({
 
             <div className="mt-7 grid gap-2">
               <a href={socialAuthUrl('google')} onClick={(event) => handleSocialAuth(event, 'google')} aria-busy={socialSubmitting === 'google'} aria-disabled={Boolean(socialSubmitting)} className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-3 font-sarabun text-sm font-medium transition duration-150 active:scale-[0.985] ${socialSubmitting === 'google' ? 'border-[#9bcabb] bg-[#e8f4ef] text-[#176b50]' : 'border-neutral-200 bg-white text-neutral-700 hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200'} ${socialSubmitting && socialSubmitting !== 'google' ? 'pointer-events-none opacity-50' : ''}`}>
-                {socialSubmitting === 'google' ? <LoadingSpinner /> : <GoogleIcon className="size-5 shrink-0" />}
+                {socialSubmitting === 'google' ? <AuthLoadingSpinner /> : <GoogleIcon className="size-5 shrink-0" />}
                 {socialSubmitting === 'google' ? 'กำลังเชื่อมต่อ Google…' : isSignup ? 'ลงทะเบียนด้วย Google' : 'เข้าสู่ระบบด้วย Google'}
               </a>
               <a href={socialAuthUrl('line')} onClick={(event) => handleSocialAuth(event, 'line')} aria-busy={socialSubmitting === 'line'} aria-disabled={Boolean(socialSubmitting)} className={`inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-3 font-sarabun text-sm font-medium transition duration-150 active:scale-[0.985] ${socialSubmitting === 'line' ? 'border-[#9bcabb] bg-[#e8f4ef] text-[#176b50]' : 'border-neutral-200 bg-white text-neutral-700 hover:border-[#b8d9cd] hover:bg-[#f1f8f5] hover:text-[#176b50] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200'} ${socialSubmitting && socialSubmitting !== 'line' ? 'pointer-events-none opacity-50' : ''}`}>
-                {socialSubmitting === 'line' ? <LoadingSpinner /> : <LineIcon className="size-5 shrink-0" />}
+                {socialSubmitting === 'line' ? <AuthLoadingSpinner /> : <LineIcon className="size-5 shrink-0" />}
                 {socialSubmitting === 'line' ? 'กำลังเชื่อมต่อ LINE…' : isSignup ? 'ลงทะเบียนด้วย LINE' : 'เข้าสู่ระบบด้วย LINE'}
               </a>
             </div>
@@ -228,8 +230,8 @@ export default function AuthModal({
                 {error ? <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 font-sarabun text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
               </div>
 
-              <button type="submit" disabled={submitting} aria-busy={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_20px_rgba(23,107,80,0.18)] transition-colors hover:bg-[#125b44] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c9c87] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-75">
-                {submitting ? <LoadingSpinner /> : null}
+              <button type="submit" disabled={submitting || Boolean(socialSubmitting)} aria-busy={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_20px_rgba(23,107,80,0.18)] transition-colors hover:bg-[#125b44] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c9c87] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-75">
+                {submitting ? <AuthLoadingSpinner /> : null}
                 {submitting ? submittingLabel : submitLabel}
                 {!submitting ? <ArrowRightIcon className="size-4" /> : null}
               </button>
@@ -237,7 +239,7 @@ export default function AuthModal({
 
             <p className="mt-4 text-center font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
               {isSignup ? 'มีบัญชีอยู่แล้ว?' : 'ยังไม่มีบัญชี?'}{' '}
-              <button type="button" onClick={() => selectMode(isSignup ? 'login' : 'signup')} disabled={submitting} className="font-semibold text-neutral-800 underline-offset-4 hover:underline disabled:opacity-50 dark:text-neutral-100">
+              <button type="button" onClick={() => selectMode(isSignup ? 'login' : 'signup')} disabled={submitting || Boolean(socialSubmitting)} className="font-semibold text-neutral-800 underline-offset-4 hover:underline disabled:opacity-50 dark:text-neutral-100">
                 {isSignup ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
               </button>
             </p>
@@ -249,8 +251,6 @@ export default function AuthModal({
 }
 
 const isStrongPassword = (password: string) => password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)
-
-const LoadingSpinner = () => <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
 
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true">

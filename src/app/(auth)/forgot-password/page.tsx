@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl } from '@/lib/auth'
+import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
@@ -8,7 +9,7 @@ import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
 import { CheckCircle, Mail } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type PasswordResetResponse = {
   success?: boolean
@@ -22,8 +23,15 @@ const Page = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isSent, setIsSent] = useState(false)
 
+  useEffect(() => {
+    const resetPendingState = () => setIsLoading(false)
+    window.addEventListener('pageshow', resetPendingState)
+    return () => window.removeEventListener('pageshow', resetPendingState)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setError(null)
 
     const trimmedEmail = email.trim().toLowerCase()
@@ -105,8 +113,9 @@ const Page = () => {
 
             {error && <p className="text-sm font-medium text-red-500">{error}</p>}
 
-            <ButtonPrimary type="submit" disabled={isLoading} className="h-12 text-base font-semibold">
-              {isLoading ? 'กำลังส่ง...' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
+            <ButtonPrimary type="submit" disabled={isLoading} aria-busy={isLoading} className="h-12 text-base font-semibold">
+              {isLoading ? <AuthLoadingSpinner /> : null}
+              {isLoading ? 'กำลังส่ง…' : 'ส่งลิงก์รีเซ็ตรหัสผ่าน'}
             </ButtonPrimary>
           </form>
         )}

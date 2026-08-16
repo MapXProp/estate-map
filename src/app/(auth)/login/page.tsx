@@ -2,6 +2,7 @@
 
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
+import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
 import Input from '@/shared/Input'
@@ -95,6 +96,7 @@ const Page = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [socialLoading, setSocialLoading] = useState<'google' | 'line' | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [redirectPath, setRedirectPath] = useState('')
   const emailInputRef = useRef<HTMLInputElement>(null)
@@ -135,6 +137,15 @@ const Page = () => {
   }, [])
 
   useEffect(() => {
+    const resetPendingState = () => {
+      setIsLoading(false)
+      setSocialLoading(null)
+    }
+    window.addEventListener('pageshow', resetPendingState)
+    return () => window.removeEventListener('pageshow', resetPendingState)
+  }, [])
+
+  useEffect(() => {
     const syncAutofilledValues = () => {
       if (emailInputRef.current?.value) {
         setEmail(emailInputRef.current.value)
@@ -155,6 +166,7 @@ const Page = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading || socialLoading) return
     setError(null)
     setSuccessMessage(null)
 
@@ -222,6 +234,17 @@ const Page = () => {
     return url.toString()
   }
 
+  const handleSocialClick = (event: React.MouseEvent<HTMLAnchorElement>, provider?: 'google' | 'facebook' | 'line') => {
+    if (provider !== 'google' && provider !== 'line') return
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    if (isLoading || socialLoading) return
+    setError(null)
+    setSocialLoading(provider)
+    const destination = event.currentTarget.href
+    window.setTimeout(() => window.location.assign(destination), 120)
+  }
+
   return (
     <div className="container">
       <div className="my-16 flex justify-center">
@@ -236,11 +259,14 @@ const Page = () => {
               <Link
                 key={index}
                 href={getSocialHref(item)}
-                className="flex h-12 w-full items-center rounded-lg bg-primary-50 px-5 transition-transform hover:translate-y-0.5 dark:bg-neutral-800"
+                onClick={(event) => handleSocialClick(event, item.provider)}
+                aria-busy={socialLoading === item.provider}
+                aria-disabled={isLoading || Boolean(socialLoading)}
+                className={`flex h-12 w-full items-center rounded-lg border px-5 transition duration-150 active:scale-[0.985] ${socialLoading === item.provider ? 'border-[#9bcabb] bg-[#e8f4ef] text-[#176b50]' : 'border-transparent bg-primary-50 hover:border-[#b8d9cd] hover:bg-[#f1f8f5] dark:bg-neutral-800'} ${isLoading || (socialLoading && socialLoading !== item.provider) ? 'pointer-events-none opacity-50' : ''}`}
               >
-                <item.icon className="size-5.5 shrink-0" />
+                {socialLoading === item.provider ? <AuthLoadingSpinner className="size-5" /> : <item.icon className="size-5.5 shrink-0" />}
                 <p className="grow text-center text-[15px] font-medium text-neutral-700 dark:text-neutral-300">
-                  {T['login'][item.labelKey]}
+                  {socialLoading === item.provider ? `กำลังเชื่อมต่อ ${item.provider === 'line' ? 'LINE' : 'Google'}…` : T['login'][item.labelKey]}
                 </p>
               </Link>
             ))}
@@ -295,8 +321,9 @@ const Page = () => {
           {error && <p className="text-sm font-medium text-red-500">{error}</p>}
           {successMessage && <SuccessToast message={successMessage} clearParam="logout" />}
 
-          <ButtonPrimary type="submit" disabled={isLoading} className="h-12 text-base font-semibold">
-            {isLoading ? 'Processing...' : 'Login'}
+          <ButtonPrimary type="submit" disabled={isLoading || Boolean(socialLoading)} aria-busy={isLoading} className="h-12 text-base font-semibold">
+            {isLoading ? <AuthLoadingSpinner /> : null}
+            {isLoading ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
           </ButtonPrimary>
         </form>
 
