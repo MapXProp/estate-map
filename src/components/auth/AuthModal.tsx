@@ -205,7 +205,7 @@ export default function AuthModal({
                 {error ? <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 font-sarabun text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
               </div>
 
-              <button type="submit" disabled={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#ff5a1f] to-[#ff7a00] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_22px_rgba(249,91,20,0.24)] transition hover:shadow-[0_10px_26px_rgba(249,91,20,0.32)] disabled:cursor-wait disabled:opacity-65">
+              <button type="submit" disabled={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#124e3c] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_22px_rgba(18,78,60,0.20)] transition-colors hover:bg-[#0d3d2f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2a8063] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65">
                 {submitting ? 'กำลังดำเนินการ...' : submitLabel}{!submitting ? <ArrowRightIcon className="size-4" /> : null}
               </button>
             </form>
