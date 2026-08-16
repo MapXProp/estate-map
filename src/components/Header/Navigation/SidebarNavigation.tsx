@@ -54,7 +54,6 @@ const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => 
     try {
       await logout()
       handleClose()
-      router.replace('/login?logout=success')
       router.refresh()
     } finally {
       setIsLoggingOut(false)

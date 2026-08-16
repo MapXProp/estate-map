@@ -1,4 +1,5 @@
 import DeferredGoogleAnalytics from '@/components/analytics/DeferredGoogleAnalytics'
+import { AuthModalProvider } from '@/components/auth/AuthModalProvider'
 import { PreferencesProvider } from '@/components/preferences/PreferencesProvider'
 import { ThemeProvider } from '@/components/theme-provider'
 import { DirectionProvider } from '@/components/ui/direction'
@@ -74,17 +75,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-neutral-100">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <PreferencesProvider>
-            <DirectionProvider
-              dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
-              direction={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
-            >
-              <div>
-                {children}
+            <AuthModalProvider>
+              <DirectionProvider
+                dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
+                direction={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
+              >
+                <div>
+                  {children}
 
-                {/* For Chisfis's demo  -- you can remove it  */}
-                {/* <CustomizeControl /> */}
-              </div>
-            </DirectionProvider>
+                  {/* For Chisfis's demo  -- you can remove it  */}
+                  {/* <CustomizeControl /> */}
+                </div>
+              </DirectionProvider>
+            </AuthModalProvider>
           </PreferencesProvider>
         </ThemeProvider>
       </body>

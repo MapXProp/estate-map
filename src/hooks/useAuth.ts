@@ -1,6 +1,14 @@
 'use client'
 
-import { AuthStatus, AuthUser, clearStoredAuth, getStoredUser, logoutStoredAuth, verifyStoredAuth } from '@/lib/auth'
+import {
+  AUTH_CHANGE_EVENT,
+  AuthStatus,
+  AuthUser,
+  clearStoredAuth,
+  getStoredUser,
+  logoutStoredAuth,
+  verifyStoredAuth,
+} from '@/lib/auth'
 import { useCallback, useEffect, useState } from 'react'
 
 export const useAuth = () => {
@@ -52,6 +60,15 @@ export const useAuth = () => {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      void refresh()
+    }
+
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
+  }, [refresh])
 
   return {
     isAuthenticated: status === 'authenticated',

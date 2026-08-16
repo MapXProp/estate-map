@@ -1,9 +1,8 @@
 'use client'
 
+import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
-import avatarImage from '@/images/avatars/Image-1-small.webp'
-import Avatar from '@/shared/Avatar'
 import { Divider } from '@/shared/divider'
 import { Link } from '@/shared/link'
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2'
@@ -35,7 +34,6 @@ export default function AvatarDropdown({
   avatarClassName = 'size-8',
   buttonClassName,
   className,
-  showGuestIcon = false,
   showMobileActions = false,
   showListingActionWhenCtaHidden = false,
   showPreferencesAction = false,
@@ -43,6 +41,7 @@ export default function AvatarDropdown({
   const router = useRouter()
   const [preferencesOpen, setPreferencesOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const { openAuthModal } = useAuthModal()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const { currency, locale, setCurrency, setLocale } = usePreferences()
   const showPreferences = showMobileActions || showPreferencesAction
@@ -51,7 +50,6 @@ export default function AvatarDropdown({
 
   const handleLogout = async () => {
     await logout()
-    router.replace('/login?logout=success')
     router.refresh()
   }
 
@@ -64,15 +62,11 @@ export default function AvatarDropdown({
             '-m-1.5 flex cursor-pointer items-center justify-center rounded-full p-1.5 hover:bg-neutral-100 focus-visible:outline-hidden dark:hover:bg-neutral-800'
           }
         >
-          {showGuestIcon && !isAuthenticated ? (
-            <span
-              className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
-            >
-              <HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.7} />
-            </span>
-          ) : (
-            <Avatar src={avatarImage.src} className={avatarClassName} />
-          )}
+          <span
+            className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
+          >
+            <HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.7} />
+          </span>
         </PopoverButton>
 
         <PopoverPanel
@@ -89,13 +83,9 @@ export default function AvatarDropdown({
             }`}
           >
             <div className="flex items-center space-x-3">
-              {showMobileActions && !isAuthenticated ? (
-                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
-                  <HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.7} />
-                </span>
-              ) : (
-                <Avatar src={avatarImage.src} className="size-12" />
-              )}
+              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
+                <HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.7} />
+              </span>
 
               <div className="grow">
                 <h4 className="font-semibold">
@@ -115,25 +105,29 @@ export default function AvatarDropdown({
 
             {!isAuthenticated && !isLoading && (
               <>
-                <Link
-                  href={'/login'}
+                <CloseButton
+                  as="button"
+                  type="button"
+                  onClick={() => openAuthModal({ mode: 'login' })}
                   className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
                 >
                   <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
                     <HugeiconsIcon icon={UserIcon} size={24} strokeWidth={1.5} />
                   </div>
                   <p className="ms-4 text-sm font-medium">{locale === 'th' ? 'เข้าสู่ระบบ' : 'Sign in'}</p>
-                </Link>
+                </CloseButton>
 
-                <Link
-                  href={'/signup'}
+                <CloseButton
+                  as="button"
+                  type="button"
+                  onClick={() => openAuthModal({ mode: 'signup' })}
                   className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
                 >
                   <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
                     <HugeiconsIcon icon={Task01Icon} size={24} strokeWidth={1.5} />
                   </div>
                   <p className="ms-4 text-sm font-medium">{locale === 'th' ? 'สร้างบัญชี' : 'Create account'}</p>
-                </Link>
+                </CloseButton>
 
                 <Divider />
               </>

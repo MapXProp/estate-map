@@ -19,6 +19,13 @@ type LoginLikeResponse = Partial<AuthUser> & {
 
 export const AUTH_TOKEN_KEY = 'mapxprop_token'
 export const AUTH_USER_KEY = 'mapxprop_user'
+export const AUTH_CHANGE_EVENT = 'mapxprop-auth-change'
+
+const notifyAuthChange = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT))
+  }
+}
 
 export const getApiBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
@@ -102,6 +109,8 @@ export const setStoredAuth = (data: LoginLikeResponse) => {
     )
   }
 
+  notifyAuthChange()
+
   return null
 }
 
@@ -124,6 +133,7 @@ export const logoutStoredAuth = async () => {
   }
 
   clearStoredAuth()
+  notifyAuthChange()
 }
 
 export const verifyStoredAuth = async () => {
