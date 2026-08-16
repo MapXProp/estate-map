@@ -131,7 +131,7 @@ export default function AuthModal({
 
   const title = isListing
     ? isSignup
-      ? 'สมัครเพื่อลงประกาศต่อ'
+      ? 'ลงทะเบียนเพื่อลงประกาศต่อ'
       : 'เข้าสู่ระบบเพื่อลงประกาศต่อ'
     : isSignup
       ? 'สร้างบัญชี MapxProp'
@@ -158,7 +158,6 @@ export default function AuthModal({
               <UserPlusIcon className="size-6" aria-hidden="true" />
             </div>
             <DialogTitle className="mt-5 px-8 text-center font-sarabun text-xl font-semibold text-neutral-900 dark:text-neutral-50">{title}</DialogTitle>
-            {!isListing ? <p className="mt-1.5 text-center font-sarabun text-sm text-neutral-500 dark:text-neutral-400">จัดการประกาศ บันทึกทรัพย์ที่สนใจ และใช้งานต่อได้สะดวก</p> : null}
 
             <div className="mt-7 grid gap-2">
               <a href={socialAuthUrl('google')} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200 dark:hover:bg-neutral-800">
