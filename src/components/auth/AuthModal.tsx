@@ -45,9 +45,12 @@ export default function AuthModal({
   const [socialSubmitting, setSocialSubmitting] = useState<'google' | 'line' | null>(null)
 
   useEffect(() => {
-    const resetSocialSubmitting = () => setSocialSubmitting(null)
-    window.addEventListener('pageshow', resetSocialSubmitting)
-    return () => window.removeEventListener('pageshow', resetSocialSubmitting)
+    const resetPendingState = () => {
+      setSubmitting(false)
+      setSocialSubmitting(null)
+    }
+    window.addEventListener('pageshow', resetPendingState)
+    return () => window.removeEventListener('pageshow', resetPendingState)
   }, [])
 
   const handleClose = () => {
@@ -162,6 +165,7 @@ export default function AuthModal({
     : isSignup
       ? 'สร้างบัญชี'
       : 'เข้าสู่ระบบ'
+  const submittingLabel = isSignup ? 'กำลังลงทะเบียน…' : 'กำลังเข้าสู่ระบบ…'
 
   return (
     <Dialog open={open} onClose={handleClose} className="relative z-[100]">
@@ -224,8 +228,10 @@ export default function AuthModal({
                 {error ? <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 font-sarabun text-sm text-red-600 dark:bg-red-950/30 dark:text-red-300">{error}</p> : null}
               </div>
 
-              <button type="submit" disabled={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_20px_rgba(23,107,80,0.18)] transition-colors hover:bg-[#125b44] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c9c87] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65">
-                {submitting ? 'กำลังดำเนินการ...' : submitLabel}{!submitting ? <ArrowRightIcon className="size-4" /> : null}
+              <button type="submit" disabled={submitting} aria-busy={submitting} className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white shadow-[0_8px_20px_rgba(23,107,80,0.18)] transition-colors hover:bg-[#125b44] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c9c87] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-75">
+                {submitting ? <LoadingSpinner /> : null}
+                {submitting ? submittingLabel : submitLabel}
+                {!submitting ? <ArrowRightIcon className="size-4" /> : null}
               </button>
             </form>
 
