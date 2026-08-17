@@ -173,7 +173,7 @@ export default function AuthModal({
     <Dialog open={open} onClose={handleClose} className="relative z-[100]">
       <DialogBackdrop transition className="fixed inset-0 bg-neutral-950/35 backdrop-blur-[2px] transition duration-200 data-closed:opacity-0" />
       <div className="fixed inset-0 overflow-y-auto p-3 sm:p-6">
-        <div className="flex min-h-full items-center justify-center">
+        <div className="flex min-h-full items-center justify-center min-[744px]:-translate-y-6">
           <DialogPanel transition className="relative w-full max-w-md rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_28px_90px_rgba(15,23,42,0.24)] transition duration-200 sm:p-7 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-3 data-closed:scale-[0.98] data-closed:opacity-0">
             <button type="button" onClick={handleClose} disabled={submitting || Boolean(socialSubmitting)} aria-label="ปิด" className="absolute end-4 top-4 grid size-9 place-items-center rounded-full bg-neutral-100 text-neutral-500 transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-300">
               <XMarkIcon className="size-5" />
