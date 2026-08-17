@@ -362,10 +362,10 @@ export default function AvatarDropdown({
       {showPreferences && (
         <Dialog open={preferencesOpen} onClose={setPreferencesOpen} className="relative z-[70]">
           <div className="fixed inset-0 bg-black/25" aria-hidden="true" />
-          <div className="fixed inset-0 flex items-end justify-center p-2 min-[744px]:items-center">
+          <div className="fixed inset-0 flex items-center justify-center px-2 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(12dvh,env(safe-area-inset-bottom))] min-[744px]:p-2">
             <DialogPanel
               transition
-              className="hidden-scrollbar max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] bg-white p-5 shadow-2xl transition duration-200 min-[744px]:max-w-[36rem] min-[744px]:p-6 dark:bg-neutral-900 data-closed:translate-y-8 data-closed:opacity-0"
+              className="hidden-scrollbar max-h-[calc(88dvh-1rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[28px] bg-white p-5 shadow-2xl transition duration-200 min-[744px]:max-h-[calc(100dvh-1rem)] min-[744px]:max-w-[36rem] min-[744px]:p-6 dark:bg-neutral-900 data-closed:translate-y-8 data-closed:opacity-0"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
