@@ -62,12 +62,16 @@ const PropertyCard: FC<Props> = ({
     getTabletNavigationServerSnapshot
   )
   const shouldOpenInNewTab = openInNewTab && isTabletOrLarger
+  const detailHref = shouldOpenInNewTab ? listingHref : `${listingHref}?view=full`
 
   const rememberReturnLocation = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target
     if (!(target instanceof Element)) return
-    const listingLink = target.closest<HTMLAnchorElement>(`a[href="${listingHref}"]`)
+    const listingLink = target.closest<HTMLAnchorElement>('a')
     if (!listingLink) return
+
+    const destination = new URL(listingLink.href, window.location.origin)
+    if (destination.pathname !== listingHref) return
 
     sessionStorage.setItem(
       'mapxprop:return-to-results',
@@ -81,7 +85,7 @@ const PropertyCard: FC<Props> = ({
         <GallerySlider
           ratioClass="aspect-w-4 aspect-h-3"
           galleryImgs={galleryImgs}
-          href={listingHref}
+          href={detailHref}
           autoPlay={autoPlayGallery}
           autoPlayInterval={2500}
           autoPlayDelay={autoPlayDelay}
@@ -169,7 +173,7 @@ const PropertyCard: FC<Props> = ({
     >
       {renderSliderGallery()}
       <Link
-        href={listingHref}
+        href={detailHref}
         target={shouldOpenInNewTab ? '_blank' : undefined}
         rel={shouldOpenInNewTab ? 'noopener noreferrer' : undefined}
       >

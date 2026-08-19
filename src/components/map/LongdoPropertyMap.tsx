@@ -129,7 +129,11 @@ const getMarkerHtml = (price: string, active: boolean) => `
     transition:transform .15s ease,background .15s ease,color .15s ease;
   ">${escapeHtml(price)}</div>`
 
-const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => `
+const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => {
+  const listingPath = `/real-estate-listings/${encodeURIComponent(listing.handle)}`
+  const fullListingPath = openInNewTab ? listingPath : `${listingPath}?view=full`
+
+  return `
   <article style="width:260px;box-sizing:border-box;padding:14px 16px;border:1px solid rgba(18,63,50,.12);border-radius:18px;background:#ffffff;color:#171717;font-family:Sarabun,Arial,sans-serif;box-shadow:0 14px 36px rgba(18,63,50,.2);overflow:hidden;">
     <p style="margin:0 0 4px;color:#176b50;font-size:12px;font-weight:700;">อสังหาริมทรัพย์</p>
     <h3 style="margin:0;font-size:16px;line-height:1.35;font-weight:700;">${escapeHtml(listing.title)}</h3>
@@ -137,11 +141,12 @@ const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => `
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eeeeee;display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(listing.price)}</strong>
       <span style="display:flex;align-items:center;gap:8px;">
-        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-quick-view="true" style="color:#31594e;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">ดูแบบไว</a>
-        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-property-link="true" ${openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''} style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
+        <a href="${listingPath}" data-mapx-quick-view="true" style="color:#31594e;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">ดูแบบไว</a>
+        <a href="${fullListingPath}" data-mapx-property-link="true" ${openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''} style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
       </span>
     </div>
   </article>`
+}
 
 interface Props {
   apiKey: string
