@@ -25,7 +25,7 @@ import {
   Video,
 } from 'lucide-react'
 import Image from 'next/image'
-import { type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type RefObject, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
 type PropertyMediaFilter = 'all' | PropertyMediaType
@@ -46,6 +46,11 @@ const MEDIA_FILTERS: { value: PropertyMediaFilter; label: string }[] = [
   { value: 'floor-plan', label: 'แปลน' },
   { value: '3d', label: '3D' },
 ]
+
+const MEDIA_SECTION_TYPES: PropertyMediaType[] = ['photo', 'video', '360', 'floor-plan', '3d']
+const MEDIA_NAV_FILTERS = MEDIA_FILTERS.filter(
+  (filter): filter is { value: PropertyMediaType; label: string } => filter.value !== 'all'
+)
 
 const MEDIA_LABELS: Record<PropertyMediaFilter, string> = {
   all: 'สื่อทั้งหมด',
@@ -69,47 +74,58 @@ const MediaFilterTabs = ({
   onChange,
   counts,
 }: {
-  activeFilter: PropertyMediaFilter
-  onChange: (filter: PropertyMediaFilter) => void
+  activeFilter: PropertyMediaType
+  onChange: (filter: PropertyMediaType) => void
   counts: Record<PropertyMediaFilter, number>
-}) => (
-  <nav aria-label="กรองประเภทสื่อ" className="w-full overflow-x-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[744px]:px-6 lg:px-8">
-    <div className="flex min-w-max items-center gap-1.5">
-      {MEDIA_FILTERS.map((filter) => {
-        const isActive = activeFilter === filter.value
-        const count = counts[filter.value]
+}) => {
+  const tabRefs = useRef<Partial<Record<PropertyMediaFilter, HTMLButtonElement | null>>>({})
 
-        return (
-          <button
-            key={filter.value}
-            type="button"
-            onClick={() => onChange(filter.value)}
-            aria-pressed={isActive}
-            className={clsx(
-              'flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
-              isActive
-                ? 'bg-[#176b50] text-white shadow-sm'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-[#edf5f1] hover:text-[#176b50] dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-emerald-950/50'
-            )}
-          >
-            {getMediaIcon(filter.value, 'size-4')}
-            <span>{filter.label}</span>
-            {count > 0 && (
-              <span
-                className={clsx(
-                  'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] leading-4',
-                  isActive ? 'bg-white/18 text-white' : 'bg-white text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'
-                )}
-              >
-                {count}
-              </span>
-            )}
-          </button>
-        )
-      })}
-    </div>
-  </nav>
-)
+  useEffect(() => {
+    tabRefs.current[activeFilter]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [activeFilter])
+
+  return (
+    <nav aria-label="เลือกดูประเภทสื่อ" className="w-full overflow-x-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[744px]:px-6 lg:px-8">
+      <div className="flex min-w-max items-center gap-1.5">
+        {MEDIA_NAV_FILTERS.map((filter) => {
+          const isActive = activeFilter === filter.value
+          const count = counts[filter.value]
+
+          return (
+            <button
+              ref={(node) => {
+                tabRefs.current[filter.value] = node
+              }}
+              key={filter.value}
+              type="button"
+              onClick={() => onChange(filter.value)}
+              aria-current={isActive ? 'true' : undefined}
+              className={clsx(
+                'flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+                isActive
+                  ? 'bg-[#176b50] text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-[#edf5f1] hover:text-[#176b50] dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-emerald-950/50'
+              )}
+            >
+              {getMediaIcon(filter.value, 'size-4')}
+              <span>{filter.label}</span>
+              {count > 0 && (
+                <span
+                  className={clsx(
+                    'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] leading-4',
+                    isActive ? 'bg-white/18 text-white' : 'bg-white text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'
+                  )}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
 
 const EmptyMediaState = ({ type }: { type: PropertyMediaFilter }) => (
   <div className="mx-auto flex min-h-64 max-w-md flex-col items-center justify-center px-6 text-center">
@@ -120,6 +136,259 @@ const EmptyMediaState = ({ type }: { type: PropertyMediaFilter }) => (
     <p className="mt-1.5 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
       เมื่อผู้ลงประกาศเพิ่มสื่อประเภทนี้ ระบบจะแสดงไว้ในหมวดนี้โดยอัตโนมัติ
     </p>
+  </div>
+)
+
+const getMediaCounts = (media: PropertyMediaItem[]) =>
+  MEDIA_FILTERS.reduce(
+    (result, filter) => {
+      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
+      return result
+    },
+    {} as Record<PropertyMediaFilter, number>
+  )
+
+const useMediaSectionNavigation = (scrollRootRef: RefObject<HTMLDivElement | null>, open: boolean) => {
+  const [activeFilter, setActiveFilter] = useState<PropertyMediaType>('photo')
+  const sectionRefs = useRef<Partial<Record<PropertyMediaType, HTMLElement | null>>>({})
+  const frameRef = useRef<number | null>(null)
+
+  const registerSection = useCallback((type: PropertyMediaType, node: HTMLElement | null) => {
+    sectionRefs.current[type] = node
+  }, [])
+
+  const updateActiveSection = useCallback(() => {
+    const root = scrollRootRef.current
+    if (!root) return
+
+    if (root.scrollTop < 20) {
+      setActiveFilter('photo')
+      return
+    }
+
+    const rootTop = root.getBoundingClientRect().top
+    // Track the section crossing the reader's natural focus line rather than
+    // waiting for an entire section to leave the viewport.
+    const marker = rootTop + Math.max(120, Math.min(210, root.clientHeight * 0.28))
+    let current: PropertyMediaType = 'photo'
+
+    for (const type of MEDIA_SECTION_TYPES) {
+      const section = sectionRefs.current[type]
+      if (!section) continue
+
+      const sectionRect = section.getBoundingClientRect()
+      if (sectionRect.top <= marker) current = type
+      if (sectionRect.top <= marker && sectionRect.bottom > marker) break
+    }
+
+    setActiveFilter(current)
+  }, [scrollRootRef])
+
+  const handleSectionScroll = useCallback(() => {
+    if (frameRef.current !== null) return
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null
+      updateActiveSection()
+    })
+  }, [updateActiveSection])
+
+  useEffect(() => {
+    const root = scrollRootRef.current
+    if (!open || !root) return
+
+    window.addEventListener('resize', handleSectionScroll)
+    const initialFrame = window.requestAnimationFrame(updateActiveSection)
+
+    return () => {
+      window.removeEventListener('resize', handleSectionScroll)
+      window.cancelAnimationFrame(initialFrame)
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current)
+      frameRef.current = null
+    }
+  }, [handleSectionScroll, open, scrollRootRef, updateActiveSection])
+
+  const navigateToFilter = useCallback(
+    (filter: PropertyMediaType) => {
+      const root = scrollRootRef.current
+      if (!root) return
+
+      setActiveFilter(filter)
+      const section = sectionRefs.current[filter]
+      if (!section) return
+      const rootRect = root.getBoundingClientRect()
+      const targetTop = root.scrollTop + section.getBoundingClientRect().top - rootRect.top - 12
+      root.scrollTop = Math.max(0, targetTop)
+      window.requestAnimationFrame(updateActiveSection)
+    },
+    [scrollRootRef, updateActiveSection]
+  )
+
+  const resetNavigation = useCallback(() => {
+    setActiveFilter('photo')
+    scrollRootRef.current?.scrollTo({ top: 0 })
+  }, [scrollRootRef])
+
+  return { activeFilter, navigateToFilter, registerSection, resetNavigation, handleSectionScroll }
+}
+
+const DeferredMediaSection = ({
+  type,
+  items,
+  images,
+  onOpenImage,
+  onSectionRef,
+  scrollRootRef,
+  layout,
+}: {
+  type: PropertyMediaType
+  items: PropertyMediaItem[]
+  images: string[]
+  onOpenImage: (index: number) => void
+  onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
+  scrollRootRef: RefObject<HTMLDivElement | null>
+  layout: 'mobile' | 'desktop'
+}) => {
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const [isReady, setIsReady] = useState(type === 'photo')
+
+  const setSectionNode = useCallback(
+    (node: HTMLElement | null) => {
+      sectionRef.current = node
+      onSectionRef(type, node)
+    },
+    [onSectionRef, type]
+  )
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (isReady || !section) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        setIsReady(true)
+        observer.disconnect()
+      },
+      { root: scrollRootRef.current, rootMargin: '700px 0px' }
+    )
+
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [isReady, scrollRootRef])
+
+  return (
+    <section
+      ref={setSectionNode}
+      data-media-section={type}
+      aria-labelledby={`media-section-${layout}-${type}`}
+      className="scroll-mt-4 border-b border-neutral-200 py-5 last:border-b-0 dark:border-neutral-800 lg:py-6"
+    >
+      <div className="mb-4 flex items-center justify-between gap-3 px-0.5">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-9 place-items-center rounded-full bg-[#edf5f1] text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
+            {getMediaIcon(type, 'size-[18px]')}
+          </span>
+          <h3 id={`media-section-${layout}-${type}`} className="text-lg font-semibold text-neutral-950 dark:text-white">
+            {MEDIA_LABELS[type]}
+          </h3>
+        </div>
+        <span className="text-xs text-neutral-500 dark:text-neutral-400">{items.length} รายการ</span>
+      </div>
+
+      {!isReady ? (
+        <div
+          aria-label={`กำลังเตรียม${MEDIA_LABELS[type]}`}
+          className={clsx(
+            'animate-pulse rounded-2xl bg-neutral-200/70 dark:bg-neutral-800/70',
+            layout === 'mobile' ? 'h-56' : 'h-72'
+          )}
+        />
+      ) : items.length === 0 ? (
+        <EmptyMediaState type={type} />
+      ) : (
+        <div className={layout === 'mobile' ? 'columns-2 gap-2' : 'grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3'}>
+          {items.map((item, index) => {
+            const imageIndex = item.type === 'photo' ? images.indexOf(item.url) : -1
+
+            return (
+              <button
+                key={`${item.id}-${layout}-section`}
+                type="button"
+                onClick={() => {
+                  if (imageIndex >= 0) onOpenImage(imageIndex)
+                }}
+                aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
+                className={clsx(
+                  'group relative min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800',
+                  layout === 'mobile'
+                    ? ['mb-2 block w-full break-inside-avoid rounded-xl', index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]']
+                    : 'aspect-[4/3] rounded-xl'
+                )}
+              >
+                {item.type === 'photo' || item.thumbnailUrl ? (
+                  <Image
+                    src={item.thumbnailUrl || item.url}
+                    alt={`${MEDIA_LABELS[item.type]}ของอสังหาริมทรัพย์ ${index + 1}`}
+                    fill
+                    sizes={layout === 'mobile' ? '50vw' : '(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw'}
+                    className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95 group-active:scale-[0.99]"
+                  />
+                ) : (
+                  <span className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[#edf5f1] to-neutral-200 text-[#176b50] dark:from-emerald-950/50 dark:to-neutral-800">
+                    {getMediaIcon(item.type, layout === 'mobile' ? 'size-9' : 'size-11')}
+                  </span>
+                )}
+
+                {item.type !== 'photo' && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/18 text-white">
+                    <span className="grid size-12 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-lg min-[744px]:size-14">
+                      {item.type === 'video' ? <Play className="ml-0.5 size-5 fill-current min-[744px]:size-6" /> : getMediaIcon(item.type, 'size-5 min-[744px]:size-6')}
+                    </span>
+                  </span>
+                )}
+
+                {layout === 'desktop' && (
+                  <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                    {index + 1} / {items.length}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+const ProgressiveMediaSections = ({
+  media,
+  images,
+  onOpenImage,
+  onSectionRef,
+  scrollRootRef,
+  layout,
+}: {
+  media: PropertyMediaItem[]
+  images: string[]
+  onOpenImage: (index: number) => void
+  onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
+  scrollRootRef: RefObject<HTMLDivElement | null>
+  layout: 'mobile' | 'desktop'
+}) => (
+  <div>
+    {MEDIA_SECTION_TYPES.map((type) => (
+      <DeferredMediaSection
+        key={`${layout}-${type}`}
+        type={type}
+        items={media.filter((item) => item.type === type)}
+        images={images}
+        onOpenImage={onOpenImage}
+        onSectionRef={onSectionRef}
+        scrollRootRef={scrollRootRef}
+        layout={layout}
+      />
+    ))}
   </div>
 )
 
@@ -228,7 +497,6 @@ const MobilePhotoGallery = ({
   initiallySaved: boolean
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
-  const [activeFilter, setActiveFilter] = useState<PropertyMediaFilter>('all')
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [isDismissing, setIsDismissing] = useState(false)
@@ -238,13 +506,10 @@ const MobilePhotoGallery = ({
   const touchStartTimeRef = useRef(0)
   const canStartDragRef = useRef(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const visibleMedia = activeFilter === 'all' ? media : media.filter((item) => item.type === activeFilter)
-  const counts = MEDIA_FILTERS.reduce(
-    (result, filter) => {
-      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
-      return result
-    },
-    {} as Record<PropertyMediaFilter, number>
+  const counts = getMediaCounts(media)
+  const { activeFilter, navigateToFilter, registerSection, resetNavigation, handleSectionScroll } = useMediaSectionNavigation(
+    scrollContainerRef,
+    open
   )
 
   const resetDrag = useCallback(() => {
@@ -256,9 +521,9 @@ const MobilePhotoGallery = ({
 
   const handleClose = useCallback(() => {
     resetDrag()
-    setActiveFilter('all')
+    resetNavigation()
     onClose()
-  }, [onClose, resetDrag])
+  }, [onClose, resetDrag, resetNavigation])
 
   useEffect(() => {
     return () => {
@@ -322,6 +587,7 @@ const MobilePhotoGallery = ({
       <div
         ref={scrollContainerRef}
         className="fixed inset-0 overflow-y-auto overscroll-y-contain"
+        onScroll={handleSectionScroll}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -364,52 +630,18 @@ const MobilePhotoGallery = ({
                 <span>{isSaved ? 'บันทึกแล้ว' : 'บันทึก'}</span>
               </button>
             </div>
-            <MediaFilterTabs activeFilter={activeFilter} onChange={setActiveFilter} counts={counts} />
+            <MediaFilterTabs activeFilter={activeFilter} onChange={navigateToFilter} counts={counts} />
           </header>
 
-          <main className="px-2.5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            <div className="mb-4 flex items-end justify-between gap-3 px-0.5">
-              <h3 className="text-lg font-semibold">{MEDIA_LABELS[activeFilter]}</h3>
-              {visibleMedia.length > 0 && <span className="text-xs text-neutral-500">{visibleMedia.length} รายการ</span>}
-            </div>
-            {visibleMedia.length > 0 ? (
-              <div className="columns-2 gap-2">
-              {visibleMedia.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    if (item.type !== 'photo') return
-                    const imageIndex = images.indexOf(item.url)
-                    if (imageIndex >= 0) onOpenImage(imageIndex)
-                  }}
-                  aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
-                  className={clsx(
-                    'relative mb-2 block w-full break-inside-avoid overflow-hidden rounded-xl bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
-                    index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]'
-                  )}
-                >
-                  <Image
-                    src={item.thumbnailUrl || item.url}
-                    alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
-                    fill
-                    sizes="50vw"
-                    priority={index < 4}
-                    className="object-cover transition duration-200 active:scale-[0.98]"
-                  />
-                  {item.type !== 'photo' && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/25 text-white">
-                      <span className="grid size-12 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-lg">
-                        {item.type === 'video' ? <Play className="ml-0.5 size-5 fill-current" /> : getMediaIcon(item.type, 'size-5')}
-                      </span>
-                    </span>
-                  )}
-                </button>
-              ))}
-              </div>
-            ) : (
-              <EmptyMediaState type={activeFilter} />
-            )}
+          <main className="px-2.5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+            <ProgressiveMediaSections
+              media={media}
+              images={images}
+              onOpenImage={onOpenImage}
+              onSectionRef={registerSection}
+              scrollRootRef={scrollContainerRef}
+              layout="mobile"
+            />
           </main>
         </DialogPanel>
       </div>
@@ -435,15 +667,9 @@ const DesktopPhotoGallery = ({
   propertyDetails?: PropertyGalleryDetails
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
-  const [activeFilter, setActiveFilter] = useState<PropertyMediaFilter>('all')
-  const visibleMedia = activeFilter === 'all' ? media : media.filter((item) => item.type === activeFilter)
-  const counts = MEDIA_FILTERS.reduce(
-    (result, filter) => {
-      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
-      return result
-    },
-    {} as Record<PropertyMediaFilter, number>
-  )
+  const mediaScrollRef = useRef<HTMLDivElement>(null)
+  const counts = getMediaCounts(media)
+  const { activeFilter, navigateToFilter, registerSection, handleSectionScroll } = useMediaSectionNavigation(mediaScrollRef, open)
 
   const handleRequestViewing = () => {
     onClose()
@@ -477,49 +703,23 @@ const DesktopPhotoGallery = ({
                 </span>
               </CloseButton>
             </div>
-            <MediaFilterTabs activeFilter={activeFilter} onChange={setActiveFilter} counts={counts} />
+            <MediaFilterTabs activeFilter={activeFilter} onChange={navigateToFilter} counts={counts} />
           </header>
 
           <div className="flex min-h-0 flex-1">
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 dark:bg-neutral-950/60 lg:p-4">
-              {visibleMedia.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3">
-                {visibleMedia.map((item, index) => (
-                  <button
-                    key={`${item.id}-desktop-gallery`}
-                    type="button"
-                    onClick={() => {
-                      if (item.type !== 'photo') return
-                      const imageIndex = images.indexOf(item.url)
-                      if (imageIndex >= 0) onOpenImage(imageIndex)
-                    }}
-                    aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
-                    className="group relative aspect-[4/3] min-w-0 overflow-hidden rounded-xl bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
-                  >
-                    <Image
-                      src={item.thumbnailUrl || item.url}
-                      alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
-                      fill
-                      sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw"
-                      priority={index < 6}
-                      className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
-                    />
-                    <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                      {index + 1} / {visibleMedia.length}
-                    </span>
-                    {item.type !== 'photo' && (
-                      <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/22 text-white">
-                        <span className="grid size-14 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-xl">
-                          {item.type === 'video' ? <Play className="ml-0.5 size-6 fill-current" /> : getMediaIcon(item.type, 'size-6')}
-                        </span>
-                      </span>
-                    )}
-                  </button>
-                ))}
-                </div>
-              ) : (
-                <EmptyMediaState type={activeFilter} />
-              )}
+            <div
+              ref={mediaScrollRef}
+              className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 px-3 dark:bg-neutral-950/60 lg:px-4"
+              onScroll={handleSectionScroll}
+            >
+              <ProgressiveMediaSections
+                media={media}
+                images={images}
+                onOpenImage={onOpenImage}
+                onSectionRef={registerSection}
+                scrollRootRef={mediaScrollRef}
+                layout="desktop"
+              />
             </div>
 
             {propertyDetails && (
