@@ -5,6 +5,7 @@ import StartRating from '@/components/StartRating'
 import { TRealEstateListing } from '@/data/listings'
 import { Badge } from '@/shared/Badge'
 import clsx from 'clsx'
+import { Eye } from 'lucide-react'
 import Link from 'next/link'
 import { FC } from 'react'
 
@@ -15,6 +16,7 @@ interface Props {
   autoPlayDelay?: number
   compactMobile?: boolean
   openInNewTab?: boolean
+  showQuickView?: boolean
 }
 
 const PropertyCard: FC<Props> = ({
@@ -24,6 +26,7 @@ const PropertyCard: FC<Props> = ({
   autoPlayDelay = 0,
   compactMobile = false,
   openInNewTab = true,
+  showQuickView = false,
 }) => {
   const {
     galleryImgs,
@@ -57,7 +60,24 @@ const PropertyCard: FC<Props> = ({
           autoPlayDelay={autoPlayDelay}
           openInNewTab={openInNewTab}
         />
-        <BtnLikeIcon isLiked={like} className={compactMobile ? 'absolute end-2 top-2 z-1 lg:end-3 lg:top-3' : 'absolute end-3 top-3 z-1'} />
+        <div
+          className={clsx(
+            'absolute z-3 flex items-center gap-1.5',
+            compactMobile ? 'end-2 top-2 lg:end-3 lg:top-3' : 'end-3 top-3'
+          )}
+        >
+          {showQuickView && (
+            <Link
+              href={listingHref}
+              title="ดูแบบไว"
+              aria-label={`ดู ${title} แบบไว`}
+              className="flex size-8 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-sm transition-colors hover:bg-black/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <Eye className="size-4" aria-hidden="true" />
+            </Link>
+          )}
+          <BtnLikeIcon isLiked={like} className="shrink-0" />
+        </div>
         {saleOff && <SaleOffBadge className="absolute start-3 top-3" />}
       </div>
     )

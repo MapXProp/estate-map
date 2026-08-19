@@ -207,7 +207,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
               <Headless.Transition show={showHeroSearch}>
                 <div
                   className={clsx(
-                    'absolute inset-x-0 top-0 z-10 transition ease-in-out',
+                    'pointer-events-none absolute inset-x-0 top-0 z-20 transition ease-in-out',
                     // Entering styles
                     'data-enter:duration-200 data-enter:data-closed:-translate-y-20 data-enter:data-closed:opacity-0',
                     // Leaving styles
@@ -215,7 +215,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
                   )}
                 >
                   <div className="absolute inset-x-0 right-0 -z-10 h-full bg-white dark:bg-neutral-900" />
-                  <div className="mx-auto w-full max-w-4xl pb-8">
+                  <div className="pointer-events-auto mx-auto w-full max-w-4xl pb-8">
                     <HeroSearchFormSmall initTab={initSearchFormTab} />
                   </div>
                 </div>

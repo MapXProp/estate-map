@@ -136,7 +136,10 @@ const getPopupHtml = (listing: TRealEstateListing) => `
     <p style="margin:7px 0 0;color:#737373;font-size:13px;line-height:1.4;">${escapeHtml(listing.address)}</p>
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eeeeee;display:flex;align-items:center;justify-content:space-between;gap:12px;">
       <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(listing.price)}</strong>
-      <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-listing-link="true" style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;">ดูประกาศ</a>
+      <span style="display:flex;align-items:center;gap:8px;">
+        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-quick-view="true" style="color:#31594e;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">ดูแบบไว</a>
+        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" target="_blank" rel="noopener noreferrer" style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
+      </span>
     </div>
   </article>`
 
@@ -223,22 +226,11 @@ const LongdoPropertyMap = ({
 
       const target = event.target
       if (!(target instanceof Element)) return
-      const link = target.closest<HTMLAnchorElement>('a[href^="/real-estate-listings/"]')
+      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"]')
       if (!link) return
 
-      const shouldUseFullPage = window.matchMedia(
-        '(max-width: 743px), (max-width: 1100px) and (orientation: portrait)'
-      ).matches
-      if (shouldUseFullPage) {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        window.location.assign(link.href)
-        return
-      }
-
-      if (link.dataset.mapxListingLink !== 'true') return
-
       event.preventDefault()
+      event.stopImmediatePropagation()
       router.push(link.getAttribute('href') || link.href)
     }
 
