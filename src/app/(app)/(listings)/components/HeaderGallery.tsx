@@ -8,9 +8,120 @@ import { Squares2X2Icon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
-import { Bath, BedDouble, ChevronLeft, Heart, MapPin, Maximize2, Phone, ShieldCheck } from 'lucide-react'
+import {
+  Bath,
+  BedDouble,
+  Box,
+  ChevronLeft,
+  FileImage,
+  Heart,
+  Images,
+  MapPin,
+  Maximize2,
+  Phone,
+  Play,
+  Rotate3D,
+  ShieldCheck,
+  Video,
+} from 'lucide-react'
 import Image from 'next/image'
 import { type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
+
+type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
+type PropertyMediaFilter = 'all' | PropertyMediaType
+
+export interface PropertyMediaItem {
+  id: string
+  type: PropertyMediaType
+  url: string
+  thumbnailUrl?: string
+  caption?: string
+}
+
+const MEDIA_FILTERS: { value: PropertyMediaFilter; label: string }[] = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'photo', label: 'รูปภาพ' },
+  { value: 'video', label: 'วิดีโอ' },
+  { value: '360', label: '360°' },
+  { value: 'floor-plan', label: 'แปลน' },
+  { value: '3d', label: '3D' },
+]
+
+const MEDIA_LABELS: Record<PropertyMediaFilter, string> = {
+  all: 'สื่อทั้งหมด',
+  photo: 'รูปภาพ',
+  video: 'วิดีโอ',
+  '360': 'ภาพ 360°',
+  'floor-plan': 'แปลน',
+  '3d': 'โมเดล 3D',
+}
+
+const getMediaIcon = (type: PropertyMediaFilter, className = 'size-5') => {
+  if (type === 'photo' || type === 'all') return <Images className={className} aria-hidden="true" />
+  if (type === 'video') return <Video className={className} aria-hidden="true" />
+  if (type === '360') return <Rotate3D className={className} aria-hidden="true" />
+  if (type === 'floor-plan') return <FileImage className={className} aria-hidden="true" />
+  return <Box className={className} aria-hidden="true" />
+}
+
+const MediaFilterTabs = ({
+  activeFilter,
+  onChange,
+  counts,
+}: {
+  activeFilter: PropertyMediaFilter
+  onChange: (filter: PropertyMediaFilter) => void
+  counts: Record<PropertyMediaFilter, number>
+}) => (
+  <nav aria-label="กรองประเภทสื่อ" className="w-full overflow-x-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[744px]:px-6 lg:px-8">
+    <div className="flex min-w-max items-center gap-1.5">
+      {MEDIA_FILTERS.map((filter) => {
+        const isActive = activeFilter === filter.value
+        const count = counts[filter.value]
+
+        return (
+          <button
+            key={filter.value}
+            type="button"
+            onClick={() => onChange(filter.value)}
+            aria-pressed={isActive}
+            className={clsx(
+              'flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+              isActive
+                ? 'bg-[#176b50] text-white shadow-sm'
+                : 'bg-neutral-100 text-neutral-600 hover:bg-[#edf5f1] hover:text-[#176b50] dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-emerald-950/50'
+            )}
+          >
+            {getMediaIcon(filter.value, 'size-4')}
+            <span>{filter.label}</span>
+            {count > 0 && (
+              <span
+                className={clsx(
+                  'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] leading-4',
+                  isActive ? 'bg-white/18 text-white' : 'bg-white text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'
+                )}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  </nav>
+)
+
+const EmptyMediaState = ({ type }: { type: PropertyMediaFilter }) => (
+  <div className="mx-auto flex min-h-64 max-w-md flex-col items-center justify-center px-6 text-center">
+    <span className="grid size-14 place-items-center rounded-full bg-[#edf5f1] text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
+      {getMediaIcon(type, 'size-6')}
+    </span>
+    <h3 className="mt-4 text-base font-semibold text-neutral-900 dark:text-white">ยังไม่มี{MEDIA_LABELS[type]}ในประกาศนี้</h3>
+    <p className="mt-1.5 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+      เมื่อผู้ลงประกาศเพิ่มสื่อประเภทนี้ ระบบจะแสดงไว้ในหมวดนี้โดยอัตโนมัติ
+    </p>
+  </div>
+)
 
 const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOptionsType }) => {
   const [selectedIndex, setSelectedIndex] = useState(option.startIndex ?? 0)
@@ -103,18 +214,21 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
 
 const MobilePhotoGallery = ({
   images,
+  media,
   open,
   onClose,
   onOpenImage,
   initiallySaved,
 }: {
   images: string[]
+  media: PropertyMediaItem[]
   open: boolean
   onClose: () => void
   onOpenImage: (index: number) => void
   initiallySaved: boolean
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
+  const [activeFilter, setActiveFilter] = useState<PropertyMediaFilter>('all')
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [isDismissing, setIsDismissing] = useState(false)
@@ -124,6 +238,14 @@ const MobilePhotoGallery = ({
   const touchStartTimeRef = useRef(0)
   const canStartDragRef = useRef(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const visibleMedia = activeFilter === 'all' ? media : media.filter((item) => item.type === activeFilter)
+  const counts = MEDIA_FILTERS.reduce(
+    (result, filter) => {
+      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
+      return result
+    },
+    {} as Record<PropertyMediaFilter, number>
+  )
 
   const resetDrag = useCallback(() => {
     setDragOffset(0)
@@ -134,6 +256,7 @@ const MobilePhotoGallery = ({
 
   const handleClose = useCallback(() => {
     resetDrag()
+    setActiveFilter('all')
     onClose()
   }, [onClose, resetDrag])
 
@@ -212,62 +335,81 @@ const MobilePhotoGallery = ({
             transition: isDragging ? 'none' : 'transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 180ms',
           }}
         >
-          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-neutral-200 bg-white/95 px-3 backdrop-blur">
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300"
-            />
-            <button
-              type="button"
-              onClick={handleClose}
-              aria-label="กลับไปหน้ารายละเอียดอสังหา"
-              className="flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
-            >
-              <ChevronLeft className="size-6" aria-hidden="true" />
-            </button>
-            <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold whitespace-nowrap">
-              รูปภาพทั้งหมด
-            </h2>
-            <button
-              type="button"
-              onClick={() => setIsSaved((saved) => !saved)}
-              aria-pressed={isSaved}
-              aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
-              className={clsx(
-                'flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition hover:bg-neutral-100 active:bg-neutral-200',
-                isSaved && 'text-rose-600'
-              )}
-            >
-              <Heart className={clsx('size-5', isSaved && 'fill-current')} aria-hidden="true" />
-              <span>{isSaved ? 'บันทึกแล้ว' : 'บันทึก'}</span>
-            </button>
+          <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 backdrop-blur">
+            <div className="relative flex h-16 items-center justify-between px-3">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300"
+              />
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="กลับไปหน้ารายละเอียดอสังหา"
+                className="flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
+              >
+                <ChevronLeft className="size-6" aria-hidden="true" />
+              </button>
+              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold whitespace-nowrap">สื่อทั้งหมด</h2>
+              <button
+                type="button"
+                onClick={() => setIsSaved((saved) => !saved)}
+                aria-pressed={isSaved}
+                aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
+                className={clsx(
+                  'flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition hover:bg-neutral-100 active:bg-neutral-200',
+                  isSaved && 'text-rose-600'
+                )}
+              >
+                <Heart className={clsx('size-5', isSaved && 'fill-current')} aria-hidden="true" />
+                <span>{isSaved ? 'บันทึกแล้ว' : 'บันทึก'}</span>
+              </button>
+            </div>
+            <MediaFilterTabs activeFilter={activeFilter} onChange={setActiveFilter} counts={counts} />
           </header>
 
           <main className="px-2.5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-            <h3 className="mb-4 px-0.5 text-lg font-semibold">แกลเลอรีรูปภาพ</h3>
-            <div className="columns-2 gap-2">
-              {images.map((image, index) => (
+            <div className="mb-4 flex items-end justify-between gap-3 px-0.5">
+              <h3 className="text-lg font-semibold">{MEDIA_LABELS[activeFilter]}</h3>
+              {visibleMedia.length > 0 && <span className="text-xs text-neutral-500">{visibleMedia.length} รายการ</span>}
+            </div>
+            {visibleMedia.length > 0 ? (
+              <div className="columns-2 gap-2">
+              {visibleMedia.map((item, index) => (
                 <button
-                  key={`${image}-${index}`}
+                  key={item.id}
                   type="button"
-                  onClick={() => onOpenImage(index)}
-                  aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
+                  onClick={() => {
+                    if (item.type !== 'photo') return
+                    const imageIndex = images.indexOf(item.url)
+                    if (imageIndex >= 0) onOpenImage(imageIndex)
+                  }}
+                  aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
                   className={clsx(
                     'relative mb-2 block w-full break-inside-avoid overflow-hidden rounded-xl bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
                     index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]'
                   )}
                 >
                   <Image
-                    src={image}
+                    src={item.thumbnailUrl || item.url}
                     alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
                     fill
                     sizes="50vw"
                     priority={index < 4}
                     className="object-cover transition duration-200 active:scale-[0.98]"
                   />
+                  {item.type !== 'photo' && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/25 text-white">
+                      <span className="grid size-12 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-lg">
+                        {item.type === 'video' ? <Play className="ml-0.5 size-5 fill-current" /> : getMediaIcon(item.type, 'size-5')}
+                      </span>
+                    </span>
+                  )}
                 </button>
               ))}
-            </div>
+              </div>
+            ) : (
+              <EmptyMediaState type={activeFilter} />
+            )}
           </main>
         </DialogPanel>
       </div>
@@ -277,6 +419,7 @@ const MobilePhotoGallery = ({
 
 const DesktopPhotoGallery = ({
   images,
+  media,
   open,
   onClose,
   onOpenImage,
@@ -284,6 +427,7 @@ const DesktopPhotoGallery = ({
   propertyDetails,
 }: {
   images: string[]
+  media: PropertyMediaItem[]
   open: boolean
   onClose: () => void
   onOpenImage: (index: number) => void
@@ -291,6 +435,15 @@ const DesktopPhotoGallery = ({
   propertyDetails?: PropertyGalleryDetails
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
+  const [activeFilter, setActiveFilter] = useState<PropertyMediaFilter>('all')
+  const visibleMedia = activeFilter === 'all' ? media : media.filter((item) => item.type === activeFilter)
+  const counts = MEDIA_FILTERS.reduce(
+    (result, filter) => {
+      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
+      return result
+    },
+    {} as Record<PropertyMediaFilter, number>
+  )
 
   const handleRequestViewing = () => {
     onClose()
@@ -304,39 +457,47 @@ const DesktopPhotoGallery = ({
       <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
       <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
         <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-neutral-900 lg:max-h-[calc(100dvh-2.5rem)]">
-          <header className="relative z-10 flex min-h-20 shrink-0 items-center justify-between gap-4 border-b border-neutral-200 bg-white px-6 dark:border-neutral-800 dark:bg-neutral-900 lg:px-8">
-            <div className="min-w-0">
-              <h2 className="truncate text-xl font-semibold text-neutral-950 dark:text-white">รูปภาพทั้งหมด</h2>
-              <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
-                เลือกรูปเพื่อดูภาพขนาดใหญ่ · {images.length} รูป
-              </p>
-            </div>
+          <header className="relative z-10 shrink-0 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+            <div className="flex min-h-20 items-center justify-between gap-4 px-6 lg:px-8">
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-semibold text-neutral-950 dark:text-white">สื่อทั้งหมด</h2>
+                <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+                  เลือกดูรูปภาพ วิดีโอ ภาพ 360° แปลน และโมเดล 3D · {media.length} รายการ
+                </p>
+              </div>
 
-            <CloseButton
-              as="button"
-              type="button"
-              aria-label="ปิดแกลเลอรีรูปภาพ"
-              className="grid size-11 shrink-0 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-            >
-              <span aria-hidden="true" className="text-2xl leading-none">
-                ×
-              </span>
-            </CloseButton>
+              <CloseButton
+                as="button"
+                type="button"
+                aria-label="ปิดแกลเลอรีสื่อ"
+                className="grid size-11 shrink-0 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                <span aria-hidden="true" className="text-2xl leading-none">
+                  ×
+                </span>
+              </CloseButton>
+            </div>
+            <MediaFilterTabs activeFilter={activeFilter} onChange={setActiveFilter} counts={counts} />
           </header>
 
           <div className="flex min-h-0 flex-1">
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 dark:bg-neutral-950/60 lg:p-4">
-              <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3">
-                {images.map((image, index) => (
+              {visibleMedia.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3">
+                {visibleMedia.map((item, index) => (
                   <button
-                    key={`${image}-desktop-gallery-${index}`}
+                    key={`${item.id}-desktop-gallery`}
                     type="button"
-                    onClick={() => onOpenImage(index)}
-                    aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
+                    onClick={() => {
+                      if (item.type !== 'photo') return
+                      const imageIndex = images.indexOf(item.url)
+                      if (imageIndex >= 0) onOpenImage(imageIndex)
+                    }}
+                    aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
                     className="group relative aspect-[4/3] min-w-0 overflow-hidden rounded-xl bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
                   >
                     <Image
-                      src={image}
+                      src={item.thumbnailUrl || item.url}
                       alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
                       fill
                       sizes="(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw"
@@ -344,11 +505,21 @@ const DesktopPhotoGallery = ({
                       className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
                     />
                     <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                      {index + 1} / {images.length}
+                      {index + 1} / {visibleMedia.length}
                     </span>
+                    {item.type !== 'photo' && (
+                      <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/22 text-white">
+                        <span className="grid size-14 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-xl">
+                          {item.type === 'video' ? <Play className="ml-0.5 size-6 fill-current" /> : getMediaIcon(item.type, 'size-6')}
+                        </span>
+                      </span>
+                    )}
                   </button>
                 ))}
-              </div>
+                </div>
+              ) : (
+                <EmptyMediaState type={activeFilter} />
+              )}
             </div>
 
             {propertyDetails && (
@@ -451,6 +622,7 @@ const DesktopPhotoGallery = ({
 
 interface Props {
   images: string[]
+  media?: PropertyMediaItem[]
   gridType?: 'grid1' | 'grid2' | 'grid3' | 'grid4'
   initiallySaved?: boolean
   propertyDetails?: PropertyGalleryDetails
@@ -467,11 +639,15 @@ interface PropertyGalleryDetails {
   phone?: string
 }
 
-const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false, propertyDetails }: Props) => {
+const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = false, propertyDetails }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
   const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
   const [startIndex, setStartIndex] = useState(0)
+  const mediaItems: PropertyMediaItem[] =
+    media && media.length > 0
+      ? media
+      : images.map((image, index) => ({ id: `photo-${index + 1}`, type: 'photo', url: image }))
 
   const handleOpenDialog = (index = 0) => {
     if (window.matchMedia('(max-width: 743px)').matches) {
@@ -507,6 +683,7 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false, pro
 
       <MobilePhotoGallery
         images={images}
+        media={mediaItems}
         open={isMobileGalleryOpen}
         onClose={() => setIsMobileGalleryOpen(false)}
         onOpenImage={handleOpenMobileImage}
@@ -516,6 +693,7 @@ const HeaderGallery = ({ images, gridType = 'grid1', initiallySaved = false, pro
       {gridType === 'grid2' && (
         <DesktopPhotoGallery
           images={images}
+          media={mediaItems}
           open={isDesktopGalleryOpen}
           onClose={() => setIsDesktopGalleryOpen(false)}
           onOpenImage={handleOpenDesktopImage}
@@ -611,7 +789,7 @@ const HeaderGalleryGrid2 = ({
               key={`${image}-${index}`}
               type="button"
               onClick={() => handleOpenDialog(index)}
-              aria-label={isLast ? `ดูรูปภาพทั้งหมด ${images.length} รูป` : `เปิดรูปที่ ${index + 1}`}
+              aria-label={isLast ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${index + 1}`}
               className={clsx(
                 'relative block min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
                 isTopRow ? 'col-span-3 aspect-[4/3]' : 'col-span-2 aspect-square'
@@ -626,8 +804,9 @@ const HeaderGalleryGrid2 = ({
                 className="object-cover transition duration-200 active:scale-[0.98]"
               />
               {isLast && (
-                <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/48 text-xl font-semibold text-white">
-                  +{Math.max(images.length - 4, 1)}
+                <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-neutral-950/48 px-2 text-center text-sm font-semibold text-white">
+                  <Squares2X2Icon className="size-5" />
+                  ดูสื่อทั้งหมด
                 </span>
               )}
             </button>
@@ -690,7 +869,7 @@ const HeaderGalleryGrid2 = ({
                 key={`${image}-thumbnail-${index}`}
                 type="button"
                 onClick={() => handleOpenDialog(imageIndex)}
-                aria-label={isLast ? `ดูรูปภาพทั้งหมด ${images.length} รูป` : `เปิดรูปที่ ${imageIndex + 1}`}
+                aria-label={isLast ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${imageIndex + 1}`}
                 className="relative aspect-[16/9] overflow-hidden rounded-lg bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
               >
               <Image
@@ -701,8 +880,9 @@ const HeaderGalleryGrid2 = ({
                 sizes="20vw"
               />
                 {isLast && (
-                  <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/52 text-base font-semibold text-white lg:text-lg">
-                    +{Math.max(images.length - 7, 1)} รูป
+                  <span className="absolute inset-0 flex items-center justify-center gap-2 bg-neutral-950/52 px-2 text-sm font-semibold text-white lg:text-base">
+                    <Squares2X2Icon className="size-5" />
+                    ดูสื่อทั้งหมด
                   </span>
                 )}
               </button>
