@@ -67,45 +67,51 @@ const NavigationLinks = ({ links, isThai }: { links: (typeof footerNavigation)[n
   </ul>
 )
 
-const PropertyFooterPrototype = () => {
+interface PropertyFooterPrototypeProps {
+  showListingCta?: boolean
+}
+
+const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterPrototypeProps) => {
   const { locale, currency } = usePreferences()
   const isThai = locale === 'th'
 
   return (
     <footer className="bg-[#f5f7f4] dark:bg-neutral-950">
       <div className="container pt-10 min-[744px]:pt-14 lg:pt-16">
-        <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-6 py-9 text-white min-[744px]:flex min-[744px]:items-center min-[744px]:justify-between min-[744px]:gap-8 min-[744px]:px-9 min-[744px]:py-10 lg:px-12 dark:bg-emerald-950">
-          <div className="pointer-events-none absolute -top-20 right-14 size-52 rounded-full border border-white/10" />
-          <div className="pointer-events-none absolute -right-16 -bottom-36 size-72 rounded-full bg-emerald-300/10" />
-          <div className="relative max-w-2xl">
-            <p className="text-sm font-semibold text-emerald-200">
-              {isThai ? 'สำหรับเจ้าของทรัพย์และผู้ประกอบการ' : 'For property owners and businesses'}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight min-[744px]:text-3xl">
-              {isThai ? 'มีพื้นที่ดี ๆ ที่อยากให้คนค้นพบ?' : 'Have a great space people should discover?'}
-            </h2>
-            <p className="mt-2 max-w-xl text-sm/6 text-emerald-50/75 min-[744px]:text-base/7">
-              {isThai
-                ? 'ลงรายละเอียดครั้งเดียว ให้ผู้ซื้อและผู้เช่าค้นพบทรัพย์ของคุณจากประเภทและการใช้งานที่ตรงกัน'
-                : 'Add the details once and help buyers or tenants discover your property by type and intended use.'}
-            </p>
+        {showListingCta && (
+          <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-6 py-9 text-white min-[744px]:flex min-[744px]:items-center min-[744px]:justify-between min-[744px]:gap-8 min-[744px]:px-9 min-[744px]:py-10 lg:px-12 dark:bg-emerald-950">
+            <div className="pointer-events-none absolute -top-20 right-14 size-52 rounded-full border border-white/10" />
+            <div className="pointer-events-none absolute -right-16 -bottom-36 size-72 rounded-full bg-emerald-300/10" />
+            <div className="relative max-w-2xl">
+              <p className="text-sm font-semibold text-emerald-200">
+                {isThai ? 'สำหรับเจ้าของทรัพย์และผู้ประกอบการ' : 'For property owners and businesses'}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight min-[744px]:text-3xl">
+                {isThai ? 'มีพื้นที่ดี ๆ ที่อยากให้คนค้นพบ?' : 'Have a great space people should discover?'}
+              </h2>
+              <p className="mt-2 max-w-xl text-sm/6 text-emerald-50/75 min-[744px]:text-base/7">
+                {isThai
+                  ? 'ลงรายละเอียดครั้งเดียว ให้ผู้ซื้อและผู้เช่าค้นพบทรัพย์ของคุณจากประเภทและการใช้งานที่ตรงกัน'
+                  : 'Add the details once and help buyers or tenants discover your property by type and intended use.'}
+              </p>
+            </div>
+            <div className="relative mt-6 flex flex-wrap gap-3 min-[744px]:mt-0 min-[744px]:shrink-0">
+              <Link
+                href="/add-listing/1"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-500 px-6 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-orange-600"
+              >
+                {isThai ? 'ลงประกาศฟรี' : 'List for free'}
+                <ArrowRight className="size-4" />
+              </Link>
+              <Link
+                href="/contact?topic=listing"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                {isThai ? 'สอบถามเรา' : 'Contact us'}
+              </Link>
+            </div>
           </div>
-          <div className="relative mt-6 flex flex-wrap gap-3 min-[744px]:mt-0 min-[744px]:shrink-0">
-            <Link
-              href="/add-listing/1"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-500 px-6 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-orange-600"
-            >
-              {isThai ? 'ลงประกาศฟรี' : 'List for free'}
-              <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              href="/contact?topic=listing"
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              {isThai ? 'สอบถามเรา' : 'Contact us'}
-            </Link>
-          </div>
-        </div>
+        )}
 
         <div className="grid gap-10 py-12 min-[744px]:grid-cols-12 min-[744px]:gap-7 lg:py-14">
           <div className="min-[744px]:col-span-5 lg:col-span-4">
