@@ -38,6 +38,7 @@ import { Fragment } from 'react'
 import HeaderGallery from '../../components/HeaderGallery'
 import HostAvatar from '../../components/HostAvatar'
 import MobilePropertyOverview from '../../components/MobilePropertyOverview'
+import MobileListingBackButton from '../../components/MobileListingBackButton'
 import SectionHeader from '../../components/SectionHeader'
 import { SectionHeading, SectionSubheading } from '../../components/SectionHeading'
 import SectionHost from '../../components/SectionHost'
@@ -282,6 +283,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
 
   return (
     <div className="pb-24 min-[744px]:pb-0">
+      <MobileListingBackButton />
       {/*  HEADER */}
       <HeaderGallery
         gridType="grid2"

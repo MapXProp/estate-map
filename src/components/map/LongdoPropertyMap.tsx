@@ -129,7 +129,7 @@ const getMarkerHtml = (price: string, active: boolean) => `
     transition:transform .15s ease,background .15s ease,color .15s ease;
   ">${escapeHtml(price)}</div>`
 
-const getPopupHtml = (listing: TRealEstateListing) => `
+const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => `
   <article style="width:260px;box-sizing:border-box;padding:14px 16px;border:1px solid rgba(18,63,50,.12);border-radius:18px;background:#ffffff;color:#171717;font-family:Sarabun,Arial,sans-serif;box-shadow:0 14px 36px rgba(18,63,50,.2);overflow:hidden;">
     <p style="margin:0 0 4px;color:#176b50;font-size:12px;font-weight:700;">อสังหาริมทรัพย์</p>
     <h3 style="margin:0;font-size:16px;line-height:1.35;font-weight:700;">${escapeHtml(listing.title)}</h3>
@@ -138,7 +138,7 @@ const getPopupHtml = (listing: TRealEstateListing) => `
       <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(listing.price)}</strong>
       <span style="display:flex;align-items:center;gap:8px;">
         <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-quick-view="true" style="color:#31594e;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">ดูแบบไว</a>
-        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" target="_blank" rel="noopener noreferrer" style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
+        <a href="/real-estate-listings/${encodeURIComponent(listing.handle)}" data-mapx-property-link="true" ${openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''} style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
       </span>
     </div>
   </article>`
@@ -226,7 +226,22 @@ const LongdoPropertyMap = ({
 
       const target = event.target
       if (!(target instanceof Element)) return
+      const propertyLink = target.closest<HTMLAnchorElement>('a[data-mapx-property-link="true"]')
       const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"]')
+      if (!link && !propertyLink) return
+
+      sessionStorage.setItem(
+        'mapxprop:return-to-results',
+        JSON.stringify({ href: `${window.location.pathname}${window.location.search}${window.location.hash}`, savedAt: Date.now() })
+      )
+
+      if (propertyLink && window.matchMedia('(max-width: 743px)').matches) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        router.push(propertyLink.getAttribute('href') || propertyLink.href)
+        return
+      }
+
       if (!link) return
 
       event.preventDefault()
@@ -427,7 +442,7 @@ const LongdoPropertyMap = ({
           offset: { x: 40, y: 17 },
         },
         popup: {
-          html: getPopupHtml(listing),
+          html: getPopupHtml(listing, window.matchMedia('(min-width: 744px)').matches),
           size: { width: 292, height: 210 },
         },
       })

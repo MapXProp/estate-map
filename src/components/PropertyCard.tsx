@@ -7,7 +7,16 @@ import { Badge } from '@/shared/Badge'
 import clsx from 'clsx'
 import { Eye } from 'lucide-react'
 import Link from 'next/link'
-import { FC } from 'react'
+import { FC, MouseEvent, useSyncExternalStore } from 'react'
+
+const TABLET_NAVIGATION_QUERY = '(min-width: 744px)'
+const subscribeTabletNavigation = (callback: () => void) => {
+  const mediaQuery = window.matchMedia(TABLET_NAVIGATION_QUERY)
+  mediaQuery.addEventListener('change', callback)
+  return () => mediaQuery.removeEventListener('change', callback)
+}
+const getTabletNavigationSnapshot = () => window.matchMedia(TABLET_NAVIGATION_QUERY).matches
+const getTabletNavigationServerSnapshot = () => false
 
 interface Props {
   className?: string
@@ -47,6 +56,24 @@ const PropertyCard: FC<Props> = ({
   } = data
 
   const listingHref = `/real-estate-listings/${listingHandle}`
+  const isTabletOrLarger = useSyncExternalStore(
+    subscribeTabletNavigation,
+    getTabletNavigationSnapshot,
+    getTabletNavigationServerSnapshot
+  )
+  const shouldOpenInNewTab = openInNewTab && isTabletOrLarger
+
+  const rememberReturnLocation = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    const listingLink = target.closest<HTMLAnchorElement>(`a[href="${listingHref}"]`)
+    if (!listingLink) return
+
+    sessionStorage.setItem(
+      'mapxprop:return-to-results',
+      JSON.stringify({ href: `${window.location.pathname}${window.location.search}${window.location.hash}`, savedAt: Date.now() })
+    )
+  }
 
   const renderSliderGallery = () => {
     return (
@@ -58,7 +85,7 @@ const PropertyCard: FC<Props> = ({
           autoPlay={autoPlayGallery}
           autoPlayInterval={2500}
           autoPlayDelay={autoPlayDelay}
-          openInNewTab={openInNewTab}
+          openInNewTab={shouldOpenInNewTab}
         />
         <div
           className={clsx(
@@ -136,12 +163,15 @@ const PropertyCard: FC<Props> = ({
   }
 
   return (
-    <div className={`group relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 ${className}`}>
+    <div
+      className={`group relative overflow-hidden rounded-xl bg-white dark:bg-neutral-900 ${className}`}
+      onClickCapture={rememberReturnLocation}
+    >
       {renderSliderGallery()}
       <Link
         href={listingHref}
-        target={openInNewTab ? '_blank' : undefined}
-        rel={openInNewTab ? 'noopener noreferrer' : undefined}
+        target={shouldOpenInNewTab ? '_blank' : undefined}
+        rel={shouldOpenInNewTab ? 'noopener noreferrer' : undefined}
       >
         {renderContent()}
       </Link>
