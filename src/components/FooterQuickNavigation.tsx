@@ -36,6 +36,7 @@ const FooterQuickNavigation = () => {
   const rafId = useRef<number | null>(null)
   const lastScrollY = useRef<number>(0)
   const pathname = usePathname()
+  const hideOnChannelHome = pathname === '/homes' || pathname === '/rooms' || pathname === '/business'
   const hideOnPropertyMap =
     pathname === '/properties/map' ||
     pathname.startsWith('/real-estate-categories-map') ||
@@ -91,7 +92,7 @@ const FooterQuickNavigation = () => {
 
   //
 
-  if (hideOnPropertyMap) return null
+  if (hideOnChannelHome || hideOnPropertyMap) return null
 
   return (
     <div
