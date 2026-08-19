@@ -1,6 +1,7 @@
 'use client'
 
 import { TRealEstateListing } from '@/data/listings'
+import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import Script from 'next/script'
 import { usePathname, useRouter } from 'next/navigation'
@@ -235,17 +236,7 @@ const LongdoPropertyMap = ({
       const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"]')
       if (!link && !propertyLink) return
 
-      sessionStorage.setItem(
-        'mapxprop:return-to-results',
-        JSON.stringify({ href: `${window.location.pathname}${window.location.search}${window.location.hash}`, savedAt: Date.now() })
-      )
-
-      if (propertyLink && window.matchMedia('(max-width: 743px)').matches) {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        router.push(propertyLink.getAttribute('href') || propertyLink.href)
-        return
-      }
+      rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
 
       if (!link) return
 
@@ -447,7 +438,7 @@ const LongdoPropertyMap = ({
           offset: { x: 40, y: 17 },
         },
         popup: {
-          html: getPopupHtml(listing, window.matchMedia('(min-width: 744px)').matches),
+          html: getPopupHtml(listing, true),
           size: { width: 292, height: 210 },
         },
       })

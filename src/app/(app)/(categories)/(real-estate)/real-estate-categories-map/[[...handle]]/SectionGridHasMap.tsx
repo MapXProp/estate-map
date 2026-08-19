@@ -121,6 +121,7 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
                 autoPlayDelay={(index % 4) * 320}
                 compactMobile
                 openInNewTab
+                openInNewTabOnMobile
                 showQuickView
               />
             </div>

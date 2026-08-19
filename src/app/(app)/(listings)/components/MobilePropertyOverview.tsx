@@ -1,4 +1,5 @@
 import { Bath, BedDouble, Building2, Check, MapPin, Maximize2, Phone } from 'lucide-react'
+import MobileReturnToResultsButton from './MobileReturnToResultsButton'
 
 interface Props {
   title: string
@@ -84,7 +85,7 @@ const MobilePropertyOverview = ({
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3 pt-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_rgba(15,23,42,0.10)] backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
-        <div className="mx-auto flex max-w-lg items-center gap-2.5">
+        <div className="mx-auto grid max-w-lg grid-cols-[3rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2.5">
           <a
             href={phone ? `tel:${phone}` : '#contact-owner'}
             aria-label="โทรหาผู้ลงประกาศ"
@@ -92,15 +93,12 @@ const MobilePropertyOverview = ({
           >
             <Phone className="size-5" aria-hidden="true" />
           </a>
-          <div className="min-w-0 flex-1 px-1">
-            <p className="truncate text-[0.68rem] text-neutral-500">ราคาเสนอ</p>
-            <p className="truncate text-sm font-bold text-neutral-950 dark:text-white">{price}</p>
-          </div>
+          <MobileReturnToResultsButton />
           <a
             href="#contact-owner"
-            className="flex min-h-12 shrink-0 items-center justify-center rounded-full bg-[#123f32] px-6 text-sm font-semibold text-white shadow-[0_7px_18px_rgba(18,63,50,0.22)] transition active:scale-[0.98]"
+            className="flex min-h-12 min-w-0 items-center justify-center rounded-full bg-[#123f32] px-4 text-sm font-semibold whitespace-nowrap text-white shadow-[0_7px_18px_rgba(18,63,50,0.22)] transition active:scale-[0.98]"
           >
-            นัดชมทรัพย์
+            นัดชม
           </a>
         </div>
       </div>

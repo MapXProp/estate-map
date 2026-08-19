@@ -1,31 +1,20 @@
 'use client'
 
+import { clearPropertyResultsLocation, closePropertyTabOrReturn, getPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { ChevronLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
-const RETURN_LOCATION_KEY = 'mapxprop:return-to-results'
-const RETURN_LOCATION_MAX_AGE = 30 * 60 * 1000
 
 const MobileListingBackButton = () => {
   const router = useRouter()
 
   const handleBack = () => {
-    const savedValue = sessionStorage.getItem(RETURN_LOCATION_KEY)
-    sessionStorage.removeItem(RETURN_LOCATION_KEY)
-
-    if (savedValue) {
-      try {
-        const savedLocation = JSON.parse(savedValue) as { href?: string; savedAt?: number }
-        if (savedLocation.href && savedLocation.savedAt && Date.now() - savedLocation.savedAt < RETURN_LOCATION_MAX_AGE) {
-          router.back()
-          return
-        }
-      } catch {
-        // Fall back to the main property search when the saved history is invalid.
-      }
+    if (window.history.length <= 1 && getPropertyResultsLocation()) {
+      closePropertyTabOrReturn()
+      return
     }
 
-    router.push('/properties/map')
+    clearPropertyResultsLocation()
+    router.back()
   }
 
   return (

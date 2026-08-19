@@ -3,6 +3,7 @@ import GallerySlider from '@/components/GallerySlider'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { TRealEstateListing } from '@/data/listings'
+import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { Badge } from '@/shared/Badge'
 import clsx from 'clsx'
 import { Eye } from 'lucide-react'
@@ -25,6 +26,7 @@ interface Props {
   autoPlayDelay?: number
   compactMobile?: boolean
   openInNewTab?: boolean
+  openInNewTabOnMobile?: boolean
   showQuickView?: boolean
 }
 
@@ -35,6 +37,7 @@ const PropertyCard: FC<Props> = ({
   autoPlayDelay = 0,
   compactMobile = false,
   openInNewTab = true,
+  openInNewTabOnMobile = false,
   showQuickView = false,
 }) => {
   const {
@@ -61,7 +64,7 @@ const PropertyCard: FC<Props> = ({
     getTabletNavigationSnapshot,
     getTabletNavigationServerSnapshot
   )
-  const shouldOpenInNewTab = openInNewTab && isTabletOrLarger
+  const shouldOpenInNewTab = openInNewTab && (isTabletOrLarger || openInNewTabOnMobile)
   const detailHref = shouldOpenInNewTab ? listingHref : `${listingHref}?view=full`
 
   const rememberReturnLocation = (event: MouseEvent<HTMLDivElement>) => {
@@ -73,10 +76,7 @@ const PropertyCard: FC<Props> = ({
     const destination = new URL(listingLink.href, window.location.origin)
     if (destination.pathname !== listingHref) return
 
-    sessionStorage.setItem(
-      'mapxprop:return-to-results',
-      JSON.stringify({ href: `${window.location.pathname}${window.location.search}${window.location.hash}`, savedAt: Date.now() })
-    )
+    rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
   }
 
   const renderSliderGallery = () => {
