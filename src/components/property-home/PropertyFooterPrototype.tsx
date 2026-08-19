@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import SocialMediaLinks from '@/components/SocialMediaLinks'
 import Logo from '@/shared/Logo'
 import { ArrowRight, CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
@@ -128,6 +129,7 @@ const PropertyFooterPrototype = () => {
                 {isThai ? 'แจ้งประกาศไม่ถูกต้องได้' : 'Easy listing reports'}
               </p>
             </div>
+            <SocialMediaLinks className="mt-6" />
           </div>
 
           <div className="hidden min-[744px]:col-span-7 min-[744px]:grid min-[744px]:grid-cols-2 min-[744px]:gap-8 lg:col-span-8 lg:grid-cols-3">
