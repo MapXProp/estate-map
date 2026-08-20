@@ -666,26 +666,26 @@ const MobilePhotoGallery = ({
                 type="button"
                 data-gallery-drag-handle
                 aria-label="ลากลงเพื่อปิดแกลเลอรี"
-                className="absolute top-0 left-1/2 z-10 flex h-6 w-20 -translate-x-1/2 touch-none cursor-grab items-start justify-center pt-1.5 active:cursor-grabbing"
+                className="absolute inset-y-0 right-24 left-14 z-10 flex touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
               >
-                <span aria-hidden="true" className="h-1 w-9 rounded-full bg-neutral-300" />
+                <span aria-hidden="true" className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300" />
+                <span className="text-base font-semibold whitespace-nowrap">สื่อทั้งหมด</span>
               </button>
               <button
                 type="button"
                 onClick={handleClose}
                 aria-label="กลับไปหน้ารายละเอียดอสังหา"
-                className="flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
+                className="relative z-20 flex size-11 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200"
               >
                 <ChevronLeft className="size-6" aria-hidden="true" />
               </button>
-              <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold whitespace-nowrap">สื่อทั้งหมด</h2>
               <button
                 type="button"
                 onClick={() => setIsSaved((saved) => !saved)}
                 aria-pressed={isSaved}
                 aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
                 className={clsx(
-                  'flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition hover:bg-neutral-100 active:bg-neutral-200',
+                  'relative z-20 flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition hover:bg-neutral-100 active:bg-neutral-200',
                   isSaved && 'text-rose-600'
                 )}
               >
@@ -716,7 +716,7 @@ const MobilePhotoGallery = ({
           aria-hidden={!isQuickCloseVisible}
           tabIndex={isQuickCloseVisible ? 0 : -1}
           className={clsx(
-            'fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-11 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
+            'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
             isQuickCloseVisible
               ? 'pointer-events-auto translate-y-0 opacity-100'
               : 'pointer-events-none translate-y-3 opacity-0'
