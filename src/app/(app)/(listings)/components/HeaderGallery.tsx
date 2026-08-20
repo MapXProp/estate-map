@@ -592,10 +592,12 @@ const MobilePhotoGallery = ({
     if (event.touches.length !== 1 || isDismissing) return
 
     const touch = event.touches[0]
+    const target = event.target as HTMLElement
+    const startedOnDragHandle = Boolean(target.closest?.('[data-gallery-drag-handle]'))
     touchStartYRef.current = touch.clientY
     touchStartXRef.current = touch.clientX
     touchStartTimeRef.current = performance.now()
-    canStartDragRef.current = (scrollContainerRef.current?.scrollTop ?? 0) <= 1
+    canStartDragRef.current = startedOnDragHandle || (scrollContainerRef.current?.scrollTop ?? 0) <= 1
   }
 
   const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
@@ -660,10 +662,14 @@ const MobilePhotoGallery = ({
         >
           <header className="sticky top-0 z-20 border-b border-neutral-200 bg-white/95 backdrop-blur">
             <div className="relative flex h-16 items-center justify-between px-3">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300"
-              />
+              <button
+                type="button"
+                data-gallery-drag-handle
+                aria-label="ลากลงเพื่อปิดแกลเลอรี"
+                className="absolute top-0 left-1/2 z-10 flex h-6 w-20 -translate-x-1/2 touch-none cursor-grab items-start justify-center pt-1.5 active:cursor-grabbing"
+              >
+                <span aria-hidden="true" className="h-1 w-9 rounded-full bg-neutral-300" />
+              </button>
               <button
                 type="button"
                 onClick={handleClose}
