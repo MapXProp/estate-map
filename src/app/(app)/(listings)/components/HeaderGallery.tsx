@@ -575,6 +575,7 @@ const MobilePhotoGallery = ({
       return
     }
 
+    // Reveal the one-hand close action when the user scrolls back up.
     if (delta < -1) {
       upwardDistanceRef.current += Math.abs(delta)
       if (upwardDistanceRef.current >= 28) showQuickClose()
@@ -700,23 +701,24 @@ const MobilePhotoGallery = ({
             />
           </main>
 
-          <button
-            type="button"
-            onClick={handleClose}
-            aria-label="ปิดแกลเลอรีสื่อ"
-            aria-hidden={!isQuickCloseVisible}
-            tabIndex={isQuickCloseVisible ? 0 : -1}
-            className={clsx(
-              'fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex min-h-11 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
-              isQuickCloseVisible
-                ? 'pointer-events-auto translate-y-0 opacity-100'
-                : 'pointer-events-none translate-y-3 opacity-0'
-            )}
-          >
-            <X className="size-4" aria-hidden="true" />
-            ปิด
-          </button>
         </DialogPanel>
+
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="ปิดแกลเลอรีสื่อ"
+          aria-hidden={!isQuickCloseVisible}
+          tabIndex={isQuickCloseVisible ? 0 : -1}
+          className={clsx(
+            'fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex min-h-11 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
+            isQuickCloseVisible
+              ? 'pointer-events-auto translate-y-0 opacity-100'
+              : 'pointer-events-none translate-y-3 opacity-0'
+          )}
+        >
+          <X className="size-4" aria-hidden="true" />
+          ปิด
+        </button>
       </div>
     </Dialog>
   )
@@ -740,19 +742,83 @@ const DesktopPhotoGallery = ({
   propertyDetails?: PropertyGalleryDetails
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
+  const [isQuickCloseVisible, setIsQuickCloseVisible] = useState(false)
   const mediaScrollRef = useRef<HTMLDivElement>(null)
+  const quickCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastScrollTopRef = useRef(0)
+  const scrollUpDistanceRef = useRef(0)
   const counts = getMediaCounts(media)
   const { activeFilter, navigateToFilter, registerSection, handleSectionScroll } = useMediaSectionNavigation(mediaScrollRef, open)
 
-  const handleRequestViewing = () => {
+  const hideQuickClose = useCallback(() => {
+    setIsQuickCloseVisible(false)
+    if (quickCloseTimerRef.current) {
+      clearTimeout(quickCloseTimerRef.current)
+      quickCloseTimerRef.current = null
+    }
+  }, [])
+
+  const showQuickClose = useCallback(() => {
+    setIsQuickCloseVisible(true)
+    if (quickCloseTimerRef.current) clearTimeout(quickCloseTimerRef.current)
+    quickCloseTimerRef.current = setTimeout(() => {
+      setIsQuickCloseVisible(false)
+      quickCloseTimerRef.current = null
+    }, 2600)
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      lastScrollTopRef.current = mediaScrollRef.current?.scrollTop ?? 0
+      scrollUpDistanceRef.current = 0
+    }
+
+    return () => {
+      if (quickCloseTimerRef.current) clearTimeout(quickCloseTimerRef.current)
+    }
+  }, [open])
+
+  const handleClose = useCallback(() => {
+    hideQuickClose()
+    lastScrollTopRef.current = 0
+    scrollUpDistanceRef.current = 0
     onClose()
+  }, [hideQuickClose, onClose])
+
+  const handleGalleryScroll = useCallback(() => {
+    handleSectionScroll()
+
+    const currentScrollTop = mediaScrollRef.current?.scrollTop ?? 0
+    const delta = currentScrollTop - lastScrollTopRef.current
+    lastScrollTopRef.current = currentScrollTop
+
+    if (currentScrollTop <= 120) {
+      scrollUpDistanceRef.current = 0
+      hideQuickClose()
+      return
+    }
+
+    if (delta < -1) {
+      scrollUpDistanceRef.current += Math.abs(delta)
+      if (scrollUpDistanceRef.current >= 28) showQuickClose()
+      return
+    }
+
+    if (delta > 2) {
+      scrollUpDistanceRef.current = 0
+      hideQuickClose()
+    }
+  }, [handleSectionScroll, hideQuickClose, showQuickClose])
+
+  const handleRequestViewing = () => {
+    handleClose()
     window.setTimeout(() => {
       document.getElementById('contact-owner-desktop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 180)
   }
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50 hidden min-[744px]:block">
+    <Dialog open={open} onClose={handleClose} className="relative z-50 hidden min-[744px]:block">
       <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
       <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
         <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-neutral-900 lg:max-h-[calc(100dvh-2.5rem)]">
@@ -780,19 +846,38 @@ const DesktopPhotoGallery = ({
           </header>
 
           <div className="flex min-h-0 flex-1">
-            <div
-              ref={mediaScrollRef}
-              className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 px-3 dark:bg-neutral-950/60 lg:px-4"
-              onScroll={handleSectionScroll}
-            >
-              <ProgressiveMediaSections
-                media={media}
-                images={images}
-                onOpenImage={onOpenImage}
-                onSectionRef={registerSection}
-                scrollRootRef={mediaScrollRef}
-                layout="desktop"
-              />
+            <div className="relative min-h-0 min-w-0 flex-1">
+              <div
+                ref={mediaScrollRef}
+                className="h-full min-h-0 overflow-y-auto overscroll-contain bg-neutral-50 px-3 dark:bg-neutral-950/60 lg:px-4"
+                onScroll={handleGalleryScroll}
+              >
+                <ProgressiveMediaSections
+                  media={media}
+                  images={images}
+                  onOpenImage={onOpenImage}
+                  onSectionRef={registerSection}
+                  scrollRootRef={mediaScrollRef}
+                  layout="desktop"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleClose}
+                aria-label="ปิดแกลเลอรีสื่อ"
+                aria-hidden={!isQuickCloseVisible}
+                tabIndex={isQuickCloseVisible ? 0 : -1}
+                className={clsx(
+                  'absolute right-5 bottom-5 z-40 hidden min-h-11 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97] min-[744px]:flex min-[1367px]:hidden',
+                  isQuickCloseVisible
+                    ? 'pointer-events-auto translate-y-0 opacity-100'
+                    : 'pointer-events-none translate-y-3 opacity-0'
+                )}
+              >
+                <X className="size-4" aria-hidden="true" />
+                ปิด
+              </button>
             </div>
 
             {propertyDetails && (
