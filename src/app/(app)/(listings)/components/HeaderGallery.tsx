@@ -666,7 +666,7 @@ const MobilePhotoGallery = ({
                 type="button"
                 data-gallery-drag-handle
                 aria-label="ลากลงเพื่อปิดแกลเลอรี"
-                className="absolute inset-y-0 right-24 left-14 z-10 flex touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
+                className="absolute inset-y-0 inset-x-24 z-10 flex touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
               >
                 <span aria-hidden="true" className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300" />
                 <span className="text-base font-semibold whitespace-nowrap">สื่อทั้งหมด</span>
@@ -716,7 +716,7 @@ const MobilePhotoGallery = ({
           aria-hidden={!isQuickCloseVisible}
           tabIndex={isQuickCloseVisible ? 0 : -1}
           className={clsx(
-            'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-40 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
+            'fixed bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-40 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-5 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
             isQuickCloseVisible
               ? 'pointer-events-auto translate-y-0 opacity-100'
               : 'pointer-events-none translate-y-3 opacity-0'
