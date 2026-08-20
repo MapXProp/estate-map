@@ -23,6 +23,7 @@ import {
   Rotate3D,
   ShieldCheck,
   Video,
+  X,
 } from 'lucide-react'
 import Image from 'next/image'
 import { type RefObject, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
@@ -500,12 +501,16 @@ const MobilePhotoGallery = ({
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [isDismissing, setIsDismissing] = useState(false)
+  const [isQuickCloseVisible, setIsQuickCloseVisible] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const touchStartYRef = useRef(0)
   const touchStartXRef = useRef(0)
   const touchStartTimeRef = useRef(0)
   const canStartDragRef = useRef(false)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const quickCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastScrollTopRef = useRef(0)
+  const upwardDistanceRef = useRef(0)
   const counts = getMediaCounts(media)
   const { activeFilter, navigateToFilter, registerSection, resetNavigation, handleSectionScroll } = useMediaSectionNavigation(
     scrollContainerRef,
@@ -520,16 +525,67 @@ const MobilePhotoGallery = ({
   }, [])
 
   const handleClose = useCallback(() => {
+    setIsQuickCloseVisible(false)
+    lastScrollTopRef.current = 0
+    upwardDistanceRef.current = 0
     resetDrag()
     resetNavigation()
     onClose()
   }, [onClose, resetDrag, resetNavigation])
 
   useEffect(() => {
+    if (open) {
+      lastScrollTopRef.current = scrollContainerRef.current?.scrollTop ?? 0
+      upwardDistanceRef.current = 0
+    }
+
     return () => {
       if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+      if (quickCloseTimerRef.current) clearTimeout(quickCloseTimerRef.current)
+    }
+  }, [open])
+
+  const hideQuickClose = useCallback(() => {
+    setIsQuickCloseVisible(false)
+    if (quickCloseTimerRef.current) {
+      clearTimeout(quickCloseTimerRef.current)
+      quickCloseTimerRef.current = null
     }
   }, [])
+
+  const showQuickClose = useCallback(() => {
+    setIsQuickCloseVisible(true)
+    if (quickCloseTimerRef.current) clearTimeout(quickCloseTimerRef.current)
+    quickCloseTimerRef.current = setTimeout(() => {
+      setIsQuickCloseVisible(false)
+      quickCloseTimerRef.current = null
+    }, 2600)
+  }, [])
+
+  const handleGalleryScroll = useCallback(() => {
+    handleSectionScroll()
+
+    const currentScrollTop = scrollContainerRef.current?.scrollTop ?? 0
+    const delta = currentScrollTop - lastScrollTopRef.current
+    lastScrollTopRef.current = currentScrollTop
+
+    if (currentScrollTop <= 120) {
+      upwardDistanceRef.current = 0
+      hideQuickClose()
+      return
+    }
+
+    if (delta < -1) {
+      upwardDistanceRef.current += Math.abs(delta)
+      if (upwardDistanceRef.current >= 28) showQuickClose()
+      return
+    }
+
+    if (delta > 2) {
+      upwardDistanceRef.current = 0
+      hideQuickClose()
+    }
+  }, [handleSectionScroll, hideQuickClose, showQuickClose])
 
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
     if (event.touches.length !== 1 || isDismissing) return
@@ -587,7 +643,7 @@ const MobilePhotoGallery = ({
       <div
         ref={scrollContainerRef}
         className="fixed inset-0 overflow-y-auto overscroll-y-contain"
-        onScroll={handleSectionScroll}
+        onScroll={handleGalleryScroll}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -643,6 +699,23 @@ const MobilePhotoGallery = ({
               layout="mobile"
             />
           </main>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="ปิดแกลเลอรีสื่อ"
+            aria-hidden={!isQuickCloseVisible}
+            tabIndex={isQuickCloseVisible ? 0 : -1}
+            className={clsx(
+              'fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex min-h-11 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-4 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97]',
+              isQuickCloseVisible
+                ? 'pointer-events-auto translate-y-0 opacity-100'
+                : 'pointer-events-none translate-y-3 opacity-0'
+            )}
+          >
+            <X className="size-4" aria-hidden="true" />
+            ปิด
+          </button>
         </DialogPanel>
       </div>
     </Dialog>
