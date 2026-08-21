@@ -1,6 +1,4 @@
-import SectionOurFeatures from '@/components/SectionOurFeatures'
 import ListingsFooter from '@/components/property-home/ListingsFooter'
-import featuresImg from '@/images/our-features-2.png'
 import { ReactNode } from 'react'
 import { ApplicationLayout } from '../application-layout'
 import ListingsHeader from './ListingsHeader'
@@ -9,10 +7,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   return (
     <ApplicationLayout header={<ListingsHeader />} footer={<ListingsFooter />}>
       <div>
-        <div className="container">
-          {children}
-          <SectionOurFeatures rightImg={featuresImg} type="type2" className="py-24 lg:py-32" />
-        </div>
+        <div className="container">{children}</div>
       </div>
     </ApplicationLayout>
   )
