@@ -1108,7 +1108,10 @@ export const getRealEstateListingByHandle = async (handle: string) => {
   }
 }
 
-export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings>>[number]
+export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings>>[number] & {
+  listingKind?: 'property' | 'event_booth'
+  metadataSummary?: string
+}
 
 // FLIGHT LISTING //
 export async function getFlightListings() {

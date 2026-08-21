@@ -6,10 +6,10 @@ import PropertyCard from '@/components/PropertyCard'
 import { TRealEstateCategory } from '@/data/categories'
 import { TRealEstateListing } from '@/data/listings'
 import { TPropertyMapFilterOptions } from '@/data/propertyMapFilters'
-import { fetchPropertyMapArea, PropertySearchListing } from '@/lib/propertySearch'
+import { fetchPropertyMapArea, fetchPropertySearch, PropertySearchListing } from '@/lib/propertySearch'
 import Pagination from '@/shared/Pagination'
 import clsx from 'clsx'
-import { FC, useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import MapFixedSection from '../../../MapFixedSection'
 
 const GALLERY_AUTOPLAY_QUERY = '(min-width: 744px) and (min-height: 600px)'
@@ -44,6 +44,8 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
     (listing: PropertySearchListing, index: number): TRealEstateListing => {
       const fallback = listings[index % listings.length]
       const amount = listing.rent_price_monthly ?? listing.sale_price
+      const eventImage = listing.primary_image_url || fallback.featuredImage
+      const isEventBooth = listing.space_type_code === 'event_booth'
       return {
         ...fallback,
         id: `property-listing://${listing.id}`,
@@ -51,19 +53,45 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
         handle: listing.slug || listing.public_listing_id,
         description: listing.description,
         date: listing.published_at || new Date().toISOString(),
-        listingCategory: listing.property_type_code,
+        listingCategory: isEventBooth ? 'บูธออกงาน' : listing.property_type_code,
         address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
-        price: amount
+        price: listing.price_on_request
+          ? 'สอบถามผู้จัด'
+          : amount
           ? `฿${amount.toLocaleString('th-TH')}${listing.rent_price_monthly ? ' / เดือน' : ''}`
           : 'ติดต่อผู้ลงประกาศ',
+        featuredImage: eventImage,
+        galleryImgs: [eventImage],
         bedrooms: listing.bedroom_count || 0,
         bathrooms: listing.bathroom_count || 0,
         acreage: listing.usable_area_sqm || 0,
         map: { lat: listing.latitude!, lng: listing.longitude! },
+        reviewStart: 0,
+        reviewCount: 0,
+        saleOff: null,
+        isAds: null,
+        listingKind: isEventBooth ? 'event_booth' : 'property',
+        metadataSummary: isEventBooth
+          ? `${listing.event_round_count} รอบ · ${listing.event_floor_label ? `ชั้น ${listing.event_floor_label}` : listing.event_name}`
+          : undefined,
       }
     },
     [listings]
   )
+
+  useEffect(() => {
+    if (!query.trim()) return
+    const controller = new AbortController()
+    fetchPropertySearch(query, controller.signal)
+      .then((response) => {
+        const databaseResults = response.listings
+          .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
+          .map(mapDatabaseListing)
+        if (databaseResults.length > 0) setAreaResults(databaseResults)
+      })
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [mapDatabaseListing, query])
 
   const handleSearchArea = useCallback(
     async (search: PropertyMapAreaSearch, listingIds: string[]) => {

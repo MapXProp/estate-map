@@ -56,6 +56,8 @@ const PropertyCard: FC<Props> = ({
     bathrooms,
     acreage,
     maxGuests,
+    listingKind,
+    metadataSummary,
   } = data
 
   const listingHref = `/real-estate-listings/${listingHandle}`
@@ -97,7 +99,7 @@ const PropertyCard: FC<Props> = ({
             compactMobile ? 'end-2 top-2 lg:end-3 lg:top-3' : 'end-3 top-3'
           )}
         >
-          {showQuickView && (
+          {showQuickView && listingKind !== 'event_booth' && (
             <Link
               href={listingHref}
               title="ดูแบบไว"
@@ -121,14 +123,20 @@ const PropertyCard: FC<Props> = ({
           <div
             className={clsx(
               'flex flex-wrap gap-1 text-sm text-neutral-500 dark:text-neutral-400',
-              compactMobile && 'max-lg:hidden'
+              compactMobile && listingKind !== 'event_booth' && 'max-lg:hidden'
             )}
           >
-            <span>{bedrooms} beds</span>
-            <span>·</span>
-            <span>{bathrooms} baths</span>
-            <span>·</span>
-            <span>{acreage} Sq. Fit</span>
+            {metadataSummary ? (
+              <span className="line-clamp-1">{metadataSummary}</span>
+            ) : (
+              <>
+                <span>{bedrooms} beds</span>
+                <span>·</span>
+                <span>{bathrooms} baths</span>
+                <span>·</span>
+                <span>{acreage} Sq. Fit</span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-x-2">

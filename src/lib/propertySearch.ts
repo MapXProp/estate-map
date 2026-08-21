@@ -59,6 +59,84 @@ export type PropertySearchListing = {
   latitude?: number
   longitude?: number
   published_at?: string
+  space_type_code: string
+  primary_image_url: string
+  event_name: string
+  event_floor_label: string
+  event_round_count: number
+  event_starts_on?: string
+  event_ends_on?: string
+  price_on_request: boolean
+}
+
+export type PropertyListingMedia = {
+  id: number
+  media_type: string
+  role_code: string
+  title: string
+  alt_text: string
+  url: string
+  width?: number
+  height?: number
+  is_primary: boolean
+}
+
+export type PropertyEventRound = {
+  id: number
+  label: string
+  starts_on: string
+  ends_on: string
+  availability_status: 'open' | 'limited' | 'waitlist' | 'closed' | 'unknown'
+  spaces_remaining?: number
+  price_amount?: number
+  price_unit: string
+  notes: string
+}
+
+export type PropertyListingDetail = {
+  id: number
+  public_listing_id: string
+  slug: string
+  title: string
+  description: string
+  property_type_code: string
+  usage_type: string
+  listing_type: string
+  listing_scope: string
+  space_type_code: string
+  project_name: string
+  building_name: string
+  address: string
+  province: string
+  district: string
+  subdistrict: string
+  postal_code: string
+  latitude?: number
+  longitude?: number
+  contact_name: string
+  contact_phone: string
+  line_id: string
+  offer_type: string
+  offer_amount?: number
+  price_unit: string
+  published_at?: string
+  expires_at?: string
+  is_verified: boolean
+  media: PropertyListingMedia[]
+  event?: {
+    name: string
+    organizer_name: string
+    venue_name: string
+    venue_floor_label: string
+    audience_segments: string[]
+    accepted_product_categories: string[]
+    application_instructions: string
+    floor_plan_url: string
+    price_on_request: boolean
+    booth_size_on_request: boolean
+    source_published_at?: string
+    rounds: PropertyEventRound[]
+  }
 }
 
 export type PropertySearchResponse = {
@@ -132,6 +210,19 @@ export const fetchPropertySearch = async (
   )
   if (!response.ok) throw new Error('property search failed')
   return response.json() as Promise<PropertySearchResponse>
+}
+
+export const fetchPropertyListingDetail = async (slug: string): Promise<PropertyListingDetail | null> => {
+  try {
+    const response = await fetch(`${getAuthApiUrl('listings')}/${encodeURIComponent(slug)}`, {
+      cache: 'no-store',
+    })
+    if (response.status === 404) return null
+    if (!response.ok) throw new Error('property listing detail failed')
+    return response.json() as Promise<PropertyListingDetail>
+  } catch {
+    return null
+  }
 }
 
 export const fetchPropertyMapArea = async ({

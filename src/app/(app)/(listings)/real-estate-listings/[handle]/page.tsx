@@ -16,6 +16,7 @@ import {
 import StartRating from '@/components/StartRating'
 import { getListingReviews } from '@/data/data'
 import { getRealEstateListingByHandle } from '@/data/listings'
+import { fetchPropertyListingDetail } from '@/lib/propertySearch'
 import { Button } from '@/shared/Button'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { DescriptionDetails, DescriptionList, DescriptionTerm } from '@/shared/description-list'
@@ -43,9 +44,18 @@ import { SectionHeading, SectionSubheading } from '../../components/SectionHeadi
 import SectionHost from '../../components/SectionHost'
 import SectionListingReviews from '../../components/SectionListingReviews'
 import SectionMap from '../../components/SectionMap'
+import EventBoothListingView from './EventBoothListingView'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
+  const databaseListing = await fetchPropertyListingDetail(handle)
+
+  if (databaseListing?.event) {
+    return {
+      title: databaseListing.title,
+      description: databaseListing.description,
+    }
+  }
   const listing = await getRealEstateListingByHandle(handle)
 
   if (!listing) {
@@ -63,6 +73,11 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
 
 const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const { handle } = await params
+
+  const databaseListing = await fetchPropertyListingDetail(handle)
+  if (databaseListing?.event) {
+    return <EventBoothListingView listing={databaseListing} />
+  }
 
   const listing = await getRealEstateListingByHandle(handle)
 
