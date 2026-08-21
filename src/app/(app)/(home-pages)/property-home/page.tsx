@@ -323,7 +323,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
         </div>
       </section>
 
-      <PropertyListingShowcase />
+      <PropertyListingShowcase mode={mode} />
 
       <section className="container py-10 sm:py-14 lg:py-16">
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">

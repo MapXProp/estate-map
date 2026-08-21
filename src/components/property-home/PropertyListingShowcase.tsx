@@ -19,11 +19,25 @@ type PrototypeListing = {
   price: string
   unit?: string
   image: string
+  href?: string
   badge?: string
   verified?: boolean
+  verificationLabel?: string
+  priceLabel?: string
+  imagePosition?: 'center' | 'top'
 }
 
-const DeferredListingImage = ({ alt, eager, src }: { alt: string; eager: boolean; src: string }) => {
+const DeferredListingImage = ({
+  alt,
+  eager,
+  position = 'center',
+  src,
+}: {
+  alt: string
+  eager: boolean
+  position?: 'center' | 'top'
+  src: string
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shouldLoad, setShouldLoad] = useState(eager)
 
@@ -54,7 +68,9 @@ const DeferredListingImage = ({ alt, eager, src }: { alt: string; eager: boolean
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'low'}
           preload={eager}
-          className="object-cover transition duration-500 group-hover:scale-[1.035]"
+          className={`object-cover transition duration-500 group-hover:scale-[1.035] ${
+            position === 'top' ? 'object-top' : 'object-center'
+          }`}
         />
       ) : null}
     </div>
@@ -70,6 +86,40 @@ const filters: { value: 'all' | ListingGroup; label: string; labelEn: string }[]
 ]
 
 const listings: PrototypeListing[] = [
+  {
+    id: 9,
+    group: 'commercial',
+    type: 'พื้นที่ออกบูธ · กลุ่มออฟฟิศ',
+    offer: 'เปิดจอง',
+    title: "Food O’Clock — THE EMPIRE TOWER",
+    location: 'ชั้น M, THE EMPIRE TOWER, สาทร',
+    facts: ['5 รอบ', '31 ส.ค.–2 ต.ค. 2569', 'อาหารและไลฟ์สไตล์'],
+    price: '0',
+    priceLabel: 'สอบถามราคากับผู้จัด',
+    image: '/listing-media/hbd/food-o-clock-empire-tower-2026.jpg',
+    href: '/real-estate-listings/food-o-clock-the-empire-tower-2026',
+    badge: 'พื้นที่ออกบูธ',
+    verified: true,
+    verificationLabel: 'ตรวจสอบผู้จัดแล้ว',
+    imagePosition: 'top',
+  },
+  {
+    id: 10,
+    group: 'commercial',
+    type: 'พื้นที่ออกบูธ · ศูนย์การค้า',
+    offer: 'เปิดจอง',
+    title: 'LOCAL FAVORITES — EMSPHERE',
+    location: 'EM MARKET HALL ชั้น G, EMSPHERE',
+    facts: ['11–22 ก.ย. 2569', 'อาหารและเครื่องดื่ม', 'คนเดินห้างและต่างชาติ'],
+    price: '0',
+    priceLabel: 'สอบถามราคากับผู้จัด',
+    image: '/listing-media/hbd/local-favorites-emsphere-2026.jpg',
+    href: '/real-estate-listings/local-favorites-emsphere-2026',
+    badge: 'พื้นที่ออกบูธ',
+    verified: true,
+    verificationLabel: 'ตรวจสอบผู้จัดแล้ว',
+    imagePosition: 'top',
+  },
   {
     id: 1,
     group: 'residential',
@@ -182,6 +232,24 @@ const englishListings: Record<
   number,
   Pick<PrototypeListing, 'type' | 'offer' | 'title' | 'location' | 'facts' | 'unit' | 'badge'>
 > = {
+  9: {
+    type: 'Event booth · Office crowd',
+    offer: 'Booking open',
+    title: "Food O’Clock — THE EMPIRE TOWER",
+    location: 'M Floor, THE EMPIRE TOWER, Sathon',
+    facts: ['5 rounds', 'Aug 31–Oct 2, 2026', 'Food + lifestyle'],
+    unit: '',
+    badge: 'Event booth',
+  },
+  10: {
+    type: 'Event booth · Shopping mall',
+    offer: 'Booking open',
+    title: 'LOCAL FAVORITES — EMSPHERE',
+    location: 'EM MARKET HALL, G Floor, EMSPHERE',
+    facts: ['Sep 11–22, 2026', 'Food + beverages', 'Mall visitors + expats'],
+    unit: '',
+    badge: 'Event booth',
+  },
   1: {
     type: 'Detached house',
     offer: 'Sale',
@@ -254,16 +322,24 @@ const englishListings: Record<
   },
 }
 
-const PropertyListingShowcase = () => {
+const PropertyListingShowcase = ({ mode = 'all' }: { mode?: 'all' | 'homes' | 'rooms' | 'business' }) => {
   const { locale, formatCurrency } = usePreferences()
   const isThai = locale === 'th'
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
   const [likedIds, setLikedIds] = useState<number[]>([])
 
-  const visibleListings = useMemo(
-    () => (activeFilter === 'all' ? listings : listings.filter((listing) => listing.group === activeFilter)),
-    [activeFilter]
+  const availableListings = useMemo(
+    () => (mode === 'homes' || mode === 'rooms' ? listings.filter((listing) => listing.id !== 9 && listing.id !== 10) : listings),
+    [mode]
   )
+  const visibleListings = useMemo(() => {
+    if (mode === 'business' && activeFilter === 'all') {
+      return availableListings.filter((listing) => listing.group === 'commercial' || listing.group === 'mixed_use')
+    }
+    return activeFilter === 'all'
+      ? availableListings
+      : availableListings.filter((listing) => listing.group === activeFilter)
+  }, [activeFilter, availableListings, mode])
 
   const toggleLike = (id: number) => {
     setLikedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
@@ -316,7 +392,17 @@ const PropertyListingShowcase = () => {
                 className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
-                  <DeferredListingImage src={listing.image} alt={displayListing.title} eager={index === 0} />
+                  <DeferredListingImage
+                    src={listing.image}
+                    alt={displayListing.title}
+                    eager={index === 0}
+                    position={listing.imagePosition}
+                  />
+                  <Link
+                    href={listing.href || '/real-estate-categories/all'}
+                    aria-label={displayListing.title}
+                    className="absolute inset-0"
+                  />
                   <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
                     <div className="flex flex-wrap gap-1.5">
                       <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">
@@ -347,14 +433,15 @@ const PropertyListingShowcase = () => {
                   </div>
                 </div>
 
-                <Link href="/real-estate-categories/all" className="block pt-4">
+                <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
                   <div className="mb-1.5 flex items-center justify-between gap-3">
                     <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                       {displayListing.type}
                     </span>
                     {listing.verified && (
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
-                        <CheckCircle2 className="size-3.5" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+                        <CheckCircle2 className="size-3.5" />{' '}
+                        {isThai ? listing.verificationLabel || 'ตรวจสอบแล้ว' : listing.verificationLabel ? 'Organizer checked' : 'Verified'}
                       </span>
                     )}
                   </div>
@@ -374,10 +461,18 @@ const PropertyListingShowcase = () => {
                     ))}
                   </div>
                   <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                    <span className="text-lg font-bold text-neutral-950 dark:text-white">{formatCurrency(price)}</span>{' '}
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
-                    </span>
+                    {listing.priceLabel ? (
+                      <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
+                        {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-lg font-bold text-neutral-950 dark:text-white">{formatCurrency(price)}</span>{' '}
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </Link>
               </article>

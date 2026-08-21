@@ -126,6 +126,8 @@ export type PropertyListingDetail = {
   event?: {
     name: string
     organizer_name: string
+    organizer_website_url: string
+    organizer_verification_status: 'unverified' | 'contact_checked' | 'verified' | ''
     venue_name: string
     venue_floor_label: string
     audience_segments: string[]

@@ -1,5 +1,5 @@
 import type { PropertyListingDetail } from '@/lib/propertySearch'
-import { CalendarDays, CircleHelp, ExternalLink, MapPin, MessageCircle, Phone, Store, Users } from 'lucide-react'
+import { CalendarDays, CircleHelp, ExternalLink, MapPin, MessageCircle, Phone, ShieldCheck, Store, Users } from 'lucide-react'
 import Image from 'next/image'
 
 const formatThaiDate = (value: string) =>
@@ -16,6 +16,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
   const lineHandle = listing.line_id.replace(/^@/, '')
   const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
+  const isVerifiedOrganizer = event.organizer_verification_status === 'verified'
 
   return (
     <div className="pb-24 min-[744px]:pb-0">
@@ -110,8 +111,28 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </section>
 
             <section className="mt-8 rounded-3xl bg-[#123f32] p-6 text-white">
-              <p className="text-sm text-white/70">ผู้ประสานงาน</p>
-              <h2 className="mt-1 text-xl font-semibold">{event.organizer_name || listing.contact_name}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-white/70">ผู้ประสานงาน</p>
+                {isVerifiedOrganizer && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/18">
+                    <ShieldCheck className="size-3.5 text-[#9bd8c3]" />
+                    ผู้จัดที่ MapxProp ตรวจสอบแล้ว
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h2 className="text-xl font-semibold">{event.organizer_name || listing.contact_name}</h2>
+                {event.organizer_website_url && (
+                  <a
+                    href={event.organizer_website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-white/75 underline-offset-4 hover:text-white hover:underline"
+                  >
+                    เว็บไซต์ผู้จัด <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+              </div>
               <p className="mt-2 text-sm leading-6 text-white/75">{event.application_instructions}</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 {phoneURL && <a href={phoneURL} className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 font-medium text-[#123f32]"><Phone className="size-4" /> โทร {listing.contact_phone}</a>}
