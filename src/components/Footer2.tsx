@@ -3,6 +3,7 @@
 import SocialMediaLinks from '@/components/SocialMediaLinks'
 import Logo from '@/shared/Logo'
 import T from '@/utils/getT'
+import { usePathname } from 'next/navigation'
 
 const navigation: {
   solutions: { name: string; href: string }[]
@@ -36,6 +37,12 @@ const navigation: {
 }
 
 export default function Footer2() {
+  const pathname = usePathname()
+
+  // Keep the listing wizard focused on one task. Navigation back to the site
+  // remains available in the wizard actions, so a large footer only adds exits.
+  if (pathname.startsWith('/add-listing')) return null
+
   return (
     <footer className="border-t border-neutral-200 dark:border-neutral-700">
       <div className="container pt-16 pb-8 sm:pt-24 lg:pt-32">
@@ -103,9 +110,7 @@ export default function Footer2() {
           </div>
         </div>
         <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24 dark:border-gray-700">
-          <p className="text-sm/6 text-gray-600 dark:text-neutral-400 font-sarabun!">
-            {T.Footer2.copyright}
-          </p>
+          <p className="font-sarabun! text-sm/6 text-gray-600 dark:text-neutral-400">{T.Footer2.copyright}</p>
         </div>
       </div>
     </footer>

@@ -4,7 +4,14 @@ import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSyn
 import RequireAuth from '@/components/auth/RequireAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
-import { ArrowRightIcon, CheckIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  ClockIcon,
+  LightBulbIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+} from '@heroicons/react/24/outline'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
@@ -13,6 +20,13 @@ const steps = [
   { number: 2, label: 'รายละเอียด' },
   { number: 3, label: 'รูปภาพและราคา' },
   { number: 4, label: 'ตรวจสอบ' },
+]
+
+const stepTips = [
+  'เลือกประเภทที่ใกล้เคียงที่สุดก่อน รายละเอียดปลีกย่อยกลับมาเพิ่มได้',
+  'มีเพียงจังหวัดก็เริ่มได้ แต่หมุดและขนาดที่ชัดจะช่วยให้คนหาเจอง่ายขึ้น',
+  'ภาพแรกควรสว่างและเห็นพื้นที่ชัด เพราะเป็นภาพที่คนเห็นก่อนเสมอ',
+  'ตรวจเบอร์ติดต่อและหัวข้อประกาศอีกครั้งก่อนส่งให้ทีมงานตรวจสอบ',
 ]
 
 const getStepIndex = (pathname: string) => {
@@ -32,10 +46,33 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [pathname])
 
   const content = (
-    <div className="mx-auto w-full max-w-3xl px-4 pt-8 pb-24 min-[744px]:px-8 sm:pt-12 lg:max-w-4xl lg:pb-32 xl:max-w-5xl 2xl:max-w-6xl">
-      <ProgressHeader pathname={pathname} />
-      <div className="mt-8 listingSection__wrap">{children}</div>
-      <Pagination pathname={pathname} />
+    <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-orange-50 via-[#fffaf6] to-transparent dark:from-orange-950/15 dark:via-neutral-950"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-28 -right-28 size-80 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-900/10"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-80 -left-40 size-96 rounded-full bg-emerald-100/45 blur-3xl dark:bg-emerald-950/15"
+      />
+
+      <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-6 pb-28 min-[744px]:px-8 sm:pt-10 lg:pb-32 xl:px-10">
+        <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
+          <SellerGuide currentStep={index} />
+
+          <main className="min-w-0">
+            <ProgressHeader pathname={pathname} />
+            <div className="mt-5 flex w-full flex-col gap-y-6 rounded-[30px] border border-orange-100/80 bg-white/95 p-5 leading-relaxed shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] backdrop-blur-sm sm:gap-y-8 sm:p-8 lg:p-10 dark:border-neutral-800 dark:bg-neutral-900/95">
+              {children}
+            </div>
+            <Pagination pathname={pathname} />
+          </main>
+        </div>
+      </div>
     </div>
   )
 
@@ -52,27 +89,37 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
 
   return (
-    <div className="rounded-[28px] border border-neutral-200 bg-white px-5 py-5 shadow-sm sm:px-7 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="font-sarabun text-xs font-semibold tracking-[0.16em] text-orange-600 uppercase">
-            ลงประกาศอสังหา
-          </p>
-          <p className="mt-1 font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+    <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-5 py-5 text-white shadow-[0_26px_70px_-38px_rgba(18,63,50,0.75)] sm:px-7 sm:py-6">
+      <div aria-hidden="true" className="absolute -top-24 -right-14 size-64 rounded-full border border-white/10" />
+      <div aria-hidden="true" className="absolute -right-6 -bottom-28 size-56 rounded-full bg-white/5" />
+
+      <div className="relative flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-sarabun text-xs font-semibold tracking-[0.14em] text-orange-300 uppercase">
+              ลงประกาศฟรี
+            </p>
+            <span className="rounded-full bg-white/10 px-2.5 py-1 font-sarabun text-[11px] text-white/75">
+              บันทึกร่างอัตโนมัติ
+            </span>
+          </div>
+          <p className="mt-2 truncate font-sarabun text-lg font-semibold text-white sm:text-xl">
             ขั้นที่ {index} จาก {steps.length} · {steps[index - 1].label}
           </p>
         </div>
-        <span className="font-sarabun text-sm text-neutral-400">{Math.round((index / steps.length) * 100)}%</span>
+        <span className="font-sarabun text-sm font-medium text-white/70">
+          {Math.round((index / steps.length) * 100)}%
+        </span>
       </div>
 
-      <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+      <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-white/15">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-[width] duration-500"
+          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-500"
           style={{ width: `${(index / steps.length) * 100}%` }}
         />
       </div>
 
-      <ol className="mt-5 grid grid-cols-4 gap-2" aria-label="ขั้นตอนลงประกาศ">
+      <ol className="relative mt-5 grid grid-cols-4 gap-2" aria-label="ขั้นตอนลงประกาศ">
         {steps.map((step) => {
           const isComplete = step.number < index
           const isCurrent = step.number === index
@@ -83,17 +130,17 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
                 <span
                   className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                     isComplete
-                      ? 'bg-emerald-500 text-white'
+                      ? 'bg-white text-[#123f32]'
                       : isCurrent
-                        ? 'bg-orange-500 text-white ring-4 ring-orange-100 dark:ring-orange-950'
-                        : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800'
+                        ? 'bg-orange-500 text-white ring-4 ring-orange-300/20'
+                        : 'bg-white/10 text-white/55'
                   }`}
                 >
                   {isComplete ? <CheckIcon className="size-4" /> : step.number}
                 </span>
                 <span
                   className={`hidden truncate font-sarabun text-xs sm:block ${
-                    isCurrent ? 'font-medium text-neutral-900 dark:text-neutral-100' : 'text-neutral-400'
+                    isCurrent ? 'font-medium text-white' : isComplete ? 'text-white/80' : 'text-white/45'
                   }`}
                 >
                   {step.label}
@@ -103,9 +150,65 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
           )
         })}
       </ol>
+
+      <div className="relative mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 xl:hidden">
+        <TrustItem icon={<ClockIcon className="size-4" />} label="ประมาณ 5–8 นาที" />
+        <TrustItem icon={<ShieldCheckIcon className="size-4" />} label="ตรวจสอบก่อนเผยแพร่" />
+        <TrustItem icon={<SparklesIcon className="size-4" />} label="แก้ไขภายหลังได้" />
+      </div>
     </div>
   )
 }
+
+const TrustItem = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+  <span className="flex min-w-0 flex-col items-center gap-1.5 text-center font-sarabun text-[10px] leading-4 text-white/65 min-[520px]:flex-row min-[520px]:justify-center min-[520px]:text-xs">
+    <span className="text-orange-300">{icon}</span>
+    <span>{label}</span>
+  </span>
+)
+
+const SellerGuide = ({ currentStep }: { currentStep: number }) => (
+  <aside className="hidden space-y-4 xl:sticky xl:top-28 xl:block">
+    <section className="relative overflow-hidden rounded-[30px] bg-[#123f32] p-6 text-white shadow-[0_28px_70px_-42px_rgba(18,63,50,0.8)]">
+      <div aria-hidden="true" className="absolute -top-16 -right-16 size-40 rounded-full border border-white/10" />
+      <span className="relative flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
+        <SparklesIcon className="size-5" />
+      </span>
+      <p className="relative mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-orange-300 uppercase">
+        เริ่มจากข้อมูลที่มี
+      </p>
+      <h2 className="relative mt-2 font-sarabun text-2xl leading-tight font-semibold">
+        พื้นที่ของคุณ
+        <br />
+        อาจเป็นสิ่งที่ใครกำลังหา
+      </h2>
+      <p className="relative mt-4 font-sarabun text-sm leading-6 text-white/70">
+        ไม่ต้องกรอกทุกอย่างในครั้งเดียว ระบบจะเก็บร่างไว้ให้คุณกลับมาเติมได้
+      </p>
+
+      <ul className="relative mt-6 space-y-3 border-t border-white/10 pt-5">
+        {['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'ทีมงานตรวจสอบก่อนเผยแพร่'].map((item) => (
+          <li key={item} className="flex items-center gap-2.5 font-sarabun text-sm text-white/85">
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-orange-300">
+              <CheckIcon className="size-3.5" />
+            </span>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section className="rounded-[26px] border border-orange-100 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/90">
+      <div className="flex items-center gap-2 text-orange-600">
+        <LightBulbIcon className="size-5" />
+        <h3 className="font-sarabun text-sm font-semibold">เคล็ดลับขั้นนี้</h3>
+      </div>
+      <p className="mt-3 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+        {stepTips[currentStep - 1]}
+      </p>
+    </section>
+  </aside>
+)
 
 const Pagination = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
@@ -117,10 +220,11 @@ const Pagination = ({ pathname }: { pathname: string }) => {
   const backHref = index > 1 ? `/add-listing/${index - 1}` : '/'
 
   return (
-    <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="sticky bottom-3 z-20 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-neutral-200/80 bg-white/95 p-3 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:static sm:mt-8 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none dark:border-neutral-800 dark:bg-neutral-900/95 sm:dark:bg-transparent">
       <ButtonSecondary type="button" href={backHref}>
         {index > 1 ? 'ย้อนกลับ' : 'กลับหน้าหลัก'}
       </ButtonSecondary>
+      <span className="hidden font-sarabun text-xs text-neutral-400 lg:block">ข้อมูลของคุณจะถูกบันทึกเป็นร่าง</span>
       <ButtonPrimary type="submit" form="add-listing-form">
         {index === steps.length - 1 ? 'ตรวจสอบประกาศ' : 'ไปขั้นถัดไป'}
         <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" />
