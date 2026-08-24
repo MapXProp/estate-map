@@ -146,10 +146,6 @@ const Page = () => {
   }
 
   const handleSubmitForm = async (formData: FormData) => {
-    if (!selectedUseCases.length) {
-      setError('กรุณาเลือกอย่างน้อยหนึ่งรูปแบบการใช้งาน')
-      return
-    }
     if (!selectedOffers.length) {
       setError('กรุณาเลือกอย่างน้อยหนึ่งรูปแบบการประกาศ')
       return
@@ -162,7 +158,10 @@ const Page = () => {
     formData.set('property_group_code', selectedGroup)
     formData.set('property_type_code', selectedPropertyType)
     formData.set('listing_scope', selectedScope)
-    formData.set('usage_type', mapUseCasesToLegacyUsage(selectedUseCases))
+    const effectiveUseCases = selectedUseCases.length ? selectedUseCases : propertyType.defaultUseCases
+    formData.delete('useCaseCodes[]')
+    effectiveUseCases.forEach((code) => formData.append('useCaseCodes[]', code))
+    formData.set('usage_type', mapUseCasesToLegacyUsage(effectiveUseCases))
     formData.set('listing_type', offersToLegacyListingType(selectedOffers))
     const savedDraft = saveListingStep(1, formData)
     const authenticated = isAuthenticated || (isLoading ? Boolean(await refresh()) : false)
@@ -185,11 +184,11 @@ const Page = () => {
         </div>
         <div className="space-y-3">
           <h1 className="font-sarabun text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">
-            บอกเราก่อนว่าทรัพย์นี้คืออะไร
+            เลือกประเภท แล้วเริ่มลงประกาศได้เลย
           </h1>
           <p className="max-w-2xl font-sarabun text-sm leading-6 text-neutral-500 sm:text-base dark:text-neutral-400">
-            เราจะใช้คำตอบเพื่อแสดงเฉพาะรายละเอียดที่จำเป็น เช่น ห้องนอนสำหรับบ้าน จำนวนห้องสำหรับหอพัก
-            หรือระบบไฟและการทำอาหารสำหรับพื้นที่ธุรกิจ
+            กรอกเฉพาะข้อมูลที่มีตอนนี้ได้ รายละเอียดเฉพาะประเภท เช่น ระบบไฟ ขนาดล็อก หรือจำนวนยูนิต
+            สามารถกลับมาเพิ่มภายหลัง
           </p>
         </div>
       </div>
@@ -257,43 +256,6 @@ const Page = () => {
 
         <WizardSection
           number="3"
-          title="กำลังประกาศส่วนใด"
-          description="ช่วยให้ระบบแยกห้องเดียว หลายห้อง และทั้งอาคารได้ถูกต้อง"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            {availableScopes.map((scope) => (
-              <ChoiceCard
-                key={scope.code}
-                selected={selectedScope === scope.code}
-                title={scope.nameTh}
-                subtitle={scope.nameEn}
-                description={scope.description}
-                onClick={() => setSelectedScope(scope.code)}
-              />
-            ))}
-          </div>
-        </WizardSection>
-
-        <WizardSection
-          number="4"
-          title="ทรัพย์นี้ใช้ทำอะไรได้บ้าง"
-          description="เลือกได้หลายข้อ โดยควรเลือกเฉพาะการใช้งานที่เจ้าของ อาคาร หรือสัญญาอนุญาต"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            {availableUseCases.map((useCase) => (
-              <ToggleCard
-                key={useCase.code}
-                checked={selectedUseCases.includes(useCase.code)}
-                title={useCase.nameTh}
-                subtitle={useCase.description}
-                onClick={() => toggleUseCase(useCase.code)}
-              />
-            ))}
-          </div>
-        </WizardSection>
-
-        <WizardSection
-          number="5"
           title="ต้องการประกาศแบบใด"
           description="เลือกได้มากกว่าหนึ่งแบบ เช่น ขายและให้เช่าในประกาศเดียว"
         >
@@ -310,32 +272,76 @@ const Page = () => {
           </div>
         </WizardSection>
 
-        {propertyType.supportsBusinessSpaceType ? (
-          <WizardSection
-            number="6"
-            title="พื้นที่ค้าขายอยู่ในรูปแบบใด"
-            description="ช่วยให้ผู้ค้นหาแยกคีออส ล็อกตลาด และร้าน Standalone ได้"
-          >
-            <FormItem label="ประเภทย่อยของพื้นที่">
-              <Select
-                name="space_type_code"
-                value={businessSpaceType}
-                onChange={(event) => setBusinessSpaceType(event.target.value)}
-                className="[&_select]:h-12 [&_select]:rounded-2xl [&_select]:bg-white [&_select]:px-4 dark:[&_select]:bg-neutral-900"
-              >
-                <option value="">เลือกประเภทย่อย</option>
-                {businessSpaceTypes.map((item) => (
-                  <option key={item.code} value={item.code}>
-                    {item.nameTh} — {item.nameEn}
-                  </option>
+        <details className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-900/60">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-sarabun sm:px-7">
+            <span>
+              <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                จัดหมวดเพิ่มเติม <span className="font-normal text-neutral-400">(ไม่จำเป็น)</span>
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-neutral-500">
+                ระบบเลือกค่าที่เหมาะกับ {propertyType.nameTh} ไว้แล้ว เปิดส่วนนี้เมื่อคุณต้องการระบุให้ละเอียดขึ้น
+              </span>
+            </span>
+            <span className="rounded-full bg-white px-3 py-1.5 text-xs text-neutral-500 shadow-sm ring-1 ring-neutral-200 group-open:text-orange-600 dark:bg-neutral-800 dark:ring-neutral-700">
+              ปรับรายละเอียด
+            </span>
+          </summary>
+
+          <div className="space-y-6 border-t border-neutral-200 px-5 py-6 sm:px-7 dark:border-neutral-800">
+            <div>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">กำลังประกาศส่วนใด</h3>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {availableScopes.map((scope) => (
+                  <ChoiceCard
+                    key={scope.code}
+                    selected={selectedScope === scope.code}
+                    title={scope.nameTh}
+                    subtitle={scope.nameEn}
+                    description={scope.description}
+                    onClick={() => setSelectedScope(scope.code)}
+                  />
                 ))}
-              </Select>
-            </FormItem>
-          </WizardSection>
-        ) : null}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">ใช้ทำอะไรได้บ้าง</h3>
+              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500">เลือกได้หลายข้อ และกลับมาแก้ไขได้ภายหลัง</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {availableUseCases.map((useCase) => (
+                  <ToggleCard
+                    key={useCase.code}
+                    checked={selectedUseCases.includes(useCase.code)}
+                    title={useCase.nameTh}
+                    subtitle={useCase.description}
+                    onClick={() => toggleUseCase(useCase.code)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {propertyType.supportsBusinessSpaceType ? (
+              <FormItem label="รูปแบบพื้นที่ค้าขาย" desccription="เว้นว่างได้ หากยังไม่แน่ใจ">
+                <Select
+                  name="space_type_code"
+                  value={businessSpaceType}
+                  onChange={(event) => setBusinessSpaceType(event.target.value)}
+                  className="[&_select]:h-12 [&_select]:rounded-2xl [&_select]:bg-white [&_select]:px-4 dark:[&_select]:bg-neutral-900"
+                >
+                  <option value="">ยังไม่ระบุ</option>
+                  {businessSpaceTypes.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.nameTh} — {item.nameEn}
+                    </option>
+                  ))}
+                </Select>
+              </FormItem>
+            ) : null}
+          </div>
+        </details>
 
         <WizardSection
-          number={propertyType.supportsBusinessSpaceType ? '7' : '6'}
+          number="4"
           title="ข้อมูลเบื้องต้นของประกาศ"
           description="เขียนให้ผู้ค้นหาเข้าใจจุดเด่นของทรัพย์ได้ทันที"
         >

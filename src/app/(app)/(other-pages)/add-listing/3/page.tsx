@@ -5,9 +5,11 @@ import {
   getListingDraft,
   saveListingDraftToCloud,
   saveListingStep,
+  uploadListingPhotos,
   type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
+import { getApiBaseUrl } from '@/lib/auth'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import { BanknotesIcon, InformationCircleIcon, PhoneIcon, PhotoIcon } from '@heroicons/react/24/outline'
@@ -25,7 +27,11 @@ const Page = () => {
   const [keyMoneyAmount, setKeyMoneyAmount] = useState('')
   const [serviceFeeMonthly, setServiceFeeMonthly] = useState('')
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState('')
+  const [priceOnRequest, setPriceOnRequest] = useState(false)
   const [photos, setPhotos] = useState<File[]>([])
+  const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
     router.prefetch('/add-listing/4')
@@ -39,6 +45,8 @@ const Page = () => {
       setKeyMoneyAmount(readText(savedDraft.keyMoneyAmount))
       setServiceFeeMonthly(readText(savedDraft.serviceFeeMonthly))
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
+      setPriceOnRequest(readText(savedDraft.priceOnRequest) === 'yes')
+      setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
     })
 
     return () => cancelAnimationFrame(frame)
@@ -57,17 +65,38 @@ const Page = () => {
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || [])
       .filter((file) => file.type.startsWith('image/'))
-      .slice(0, 12)
+      .slice(0, Math.max(0, 12 - uploadedPhotoUrls.length))
     setPhotos(selected)
+    setUploadError('')
   }
 
   const handleSubmitForm = async (formData: FormData) => {
+    setUploadError('')
+    setIsUploading(true)
+    let nextPhotoUrls = uploadedPhotoUrls
+
+    try {
+      if (photos.length) {
+        const uploaded = await uploadListingPhotos(photos)
+        nextPhotoUrls = [...new Set([...uploadedPhotoUrls, ...uploaded])].slice(0, 12)
+        setUploadedPhotoUrls(nextPhotoUrls)
+        setPhotos([])
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'อัปโหลดรูปไม่สำเร็จ กรุณาลองอีกครั้ง')
+      setIsUploading(false)
+      return
+    }
+
     if (!hasSale) formData.set('salePrice', '')
     if (!hasRent && !hasTransfer) formData.set('rentPriceMonthly', '')
     if (!hasTransfer) formData.set('keyMoneyAmount', '')
-    formData.set('selectedPhotoCount', String(photos.length))
+    formData.set('priceOnRequest', priceOnRequest ? 'yes' : '')
+    formData.set('selectedPhotoCount', String(nextPhotoUrls.length))
+    nextPhotoUrls.forEach((url) => formData.append('listingPhotoUrls[]', url))
     const savedDraft = saveListingStep(3, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
+    setIsUploading(false)
     router.push('/add-listing/4')
   }
 
@@ -116,9 +145,9 @@ const Page = () => {
             />
           </label>
 
-          {previewUrls.length ? (
+          {uploadedPhotoUrls.length || previewUrls.length ? (
             <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
-              {previewUrls.map((url, index) => (
+              {[...uploadedPhotoUrls.map(resolveListingMediaUrl), ...previewUrls].map((url, index) => (
                 <div
                   key={url}
                   className="aspect-square overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
@@ -138,9 +167,17 @@ const Page = () => {
           <div className="mt-4 flex items-start gap-3 rounded-2xl bg-blue-50 p-4 text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
             <InformationCircleIcon className="mt-0.5 size-5 shrink-0" />
             <p className="font-sarabun text-xs leading-5">
-              ตอนนี้เป็นส่วนเลือกและตรวจรูปบนหน้าเว็บ การส่งไฟล์ขึ้นพื้นที่จัดเก็บจะเชื่อมในโมดูลรูปภาพถัดไป
+              เมื่อกดไปขั้นถัดไป ระบบจะอัปโหลดและบันทึกรูปไว้กับร่างประกาศโดยอัตโนมัติ
             </p>
           </div>
+          {isUploading ? (
+            <p className="mt-3 font-sarabun text-sm font-medium text-emerald-700">กำลังอัปโหลดรูป กรุณารอสักครู่...</p>
+          ) : null}
+          {uploadError ? (
+            <p role="alert" className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700">
+              {uploadError}
+            </p>
+          ) : null}
         </SectionCard>
 
         <section className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
@@ -159,11 +196,28 @@ const Page = () => {
           </div>
         </section>
 
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-white p-4 transition hover:border-emerald-300 dark:border-neutral-800 dark:bg-neutral-900">
+          <input
+            type="checkbox"
+            checked={priceOnRequest}
+            onChange={(event) => setPriceOnRequest(event.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-neutral-300 text-emerald-700 focus:ring-emerald-600"
+          />
+          <span>
+            <span className="block font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              ยังไม่ระบุราคา ให้ผู้สนใจสอบถาม
+            </span>
+            <span className="mt-1 block font-sarabun text-xs leading-5 text-neutral-500">
+              เหมาะกับพื้นที่ออกบูธ ล็อกตลาด โครงการใหม่ หรือประกาศที่กำลังรอยืนยันราคา
+            </span>
+          </span>
+        </label>
+
         <input type="hidden" name="currency" value="THB" />
 
         {hasSale ? (
           <PriceSection title="ราคาขาย" description="ราคารวมของทรัพย์ ไม่ใช่ราคาต่อตารางเมตร">
-            <PriceInput name="salePrice" value={salePrice} onChange={setSalePrice} suffix="บาท" required />
+            <PriceInput name="salePrice" value={salePrice} onChange={setSalePrice} suffix="บาท" />
           </PriceSection>
         ) : null}
 
@@ -179,7 +233,6 @@ const Page = () => {
                   value={rentPriceMonthly}
                   onChange={setRentPriceMonthly}
                   suffix="บาท/เดือน"
-                  required
                 />
               </FormItem>
               <FormItem label="ระยะสัญญาขั้นต่ำ">
@@ -222,7 +275,6 @@ const Page = () => {
                   value={keyMoneyAmount}
                   onChange={setKeyMoneyAmount}
                   suffix="บาท"
-                  required
                 />
               </FormItem>
               {!hasRent ? (
@@ -378,6 +430,8 @@ const PriceInput = ({
 
 const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
+const resolveListingMediaUrl = (value: string) =>
+  value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value
 const isOfferTypeCode = (value: string): value is OfferTypeCode =>
   ['sale', 'rent', 'sublease', 'business_transfer'].includes(value)
 const offersFromLegacy = (value: string): OfferTypeCode[] => {

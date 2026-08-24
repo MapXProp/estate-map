@@ -30,6 +30,7 @@ export type CreateListingPayload = {
   rent_price_monthly?: string
   rent_price_daily?: string
   price_negotiable?: boolean
+  price_on_request?: boolean
   usable_area_sqm?: string
   land_area_sqm?: string
   bedroom_count?: string
@@ -59,6 +60,8 @@ export type CreateListingPayload = {
   service_fee_monthly?: string
   allowed_business_types?: string[]
   amenities?: string[]
+  category_details?: Record<string, string | boolean | string[]>
+  media_urls?: string[]
 }
 
 export type CreateListingResponse = {
@@ -208,6 +211,27 @@ export const publishListingDraft = async () => {
   return data
 }
 
+export const uploadListingPhotos = async (files: File[]) => {
+  const urls: string[] = []
+
+  for (const file of files.slice(0, 12)) {
+    const formData = new FormData()
+    formData.set('file', file)
+    const response = await fetch(getAuthApiUrl('listing-media'), {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    })
+    const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string }
+    if (!response.ok || !data.url) {
+      throw new Error(data.error || `อัปโหลดรูป ${file.name} ไม่สำเร็จ`)
+    }
+    urls.push(data.url)
+  }
+
+  return urls
+}
+
 export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPayload => {
   const title = text(draft.listingTitle) || text(draft.placeName) || 'New property listing'
   const descriptionParts = [text(draft.listingDescription), text(draft['place-description'])].filter(Boolean)
@@ -239,6 +263,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     rent_price_monthly: text(draft.rentPriceMonthly || draft['base-price1']),
     rent_price_daily: text(draft.rentPriceDaily || draft['base-price2']),
     price_negotiable: text(draft.priceNegotiable) === 'yes',
+    price_on_request: text(draft.priceOnRequest) === 'yes',
     usable_area_sqm: text(draft.usableAreaSqm || draft.acreage),
     land_area_sqm: text(draft.landAreaSqm),
     bedroom_count: text(draft.Bedroom),
@@ -271,6 +296,12 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
       ...values(draft['otherAmenities[]']),
       ...values(draft['safeAmenities[]']),
     ],
+    category_details: {
+      details_status: 'basic',
+      can_complete_later: true,
+      selected_photo_count: text(draft.selectedPhotoCount),
+    },
+    media_urls: values(draft['listingPhotoUrls[]']),
   }
 }
 
@@ -398,6 +429,7 @@ const mapLegacyUsageToUseCases = (usageType: string) => {
 }
 
 const priceSummary = (payload: CreateListingPayload) => {
+  if (payload.price_on_request) return 'สอบถามราคา'
   const prices: string[] = []
   if (payload.sale_price) prices.push(`ขาย ${payload.sale_price} บาท`)
   if (payload.rent_price_monthly) prices.push(`เช่า ${payload.rent_price_monthly} บาท/เดือน`)

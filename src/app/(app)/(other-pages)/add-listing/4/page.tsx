@@ -115,6 +115,10 @@ const Page = () => {
           <ReviewItem label="ห้องนอน" value={summary?.payload.bedroom_count} />
           <ReviewItem label="ห้องน้ำ" value={summary?.payload.bathroom_count} />
           <ReviewItem label="ที่จอดรถ" value={summary?.payload.parking_count} />
+          <ReviewItem
+            label="รูปภาพ"
+            value={summary?.payload.media_urls?.length ? `${summary.payload.media_urls.length} รูป` : 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'}
+          />
         </ReviewCard>
 
         <ReviewCard icon={<PhoneIcon className="size-5" />} title="ราคาและการติดต่อ" editHref="/add-listing/3">

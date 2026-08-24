@@ -26,17 +26,21 @@ const Page = () => {
   const router = useRouter()
   const [draft, setDraft] = useState<ListingDraft | null>(null)
   const [marker, setMarker] = useState({ lng: 100.5018, lat: 13.7563 })
+  const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
   const [locationError, setLocationError] = useState('')
 
   useEffect(() => {
     router.prefetch('/add-listing/3')
     const frame = requestAnimationFrame(() => {
       const savedDraft = getListingDraft()
+      const savedLng = readText(savedDraft.lngMapPosition)
+      const savedLat = readText(savedDraft.latMapPosition)
       setDraft(savedDraft)
       setMarker({
-        lng: parseCoordinate(readText(savedDraft.lngMapPosition), 100.5018),
-        lat: parseCoordinate(readText(savedDraft.latMapPosition), 13.7563),
+        lng: parseCoordinate(savedLng, 100.5018),
+        lat: parseCoordinate(savedLat, 13.7563),
       })
+      setHasConfirmedMarker(Boolean(savedLng && savedLat))
     })
 
     return () => cancelAnimationFrame(frame)
@@ -56,7 +60,10 @@ const Page = () => {
     }
 
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => setMarker({ lng: coords.longitude, lat: coords.latitude }),
+      ({ coords }) => {
+        setMarker({ lng: coords.longitude, lat: coords.latitude })
+        setHasConfirmedMarker(true)
+      },
       () => setLocationError('ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต Location หรือลากหมุดเอง'),
       { enableHighAccuracy: true, timeout: 10000 }
     )
@@ -83,7 +90,7 @@ const Page = () => {
           ข้อมูลที่คนค้นหาใช้ตัดสินใจ
         </h1>
         <p className="font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          กรอกเฉพาะข้อมูลสำคัญก่อน รายละเอียดย่อยสามารถกลับมาเพิ่มภายหลังได้
+          ระบุจังหวัดเป็นอย่างน้อย ส่วนที่อยู่ละเอียด ขนาด ห้อง และสิ่งอำนวยความสะดวกเว้นไว้ก่อนได้
         </p>
       </div>
 
@@ -118,8 +125,8 @@ const Page = () => {
             </button>
             {locationError ? <p className="font-sarabun text-sm text-red-600">{locationError}</p> : null}
 
-            <FormItem label="ที่อยู่ / ถนน / ซอย" desccription="ไม่ต้องใส่ข้อมูลส่วนตัว เช่น ชื่อเจ้าของทรัพย์">
-              <Input name="Street" defaultValue={readText(draft.Street)} placeholder="เช่น ถนนสุขุมวิท 24" required />
+            <FormItem label="ที่อยู่ / ถนน / ซอย" desccription="เว้นว่างได้ หากตอนนี้ทราบเพียงโครงการหรือจังหวัด">
+              <Input name="Street" defaultValue={readText(draft.Street)} placeholder="เช่น ถนนสุขุมวิท 24" />
             </FormItem>
 
             <div className="grid gap-5 sm:grid-cols-2">
@@ -127,7 +134,7 @@ const Page = () => {
                 <Input name="subdistrict" defaultValue={readText(draft.subdistrict)} placeholder="เช่น คลองตัน" />
               </FormItem>
               <FormItem label="เขต / อำเภอ">
-                <Input name="city" defaultValue={readText(draft.city)} placeholder="เช่น คลองเตย" required />
+                <Input name="city" defaultValue={readText(draft.city)} placeholder="เช่น คลองเตย" />
               </FormItem>
               <FormItem label="จังหวัด">
                 <Input name="state" defaultValue={readText(draft.state)} placeholder="เช่น กรุงเทพมหานคร" required />
@@ -153,7 +160,10 @@ const Page = () => {
                     draggable
                     longitude={marker.lng}
                     latitude={marker.lat}
-                    onDragEnd={(lngLat) => setMarker({ lng: lngLat.lng, lat: lngLat.lat })}
+                    onDragEnd={(lngLat) => {
+                      setMarker({ lng: lngLat.lng, lat: lngLat.lat })
+                      setHasConfirmedMarker(true)
+                    }}
                   >
                     <MarkerContent>
                       <div className="cursor-move rounded-full bg-orange-500 p-1 text-white shadow-lg ring-4 ring-white/80">
@@ -172,9 +182,14 @@ const Page = () => {
                 </Map>
               </div>
             </div>
+            <p className="font-sarabun text-xs leading-5 text-neutral-500">
+              {hasConfirmedMarker
+                ? 'บันทึกตำแหน่งหมุดแล้ว สามารถลากเพื่อปรับได้'
+                : 'แผนที่เริ่มต้นที่กรุงเทพฯ และจะยังไม่บันทึกพิกัดจนกว่าคุณจะลากหมุดหรือใช้ตำแหน่งปัจจุบัน'}
+            </p>
             <input type="hidden" name="country-region" value="Thailand" />
-            <input type="hidden" name="latMapPosition" value={marker.lat} />
-            <input type="hidden" name="lngMapPosition" value={marker.lng} />
+            <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
+            <input type="hidden" name="lngMapPosition" value={hasConfirmedMarker ? marker.lng : ''} />
           </div>
         </SectionCard>
 
@@ -185,11 +200,11 @@ const Page = () => {
           <div className="grid gap-5 sm:grid-cols-2">
             {isLand ? (
               <FormItem label="ขนาดที่ดิน" desccription="กรอกเป็นตารางเมตร">
-                <UnitInput name="landAreaSqm" defaultValue={readText(draft.landAreaSqm)} suffix="ตร.ม." required />
+                <UnitInput name="landAreaSqm" defaultValue={readText(draft.landAreaSqm)} suffix="ตร.ม." />
               </FormItem>
             ) : (
               <FormItem label="พื้นที่ใช้สอย" desccription="กรอกเป็นตารางเมตร">
-                <UnitInput name="usableAreaSqm" defaultValue={readText(draft.usableAreaSqm)} suffix="ตร.ม." required />
+                <UnitInput name="usableAreaSqm" defaultValue={readText(draft.usableAreaSqm)} suffix="ตร.ม." />
               </FormItem>
             )}
 
@@ -205,7 +220,6 @@ const Page = () => {
                     type="number"
                     min="0"
                     placeholder="0"
-                    required
                   />
                 </FormItem>
               </>
