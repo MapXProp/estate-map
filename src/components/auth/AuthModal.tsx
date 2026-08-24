@@ -155,7 +155,7 @@ export default function AuthModal({
 
   const title = isListing
     ? isSignup
-      ? 'ลงทะเบียน เพื่อลงประกาศ'
+      ? 'ลงทะเบียน เพื่อลงประกาศต่อ'
       : 'เข้าสู่ระบบเพื่อลงประกาศต่อ'
     : isSignup
       ? 'สร้างบัญชี MapxProp'
