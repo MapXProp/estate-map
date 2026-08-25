@@ -23,12 +23,14 @@ const amenities = [
   { code: 'pet_friendly', labelTh: 'เลี้ยงสัตว์ได้', labelEn: 'Pet friendly' },
 ]
 
+const BANGKOK_CENTER = { lng: 100.5018, lat: 13.7563 }
+
 const Page = () => {
   const router = useRouter()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
-  const [marker, setMarker] = useState({ lng: 100.5018, lat: 13.7563 })
+  const [marker, setMarker] = useState(BANGKOK_CENTER)
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
   const [locationError, setLocationError] = useState('')
 
@@ -38,12 +40,10 @@ const Page = () => {
       const savedDraft = getListingDraft()
       const savedLng = readText(savedDraft.lngMapPosition)
       const savedLat = readText(savedDraft.latMapPosition)
+      const savedPosition = parseSavedLocation(savedLng, savedLat)
       setDraft(savedDraft)
-      setMarker({
-        lng: parseCoordinate(savedLng, 100.5018),
-        lat: parseCoordinate(savedLat, 13.7563),
-      })
-      setHasConfirmedMarker(Boolean(savedLng && savedLat))
+      setMarker(savedPosition || BANGKOK_CENTER)
+      setHasConfirmedMarker(Boolean(savedPosition))
     })
 
     return () => cancelAnimationFrame(frame)
@@ -377,9 +377,16 @@ const UnitInput = ({
 
 const readText = (value: ListingDraft[string] | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readValues = (value: ListingDraft[string] | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
-const parseCoordinate = (value: string, fallback: number) => {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : fallback
+const parseSavedLocation = (lngValue: string, latValue: string) => {
+  if (!lngValue.trim() || !latValue.trim()) return null
+
+  const lng = Number(lngValue)
+  const lat = Number(latValue)
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+    return null
+  }
+
+  return { lng, lat }
 }
 
 export default Page
