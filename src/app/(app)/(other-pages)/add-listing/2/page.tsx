@@ -1,7 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { Map, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
+import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
@@ -194,35 +194,18 @@ const Page = () => {
               </FormItem>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700">
+            <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] shadow-sm dark:border-neutral-700">
               <div className="h-72 lg:h-96 xl:h-[26rem]">
-                <Map center={[marker.lng, marker.lat]} zoom={14}>
-                  <MapMarker
-                    draggable
-                    longitude={marker.lng}
-                    latitude={marker.lat}
-                    onDragEnd={(lngLat) => {
-                      setMarker({ lng: lngLat.lng, lat: lngLat.lat })
-                      setHasConfirmedMarker(true)
-                    }}
-                  >
-                    <MarkerContent>
-                      <div className="cursor-move rounded-full bg-orange-500 p-1 text-white shadow-lg ring-4 ring-white/80">
-                        <MapPinIcon className="size-7" />
-                      </div>
-                    </MarkerContent>
-                    <MarkerPopup>
-                      <div className="space-y-1">
-                        <p className="font-sarabun font-medium">
-                          {isThai ? 'ลากหมุดเพื่อปรับตำแหน่ง' : 'Drag the pin to adjust the location'}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {marker.lat.toFixed(5)}, {marker.lng.toFixed(5)}
-                        </p>
-                      </div>
-                    </MarkerPopup>
-                  </MapMarker>
-                </Map>
+                <LongdoLocationPicker
+                  apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
+                  value={marker}
+                  locale={isThai ? 'th' : 'en'}
+                  onChange={(location) => {
+                    setMarker(location)
+                    setHasConfirmedMarker(true)
+                    setLocationError('')
+                  }}
+                />
               </div>
             </div>
             <p
@@ -238,8 +221,8 @@ const Page = () => {
                   ? 'บันทึกตำแหน่งแล้ว'
                   : 'Location saved'
                 : isThai
-                  ? 'ลากหมุดหรือใช้ตำแหน่งปัจจุบัน'
-                  : 'Drag the pin or use your current location'}
+                  ? 'ค้นหา แตะแผนที่ ลากหมุด หรือใช้ตำแหน่งปัจจุบัน'
+                  : 'Search, tap the map, drag the pin, or use your current location'}
             </p>
             <input type="hidden" name="country-region" value="Thailand" />
             <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
