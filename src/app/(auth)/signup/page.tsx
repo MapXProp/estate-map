@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
+import { showAuthNotice, withAuthNotice } from '@/lib/authNotice'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
@@ -156,7 +157,8 @@ const Page = () => {
 
       setStoredAuth({ ...data, email: data?.email || trimmedEmail })
       await syncListingDraftAfterAuth().catch(() => undefined)
-      router.push(redirectPath || '/account?login=success')
+      showAuthNotice('signup')
+      router.push(redirectPath || '/account')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถสร้างบัญชีได้')
     } finally {
@@ -170,7 +172,7 @@ const Page = () => {
     }
 
     const url = new URL(getAuthApiUrl(`auth/${item.provider}/start`))
-    if (redirectPath) url.searchParams.set('redirect', redirectPath)
+    url.searchParams.set('redirect', withAuthNotice(redirectPath || '/account', 'signup'))
     return url.toString()
   }
 

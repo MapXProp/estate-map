@@ -305,7 +305,8 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
       placeholder: placeholderRef.current,
       language: locale,
       location: initialLocation,
-      zoom: 15,
+      // Start with a useful Bangkok overview; searching or selecting a place still zooms in to street level.
+      zoom: 11,
       lastView: false,
       autoResize: true,
       ui: longdo.UiComponent.None,

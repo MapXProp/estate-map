@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl } from '@/lib/auth'
+import { showAuthNotice } from '@/lib/authNotice'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import Logo from '@/shared/Logo'
 import { CheckCircle, MailCheck, XCircle } from 'lucide-react'
@@ -43,6 +44,7 @@ const Page = () => {
 
         setStatus('success')
         setMessage('ยืนยันอีเมลเรียบร้อยแล้ว บัญชีของคุณพร้อมใช้งาน')
+        showAuthNotice('verify-email')
         window.history.replaceState(null, '', window.location.pathname)
       } catch (err) {
         setStatus('error')

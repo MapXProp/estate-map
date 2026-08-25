@@ -3,15 +3,13 @@
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
+import { showAuthNotice } from '@/lib/authNotice'
 import { Divider } from '@/shared/divider'
 import { Link } from '@/shared/link'
-import SwitchDarkMode2 from '@/shared/SwitchDarkMode2'
 import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BellIcon, CheckIcon, ChevronRightIcon, GlobeAltIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import {
-  BulbChargingIcon,
   FavouriteIcon,
-  Idea01Icon,
   Logout01Icon,
   Task01Icon,
   UserIcon,
@@ -50,6 +48,7 @@ export default function AvatarDropdown({
 
   const handleLogout = async () => {
     await logout()
+    showAuthNotice('logout')
     router.refresh()
   }
 
@@ -241,30 +240,6 @@ export default function AvatarDropdown({
               </>
             )}
 
-            {/* ------------------ 2 --------------------- */}
-            <div className="focus-visible:ring-opacity-50 -m-3 flex items-center justify-between rounded-lg p-2 hover:bg-neutral-100 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 dark:hover:bg-neutral-700">
-              <div className="flex items-center">
-                <div className="flex flex-shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                  <HugeiconsIcon icon={Idea01Icon} size={24} strokeWidth={1.5} />
-                </div>
-                <p className="ms-4 text-sm font-medium">{locale === 'th' ? 'ธีมมืด' : 'Dark theme'}</p>
-              </div>
-              <SwitchDarkMode2 />
-            </div>
-
-            {/* ------------------ 2 --------------------- */}
-
-            <Link
-              href={'#'}
-              className="-m-3 flex items-center rounded-lg p-2 transition duration-150 ease-in-out hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/50 dark:hover:bg-neutral-700"
-            >
-              <div className="flex shrink-0 items-center justify-center text-neutral-500 dark:text-neutral-300">
-                <HugeiconsIcon icon={BulbChargingIcon} size={24} strokeWidth={1.5} />
-              </div>
-              <p className="ms-4 text-sm font-medium">{locale === 'th' ? 'ช่วยเหลือ' : 'Help'}</p>
-            </Link>
-
-            {/* ------------------ 2 --------------------- */}
             {isAuthenticated && (
               <button
                 type="button"

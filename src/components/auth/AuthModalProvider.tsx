@@ -1,6 +1,8 @@
 'use client'
 
 import AuthModal, { type AuthMode, type AuthPurpose } from '@/components/auth/AuthModal'
+import AuthStatusToast from '@/components/auth/AuthStatusToast'
+import { showAuthNotice } from '@/lib/authNotice'
 import { useRouter } from 'next/navigation'
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
@@ -40,6 +42,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     const completedModal = modal
     setModal(null)
     await completedModal?.onAuthenticated?.()
+    showAuthNotice(completedModal?.mode === 'signup' ? 'signup' : 'login')
     router.refresh()
   }
 
@@ -55,6 +58,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
         onClose={closeAuthModal}
         onAuthenticated={handleAuthenticated}
       />
+      <AuthStatusToast />
     </AuthModalContext.Provider>
   )
 }

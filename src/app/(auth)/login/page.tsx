@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
+import { showAuthNotice, withAuthNotice } from '@/lib/authNotice'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
@@ -202,17 +203,11 @@ const Page = () => {
       setStoredAuth({ ...data, email: data?.email || trimmedEmail })
       await syncListingDraftAfterAuth().catch(() => undefined)
 
-      const redirectPath = new URLSearchParams(window.location.search).get('redirect')
-      if (redirectPath?.startsWith('/') && !redirectPath.startsWith('//')) {
-        const redirectUrl = new URL(redirectPath, window.location.origin)
-        if (redirectUrl.pathname === '/account') {
-          redirectUrl.searchParams.set('login', 'success')
-        }
-        router.push(`${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`)
-        return
-      }
-
-      router.push('/account?login=success')
+      const requestedRedirect = new URLSearchParams(window.location.search).get('redirect')
+      const destination =
+        requestedRedirect?.startsWith('/') && !requestedRedirect.startsWith('//') ? requestedRedirect : '/account'
+      showAuthNotice('login')
+      router.push(destination)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถเข้าสู่ระบบได้')
     } finally {
@@ -227,9 +222,7 @@ const Page = () => {
 
     const url = new URL(getAuthApiUrl(`auth/${item.provider}/start`))
     if (typeof window !== 'undefined') {
-      if (redirectPath) {
-        url.searchParams.set('redirect', redirectPath)
-      }
+      url.searchParams.set('redirect', withAuthNotice(redirectPath || '/account', 'login'))
     }
     return url.toString()
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl } from '@/lib/auth'
+import { showAuthNotice } from '@/lib/authNotice'
 import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
@@ -81,6 +82,7 @@ const Page = () => {
       }
 
       setIsComplete(true)
+      showAuthNotice('reset-password')
       window.history.replaceState(null, '', window.location.pathname)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถตั้งรหัสผ่านใหม่ได้')

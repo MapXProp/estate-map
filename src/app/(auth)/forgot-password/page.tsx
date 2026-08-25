@@ -1,6 +1,7 @@
 'use client'
 
 import { getAuthApiUrl } from '@/lib/auth'
+import { showAuthNotice } from '@/lib/authNotice'
 import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { Field, Label } from '@/shared/fieldset'
@@ -57,6 +58,7 @@ const Page = () => {
       }
 
       setIsSent(true)
+      showAuthNotice('reset-request')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถส่งอีเมลรีเซ็ตรหัสผ่านได้')
     } finally {

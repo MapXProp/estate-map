@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getAuthApiUrl, setStoredAuth } from '@/lib/auth'
+import { withAuthNotice } from '@/lib/authNotice'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ArrowRightIcon, CheckIcon, EyeIcon, EyeSlashIcon, UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -157,7 +158,7 @@ export default function AuthModal({
 
   const socialAuthUrl = (provider: 'google' | 'line') => {
     const url = new URL(getAuthApiUrl(`auth/${provider}/start`))
-    url.searchParams.set('redirect', resolvedRedirectPath())
+    url.searchParams.set('redirect', withAuthNotice(resolvedRedirectPath(), mode === 'signup' ? 'signup' : 'login'))
     return url.toString()
   }
 
