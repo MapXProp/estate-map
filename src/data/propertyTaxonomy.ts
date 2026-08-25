@@ -7,6 +7,10 @@ export type PropertyTypeCode =
   | 'condo'
   | 'apartment'
   | 'dormitory'
+  | 'rental_room'
+  | 'flat'
+  | 'serviced_apartment'
+  | 'monthly_hotel'
   | 'shophouse'
   | 'home_office'
   | 'office'
@@ -16,17 +20,11 @@ export type PropertyTypeCode =
   | 'land'
 
 export type UseCaseCode =
-  | 'residential'
-  | 'office'
-  | 'retail'
-  | 'food_service'
-  | 'storage'
-  | 'industrial'
-  | 'hospitality'
-  | 'agriculture'
+  'residential' | 'office' | 'retail' | 'food_service' | 'storage' | 'industrial' | 'hospitality' | 'agriculture'
 
 export type ListingScopeCode = 'single_unit' | 'whole_property' | 'multi_unit' | 'land_plot' | 'space_slot'
-export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer'
+export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer' | 'event_booking'
+export type DiscoveryChannelCode = 'homes' | 'rooms' | 'business'
 
 export type TaxonomyOption<TCode extends string> = {
   code: TCode
@@ -45,6 +43,58 @@ export type PropertyTypeDefinition = TaxonomyOption<PropertyTypeCode> & {
   allowedOffers: OfferTypeCode[]
   supportsBusinessSpaceType?: boolean
 }
+
+export type DiscoveryChannelDefinition = TaxonomyOption<DiscoveryChannelCode> & {
+  route: `/${DiscoveryChannelCode}`
+  propertyTypeCodes: PropertyTypeCode[]
+  defaultPropertyTypeCode: PropertyTypeCode
+}
+
+export const discoveryChannels: DiscoveryChannelDefinition[] = [
+  {
+    code: 'homes',
+    route: '/homes',
+    nameTh: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    nameEn: 'Homes & residential',
+    description: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว และที่ดิน',
+    propertyTypeCodes: [
+      'detached_house',
+      'semi_detached_house',
+      'townhouse',
+      'condo',
+      'shophouse',
+      'home_office',
+      'land',
+    ],
+    defaultPropertyTypeCode: 'detached_house',
+  },
+  {
+    code: 'rooms',
+    route: '/rooms',
+    nameTh: 'ห้องเช่า & ที่พักรายเดือน',
+    nameEn: 'Rooms & monthly stays',
+    description: 'ห้องเช่า อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
+    propertyTypeCodes: [
+      'rental_room',
+      'apartment',
+      'dormitory',
+      'condo',
+      'flat',
+      'serviced_apartment',
+      'monthly_hotel',
+    ],
+    defaultPropertyTypeCode: 'rental_room',
+  },
+  {
+    code: 'business',
+    route: '/business',
+    nameTh: 'พื้นที่ทำธุรกิจ',
+    nameEn: 'Business spaces',
+    description: 'ตึกแถว ร้านค้า ออฟฟิศ โกดัง โรงงาน และที่ดิน',
+    propertyTypeCodes: ['shophouse', 'home_office', 'office', 'retail_space', 'warehouse', 'factory', 'land'],
+    defaultPropertyTypeCode: 'retail_space',
+  },
+]
 
 export const propertyGroups: TaxonomyOption<PropertyGroupCode>[] = [
   {
@@ -155,6 +205,58 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     allowedOffers: commonPropertyOffers,
   },
   {
+    code: 'rental_room',
+    groupCode: 'residential',
+    nameTh: 'ห้องเช่า',
+    nameEn: 'Rental room',
+    description: 'ห้องเดี่ยวหรือยูนิตสำหรับเช่ารายเดือน',
+    aliases: ['monthly_room', 'room_for_rent'],
+    allowedUseCases: ['residential'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['single_unit', 'multi_unit'],
+    defaultScope: 'single_unit',
+    allowedOffers: ['rent'],
+  },
+  {
+    code: 'flat',
+    groupCode: 'residential',
+    nameTh: 'แฟลต',
+    nameEn: 'Flat',
+    description: 'ห้องพักในอาคารแฟลตหรือโครงการที่พักอาศัย',
+    aliases: ['housing_flat'],
+    allowedUseCases: ['residential'],
+    defaultUseCases: ['residential'],
+    allowedScopes: ['single_unit', 'multi_unit'],
+    defaultScope: 'single_unit',
+    allowedOffers: ['rent'],
+  },
+  {
+    code: 'serviced_apartment',
+    groupCode: 'residential',
+    nameTh: 'เซอร์วิสอพาร์ตเมนต์',
+    nameEn: 'Serviced apartment',
+    description: 'ที่พักรายเดือนพร้อมบริการส่วนกลาง',
+    aliases: ['service_apartment', 'long_stay_apartment'],
+    allowedUseCases: ['residential', 'hospitality'],
+    defaultUseCases: ['residential', 'hospitality'],
+    allowedScopes: ['single_unit', 'multi_unit'],
+    defaultScope: 'single_unit',
+    allowedOffers: ['rent'],
+  },
+  {
+    code: 'monthly_hotel',
+    groupCode: 'residential',
+    nameTh: 'โรงแรมรายเดือน',
+    nameEn: 'Monthly hotel',
+    description: 'ห้องพักโรงแรมที่เปิดให้เช่าระยะยาวหรือรายเดือน',
+    aliases: ['long_stay_hotel', 'hotel_monthly'],
+    allowedUseCases: ['residential', 'hospitality'],
+    defaultUseCases: ['hospitality'],
+    allowedScopes: ['single_unit', 'multi_unit'],
+    defaultScope: 'single_unit',
+    allowedOffers: ['rent'],
+  },
+  {
     code: 'shophouse',
     groupCode: 'mixed_use',
     nameTh: 'ตึกแถว / อาคารพาณิชย์',
@@ -204,7 +306,7 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     defaultUseCases: ['retail'],
     allowedScopes: ['space_slot', 'single_unit', 'whole_property'],
     defaultScope: 'space_slot',
-    allowedOffers: ['rent', 'sublease', 'business_transfer'],
+    allowedOffers: ['rent', 'sublease', 'business_transfer', 'event_booking'],
     supportsBusinessSpaceType: true,
   },
   {
@@ -326,27 +428,110 @@ export const offerTypes: TaxonomyOption<OfferTypeCode>[] = [
     nameEn: 'Business transfer',
     description: 'โอนสิทธิการเช่าหรือกิจการพร้อมอุปกรณ์',
   },
+  {
+    code: 'event_booking',
+    nameTh: 'จองพื้นที่ตามรอบงาน',
+    nameEn: 'Event booking',
+    description: 'เปิดรับร้านค้าตามวันหรือรอบของงาน',
+  },
 ]
 
 export const businessSpaceTypes = [
-  { code: 'mall_shop', nameTh: 'ร้านภายในห้าง', nameEn: 'Mall shop' },
-  { code: 'mall_kiosk', nameTh: 'คีออสในห้าง', nameEn: 'Mall kiosk' },
-  { code: 'food_court_counter', nameTh: 'เคาน์เตอร์ศูนย์อาหาร', nameEn: 'Food court counter' },
-  { code: 'market_stall', nameTh: 'ล็อกในตลาดหรือตลาดนัด', nameEn: 'Market stall' },
-  { code: 'school_canteen', nameTh: 'พื้นที่ในโรงเรียน', nameEn: 'School canteen' },
-  { code: 'office_canteen', nameTh: 'พื้นที่ในสำนักงาน', nameEn: 'Office canteen' },
-  { code: 'dormitory_shop', nameTh: 'ร้านค้าในหอพัก', nameEn: 'Dormitory shop' },
-  { code: 'standalone_shop', nameTh: 'ร้านค้า Standalone', nameEn: 'Standalone shop' },
-  { code: 'street_food_space', nameTh: 'พื้นที่ขายอาหารริมทาง', nameEn: 'Street food space' },
+  {
+    code: 'market_stall',
+    nameTh: 'ล็อกในตลาด / ตลาดนัด',
+    nameEn: 'Market stall',
+    description: 'พื้นที่ประจำในตลาดหรือตลาดนัด',
+  },
+  {
+    code: 'mall_kiosk',
+    nameTh: 'ล็อกหรือคีออสในห้าง',
+    nameEn: 'Mall kiosk',
+    description: 'คีออส เคาน์เตอร์ หรือพื้นที่กลางห้าง',
+  },
+  {
+    code: 'standalone_shop',
+    nameTh: 'ร้านค้า Standalone',
+    nameEn: 'Standalone shop',
+    description: 'ร้านเดี่ยวที่มีพื้นที่และทางเข้าของตัวเอง',
+  },
+  {
+    code: 'shophouse_ground_floor',
+    nameTh: 'ร้านค้าใต้ตึกแถว',
+    nameEn: 'Shophouse ground-floor shop',
+    description: 'พื้นที่ร้านค้าด้านล่างของตึกแถวหรืออาคารพาณิชย์',
+  },
+  {
+    code: 'event_booth',
+    nameTh: 'บูธอีเวนต์ / พื้นที่ชั่วคราว',
+    nameEn: 'Event booth',
+    description: 'พื้นที่ออกบูธตามรอบงานหรือช่วงเวลาที่กำหนด',
+  },
+  {
+    code: 'mall_shop',
+    nameTh: 'ร้านภายในห้าง',
+    nameEn: 'Mall shop',
+    description: 'ยูนิตร้านค้าแบบมีหน้าร้านภายในศูนย์การค้า',
+  },
+  {
+    code: 'food_court_counter',
+    nameTh: 'เคาน์เตอร์ศูนย์อาหาร',
+    nameEn: 'Food court counter',
+    description: 'เคาน์เตอร์ขายอาหารหรือเครื่องดื่มในศูนย์อาหาร',
+  },
+  {
+    code: 'school_canteen',
+    nameTh: 'พื้นที่ในโรงเรียน',
+    nameEn: 'School canteen',
+    description: 'พื้นที่ขายสินค้าและอาหารภายในสถานศึกษา',
+  },
+  {
+    code: 'office_canteen',
+    nameTh: 'พื้นที่ในสำนักงาน',
+    nameEn: 'Office canteen',
+    description: 'พื้นที่ขายสินค้าและอาหารในอาคารสำนักงาน',
+  },
+  {
+    code: 'dormitory_shop',
+    nameTh: 'ร้านค้าในหอพัก',
+    nameEn: 'Dormitory shop',
+    description: 'พื้นที่ร้านค้าที่อยู่ภายในหรือใต้หอพัก',
+  },
+  {
+    code: 'street_food_space',
+    nameTh: 'พื้นที่ขายอาหารริมทาง',
+    nameEn: 'Street food space',
+    description: 'จุดขายอาหารริมทางหรือพื้นที่เปิด',
+  },
 ] as const
+
+export const primaryBusinessSpaceTypeCodes = [
+  'market_stall',
+  'mall_kiosk',
+  'standalone_shop',
+  'shophouse_ground_floor',
+  'event_booth',
+] as const
+
+export type BusinessSpaceTypeCode = (typeof businessSpaceTypes)[number]['code']
 
 export const getPropertyType = (code: string) => propertyTypes.find((item) => item.code === code)
 export const getPropertyGroup = (code: string) => propertyGroups.find((item) => item.code === code)
 export const getUseCase = (code: string) => useCases.find((item) => item.code === code)
 export const getListingScope = (code: string) => listingScopes.find((item) => item.code === code)
 export const getOfferType = (code: string) => offerTypes.find((item) => item.code === code)
+export const getBusinessSpaceType = (code: string) => businessSpaceTypes.find((item) => item.code === code)
+export const getDiscoveryChannel = (code: string) => discoveryChannels.find((item) => item.code === code)
 export const getPropertyTypesForGroup = (groupCode: PropertyGroupCode) =>
   propertyTypes.filter((item) => item.groupCode === groupCode)
+export const getPropertyTypesForDiscoveryChannel = (channelCode: DiscoveryChannelCode) => {
+  const channel = getDiscoveryChannel(channelCode)
+  return channel
+    ? channel.propertyTypeCodes
+        .map((code) => getPropertyType(code))
+        .filter((item): item is PropertyTypeDefinition => Boolean(item))
+    : []
+}
 
 export const normalizeLegacyPropertyType = (code: string): PropertyTypeCode => {
   if (code === 'house') return 'detached_house'
@@ -368,5 +553,6 @@ export const offersToLegacyListingType = (codes: OfferTypeCode[]) => {
   if (codes.includes('rent')) return 'rent'
   if (codes.includes('sublease')) return 'sublease'
   if (codes.includes('business_transfer')) return 'business_transfer'
+  if (codes.includes('event_booking')) return 'event_booking'
   return 'rent'
 }

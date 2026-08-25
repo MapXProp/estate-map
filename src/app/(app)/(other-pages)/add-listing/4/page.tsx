@@ -1,5 +1,6 @@
 'use client'
 
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   clearCloudListingDraft,
   clearListingDraft,
@@ -24,14 +25,17 @@ import { useEffect, useState } from 'react'
 
 const Page = () => {
   const router = useRouter()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const [summary, setSummary] = useState<ReturnType<typeof getListingDraftSummary> | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successId, setSuccessId] = useState('')
 
   useEffect(() => {
-    setSummary(getListingDraftSummary())
-  }, [])
+    const frame = requestAnimationFrame(() => setSummary(getListingDraftSummary(locale)))
+    return () => cancelAnimationFrame(frame)
+  }, [locale])
 
   const handleSubmitForm = async () => {
     setError('')
@@ -43,7 +47,13 @@ const Page = () => {
       clearListingDraft()
       setSuccessId(data.public_listing_id || data.slug || 'created')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ยังไม่สามารถส่งประกาศได้ กรุณาลองอีกครั้ง')
+      setError(
+        err instanceof Error
+          ? err.message
+          : isThai
+            ? 'ยังไม่สามารถส่งประกาศได้ กรุณาลองอีกครั้ง'
+            : 'Unable to submit your listing. Please try again.'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -54,15 +64,17 @@ const Page = () => {
       <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-6 py-9 text-center dark:border-emerald-900/60 dark:bg-emerald-950/30">
         <CheckCircleIcon className="mx-auto h-14 w-14 text-emerald-600" />
         <h2 className="mt-4 font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          ส่งประกาศเรียบร้อยแล้ว
+          {isThai ? 'ส่งประกาศเรียบร้อยแล้ว' : 'Listing submitted'}
         </h2>
         <p className="mx-auto mt-3 max-w-xl font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          ระบบบันทึกประกาศและส่งเข้าคิวตรวจสอบแล้ว · รหัสประกาศ {successId}
+          {isThai
+            ? `ระบบบันทึกประกาศและส่งเข้าคิวตรวจสอบแล้ว · รหัสประกาศ ${successId}`
+            : `Your listing has been saved and sent for review · Listing ID ${successId}`}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <ButtonSecondary href="/account">ดูบัญชีของฉัน</ButtonSecondary>
+          <ButtonSecondary href="/account">{isThai ? 'ดูบัญชีของฉัน' : 'View my account'}</ButtonSecondary>
           <ButtonPrimary type="button" onClick={() => router.push('/add-listing/1')}>
-            ลงประกาศใหม่
+            {isThai ? 'ลงประกาศใหม่' : 'Create another listing'}
           </ButtonPrimary>
         </div>
       </div>
@@ -74,60 +86,133 @@ const Page = () => {
       <div className="space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-300">
           <SparklesIcon className="h-4 w-4" />
-          พร้อมส่งประกาศ
+          {isThai ? 'พร้อมส่งประกาศ' : 'Ready to submit'}
         </div>
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          ตรวจอีกครั้งก่อนเผยแพร่
+          {isThai ? 'ตรวจอีกครั้งก่อนเผยแพร่' : 'Review before publishing'}
         </h1>
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-5">
-        <ReviewCard icon={<HomeModernIcon className="size-5" />} title="ข้อมูลประกาศ" editHref="/add-listing/1">
+        <ReviewCard
+          icon={<HomeModernIcon className="size-5" />}
+          title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}
+          editHref="/add-listing/1"
+          editLabel={isThai ? 'แก้ไข' : 'Edit'}
+        >
           <div className="sm:col-span-2">
             <p className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-              {summary?.payload.title || 'ยังไม่ได้ระบุหัวข้อประกาศ'}
+              {summary?.payload.title || (isThai ? 'ยังไม่ได้ระบุหัวข้อประกาศ' : 'Listing title not specified')}
             </p>
             <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-              {[summary?.propertyGroup, summary?.propertyType, summary?.listingScope, summary?.listingType]
+              {[
+                summary?.discoveryChannel,
+                summary?.propertyType,
+                summary?.businessSpaceType,
+                summary?.listingScope,
+                summary?.listingType,
+              ]
                 .filter(Boolean)
                 .join(' · ')}
             </p>
           </div>
-          <ReviewItem label="เหมาะสำหรับ" value={summary?.usageType} />
-          <ReviewItem label="ชื่อโครงการ / สถานที่" value={summary?.payload.custom_project_name} />
+          <ReviewItem
+            label={isThai ? 'เหมาะสำหรับ' : 'Suitable for'}
+            value={summary?.usageType}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'ชื่อโครงการ / สถานที่' : 'Project / place name'}
+            value={summary?.payload.custom_project_name}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
         </ReviewCard>
 
-        <ReviewCard icon={<MapPinIcon className="size-5" />} title="ทำเลและรายละเอียด" editHref="/add-listing/2">
-          <ReviewItem label="ตำแหน่ง" value={summary?.location} className="sm:col-span-2" />
+        <ReviewCard
+          icon={<MapPinIcon className="size-5" />}
+          title={isThai ? 'ทำเลและรายละเอียด' : 'Location & details'}
+          editHref="/add-listing/2"
+          editLabel={isThai ? 'แก้ไข' : 'Edit'}
+        >
           <ReviewItem
-            label="พื้นที่"
+            label={isThai ? 'ตำแหน่ง' : 'Location'}
+            value={summary?.location}
+            className="sm:col-span-2"
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'พื้นที่' : 'Area'}
             value={
               summary?.payload.land_area_sqm
-                ? `${summary.payload.land_area_sqm} ตร.ม. (ที่ดิน)`
+                ? `${summary.payload.land_area_sqm} ${isThai ? 'ตร.ม. (ที่ดิน)' : 'sq.m. (land)'}`
                 : summary?.payload.usable_area_sqm
-                  ? `${summary.payload.usable_area_sqm} ตร.ม.`
+                  ? `${summary.payload.usable_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
                   : ''
             }
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
-          <ReviewItem label="ห้องนอน" value={summary?.payload.bedroom_count} />
-          <ReviewItem label="ห้องน้ำ" value={summary?.payload.bathroom_count} />
-          <ReviewItem label="ที่จอดรถ" value={summary?.payload.parking_count} />
           <ReviewItem
-            label="รูปภาพ"
+            label={isThai ? 'ห้องนอน' : 'Bedrooms'}
+            value={summary?.payload.bedroom_count}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'ห้องน้ำ' : 'Bathrooms'}
+            value={summary?.payload.bathroom_count}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'ที่จอดรถ' : 'Parking spaces'}
+            value={summary?.payload.parking_count}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'รูปภาพ' : 'Photos'}
             value={
               summary?.payload.media_urls?.length
-                ? `${summary.payload.media_urls.length} รูป`
-                : 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'
+                ? isThai
+                  ? `${summary.payload.media_urls.length} รูป`
+                  : `${summary.payload.media_urls.length} photos`
+                : isThai
+                  ? 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'
+                  : 'None added yet (you can add them later)'
             }
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
         </ReviewCard>
 
-        <ReviewCard icon={<PhoneIcon className="size-5" />} title="ราคาและการติดต่อ" editHref="/add-listing/3">
-          <ReviewItem label="ราคา" value={summary?.price} className="sm:col-span-2" />
-          <ReviewItem label="ชื่อผู้ติดต่อ" value={summary?.payload.contact_name} />
-          <ReviewItem label="โทรศัพท์" value={summary?.payload.contact_phone} />
-          <ReviewItem label="LINE ID" value={summary?.payload.line_id} />
-          <ReviewItem label="อีเมล" value={summary?.payload.contact_email} />
+        <ReviewCard
+          icon={<PhoneIcon className="size-5" />}
+          title={isThai ? 'ราคาและการติดต่อ' : 'Price & contact'}
+          editHref="/add-listing/3"
+          editLabel={isThai ? 'แก้ไข' : 'Edit'}
+        >
+          <ReviewItem
+            label={isThai ? 'ราคา' : 'Price'}
+            value={summary?.price}
+            className="sm:col-span-2"
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
+            value={summary?.payload.contact_name}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'โทรศัพท์' : 'Phone'}
+            value={summary?.payload.contact_phone}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label="LINE ID"
+            value={summary?.payload.line_id}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'อีเมล' : 'Email'}
+            value={summary?.payload.contact_email}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
         </ReviewCard>
 
         {error ? (
@@ -139,10 +224,16 @@ const Page = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <ButtonSecondary type="button" href="/add-listing/3">
             <ArrowLeftIcon className="h-5 w-5" />
-            ย้อนกลับ
+            {isThai ? 'ย้อนกลับ' : 'Back'}
           </ButtonSecondary>
           <ButtonPrimary type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'กำลังส่งประกาศ...' : 'ส่งประกาศเพื่อตรวจสอบ'}
+            {isSubmitting
+              ? isThai
+                ? 'กำลังส่งประกาศ...'
+                : 'Submitting listing...'
+              : isThai
+                ? 'ส่งประกาศเพื่อตรวจสอบ'
+                : 'Submit for review'}
           </ButtonPrimary>
         </div>
       </Form>
@@ -154,11 +245,13 @@ const ReviewCard = ({
   icon,
   title,
   editHref,
+  editLabel,
   children,
 }: {
   icon: React.ReactNode
   title: string
   editHref: string
+  editLabel: string
   children: React.ReactNode
 }) => (
   <section className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -174,19 +267,27 @@ const ReviewCard = ({
         className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 font-sarabun text-xs font-medium text-orange-600 transition hover:bg-orange-50 dark:hover:bg-orange-950/30"
       >
         <PencilSquareIcon className="size-4" />
-        แก้ไข
+        {editLabel}
       </Link>
     </div>
     <div className="grid gap-5 px-5 py-6 sm:grid-cols-2 sm:px-7">{children}</div>
   </section>
 )
 
-const ReviewItem = ({ label, value, className }: { label: string; value?: string; className?: string }) => (
+const ReviewItem = ({
+  label,
+  value,
+  className,
+  fallback,
+}: {
+  label: string
+  value?: string
+  className?: string
+  fallback: string
+}) => (
   <div className={className}>
     <p className="font-sarabun text-xs font-medium tracking-wide text-neutral-400 uppercase">{label}</p>
-    <p className="mt-1 font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-      {value || 'ยังไม่ระบุ'}
-    </p>
+    <p className="mt-1 font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">{value || fallback}</p>
   </div>
 )
 

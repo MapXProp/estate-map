@@ -2,6 +2,7 @@
 
 import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSync'
 import RequireAuth from '@/components/auth/RequireAuth'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { ArrowRightIcon, CheckIcon, ClockIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
@@ -9,10 +10,10 @@ import { usePathname } from 'next/navigation'
 import React from 'react'
 
 const steps = [
-  { number: 1, label: 'ประเภททรัพย์' },
-  { number: 2, label: 'รายละเอียด' },
-  { number: 3, label: 'รูปภาพและราคา' },
-  { number: 4, label: 'ตรวจสอบ' },
+  { number: 1, labelTh: 'ประเภททรัพย์', labelEn: 'Property type' },
+  { number: 2, labelTh: 'รายละเอียด', labelEn: 'Details' },
+  { number: 3, labelTh: 'รูปภาพและราคา', labelEn: 'Photos & price' },
+  { number: 4, labelTh: 'ตรวจสอบ', labelEn: 'Review' },
 ]
 
 const getStepIndex = (pathname: string) => {
@@ -73,6 +74,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
 
   return (
     <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-5 py-5 text-white shadow-[0_26px_70px_-38px_rgba(18,63,50,0.75)] sm:px-7 sm:py-6">
@@ -83,14 +86,15 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-sarabun text-xs font-semibold tracking-[0.14em] text-orange-300 uppercase">
-              ลงประกาศฟรี
+              {isThai ? 'ลงประกาศฟรี' : 'List for free'}
             </p>
             <span className="rounded-full bg-white/10 px-2.5 py-1 font-sarabun text-[11px] text-white/75">
-              บันทึกร่างอัตโนมัติ
+              {isThai ? 'บันทึกร่างอัตโนมัติ' : 'Draft saved automatically'}
             </span>
           </div>
           <p className="mt-2 truncate font-sarabun text-lg font-semibold text-white sm:text-xl">
-            ขั้นที่ {index} จาก {steps.length} · {steps[index - 1].label}
+            {isThai ? `ขั้นที่ ${index} จาก ${steps.length}` : `Step ${index} of ${steps.length}`} ·{' '}
+            {isThai ? steps[index - 1].labelTh : steps[index - 1].labelEn}
           </p>
         </div>
         <span className="font-sarabun text-sm font-medium text-white/70">
@@ -105,7 +109,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         />
       </div>
 
-      <ol className="relative mt-5 grid grid-cols-4 gap-2" aria-label="ขั้นตอนลงประกาศ">
+      <ol className="relative mt-5 grid grid-cols-4 gap-2" aria-label={isThai ? 'ขั้นตอนลงประกาศ' : 'Listing steps'}>
         {steps.map((step) => {
           const isComplete = step.number < index
           const isCurrent = step.number === index
@@ -129,7 +133,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
                     isCurrent ? 'font-medium text-white' : isComplete ? 'text-white/80' : 'text-white/45'
                   }`}
                 >
-                  {step.label}
+                  {isThai ? step.labelTh : step.labelEn}
                 </span>
               </div>
             </li>
@@ -138,9 +142,12 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
       </ol>
 
       <div className="relative mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 xl:hidden">
-        <TrustItem icon={<ClockIcon className="size-4" />} label="ประมาณ 5–8 นาที" />
-        <TrustItem icon={<ShieldCheckIcon className="size-4" />} label="ตรวจสอบก่อนเผยแพร่" />
-        <TrustItem icon={<SparklesIcon className="size-4" />} label="แก้ไขภายหลังได้" />
+        <TrustItem icon={<ClockIcon className="size-4" />} label={isThai ? 'ประมาณ 5–8 นาที' : 'About 5–8 minutes'} />
+        <TrustItem
+          icon={<ShieldCheckIcon className="size-4" />}
+          label={isThai ? 'ตรวจสอบก่อนเผยแพร่' : 'Reviewed before publishing'}
+        />
+        <TrustItem icon={<SparklesIcon className="size-4" />} label={isThai ? 'แก้ไขภายหลังได้' : 'Edit anytime'} />
       </div>
     </div>
   )
@@ -153,37 +160,57 @@ const TrustItem = ({ icon, label }: { icon: React.ReactNode; label: string }) =>
   </span>
 )
 
-const SellerGuide = () => (
-  <aside className="hidden xl:sticky xl:top-28 xl:block">
-    <section className="relative overflow-hidden rounded-[30px] bg-[#123f32] p-6 text-white shadow-[0_28px_70px_-42px_rgba(18,63,50,0.8)]">
-      <div aria-hidden="true" className="absolute -top-16 -right-16 size-40 rounded-full border border-white/10" />
-      <span className="relative flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
-        <SparklesIcon className="size-5" />
-      </span>
-      <p className="relative mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-orange-300 uppercase">
-        เริ่มจากข้อมูลที่มี
-      </p>
-      <h2 className="relative mt-2 font-sarabun text-2xl leading-tight font-semibold">
-        พื้นที่ของคุณ
-        <br />
-        อาจเป็นสิ่งที่ใครกำลังหา
-      </h2>
-      <ul className="relative mt-6 space-y-3 border-t border-white/10 pt-5">
-        {['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'ทีมงานตรวจสอบก่อนเผยแพร่'].map((item) => (
-          <li key={item} className="flex items-center gap-2.5 font-sarabun text-sm text-white/85">
-            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-orange-300">
-              <CheckIcon className="size-3.5" />
-            </span>
-            {item}
-          </li>
-        ))}
-      </ul>
-    </section>
-  </aside>
-)
+const SellerGuide = () => {
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
+  const benefits = isThai
+    ? ['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'ทีมงานตรวจสอบก่อนเผยแพร่']
+    : ['List for free', 'Add category-specific details later', 'Reviewed before publishing']
+
+  return (
+    <aside className="hidden xl:sticky xl:top-28 xl:block">
+      <section className="relative overflow-hidden rounded-[30px] bg-[#123f32] p-6 text-white shadow-[0_28px_70px_-42px_rgba(18,63,50,0.8)]">
+        <div aria-hidden="true" className="absolute -top-16 -right-16 size-40 rounded-full border border-white/10" />
+        <span className="relative flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
+          <SparklesIcon className="size-5" />
+        </span>
+        <p className="relative mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-orange-300 uppercase">
+          {isThai ? 'เริ่มจากข้อมูลที่มี' : 'Start with what you know'}
+        </p>
+        <h2 className="relative mt-2 font-sarabun text-2xl leading-tight font-semibold">
+          {isThai ? (
+            <>
+              พื้นที่ของคุณ
+              <br />
+              อาจเป็นสิ่งที่ใครกำลังหา
+            </>
+          ) : (
+            <>
+              Your space could be
+              <br />
+              exactly what someone needs
+            </>
+          )}
+        </h2>
+        <ul className="relative mt-6 space-y-3 border-t border-white/10 pt-5">
+          {benefits.map((item) => (
+            <li key={item} className="flex items-center gap-2.5 font-sarabun text-sm text-white/85">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-orange-300">
+                <CheckIcon className="size-3.5" />
+              </span>
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </aside>
+  )
+}
 
 const Pagination = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
 
   if (index === steps.length) {
     return null
@@ -201,7 +228,7 @@ const Pagination = ({ pathname }: { pathname: string }) => {
     >
       {index > 1 ? (
         <ButtonSecondary type="button" href={backHref} className="h-12 px-5 min-[744px]:h-auto">
-          ย้อนกลับ
+          {isThai ? 'ย้อนกลับ' : 'Back'}
         </ButtonSecondary>
       ) : null}
       <ButtonPrimary
@@ -209,7 +236,13 @@ const Pagination = ({ pathname }: { pathname: string }) => {
         form="add-listing-form"
         className="h-12 w-full text-base font-semibold shadow-[0_12px_28px_-14px_rgba(18,63,50,0.75)] min-[744px]:h-auto min-[744px]:w-auto min-[744px]:min-w-52"
       >
-        {index === steps.length - 1 ? 'ตรวจสอบประกาศ' : 'ไปขั้นถัดไป'}
+        {index === steps.length - 1
+          ? isThai
+            ? 'ตรวจสอบประกาศ'
+            : 'Review listing'
+          : isThai
+            ? 'ไปขั้นถัดไป'
+            : 'Continue'}
         <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" />
       </ButtonPrimary>
     </div>

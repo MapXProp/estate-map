@@ -1,7 +1,8 @@
 'use client'
 
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { Map, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
-import { getPropertyGroup, getPropertyType } from '@/data/propertyTaxonomy'
+import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
@@ -12,18 +13,20 @@ import { useEffect, useMemo, useState } from 'react'
 import FormItem from '../FormItem'
 
 const amenities = [
-  { code: 'air_conditioning', label: 'เครื่องปรับอากาศ' },
-  { code: 'parking', label: 'ที่จอดรถ' },
-  { code: 'elevator', label: 'ลิฟต์' },
-  { code: 'security', label: 'ระบบรักษาความปลอดภัย' },
-  { code: 'swimming_pool', label: 'สระว่ายน้ำ' },
-  { code: 'fitness', label: 'ฟิตเนส' },
-  { code: 'wifi', label: 'อินเทอร์เน็ต / Wi-Fi' },
-  { code: 'pet_friendly', label: 'เลี้ยงสัตว์ได้' },
+  { code: 'air_conditioning', labelTh: 'เครื่องปรับอากาศ', labelEn: 'Air conditioning' },
+  { code: 'parking', labelTh: 'ที่จอดรถ', labelEn: 'Parking' },
+  { code: 'elevator', labelTh: 'ลิฟต์', labelEn: 'Elevator' },
+  { code: 'security', labelTh: 'ระบบรักษาความปลอดภัย', labelEn: 'Security' },
+  { code: 'swimming_pool', labelTh: 'สระว่ายน้ำ', labelEn: 'Swimming pool' },
+  { code: 'fitness', labelTh: 'ฟิตเนส', labelEn: 'Fitness center' },
+  { code: 'wifi', labelTh: 'อินเทอร์เน็ต / Wi-Fi', labelEn: 'Internet / Wi-Fi' },
+  { code: 'pet_friendly', labelTh: 'เลี้ยงสัตว์ได้', labelEn: 'Pet friendly' },
 ]
 
 const Page = () => {
   const router = useRouter()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
   const [marker, setMarker] = useState({ lng: 100.5018, lat: 13.7563 })
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
@@ -47,7 +50,9 @@ const Page = () => {
   }, [router])
 
   const propertyGroup = readText(draft?.property_group_code) || 'residential'
+  const discoveryChannel = readText(draft?.discovery_channel_code) || 'homes'
   const propertyType = getPropertyType(readText(draft?.property_type_code))
+  const businessSpaceType = getBusinessSpaceType(readText(draft?.space_type_code))
   const selectedAmenities = useMemo(() => readValues(draft?.['amenities[]']), [draft])
   const showsRooms = propertyGroup === 'residential' || propertyGroup === 'mixed_use'
   const isLand = propertyGroup === 'land'
@@ -55,7 +60,7 @@ const Page = () => {
   const useCurrentLocation = () => {
     setLocationError('')
     if (!navigator.geolocation) {
-      setLocationError('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง')
+      setLocationError(isThai ? 'อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง' : 'Location is not supported on this device.')
       return
     }
 
@@ -64,7 +69,12 @@ const Page = () => {
         setMarker({ lng: coords.longitude, lat: coords.latitude })
         setHasConfirmedMarker(true)
       },
-      () => setLocationError('ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต Location หรือลากหมุดเอง'),
+      () =>
+        setLocationError(
+          isThai
+            ? 'ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต Location หรือลากหมุดเอง'
+            : 'Unable to get your location. Allow location access or drag the pin manually.'
+        ),
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }
@@ -84,30 +94,46 @@ const Page = () => {
       <div className="space-y-3">
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300">
           <MapPinIcon className="h-4 w-4" />
-          ทำเลและรายละเอียด
+          {isThai ? 'ทำเลและรายละเอียด' : 'Location & details'}
         </div>
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          ข้อมูลที่คนค้นหาใช้ตัดสินใจ
+          {isThai ? 'ข้อมูลที่คนค้นหาใช้ตัดสินใจ' : 'Add the details people need to decide'}
         </h1>
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-6">
         <section className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
-              {propertyGroup === 'commercial' ? (
+            <span
+              className={`flex size-10 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-neutral-800 ${
+                discoveryChannel === 'business'
+                  ? 'text-orange-600'
+                  : discoveryChannel === 'rooms'
+                    ? 'text-sky-600'
+                    : 'text-emerald-700'
+              }`}
+            >
+              {discoveryChannel === 'business' ? (
                 <BuildingOffice2Icon className="size-5" />
               ) : (
                 <HomeModernIcon className="size-5" />
               )}
             </span>
             <p className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {getPropertyGroup(propertyGroup)?.nameTh || propertyGroup} · {propertyType?.nameTh || 'อสังหาริมทรัพย์'}
+              {[
+                isThai
+                  ? getDiscoveryChannel(discoveryChannel)?.nameTh || discoveryChannel
+                  : getDiscoveryChannel(discoveryChannel)?.nameEn || discoveryChannel,
+                isThai ? propertyType?.nameTh : propertyType?.nameEn,
+                isThai ? businessSpaceType?.nameTh : businessSpaceType?.nameEn,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           </div>
         </section>
 
-        <SectionCard title="ตำแหน่งที่ตั้ง">
+        <SectionCard title={isThai ? 'ตำแหน่งที่ตั้ง' : 'Location'}>
           <div className="space-y-5">
             <button
               type="button"
@@ -115,25 +141,42 @@ const Page = () => {
               className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-orange-300 hover:text-orange-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
             >
               <MapPinIcon className="size-5" />
-              ใช้ตำแหน่งปัจจุบัน
+              {isThai ? 'ใช้ตำแหน่งปัจจุบัน' : 'Use current location'}
             </button>
             {locationError ? <p className="font-sarabun text-sm text-red-600">{locationError}</p> : null}
 
-            <FormItem label="ที่อยู่ / ถนน / ซอย (ไม่บังคับ)">
-              <Input name="Street" defaultValue={readText(draft.Street)} placeholder="เช่น ถนนสุขุมวิท 24" />
+            <FormItem label={isThai ? 'ที่อยู่ / ถนน / ซอย (ไม่บังคับ)' : 'Address / road / soi (optional)'}>
+              <Input
+                name="Street"
+                defaultValue={readText(draft.Street)}
+                placeholder={isThai ? 'เช่น ถนนสุขุมวิท 24' : 'e.g. Sukhumvit Soi 24'}
+              />
             </FormItem>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <FormItem label="แขวง / ตำบล">
-                <Input name="subdistrict" defaultValue={readText(draft.subdistrict)} placeholder="เช่น คลองตัน" />
+              <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
+                <Input
+                  name="subdistrict"
+                  defaultValue={readText(draft.subdistrict)}
+                  placeholder={isThai ? 'เช่น คลองตัน' : 'e.g. Khlong Tan'}
+                />
               </FormItem>
-              <FormItem label="เขต / อำเภอ">
-                <Input name="city" defaultValue={readText(draft.city)} placeholder="เช่น คลองเตย" />
+              <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
+                <Input
+                  name="city"
+                  defaultValue={readText(draft.city)}
+                  placeholder={isThai ? 'เช่น คลองเตย' : 'e.g. Khlong Toei'}
+                />
               </FormItem>
-              <FormItem label="จังหวัด">
-                <Input name="state" defaultValue={readText(draft.state)} placeholder="เช่น กรุงเทพมหานคร" required />
+              <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
+                <Input
+                  name="state"
+                  defaultValue={readText(draft.state)}
+                  placeholder={isThai ? 'เช่น กรุงเทพมหานคร' : 'e.g. Bangkok'}
+                  required
+                />
               </FormItem>
-              <FormItem label="รหัสไปรษณีย์">
+              <FormItem label={isThai ? 'รหัสไปรษณีย์' : 'Postal code'}>
                 <Input
                   name="Postal"
                   defaultValue={readText(draft.Postal)}
@@ -142,8 +185,12 @@ const Page = () => {
                   placeholder="10110"
                 />
               </FormItem>
-              <FormItem label="เลขห้อง / ยูนิต (ไม่บังคับ)">
-                <Input name="room-number" defaultValue={readText(draft['room-number'])} placeholder="เช่น A-1208" />
+              <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ไม่บังคับ)' : 'Room / unit number (optional)'}>
+                <Input
+                  name="room-number"
+                  defaultValue={readText(draft['room-number'])}
+                  placeholder={isThai ? 'เช่น A-1208' : 'e.g. A-1208'}
+                />
               </FormItem>
             </div>
 
@@ -166,7 +213,9 @@ const Page = () => {
                     </MarkerContent>
                     <MarkerPopup>
                       <div className="space-y-1">
-                        <p className="font-sarabun font-medium">ลากหมุดเพื่อปรับตำแหน่ง</p>
+                        <p className="font-sarabun font-medium">
+                          {isThai ? 'ลากหมุดเพื่อปรับตำแหน่ง' : 'Drag the pin to adjust the location'}
+                        </p>
                         <p className="text-xs text-neutral-500">
                           {marker.lat.toFixed(5)}, {marker.lng.toFixed(5)}
                         </p>
@@ -184,7 +233,13 @@ const Page = () => {
                   : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
               }`}
             >
-              {hasConfirmedMarker ? 'บันทึกตำแหน่งแล้ว' : 'ลากหมุดหรือใช้ตำแหน่งปัจจุบัน'}
+              {hasConfirmedMarker
+                ? isThai
+                  ? 'บันทึกตำแหน่งแล้ว'
+                  : 'Location saved'
+                : isThai
+                  ? 'ลากหมุดหรือใช้ตำแหน่งปัจจุบัน'
+                  : 'Drag the pin or use your current location'}
             </p>
             <input type="hidden" name="country-region" value="Thailand" />
             <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
@@ -192,24 +247,34 @@ const Page = () => {
           </div>
         </SectionCard>
 
-        <SectionCard title={isLand ? 'ขนาดที่ดิน' : 'ขนาดและข้อมูลหลัก'}>
+        <SectionCard
+          title={isLand ? (isThai ? 'ขนาดที่ดิน' : 'Land size') : isThai ? 'ขนาดและข้อมูลหลัก' : 'Size & key details'}
+        >
           <div className="grid gap-5 sm:grid-cols-2">
             {isLand ? (
-              <FormItem label="ขนาดที่ดิน">
-                <UnitInput name="landAreaSqm" defaultValue={readText(draft.landAreaSqm)} suffix="ตร.ม." />
+              <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
+                <UnitInput
+                  name="landAreaSqm"
+                  defaultValue={readText(draft.landAreaSqm)}
+                  suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                />
               </FormItem>
             ) : (
-              <FormItem label="พื้นที่ใช้สอย">
-                <UnitInput name="usableAreaSqm" defaultValue={readText(draft.usableAreaSqm)} suffix="ตร.ม." />
+              <FormItem label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'}>
+                <UnitInput
+                  name="usableAreaSqm"
+                  defaultValue={readText(draft.usableAreaSqm)}
+                  suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                />
               </FormItem>
             )}
 
             {showsRooms ? (
               <>
-                <FormItem label="ห้องนอน">
+                <FormItem label={isThai ? 'ห้องนอน' : 'Bedrooms'}>
                   <Input name="Bedroom" defaultValue={readText(draft.Bedroom)} type="number" min="0" placeholder="0" />
                 </FormItem>
-                <FormItem label="ห้องน้ำ">
+                <FormItem label={isThai ? 'ห้องน้ำ' : 'Bathrooms'}>
                   <Input
                     name="Bathroom"
                     defaultValue={readText(draft.Bathroom)}
@@ -223,37 +288,37 @@ const Page = () => {
 
             {!isLand ? (
               <>
-                <FormItem label="ที่จอดรถ">
+                <FormItem label={isThai ? 'ที่จอดรถ' : 'Parking spaces'}>
                   <Input name="Parking" defaultValue={readText(draft.Parking)} type="number" min="0" placeholder="0" />
                 </FormItem>
-                <FormItem label="ชั้นที่">
+                <FormItem label={isThai ? 'ชั้นที่' : 'Floor'}>
                   <Input
                     name="floorNo"
                     defaultValue={readText(draft.floorNo)}
                     type="number"
                     min="0"
-                    placeholder="ไม่ระบุ"
+                    placeholder={isThai ? 'ไม่ระบุ' : 'Not specified'}
                   />
                 </FormItem>
-                <FormItem label="จำนวนชั้นทั้งหมด">
+                <FormItem label={isThai ? 'จำนวนชั้นทั้งหมด' : 'Total floors'}>
                   <Input
                     name="totalFloors"
                     defaultValue={readText(draft.totalFloors)}
                     type="number"
                     min="0"
-                    placeholder="ไม่ระบุ"
+                    placeholder={isThai ? 'ไม่ระบุ' : 'Not specified'}
                   />
                 </FormItem>
-                <FormItem label="เฟอร์นิเจอร์">
+                <FormItem label={isThai ? 'เฟอร์นิเจอร์' : 'Furnishing'}>
                   <Select
                     name="furnishingStatus"
                     defaultValue={readText(draft.furnishingStatus)}
                     className="[&_select]:h-11 [&_select]:rounded-2xl"
                   >
-                    <option value="">ไม่ระบุ</option>
-                    <option value="fully_furnished">ครบ พร้อมอยู่</option>
-                    <option value="partly_furnished">มีบางส่วน</option>
-                    <option value="unfurnished">ไม่มีเฟอร์นิเจอร์</option>
+                    <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
+                    <option value="fully_furnished">{isThai ? 'ครบ พร้อมอยู่' : 'Fully furnished'}</option>
+                    <option value="partly_furnished">{isThai ? 'มีบางส่วน' : 'Partly furnished'}</option>
+                    <option value="unfurnished">{isThai ? 'ไม่มีเฟอร์นิเจอร์' : 'Unfurnished'}</option>
                   </Select>
                 </FormItem>
               </>
@@ -262,7 +327,7 @@ const Page = () => {
         </SectionCard>
 
         {!isLand ? (
-          <SectionCard title="จุดเด่นและสิ่งอำนวยความสะดวก">
+          <SectionCard title={isThai ? 'จุดเด่นและสิ่งอำนวยความสะดวก' : 'Features & amenities'}>
             <input type="hidden" name="amenities[]" value="" />
             <div className="grid gap-3 sm:grid-cols-2">
               {amenities.map((amenity) => (
@@ -280,7 +345,9 @@ const Page = () => {
                   <span className="flex size-6 items-center justify-center rounded-lg border border-neutral-300 text-transparent transition peer-checked:border-orange-500 peer-checked:bg-orange-500 peer-checked:text-white dark:border-neutral-600">
                     <CheckIcon className="size-4" />
                   </span>
-                  <span className="font-sarabun text-sm text-neutral-700 dark:text-neutral-200">{amenity.label}</span>
+                  <span className="font-sarabun text-sm text-neutral-700 dark:text-neutral-200">
+                    {isThai ? amenity.labelTh : amenity.labelEn}
+                  </span>
                 </label>
               ))}
             </div>

@@ -1,4 +1,11 @@
-import { getOfferType, getPropertyGroup, getPropertyType, getUseCase } from '@/data/propertyTaxonomy'
+import {
+  getBusinessSpaceType,
+  getDiscoveryChannel,
+  getOfferType,
+  getPropertyGroup,
+  getPropertyType,
+  getUseCase,
+} from '@/data/propertyTaxonomy'
 import { getAuthApiUrl } from './auth'
 
 export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
@@ -15,6 +22,7 @@ type CloudListingDraftResponse = {
 }
 
 export type CreateListingPayload = {
+  discovery_channel_code?: string
   property_group_code?: string
   property_type_code: string
   listing_scope?: string
@@ -31,6 +39,7 @@ export type CreateListingPayload = {
   rent_price_daily?: string
   price_negotiable?: boolean
   price_on_request?: boolean
+  currency?: string
   usable_area_sqm?: string
   land_area_sqm?: string
   bedroom_count?: string
@@ -57,6 +66,7 @@ export type CreateListingPayload = {
   target_tenant_type?: string
   price_unit?: string
   key_money_amount?: string
+  event_booking_price?: string
   service_fee_monthly?: string
   allowed_business_types?: string[]
   amenities?: string[]
@@ -248,6 +258,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   ].filter((value, index, all) => all.indexOf(value) === index)
 
   return {
+    discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
     property_group_code: normalizeCode(text(draft.property_group_code)),
     property_type_code: normalizeCode(text(draft.property_type_code) || text(draft.propertyType) || 'condo'),
     listing_scope: normalizeCode(text(draft.listing_scope)) || 'whole_property',
@@ -264,6 +275,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     rent_price_daily: text(draft.rentPriceDaily || draft['base-price2']),
     price_negotiable: text(draft.priceNegotiable) === 'yes',
     price_on_request: text(draft.priceOnRequest) === 'yes',
+    currency: text(draft.currency) || 'THB',
     usable_area_sqm: text(draft.usableAreaSqm || draft.acreage),
     land_area_sqm: text(draft.landAreaSqm),
     bedroom_count: text(draft.Bedroom),
@@ -287,8 +299,11 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     longitude: text(draft.lngMapPosition),
     business_type_code: normalizeCode(text(draft.business_type_code)),
     space_type_code: normalizeCode(text(draft.space_type_code)),
-    price_unit: normalizeCode(text(draft.price_unit)) || (listingType.includes('rent') ? 'month' : ''),
+    price_unit:
+      normalizeCode(text(draft.price_unit)) ||
+      (listingType === 'event_booking' ? 'event_round' : listingType.includes('rent') ? 'month' : ''),
     key_money_amount: text(draft.keyMoneyAmount),
+    event_booking_price: text(draft.eventBookingPrice),
     service_fee_monthly: text(draft.serviceFeeMonthly),
     allowed_business_types: allowedBusinessTypes,
     amenities: [
@@ -299,25 +314,31 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     category_details: {
       details_status: 'basic',
       can_complete_later: true,
+      discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
       selected_photo_count: text(draft.selectedPhotoCount),
     },
     media_urls: values(draft['listingPhotoUrls[]']),
   }
 }
 
-export const getListingDraftSummary = () => {
+export const getListingDraftSummary = (locale: 'th' | 'en' = 'th') => {
   const draft = getListingDraft()
   const payload = buildCreateListingPayload(draft)
 
   return {
     draft,
     payload,
-    propertyType: propertyTypeLabel(payload.property_type_code),
-    propertyGroup: propertyGroupLabel(payload.property_group_code),
-    listingScope: listingScopeLabel(payload.listing_scope),
-    listingType: offerTypeLabels(payload.offer_types, payload.listing_type),
-    usageType: formatUseCaseLabels(payload.use_case_codes, payload.usage_type),
-    price: priceSummary(payload),
+    discoveryChannel: discoveryChannelLabel(payload.discovery_channel_code, locale),
+    propertyType: propertyTypeLabel(payload.property_type_code, locale),
+    businessSpaceType:
+      (locale === 'th'
+        ? getBusinessSpaceType(payload.space_type_code || '')?.nameTh
+        : getBusinessSpaceType(payload.space_type_code || '')?.nameEn) || '',
+    propertyGroup: propertyGroupLabel(payload.property_group_code, locale),
+    listingScope: listingScopeLabel(payload.listing_scope, locale),
+    listingType: offerTypeLabels(payload.offer_types, payload.listing_type, locale),
+    usageType: formatUseCaseLabels(payload.use_case_codes, payload.usage_type, locale),
+    price: priceSummary(payload, locale),
     location: [payload.address_line1, payload.address_line2, payload.postal_code].filter(Boolean).join(', '),
   }
 }
@@ -353,10 +374,10 @@ const inferUsageType = (draft: ListingDraft) => {
   return 'residence'
 }
 
-const propertyTypeLabel = (value: string) => {
+const propertyTypeLabel = (value: string, locale: 'th' | 'en' = 'th') => {
   const taxonomyType = getPropertyType(value)
   if (taxonomyType) {
-    return taxonomyType.nameTh
+    return locale === 'th' ? taxonomyType.nameTh : taxonomyType.nameEn
   }
 
   const labels: Record<string, string> = {
@@ -374,16 +395,19 @@ const propertyTypeLabel = (value: string) => {
   return labels[value] || value
 }
 
-const propertyGroupLabel = (value?: string) => (value ? getPropertyGroup(value)?.nameTh || value : '')
-const listingScopeLabel = (value?: string) => {
-  const labels: Record<string, string> = {
-    single_unit: 'ห้องหรือยูนิตเดียว',
-    whole_property: 'ทั้งหลังหรือทั้งอาคาร',
-    multi_unit: 'หลายห้องหรือหลายยูนิต',
-    land_plot: 'แปลงที่ดิน',
-    space_slot: 'พื้นที่ย่อย ล็อก หรือคีออส',
+const propertyGroupLabel = (value: string | undefined, locale: 'th' | 'en') =>
+  value ? (locale === 'th' ? getPropertyGroup(value)?.nameTh : getPropertyGroup(value)?.nameEn) || value : ''
+const discoveryChannelLabel = (value: string | undefined, locale: 'th' | 'en') =>
+  value ? (locale === 'th' ? getDiscoveryChannel(value)?.nameTh : getDiscoveryChannel(value)?.nameEn) || value : ''
+const listingScopeLabel = (value: string | undefined, locale: 'th' | 'en') => {
+  const labels: Record<string, { th: string; en: string }> = {
+    single_unit: { th: 'ห้องหรือยูนิตเดียว', en: 'Single room or unit' },
+    whole_property: { th: 'ทั้งหลังหรือทั้งอาคาร', en: 'Whole property or building' },
+    multi_unit: { th: 'หลายห้องหรือหลายยูนิต', en: 'Multiple rooms or units' },
+    land_plot: { th: 'แปลงที่ดิน', en: 'Land plot' },
+    space_slot: { th: 'พื้นที่ย่อย ล็อก หรือคีออส', en: 'Stall, kiosk or small space' },
   }
-  return value ? labels[value] || value : ''
+  return value ? labels[value]?.[locale] || value : ''
 }
 
 const legacyListingTypeLabel = (value: string) => {
@@ -407,14 +431,18 @@ const legacyUsageTypeLabel = (value: string) => {
   return labels[value] || value
 }
 
-const offerTypeLabels = (values: string[] | undefined, fallback: string) => {
+const offerTypeLabels = (values: string[] | undefined, fallback: string, locale: 'th' | 'en') => {
   if (!values?.length) return legacyListingTypeLabel(fallback)
-  return values.map((value) => getOfferType(value)?.nameTh || value).join(' + ')
+  return values
+    .map((value) => (locale === 'th' ? getOfferType(value)?.nameTh : getOfferType(value)?.nameEn) || value)
+    .join(' + ')
 }
 
-const formatUseCaseLabels = (values: string[] | undefined, fallback: string) => {
+const formatUseCaseLabels = (values: string[] | undefined, fallback: string, locale: 'th' | 'en') => {
   if (!values?.length) return legacyUsageTypeLabel(fallback)
-  return values.map((value) => getUseCase(value)?.nameTh || value).join(', ')
+  return values
+    .map((value) => (locale === 'th' ? getUseCase(value)?.nameTh : getUseCase(value)?.nameEn) || value)
+    .join(', ')
 }
 
 const offersFromLegacy = (listingType: string) => {
@@ -428,14 +456,34 @@ const mapLegacyUsageToUseCases = (usageType: string) => {
   return ['residential']
 }
 
-const priceSummary = (payload: CreateListingPayload) => {
-  if (payload.price_on_request) return 'สอบถามราคา'
+const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {
+  if (payload.price_on_request) return locale === 'th' ? 'สอบถามราคา' : 'Price on request'
+  const currency = payload.currency || 'THB'
+  const unit = currency === 'THB' ? (locale === 'th' ? 'บาท' : 'THB') : currency
   const prices: string[] = []
-  if (payload.sale_price) prices.push(`ขาย ${payload.sale_price} บาท`)
-  if (payload.rent_price_monthly) prices.push(`เช่า ${payload.rent_price_monthly} บาท/เดือน`)
-  if (payload.rent_price_daily) prices.push(`เช่า ${payload.rent_price_daily} บาท/วัน`)
+  if (payload.sale_price)
+    prices.push(locale === 'th' ? `ขาย ${payload.sale_price} ${unit}` : `Sale ${payload.sale_price} ${unit}`)
+  if (payload.rent_price_monthly)
+    prices.push(
+      locale === 'th'
+        ? `เช่า ${payload.rent_price_monthly} ${unit}/เดือน`
+        : `Rent ${payload.rent_price_monthly} ${unit}/month`
+    )
+  if (payload.rent_price_daily)
+    prices.push(
+      locale === 'th' ? `เช่า ${payload.rent_price_daily} ${unit}/วัน` : `Rent ${payload.rent_price_daily} ${unit}/day`
+    )
   if (payload.key_money_amount && payload.offer_types?.includes('business_transfer')) {
-    prices.push(`เซ้ง ${payload.key_money_amount} บาท`)
+    prices.push(
+      locale === 'th' ? `เซ้ง ${payload.key_money_amount} ${unit}` : `Transfer ${payload.key_money_amount} ${unit}`
+    )
   }
-  return prices.join(' · ') || 'ยังไม่ระบุราคา'
+  if (payload.event_booking_price && payload.offer_types?.includes('event_booking')) {
+    prices.push(
+      locale === 'th'
+        ? `รอบงาน ${payload.event_booking_price} ${unit}`
+        : `Event period ${payload.event_booking_price} ${unit}`
+    )
+  }
+  return prices.join(' · ') || (locale === 'th' ? 'ยังไม่ระบุราคา' : 'Price not specified')
 }
