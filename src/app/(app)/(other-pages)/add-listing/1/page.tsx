@@ -26,7 +26,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraftValue } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Textarea from '@/shared/Textarea'
-import { BuildingStorefrontIcon, CheckCircleIcon, HomeModernIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import { BuildingStorefrontIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import {
   BedDouble,
   Building,
@@ -95,7 +95,7 @@ const businessSpaceTypeDescriptionsEn: Record<(typeof primaryBusinessSpaceTypeCo
 
 const discoveryChannelVisuals = {
   homes: {
-    Icon: HomeModernIcon,
+    Icon: House,
     selected: 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600 dark:bg-emerald-950/30',
     icon: 'bg-emerald-600 text-white',
     check: 'text-emerald-700 dark:text-emerald-300',
@@ -321,15 +321,16 @@ const Page = () => {
         </WizardSection>
 
         <WizardSection number="2" title={isThai ? 'เลือกประเภทที่ต้องการลง' : 'Choose a property type'}>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
             {propertyTypesForChannel.map((item) => {
               const Icon = propertyTypeIcons[item.code]
               return (
                 <ChoiceCard
                   key={item.code}
+                  compact
                   selected={selectedPropertyType === item.code}
                   title={isThai ? item.nameTh : item.nameEn}
-                  icon={<Icon className="h-6 w-6" />}
+                  icon={<Icon className="size-5" />}
                   tone={selectedChannel}
                   onClick={() => selectPropertyType(item.code)}
                 />
@@ -620,12 +621,14 @@ const ChoiceCard = ({
   title,
   icon,
   tone,
+  compact = false,
   onClick,
 }: {
   selected: boolean
   title: string
   icon?: React.ReactNode
   tone?: DiscoveryChannelCode
+  compact?: boolean
   onClick: () => void
 }) => {
   const selectedStyle =
@@ -642,7 +645,11 @@ const ChoiceCard = ({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`relative flex min-h-20 w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+      className={`relative flex w-full rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+        compact
+          ? 'min-h-[5.25rem] flex-col items-start gap-2.5 p-3 min-[744px]:min-h-[4.5rem] min-[744px]:flex-row min-[744px]:items-center'
+          : 'min-h-20 items-center gap-4 p-4'
+      } ${
         selected
           ? selectedStyle
           : 'border-neutral-200 bg-white hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500 dark:hover:bg-neutral-800/60'
@@ -650,7 +657,7 @@ const ChoiceCard = ({
     >
       {icon ? (
         <span
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+          className={`flex shrink-0 items-center justify-center rounded-xl ${compact ? 'size-9' : 'h-11 w-11'} ${
             selected
               ? `${iconStyle} text-white`
               : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
@@ -659,12 +666,20 @@ const ChoiceCard = ({
           {icon}
         </span>
       ) : null}
-      <span className="min-w-0 flex-1">
-        <span className="block font-sarabun text-base font-semibold text-neutral-900 dark:text-neutral-50">
+      <span className={`min-w-0 flex-1 ${compact ? 'pe-5 min-[744px]:pe-4' : ''}`}>
+        <span
+          className={`block font-sarabun font-semibold text-neutral-900 dark:text-neutral-50 ${
+            compact ? 'text-sm leading-5' : 'text-base'
+          }`}
+        >
           {title}
         </span>
       </span>
-      {selected ? <CheckCircleIcon className={`h-6 w-6 shrink-0 ${checkStyle}`} /> : null}
+      {selected ? (
+        <CheckCircleIcon
+          className={`${compact ? 'absolute top-3 right-3 size-5' : 'h-6 w-6 shrink-0'} ${checkStyle}`}
+        />
+      ) : null}
     </button>
   )
 }
