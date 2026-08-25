@@ -132,7 +132,7 @@ const Page = () => {
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
   const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
-  const { isAuthenticated, isLoading, refresh } = useAuth()
+  const { isAuthenticated, refresh } = useAuth()
 
   const propertyType = getPropertyType(selectedPropertyType) ?? getPropertyType('detached_house')!
   const selectedGroup = propertyType.groupCode
@@ -265,7 +265,7 @@ const Page = () => {
     formData.set('usage_type', mapUseCasesToLegacyUsage(effectiveUseCases))
     formData.set('listing_type', offersToLegacyListingType(selectedOffers))
     const savedDraft = saveListingStep(1, formData)
-    const authenticated = isAuthenticated || (isLoading ? Boolean(await refresh()) : false)
+    const authenticated = isAuthenticated || Boolean(await refresh())
 
     if (!authenticated) {
       setAuthCheckpointOpen(true)

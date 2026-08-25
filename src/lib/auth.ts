@@ -122,6 +122,8 @@ export const clearStoredAuth = () => {
   localStorage.removeItem(AUTH_USER_KEY)
 }
 
+let authVerificationPromise: Promise<AuthUser | null> | null = null
+
 export const logoutStoredAuth = async () => {
   try {
     await fetch(getAuthApiUrl('logout'), {
@@ -136,7 +138,7 @@ export const logoutStoredAuth = async () => {
   notifyAuthChange()
 }
 
-export const verifyStoredAuth = async () => {
+const runStoredAuthVerification = async () => {
   let response = await fetch(getAuthApiUrl('me'), {
     cache: 'no-store',
     credentials: 'include',
@@ -163,4 +165,16 @@ export const verifyStoredAuth = async () => {
 
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.user))
   return data.user
+}
+
+export const verifyStoredAuth = () => {
+  if (authVerificationPromise) {
+    return authVerificationPromise
+  }
+
+  authVerificationPromise = runStoredAuthVerification().finally(() => {
+    authVerificationPromise = null
+  })
+
+  return authVerificationPromise
 }
