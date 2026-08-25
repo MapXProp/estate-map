@@ -79,9 +79,6 @@ const Page = () => {
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
           ตรวจอีกครั้งก่อนเผยแพร่
         </h1>
-        <p className="font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          หากมีข้อมูลไม่ถูกต้อง กดแก้ไขเฉพาะส่วนนั้นได้โดยไม่ต้องเริ่มใหม่
-        </p>
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-5">
@@ -117,7 +114,11 @@ const Page = () => {
           <ReviewItem label="ที่จอดรถ" value={summary?.payload.parking_count} />
           <ReviewItem
             label="รูปภาพ"
-            value={summary?.payload.media_urls?.length ? `${summary.payload.media_urls.length} รูป` : 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'}
+            value={
+              summary?.payload.media_urls?.length
+                ? `${summary.payload.media_urls.length} รูป`
+                : 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'
+            }
           />
         </ReviewCard>
 

@@ -4,14 +4,7 @@ import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSyn
 import RequireAuth from '@/components/auth/RequireAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
-import {
-  ArrowRightIcon,
-  CheckIcon,
-  ClockIcon,
-  LightBulbIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
-} from '@heroicons/react/24/outline'
+import { ArrowRightIcon, CheckIcon, ClockIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
@@ -20,13 +13,6 @@ const steps = [
   { number: 2, label: 'รายละเอียด' },
   { number: 3, label: 'รูปภาพและราคา' },
   { number: 4, label: 'ตรวจสอบ' },
-]
-
-const stepTips = [
-  'เลือกประเภทที่ใกล้เคียงที่สุดก่อน รายละเอียดปลีกย่อยกลับมาเพิ่มได้',
-  'มีเพียงจังหวัดก็เริ่มได้ แต่หมุดและขนาดที่ชัดจะช่วยให้คนหาเจอง่ายขึ้น',
-  'ภาพแรกควรสว่างและเห็นพื้นที่ชัด เพราะเป็นภาพที่คนเห็นก่อนเสมอ',
-  'ตรวจเบอร์ติดต่อและหัวข้อประกาศอีกครั้งก่อนส่งให้ทีมงานตรวจสอบ',
 ]
 
 const getStepIndex = (pathname: string) => {
@@ -60,13 +46,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         className="pointer-events-none absolute top-80 -left-40 size-96 rounded-full bg-emerald-100/45 blur-3xl dark:bg-emerald-950/15"
       />
 
-      <div className="relative mx-auto w-full max-w-[1440px] px-4 pt-6 pb-28 min-[744px]:px-8 sm:pt-10 lg:pb-32 xl:px-10">
+      <div className="relative mx-auto w-full max-w-[1440px] px-2 pt-4 pb-28 min-[744px]:px-8 sm:pt-10 lg:pb-32 xl:px-10">
         <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
-          <SellerGuide currentStep={index} />
+          <SellerGuide />
 
           <main className="min-w-0">
             <ProgressHeader pathname={pathname} />
-            <div className="mt-5 flex w-full flex-col gap-y-6 rounded-[30px] border border-orange-100/80 bg-white/95 p-5 leading-relaxed shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] backdrop-blur-sm sm:gap-y-8 sm:p-8 lg:p-10 dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="mt-3 flex w-full flex-col gap-y-5 rounded-[22px] border border-orange-100/80 bg-white/95 p-2.5 leading-relaxed shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] backdrop-blur-sm min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:p-8 lg:p-10 dark:border-neutral-800 dark:bg-neutral-900/95">
               {children}
             </div>
             <Pagination pathname={pathname} />
@@ -167,8 +153,8 @@ const TrustItem = ({ icon, label }: { icon: React.ReactNode; label: string }) =>
   </span>
 )
 
-const SellerGuide = ({ currentStep }: { currentStep: number }) => (
-  <aside className="hidden space-y-4 xl:sticky xl:top-28 xl:block">
+const SellerGuide = () => (
+  <aside className="hidden xl:sticky xl:top-28 xl:block">
     <section className="relative overflow-hidden rounded-[30px] bg-[#123f32] p-6 text-white shadow-[0_28px_70px_-42px_rgba(18,63,50,0.8)]">
       <div aria-hidden="true" className="absolute -top-16 -right-16 size-40 rounded-full border border-white/10" />
       <span className="relative flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
@@ -182,10 +168,6 @@ const SellerGuide = ({ currentStep }: { currentStep: number }) => (
         <br />
         อาจเป็นสิ่งที่ใครกำลังหา
       </h2>
-      <p className="relative mt-4 font-sarabun text-sm leading-6 text-white/70">
-        ไม่ต้องกรอกทุกอย่างในครั้งเดียว ระบบจะเก็บร่างไว้ให้คุณกลับมาเติมได้
-      </p>
-
       <ul className="relative mt-6 space-y-3 border-t border-white/10 pt-5">
         {['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'ทีมงานตรวจสอบก่อนเผยแพร่'].map((item) => (
           <li key={item} className="flex items-center gap-2.5 font-sarabun text-sm text-white/85">
@@ -197,16 +179,6 @@ const SellerGuide = ({ currentStep }: { currentStep: number }) => (
         ))}
       </ul>
     </section>
-
-    <section className="rounded-[26px] border border-orange-100 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/90">
-      <div className="flex items-center gap-2 text-orange-600">
-        <LightBulbIcon className="size-5" />
-        <h3 className="font-sarabun text-sm font-semibold">เคล็ดลับขั้นนี้</h3>
-      </div>
-      <p className="mt-3 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-        {stepTips[currentStep - 1]}
-      </p>
-    </section>
   </aside>
 )
 
@@ -217,15 +189,26 @@ const Pagination = ({ pathname }: { pathname: string }) => {
     return null
   }
 
-  const backHref = index > 1 ? `/add-listing/${index - 1}` : '/'
+  const backHref = `/add-listing/${index - 1}`
 
   return (
-    <div className="sticky bottom-3 z-20 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-neutral-200/80 bg-white/95 p-3 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:static sm:mt-8 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none dark:border-neutral-800 dark:bg-neutral-900/95 sm:dark:bg-transparent">
-      <ButtonSecondary type="button" href={backHref}>
-        {index > 1 ? 'ย้อนกลับ' : 'กลับหน้าหลัก'}
-      </ButtonSecondary>
-      <span className="hidden font-sarabun text-xs text-neutral-400 lg:block">ข้อมูลของคุณจะถูกบันทึกเป็นร่าง</span>
-      <ButtonPrimary type="submit" form="add-listing-form">
+    <div
+      className={`sticky bottom-2 z-20 mt-5 grid items-center gap-2.5 rounded-[22px] border border-neutral-200/80 bg-white/95 p-2.5 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.45)] backdrop-blur-xl min-[744px]:static min-[744px]:mt-8 min-[744px]:flex min-[744px]:border-0 min-[744px]:bg-transparent min-[744px]:p-0 min-[744px]:shadow-none dark:border-neutral-800 dark:bg-neutral-900/95 min-[744px]:dark:bg-transparent ${
+        index === 1
+          ? 'grid-cols-1 min-[744px]:justify-end'
+          : 'grid-cols-[auto_minmax(0,1fr)] min-[744px]:justify-between'
+      }`}
+    >
+      {index > 1 ? (
+        <ButtonSecondary type="button" href={backHref} className="h-12 px-5 min-[744px]:h-auto">
+          ย้อนกลับ
+        </ButtonSecondary>
+      ) : null}
+      <ButtonPrimary
+        type="submit"
+        form="add-listing-form"
+        className="h-12 w-full text-base font-semibold shadow-[0_12px_28px_-14px_rgba(18,63,50,0.75)] min-[744px]:h-auto min-[744px]:w-auto min-[744px]:min-w-52"
+      >
         {index === steps.length - 1 ? 'ตรวจสอบประกาศ' : 'ไปขั้นถัดไป'}
         <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" />
       </ButtonPrimary>

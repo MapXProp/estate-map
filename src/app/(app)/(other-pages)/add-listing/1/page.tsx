@@ -3,12 +3,8 @@
 import ListingAuthCheckpoint from '@/components/add-listing/ListingAuthCheckpoint'
 import {
   businessSpaceTypes,
-  getListingScope,
-  getOfferType,
-  getPropertyGroup,
   getPropertyType,
   getPropertyTypesForGroup,
-  getUseCase,
   listingScopes,
   mapUseCasesToLegacyUsage,
   normalizeLegacyPropertyType,
@@ -32,10 +28,20 @@ import {
   BuildingStorefrontIcon,
   CheckCircleIcon,
   HomeModernIcon,
-  InformationCircleIcon,
   MapIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline'
+import {
+  BedDouble,
+  Building,
+  Building2,
+  Factory,
+  House,
+  LandPlot,
+  Store,
+  Warehouse,
+  type LucideIcon,
+} from 'lucide-react'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -47,6 +53,22 @@ const groupIcons = {
   commercial: BuildingOffice2Icon,
   land: MapIcon,
 } satisfies Record<PropertyGroupCode, typeof HomeModernIcon>
+
+const propertyTypeIcons = {
+  detached_house: House,
+  semi_detached_house: House,
+  townhouse: Building,
+  condo: Building2,
+  apartment: Building2,
+  dormitory: BedDouble,
+  shophouse: Store,
+  home_office: Building2,
+  office: Building2,
+  retail_space: Store,
+  warehouse: Warehouse,
+  factory: Factory,
+  land: LandPlot,
+} satisfies Record<PropertyTypeCode, LucideIcon>
 
 const Page = () => {
   const router = useRouter()
@@ -182,22 +204,12 @@ const Page = () => {
           <PencilSquareIcon className="h-4 w-4" />
           <span>เริ่มลงประกาศ</span>
         </div>
-        <div className="space-y-3">
-          <h1 className="font-sarabun text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">
-            เลือกประเภท แล้วเริ่มลงประกาศได้เลย
-          </h1>
-          <p className="max-w-2xl font-sarabun text-sm leading-6 text-neutral-500 sm:text-base dark:text-neutral-400">
-            กรอกเฉพาะข้อมูลที่มีตอนนี้ได้ รายละเอียดเฉพาะประเภท เช่น ระบบไฟ ขนาดล็อก หรือจำนวนยูนิต
-            สามารถกลับมาเพิ่มภายหลัง
-          </p>
-        </div>
+        <h1 className="font-sarabun text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl dark:text-neutral-50">
+          เลือกประเภท แล้วเริ่มลงประกาศได้เลย
+        </h1>
       </div>
 
       <div className="h-px w-16 bg-gradient-to-r from-orange-400 via-orange-200 to-transparent" />
-
-      <div className="rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-3 font-sarabun text-sm leading-6 text-neutral-600 dark:border-orange-900/50 dark:bg-orange-950/20 dark:text-neutral-300">
-        เริ่มกรอกได้ทันที เราจะขอให้เข้าสู่ระบบเมื่อคุณต้องการบันทึกร่างและไปขั้นตอนถัดไป
-      </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-7">
         <input type="hidden" name="property_group_code" value={selectedGroup} />
@@ -212,11 +224,7 @@ const Page = () => {
           <input key={code} type="hidden" name="offerTypes[]" value={code} />
         ))}
 
-        <WizardSection
-          number="1"
-          title="เลือกกลุ่มทรัพย์"
-          description="เลือกภาพรวมที่ใกล้เคียงที่สุด แล้วค่อยระบุประเภททรัพย์ในขั้นถัดไป"
-        >
+        <WizardSection number="1" title="เลือกกลุ่มทรัพย์">
           <div className="grid gap-3 sm:grid-cols-2">
             {propertyGroups.map((group) => {
               const Icon = groupIcons[group.code]
@@ -225,8 +233,6 @@ const Page = () => {
                   key={group.code}
                   selected={selectedGroup === group.code}
                   title={group.nameTh}
-                  subtitle={group.nameEn}
-                  description={group.description}
                   icon={<Icon className="h-6 w-6" />}
                   onClick={() => selectGroup(group.code)}
                 />
@@ -235,37 +241,30 @@ const Page = () => {
           </div>
         </WizardSection>
 
-        <WizardSection
-          number="2"
-          title="เลือกประเภททรัพย์"
-          description={`ประเภทในกลุ่ม ${getPropertyGroup(selectedGroup)?.nameTh ?? ''}`}
-        >
+        <WizardSection number="2" title="เลือกประเภททรัพย์">
           <div className="grid gap-3 sm:grid-cols-2">
-            {propertyTypesForGroup.map((item) => (
-              <ChoiceCard
-                key={item.code}
-                selected={selectedPropertyType === item.code}
-                title={item.nameTh}
-                subtitle={item.nameEn}
-                description={item.description}
-                onClick={() => selectPropertyType(item.code)}
-              />
-            ))}
+            {propertyTypesForGroup.map((item) => {
+              const Icon = propertyTypeIcons[item.code]
+              return (
+                <ChoiceCard
+                  key={item.code}
+                  selected={selectedPropertyType === item.code}
+                  title={item.nameTh}
+                  icon={<Icon className="h-6 w-6" />}
+                  onClick={() => selectPropertyType(item.code)}
+                />
+              )
+            })}
           </div>
         </WizardSection>
 
-        <WizardSection
-          number="3"
-          title="ต้องการประกาศแบบใด"
-          description="เลือกได้มากกว่าหนึ่งแบบ เช่น ขายและให้เช่าในประกาศเดียว"
-        >
+        <WizardSection number="3" title="ต้องการขายหรือให้เช่า">
           <div className="grid gap-3 sm:grid-cols-2">
             {availableOffers.map((offer) => (
               <ToggleCard
                 key={offer.code}
                 checked={selectedOffers.includes(offer.code)}
                 title={offer.nameTh}
-                subtitle={offer.description}
                 onClick={() => toggleOffer(offer.code)}
               />
             ))}
@@ -274,30 +273,25 @@ const Page = () => {
 
         <details className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-neutral-50/70 dark:border-neutral-800 dark:bg-neutral-900/60">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-sarabun sm:px-7">
-            <span>
-              <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                จัดหมวดเพิ่มเติม <span className="font-normal text-neutral-400">(ไม่จำเป็น)</span>
-              </span>
-              <span className="mt-1 block text-xs leading-5 text-neutral-500">
-                ระบบเลือกค่าที่เหมาะกับ {propertyType.nameTh} ไว้แล้ว เปิดส่วนนี้เมื่อคุณต้องการระบุให้ละเอียดขึ้น
-              </span>
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              ตัวเลือกเพิ่มเติม <span className="font-normal text-neutral-400">(ไม่บังคับ)</span>
             </span>
             <span className="rounded-full bg-white px-3 py-1.5 text-xs text-neutral-500 shadow-sm ring-1 ring-neutral-200 group-open:text-orange-600 dark:bg-neutral-800 dark:ring-neutral-700">
-              ปรับรายละเอียด
+              เปิด
             </span>
           </summary>
 
           <div className="space-y-6 border-t border-neutral-200 px-5 py-6 sm:px-7 dark:border-neutral-800">
             <div>
-              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">กำลังประกาศส่วนใด</h3>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                กำลังประกาศส่วนใด
+              </h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {availableScopes.map((scope) => (
                   <ChoiceCard
                     key={scope.code}
                     selected={selectedScope === scope.code}
                     title={scope.nameTh}
-                    subtitle={scope.nameEn}
-                    description={scope.description}
                     onClick={() => setSelectedScope(scope.code)}
                   />
                 ))}
@@ -305,15 +299,15 @@ const Page = () => {
             </div>
 
             <div>
-              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">ใช้ทำอะไรได้บ้าง</h3>
-              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500">เลือกได้หลายข้อ และกลับมาแก้ไขได้ภายหลัง</p>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                ใช้ทำอะไรได้บ้าง
+              </h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {availableUseCases.map((useCase) => (
                   <ToggleCard
                     key={useCase.code}
                     checked={selectedUseCases.includes(useCase.code)}
                     title={useCase.nameTh}
-                    subtitle={useCase.description}
                     onClick={() => toggleUseCase(useCase.code)}
                   />
                 ))}
@@ -321,7 +315,7 @@ const Page = () => {
             </div>
 
             {propertyType.supportsBusinessSpaceType ? (
-              <FormItem label="รูปแบบพื้นที่ค้าขาย" desccription="เว้นว่างได้ หากยังไม่แน่ใจ">
+              <FormItem label="รูปแบบพื้นที่ค้าขาย (ไม่บังคับ)">
                 <Select
                   name="space_type_code"
                   value={businessSpaceType}
@@ -340,16 +334,9 @@ const Page = () => {
           </div>
         </details>
 
-        <WizardSection
-          number="4"
-          title="ข้อมูลเบื้องต้นของประกาศ"
-          description="เขียนให้ผู้ค้นหาเข้าใจจุดเด่นของทรัพย์ได้ทันที"
-        >
+        <WizardSection number="4" title="ข้อมูลประกาศ">
           <div className="grid gap-5">
-            <FormItem
-              label="หัวข้อประกาศ"
-              desccription="ระบุประเภททรัพย์ ทำเล และจุดเด่นสำคัญ โดยไม่ต้องใส่เบอร์โทรในหัวข้อ"
-            >
+            <FormItem label="หัวข้อประกาศ">
               <Input
                 name="listingTitle"
                 value={title}
@@ -362,7 +349,7 @@ const Page = () => {
               <p className="mt-2 text-right text-xs text-neutral-400">{title.length}/160</p>
             </FormItem>
 
-            <FormItem label="ชื่อโครงการ อาคาร หรือสถานที่" desccription="เว้นว่างได้ หากทรัพย์ไม่ได้อยู่ในโครงการ">
+            <FormItem label="ชื่อโครงการ อาคาร หรือสถานที่ (ไม่บังคับ)">
               <Input
                 name="placeName"
                 value={placeName}
@@ -373,43 +360,19 @@ const Page = () => {
               />
             </FormItem>
 
-            <FormItem
-              label="คำอธิบายสั้น"
-              desccription="สรุปสภาพทรัพย์ จุดเด่น และผู้เช่าหรือผู้ซื้อที่เหมาะสม ยังสามารถเพิ่มรายละเอียดฉบับเต็มในขั้นถัดไป"
-            >
+            <FormItem label="คำอธิบายสั้น (ไม่บังคับ)">
               <Textarea
                 name="listingDescription"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="อธิบายจุดเด่นของทรัพย์ การเดินทาง และเงื่อนไขสำคัญ..."
                 maxLength={1000}
-                className="min-h-36 rounded-2xl border-neutral-200 bg-neutral-50 px-4 py-3 text-[15px] shadow-none dark:bg-neutral-950"
+                className="min-h-52 rounded-2xl border-neutral-200 bg-neutral-50 px-4 py-3 text-[15px] shadow-none min-[744px]:min-h-60 dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{description.length}/1000</p>
             </FormItem>
           </div>
         </WizardSection>
-
-        <div className="rounded-3xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
-          <div className="flex items-start gap-3">
-            <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0" />
-            <div>
-              <p className="font-medium">สรุปการจัดหมวด</p>
-              <p className="mt-1 leading-6">
-                {propertyType.nameTh} · {getListingScope(selectedScope)?.nameTh} ·{' '}
-                {selectedUseCases
-                  .map((code) => getUseCase(code)?.nameTh)
-                  .filter(Boolean)
-                  .join(', ') || 'ยังไม่ได้เลือกการใช้งาน'}{' '}
-                ·{' '}
-                {selectedOffers
-                  .map((code) => getOfferType(code)?.nameTh)
-                  .filter(Boolean)
-                  .join(', ') || 'ยังไม่ได้เลือกรูปแบบประกาศ'}
-              </p>
-            </div>
-          </div>
-        </div>
 
         {error ? (
           <div
@@ -430,43 +393,26 @@ const Page = () => {
   )
 }
 
-const WizardSection = ({
-  number,
-  title,
-  description,
-  children,
-}: {
-  number: string
-  title: string
-  description: string
-  children: React.ReactNode
-}) => (
+const WizardSection = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <section className="overflow-hidden rounded-[28px] border border-neutral-200/80 bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.32)] dark:border-neutral-800 dark:bg-neutral-900">
-    <div className="flex items-start gap-4 border-b border-neutral-100 bg-neutral-50/80 px-5 py-5 sm:px-7 dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="flex items-start gap-3 border-b border-neutral-100 bg-neutral-50/80 px-4 py-4 min-[744px]:gap-4 min-[744px]:px-7 min-[744px]:py-5 dark:border-neutral-800 dark:bg-neutral-900">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">
         {number}
       </span>
-      <div>
-        <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-        <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</p>
-      </div>
+      <h2 className="self-center font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
     </div>
-    <div className="p-5 sm:p-7">{children}</div>
+    <div className="p-3 min-[744px]:p-7">{children}</div>
   </section>
 )
 
 const ChoiceCard = ({
   selected,
   title,
-  subtitle,
-  description,
   icon,
   onClick,
 }: {
   selected: boolean
   title: string
-  subtitle: string
-  description: string
   icon?: React.ReactNode
   onClick: () => void
 }) => (
@@ -474,7 +420,7 @@ const ChoiceCard = ({
     type="button"
     aria-pressed={selected}
     onClick={onClick}
-    className={`relative flex min-h-32 w-full items-start gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+    className={`relative flex min-h-20 w-full items-center gap-4 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
       selected
         ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/25'
         : 'border-neutral-200 bg-white hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500 dark:hover:bg-neutral-800/60'
@@ -489,32 +435,18 @@ const ChoiceCard = ({
     ) : null}
     <span className="min-w-0 flex-1">
       <span className="block font-sarabun text-base font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
-      <span className="mt-0.5 block text-xs font-medium tracking-wide text-neutral-400 uppercase">{subtitle}</span>
-      <span className="mt-2 block font-sarabun text-sm leading-5 text-neutral-500 dark:text-neutral-400">
-        {description}
-      </span>
     </span>
     {selected ? <CheckCircleIcon className="h-6 w-6 shrink-0 text-orange-600" /> : null}
   </button>
 )
 
-const ToggleCard = ({
-  checked,
-  title,
-  subtitle,
-  onClick,
-}: {
-  checked: boolean
-  title: string
-  subtitle: string
-  onClick: () => void
-}) => (
+const ToggleCard = ({ checked, title, onClick }: { checked: boolean; title: string; onClick: () => void }) => (
   <button
     type="button"
     role="checkbox"
     aria-checked={checked}
     onClick={onClick}
-    className={`flex min-h-24 w-full items-start gap-3 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+    className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
       checked
         ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
         : 'border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500'
@@ -525,12 +457,7 @@ const ToggleCard = ({
     >
       {checked ? <CheckCircleIcon className="h-4 w-4" /> : null}
     </span>
-    <span>
-      <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
-      <span className="mt-1 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-        {subtitle}
-      </span>
-    </span>
+    <span className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
   </button>
 )
 

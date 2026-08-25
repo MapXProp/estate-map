@@ -1,6 +1,7 @@
 'use client'
 
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
+import { getApiBaseUrl } from '@/lib/auth'
 import {
   getListingDraft,
   saveListingDraftToCloud,
@@ -9,10 +10,9 @@ import {
   type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
-import { getApiBaseUrl } from '@/lib/auth'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
-import { BanknotesIcon, InformationCircleIcon, PhoneIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { BanknotesIcon, PhoneIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
@@ -114,17 +114,10 @@ const Page = () => {
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
           ทำให้ประกาศพร้อมรับลูกค้า
         </h1>
-        <p className="font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          ใส่ราคาให้ชัดและเลือกช่องทางที่สะดวกสำหรับให้ผู้สนใจติดต่อกลับ
-        </p>
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-6">
-        <SectionCard
-          icon={<PhotoIcon className="size-5" />}
-          title="รูปภาพของทรัพย์"
-          description="เลือกภาพหน้าปกก่อน ตามด้วยภายใน ห้องน้ำ วิว และบริเวณโดยรอบ สูงสุด 12 รูป"
-        >
+        <SectionCard icon={<PhotoIcon className="size-5" />} title="รูปภาพของทรัพย์">
           <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-10 text-center transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-orange-700">
             <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
               <PhotoIcon className="size-6" />
@@ -132,8 +125,8 @@ const Page = () => {
             <span className="mt-4 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               เลือกรูปจากอุปกรณ์
             </span>
-            <span className="mt-1 font-sarabun text-xs text-neutral-500">
-              JPG, PNG หรือ WebP · รูปแรกจะเป็นภาพหน้าปก
+            <span className="mt-1 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              สูงสุด 12 รูป · รูปแรกเป็นภาพหน้าปก
             </span>
             <input
               name="listingPhotos"
@@ -164,17 +157,14 @@ const Page = () => {
             </div>
           ) : null}
 
-          <div className="mt-4 flex items-start gap-3 rounded-2xl bg-blue-50 p-4 text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-            <InformationCircleIcon className="mt-0.5 size-5 shrink-0" />
-            <p className="font-sarabun text-xs leading-5">
-              เมื่อกดไปขั้นถัดไป ระบบจะอัปโหลดและบันทึกรูปไว้กับร่างประกาศโดยอัตโนมัติ
-            </p>
-          </div>
           {isUploading ? (
             <p className="mt-3 font-sarabun text-sm font-medium text-emerald-700">กำลังอัปโหลดรูป กรุณารอสักครู่...</p>
           ) : null}
           {uploadError ? (
-            <p role="alert" className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700">
+            <p
+              role="alert"
+              className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700"
+            >
               {uploadError}
             </p>
           ) : null}
@@ -203,29 +193,21 @@ const Page = () => {
             onChange={(event) => setPriceOnRequest(event.target.checked)}
             className="mt-1 h-4 w-4 rounded border-neutral-300 text-emerald-700 focus:ring-emerald-600"
           />
-          <span>
-            <span className="block font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              ยังไม่ระบุราคา ให้ผู้สนใจสอบถาม
-            </span>
-            <span className="mt-1 block font-sarabun text-xs leading-5 text-neutral-500">
-              เหมาะกับพื้นที่ออกบูธ ล็อกตลาด โครงการใหม่ หรือประกาศที่กำลังรอยืนยันราคา
-            </span>
+          <span className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            ยังไม่ระบุราคา ให้ผู้สนใจสอบถาม
           </span>
         </label>
 
         <input type="hidden" name="currency" value="THB" />
 
         {hasSale ? (
-          <PriceSection title="ราคาขาย" description="ราคารวมของทรัพย์ ไม่ใช่ราคาต่อตารางเมตร">
+          <PriceSection title="ราคาขายรวม">
             <PriceInput name="salePrice" value={salePrice} onChange={setSalePrice} suffix="บาท" />
           </PriceSection>
         ) : null}
 
         {hasRent ? (
-          <PriceSection
-            title={offers.includes('sublease') ? 'ค่าเช่าช่วงต่อเดือน' : 'ค่าเช่าต่อเดือน'}
-            description="ระบุค่าเช่าหลักก่อนรวมค่าสาธารณูปโภคและค่าบริการอื่น"
-          >
+          <PriceSection title={offers.includes('sublease') ? 'ค่าเช่าช่วงต่อเดือน' : 'ค่าเช่าต่อเดือน'}>
             <div className="grid gap-5 sm:grid-cols-2">
               <FormItem label="ค่าเช่ารายเดือน">
                 <PriceInput
@@ -251,7 +233,7 @@ const Page = () => {
                   <option value="36">3 ปี</option>
                 </Select>
               </FormItem>
-              <FormItem label="ค่าบริการส่วนกลางต่อเดือน" desccription="เว้นว่างได้ หากรวมอยู่ในค่าเช่าแล้ว">
+              <FormItem label="ค่าส่วนกลางต่อเดือน (ไม่บังคับ)">
                 <PriceInput
                   name="serviceFeeMonthly"
                   value={serviceFeeMonthly}
@@ -264,18 +246,10 @@ const Page = () => {
         ) : null}
 
         {hasTransfer ? (
-          <PriceSection
-            title="ราคาเซ้งหรือค่าโอนสิทธิ"
-            description="ค่าโอนสิทธิ กิจการ หรืออุปกรณ์ ไม่ใช่ราคาซื้อกรรมสิทธิ์ในอสังหาริมทรัพย์"
-          >
+          <PriceSection title="ราคาเซ้งหรือค่าโอนสิทธิ">
             <div className="grid gap-5 sm:grid-cols-2">
               <FormItem label="ราคาเซ้ง">
-                <PriceInput
-                  name="keyMoneyAmount"
-                  value={keyMoneyAmount}
-                  onChange={setKeyMoneyAmount}
-                  suffix="บาท"
-                />
+                <PriceInput name="keyMoneyAmount" value={keyMoneyAmount} onChange={setKeyMoneyAmount} suffix="บาท" />
               </FormItem>
               {!hasRent ? (
                 <FormItem label="ค่าเช่าที่ต้องจ่ายต่อหลังรับโอน">
@@ -300,21 +274,10 @@ const Page = () => {
             defaultChecked={readText(draft.priceNegotiable) === 'yes'}
             className="mt-1 h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
           />
-          <span>
-            <span className="block font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              ราคาต่อรองได้
-            </span>
-            <span className="mt-1 block font-sarabun text-xs leading-5 text-neutral-500">
-              แสดงให้ผู้ค้นหาทราบว่าเจ้าของพร้อมพูดคุยเรื่องราคา
-            </span>
-          </span>
+          <span className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">ราคาต่อรองได้</span>
         </label>
 
-        <SectionCard
-          icon={<PhoneIcon className="size-5" />}
-          title="ช่องทางติดต่อ"
-          description="ข้อมูลนี้จะแสดงกับผู้สนใจประกาศ กรุณาใช้ช่องทางที่ติดต่อได้จริง"
-        >
+        <SectionCard icon={<PhoneIcon className="size-5" />} title="ช่องทางติดต่อ">
           <div className="grid gap-5 sm:grid-cols-2">
             <FormItem label="ชื่อผู้ติดต่อ">
               <Input
@@ -333,10 +296,10 @@ const Page = () => {
                 required
               />
             </FormItem>
-            <FormItem label="LINE ID" desccription="เว้นว่างได้">
+            <FormItem label="LINE ID (ไม่บังคับ)">
               <Input name="lineId" defaultValue={readText(draft.lineId)} placeholder="Line ID" />
             </FormItem>
-            <FormItem label="อีเมล" desccription="เว้นว่างได้">
+            <FormItem label="อีเมล (ไม่บังคับ)">
               <Input
                 name="contactEmail"
                 defaultValue={readText(draft.contactEmail)}
@@ -346,11 +309,6 @@ const Page = () => {
             </FormItem>
           </div>
         </SectionCard>
-
-        <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
-          <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0" />
-          <p className="font-sarabun leading-6">กรอกราคาเป็นตัวเลข เช่น 35000 หรือ 1,250,000 ระบบจะจัดรูปแบบภายหลัง</p>
-        </div>
       </Form>
     </>
   )
@@ -359,12 +317,10 @@ const Page = () => {
 const SectionCard = ({
   icon,
   title,
-  description,
   children,
 }: {
   icon: React.ReactNode
   title: string
-  description: string
   children: React.ReactNode
 }) => (
   <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
@@ -374,26 +330,16 @@ const SectionCard = ({
       </span>
       <div>
         <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-        <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</p>
       </div>
     </div>
     <div className="mt-6">{children}</div>
   </section>
 )
 
-const PriceSection = ({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: React.ReactNode
-}) => (
+const PriceSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
     <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-    <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</p>
-    <div className="mt-5">{children}</div>
+    <div className="mt-4">{children}</div>
   </section>
 )
 
@@ -430,8 +376,7 @@ const PriceInput = ({
 
 const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
-const resolveListingMediaUrl = (value: string) =>
-  value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value
+const resolveListingMediaUrl = (value: string) => (value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value)
 const isOfferTypeCode = (value: string): value is OfferTypeCode =>
   ['sale', 'rent', 'sublease', 'business_transfer'].includes(value)
 const offersFromLegacy = (value: string): OfferTypeCode[] => {

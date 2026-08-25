@@ -5,7 +5,7 @@ import { getPropertyGroup, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
-import { BuildingOffice2Icon, CheckIcon, HomeModernIcon, MapPinIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { BuildingOffice2Icon, CheckIcon, HomeModernIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -89,9 +89,6 @@ const Page = () => {
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
           ข้อมูลที่คนค้นหาใช้ตัดสินใจ
         </h1>
-        <p className="font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-          ระบุจังหวัดเป็นอย่างน้อย ส่วนที่อยู่ละเอียด ขนาด ห้อง และสิ่งอำนวยความสะดวกเว้นไว้ก่อนได้
-        </p>
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-6">
@@ -104,16 +101,13 @@ const Page = () => {
                 <HomeModernIcon className="size-5" />
               )}
             </span>
-            <div>
-              <p className="font-sarabun text-xs text-neutral-500">กำลังลงรายละเอียดให้</p>
-              <p className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                {getPropertyGroup(propertyGroup)?.nameTh || propertyGroup} · {propertyType?.nameTh || 'อสังหาริมทรัพย์'}
-              </p>
-            </div>
+            <p className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              {getPropertyGroup(propertyGroup)?.nameTh || propertyGroup} · {propertyType?.nameTh || 'อสังหาริมทรัพย์'}
+            </p>
           </div>
         </section>
 
-        <SectionCard title="ตำแหน่งที่ตั้ง" description="ระบุตำแหน่งให้ใกล้เคียงที่สุด ผู้ค้นหาจะเห็นทำเลได้ง่ายขึ้น">
+        <SectionCard title="ตำแหน่งที่ตั้ง">
           <div className="space-y-5">
             <button
               type="button"
@@ -125,7 +119,7 @@ const Page = () => {
             </button>
             {locationError ? <p className="font-sarabun text-sm text-red-600">{locationError}</p> : null}
 
-            <FormItem label="ที่อยู่ / ถนน / ซอย" desccription="เว้นว่างได้ หากตอนนี้ทราบเพียงโครงการหรือจังหวัด">
+            <FormItem label="ที่อยู่ / ถนน / ซอย (ไม่บังคับ)">
               <Input name="Street" defaultValue={readText(draft.Street)} placeholder="เช่น ถนนสุขุมวิท 24" />
             </FormItem>
 
@@ -148,7 +142,7 @@ const Page = () => {
                   placeholder="10110"
                 />
               </FormItem>
-              <FormItem label="เลขห้อง / ยูนิต" desccription="เว้นว่างได้">
+              <FormItem label="เลขห้อง / ยูนิต (ไม่บังคับ)">
                 <Input name="room-number" defaultValue={readText(draft['room-number'])} placeholder="เช่น A-1208" />
               </FormItem>
             </div>
@@ -182,10 +176,15 @@ const Page = () => {
                 </Map>
               </div>
             </div>
-            <p className="font-sarabun text-xs leading-5 text-neutral-500">
-              {hasConfirmedMarker
-                ? 'บันทึกตำแหน่งหมุดแล้ว สามารถลากเพื่อปรับได้'
-                : 'แผนที่เริ่มต้นที่กรุงเทพฯ และจะยังไม่บันทึกพิกัดจนกว่าคุณจะลากหมุดหรือใช้ตำแหน่งปัจจุบัน'}
+            <p
+              role="status"
+              className={`inline-flex rounded-full px-3 py-1.5 font-sarabun text-xs font-medium ${
+                hasConfirmedMarker
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+              }`}
+            >
+              {hasConfirmedMarker ? 'บันทึกตำแหน่งแล้ว' : 'ลากหมุดหรือใช้ตำแหน่งปัจจุบัน'}
             </p>
             <input type="hidden" name="country-region" value="Thailand" />
             <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
@@ -193,17 +192,14 @@ const Page = () => {
           </div>
         </SectionCard>
 
-        <SectionCard
-          title={isLand ? 'ขนาดที่ดิน' : 'ขนาดและข้อมูลหลัก'}
-          description="ตัวเลขที่ครบช่วยให้ประกาศติดตัวกรองการค้นหาได้ถูกต้อง"
-        >
+        <SectionCard title={isLand ? 'ขนาดที่ดิน' : 'ขนาดและข้อมูลหลัก'}>
           <div className="grid gap-5 sm:grid-cols-2">
             {isLand ? (
-              <FormItem label="ขนาดที่ดิน" desccription="กรอกเป็นตารางเมตร">
+              <FormItem label="ขนาดที่ดิน">
                 <UnitInput name="landAreaSqm" defaultValue={readText(draft.landAreaSqm)} suffix="ตร.ม." />
               </FormItem>
             ) : (
-              <FormItem label="พื้นที่ใช้สอย" desccription="กรอกเป็นตารางเมตร">
+              <FormItem label="พื้นที่ใช้สอย">
                 <UnitInput name="usableAreaSqm" defaultValue={readText(draft.usableAreaSqm)} suffix="ตร.ม." />
               </FormItem>
             )}
@@ -266,7 +262,7 @@ const Page = () => {
         </SectionCard>
 
         {!isLand ? (
-          <SectionCard title="จุดเด่นและสิ่งอำนวยความสะดวก" description="เลือกเท่าที่มีจริง ไม่จำเป็นต้องเลือกให้ครบ">
+          <SectionCard title="จุดเด่นและสิ่งอำนวยความสะดวก">
             <input type="hidden" name="amenities[]" value="" />
             <div className="grid gap-3 sm:grid-cols-2">
               {amenities.map((amenity) => (
@@ -290,31 +286,15 @@ const Page = () => {
             </div>
           </SectionCard>
         ) : null}
-
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-          <SparklesIcon className="mt-0.5 size-5 shrink-0" />
-          <p className="font-sarabun text-sm leading-6">
-            แนะนำให้กรอกทำเลและขนาดให้ครบ เพราะเป็นสองข้อมูลหลักที่ผู้ซื้อและผู้เช่าใช้กรองประกาศ
-          </p>
-        </div>
       </Form>
     </>
   )
 }
 
-const SectionCard = ({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: React.ReactNode
-}) => (
+const SectionCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
     <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-    <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">{description}</p>
-    <div className="mt-6">{children}</div>
+    <div className="mt-5">{children}</div>
   </section>
 )
 
