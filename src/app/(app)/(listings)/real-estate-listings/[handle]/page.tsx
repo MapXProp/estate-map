@@ -45,12 +45,13 @@ import SectionHost from '../../components/SectionHost'
 import SectionListingReviews from '../../components/SectionListingReviews'
 import SectionMap from '../../components/SectionMap'
 import EventBoothListingView from './EventBoothListingView'
+import LandListingView from './LandListingView'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
   const databaseListing = await fetchPropertyListingDetail(handle)
 
-  if (databaseListing?.event) {
+  if (databaseListing) {
     return {
       title: databaseListing.title,
       description: databaseListing.description,
@@ -77,6 +78,9 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const databaseListing = await fetchPropertyListingDetail(handle)
   if (databaseListing?.event) {
     return <EventBoothListingView listing={databaseListing} />
+  }
+  if (databaseListing?.property_type_code === 'land') {
+    return <LandListingView listing={databaseListing} />
   }
 
   const listing = await getRealEstateListingByHandle(handle)

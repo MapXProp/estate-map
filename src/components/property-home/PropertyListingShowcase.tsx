@@ -87,6 +87,20 @@ const filters: { value: 'all' | ListingGroup; label: string; labelEn: string }[]
 
 const listings: PrototypeListing[] = [
   {
+    id: 11,
+    group: 'land',
+    type: 'ที่ดินเปล่า · 2 แปลงติดกัน',
+    offer: 'ขาย',
+    title: 'ที่ดิน 700 ตร.ว. สุทธิสาร หน้ากว้างติดถนน 87 ม.',
+    location: 'ซอยจัดสรร ถนนสุทธิสารวินิจฉัย, กรุงเทพฯ',
+    facts: ['700 ตร.ว.', '2 แปลง', 'หน้ากว้างรวม 87 ม.'],
+    price: '294,000,000',
+    unit: 'บาท',
+    image: '/listing-media/mapxprop/sutthisan-700-sq-wah/01-cover.webp',
+    href: '/real-estate-listings/land-for-sale-sutthisan-700-sq-wah',
+    badge: 'เจ้าของลงเอง',
+  },
+  {
     id: 9,
     group: 'commercial',
     type: 'พื้นที่ออกบูธ · กลุ่มออฟฟิศ',
@@ -232,6 +246,15 @@ const englishListings: Record<
   number,
   Pick<PrototypeListing, 'type' | 'offer' | 'title' | 'location' | 'facts' | 'unit' | 'badge'>
 > = {
+  11: {
+    type: 'Vacant land · 2 adjoining plots',
+    offer: 'Sale',
+    title: '700 sq.wah land in Sutthisan with 87 m road frontage',
+    location: 'Soi Chatsan, Sutthisan Winitchai Road, Bangkok',
+    facts: ['2,800 sq.m.', '2 plots', 'Approx. 87 m frontage'],
+    unit: '',
+    badge: 'Owner listed',
+  },
   9: {
     type: 'Event booth · Office crowd',
     offer: 'Booking open',

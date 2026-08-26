@@ -55,6 +55,7 @@ export type PropertySearchListing = {
   bedroom_count?: number
   bathroom_count?: number
   usable_area_sqm?: number
+  land_area_sqm?: number
   pet_allowed: boolean
   latitude?: number
   longitude?: number
@@ -111,10 +112,13 @@ export type PropertyListingDetail = {
   district: string
   subdistrict: string
   postal_code: string
+  road: string
+  land_area_sqm?: number
   latitude?: number
   longitude?: number
   contact_name: string
   contact_phone: string
+  contact_email: string
   line_id: string
   offer_type: string
   offer_amount?: number
@@ -122,6 +126,7 @@ export type PropertyListingDetail = {
   published_at?: string
   expires_at?: string
   is_verified: boolean
+  category_details: Record<string, unknown>
   media: PropertyListingMedia[]
   event?: {
     name: string
