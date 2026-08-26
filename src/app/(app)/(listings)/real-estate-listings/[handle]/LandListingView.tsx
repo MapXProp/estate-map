@@ -31,10 +31,10 @@ const formatPhone = (value: string) => {
 const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const images = listing.media.filter((item) => item.media_type === 'image').map((item) => item.url)
   const media: PropertyMediaItem[] = listing.media
-    .filter((item) => ['image', '360', 'panorama'].includes(item.media_type))
+    .filter((item) => ['image', 'video', '360', 'panorama'].includes(item.media_type))
     .map((item) => ({
       id: String(item.id),
-      type: item.media_type === 'image' ? 'photo' : '360',
+      type: item.media_type === 'image' ? 'photo' : item.media_type === 'video' ? 'video' : '360',
       url: item.url,
       thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,

@@ -1035,6 +1035,61 @@ const PanoramaDialog = ({
   </Dialog>
 )
 
+const VideoDialog = ({
+  item,
+  onClose,
+}: {
+  item: PropertyMediaItem | null
+  onClose: () => void
+}) => (
+  <Dialog open={Boolean(item)} onClose={onClose} className="relative z-[80]">
+    <DialogBackdrop className="fixed inset-0 bg-neutral-950/90 backdrop-blur-sm" />
+    <div className="fixed inset-0 flex items-center justify-center p-0 min-[744px]:p-4">
+      <DialogPanel className="relative flex h-full w-full flex-col overflow-hidden bg-neutral-950 text-white min-[744px]:h-auto min-[744px]:max-h-[calc(100dvh-2rem)] min-[744px]:max-w-6xl min-[744px]:rounded-3xl min-[744px]:border min-[744px]:border-white/10 min-[744px]:shadow-2xl">
+        <header className="relative z-20 flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-neutral-950 px-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
+              <Video className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-semibold sm:text-lg">วิดีโอ</h2>
+              <p className="truncate text-xs text-white/60 sm:text-sm">
+                {item?.caption || 'ชมแปลงที่ดินและบรรยากาศโดยรอบ'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="ปิดวิดีโอ"
+            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 active:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <X className="size-6" aria-hidden="true" />
+          </button>
+        </header>
+
+        {item && (
+          <div className="flex min-h-0 flex-1 items-center justify-center bg-black min-[744px]:flex-none">
+            <video
+              key={item.url}
+              controls
+              autoPlay
+              playsInline
+              preload="metadata"
+              poster={item.thumbnailUrl}
+              className="max-h-[calc(100dvh-4rem)] w-full bg-black object-contain min-[744px]:max-h-[calc(100dvh-7rem)]"
+            >
+              <source src={item.url} type="video/mp4" />
+              เบราว์เซอร์นี้ไม่รองรับการเล่นวิดีโอ
+            </video>
+          </div>
+        )}
+      </DialogPanel>
+    </div>
+  </Dialog>
+)
+
 interface Props {
   images: string[]
   media?: PropertyMediaItem[]
@@ -1059,6 +1114,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
   const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
   const [activePanorama, setActivePanorama] = useState<PropertyMediaItem | null>(null)
+  const [activeVideo, setActiveVideo] = useState<PropertyMediaItem | null>(null)
   const [startIndex, setStartIndex] = useState(0)
   const mediaItems: PropertyMediaItem[] =
     media && media.length > 0
@@ -1105,6 +1161,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
         onOpenImage={handleOpenMobileImage}
         onOpenMedia={(item) => {
           if (item.type === '360') setActivePanorama(item)
+          else if (item.type === 'video') setActiveVideo(item)
         }}
         initiallySaved={initiallySaved}
       />
@@ -1118,6 +1175,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
           onOpenImage={handleOpenDesktopImage}
           onOpenMedia={(item) => {
             if (item.type === '360') setActivePanorama(item)
+            else if (item.type === 'video') setActiveVideo(item)
           }}
           initiallySaved={initiallySaved}
           propertyDetails={propertyDetails}
@@ -1125,6 +1183,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
       )}
 
       <PanoramaDialog item={activePanorama} onClose={() => setActivePanorama(null)} />
+      <VideoDialog item={activeVideo} onClose={() => setActiveVideo(null)} />
 
       {/* Dialog for full-screen image gallery */}
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-[60]">
