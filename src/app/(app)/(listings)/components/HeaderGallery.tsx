@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { type RefObject, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
+import PanoramaViewer from './PanoramaViewer'
 
 type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
 type PropertyMediaFilter = 'all' | PropertyMediaType
@@ -237,6 +238,7 @@ const DeferredMediaSection = ({
   items,
   images,
   onOpenImage,
+  onOpenMedia,
   onSectionRef,
   scrollRootRef,
   layout,
@@ -245,6 +247,7 @@ const DeferredMediaSection = ({
   items: PropertyMediaItem[]
   images: string[]
   onOpenImage: (index: number) => void
+  onOpenMedia: (item: PropertyMediaItem) => void
   onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
   scrollRootRef: RefObject<HTMLDivElement | null>
   layout: 'mobile' | 'desktop'
@@ -317,6 +320,7 @@ const DeferredMediaSection = ({
                 type="button"
                 onClick={() => {
                   if (imageIndex >= 0) onOpenImage(imageIndex)
+                  else onOpenMedia(item)
                 }}
                 aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
                 className={clsx(
@@ -366,6 +370,7 @@ const ProgressiveMediaSections = ({
   media,
   images,
   onOpenImage,
+  onOpenMedia,
   onSectionRef,
   scrollRootRef,
   layout,
@@ -373,6 +378,7 @@ const ProgressiveMediaSections = ({
   media: PropertyMediaItem[]
   images: string[]
   onOpenImage: (index: number) => void
+  onOpenMedia: (item: PropertyMediaItem) => void
   onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
   scrollRootRef: RefObject<HTMLDivElement | null>
   layout: 'mobile' | 'desktop'
@@ -385,6 +391,7 @@ const ProgressiveMediaSections = ({
         items={media.filter((item) => item.type === type)}
         images={images}
         onOpenImage={onOpenImage}
+        onOpenMedia={onOpenMedia}
         onSectionRef={onSectionRef}
         scrollRootRef={scrollRootRef}
         layout={layout}
@@ -488,6 +495,7 @@ const MobilePhotoGallery = ({
   open,
   onClose,
   onOpenImage,
+  onOpenMedia,
   initiallySaved,
 }: {
   images: string[]
@@ -495,6 +503,7 @@ const MobilePhotoGallery = ({
   open: boolean
   onClose: () => void
   onOpenImage: (index: number) => void
+  onOpenMedia: (item: PropertyMediaItem) => void
   initiallySaved: boolean
 }) => {
   const [isSaved, setIsSaved] = useState(initiallySaved)
@@ -701,6 +710,7 @@ const MobilePhotoGallery = ({
               media={media}
               images={images}
               onOpenImage={onOpenImage}
+              onOpenMedia={onOpenMedia}
               onSectionRef={registerSection}
               scrollRootRef={scrollContainerRef}
               layout="mobile"
@@ -736,6 +746,7 @@ const DesktopPhotoGallery = ({
   open,
   onClose,
   onOpenImage,
+  onOpenMedia,
   initiallySaved,
   propertyDetails,
 }: {
@@ -744,6 +755,7 @@ const DesktopPhotoGallery = ({
   open: boolean
   onClose: () => void
   onOpenImage: (index: number) => void
+  onOpenMedia: (item: PropertyMediaItem) => void
   initiallySaved: boolean
   propertyDetails?: PropertyGalleryDetails
 }) => {
@@ -862,6 +874,7 @@ const DesktopPhotoGallery = ({
                   media={media}
                   images={images}
                   onOpenImage={onOpenImage}
+                  onOpenMedia={onOpenMedia}
                   onSectionRef={registerSection}
                   scrollRootRef={mediaScrollRef}
                   layout="desktop"
@@ -984,6 +997,44 @@ const DesktopPhotoGallery = ({
   )
 }
 
+const PanoramaDialog = ({
+  item,
+  onClose,
+}: {
+  item: PropertyMediaItem | null
+  onClose: () => void
+}) => (
+  <Dialog open={Boolean(item)} onClose={onClose} className="relative z-[80]">
+    <DialogBackdrop className="fixed inset-0 bg-neutral-950/90 backdrop-blur-sm" />
+    <div className="fixed inset-0 flex items-center justify-center p-0 min-[744px]:p-4">
+      <DialogPanel className="relative flex h-full w-full flex-col overflow-hidden bg-neutral-950 text-white min-[744px]:h-[min(820px,calc(100dvh-2rem))] min-[744px]:max-w-[1440px] min-[744px]:rounded-3xl min-[744px]:border min-[744px]:border-white/10 min-[744px]:shadow-2xl">
+        <header className="relative z-20 flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-neutral-950 px-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 text-white">
+              <Rotate3D className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-semibold sm:text-lg">ภาพ 360°</h2>
+              <p className="truncate text-xs text-white/60 sm:text-sm">{item?.caption || 'สำรวจพื้นที่และสภาพแวดล้อมโดยรอบ'}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="ปิดภาพ 360 องศา"
+            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 active:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <X className="size-6" aria-hidden="true" />
+          </button>
+        </header>
+
+        {item && <PanoramaViewer src={item.url} caption={item.caption} className="min-h-0 flex-1" />}
+      </DialogPanel>
+    </div>
+  </Dialog>
+)
+
 interface Props {
   images: string[]
   media?: PropertyMediaItem[]
@@ -1007,6 +1058,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
   const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
+  const [activePanorama, setActivePanorama] = useState<PropertyMediaItem | null>(null)
   const [startIndex, setStartIndex] = useState(0)
   const mediaItems: PropertyMediaItem[] =
     media && media.length > 0
@@ -1051,6 +1103,9 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
         open={isMobileGalleryOpen}
         onClose={() => setIsMobileGalleryOpen(false)}
         onOpenImage={handleOpenMobileImage}
+        onOpenMedia={(item) => {
+          if (item.type === '360') setActivePanorama(item)
+        }}
         initiallySaved={initiallySaved}
       />
 
@@ -1061,10 +1116,15 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
           open={isDesktopGalleryOpen}
           onClose={() => setIsDesktopGalleryOpen(false)}
           onOpenImage={handleOpenDesktopImage}
+          onOpenMedia={(item) => {
+            if (item.type === '360') setActivePanorama(item)
+          }}
           initiallySaved={initiallySaved}
           propertyDetails={propertyDetails}
         />
       )}
+
+      <PanoramaDialog item={activePanorama} onClose={() => setActivePanorama(null)} />
 
       {/* Dialog for full-screen image gallery */}
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-[60]">

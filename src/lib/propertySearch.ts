@@ -79,6 +79,7 @@ export type PropertyListingMedia = {
   title: string
   alt_text: string
   url: string
+  thumbnail_url?: string
   width?: number
   height?: number
   is_primary: boolean

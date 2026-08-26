@@ -31,11 +31,12 @@ const formatPhone = (value: string) => {
 const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const images = listing.media.filter((item) => item.media_type === 'image').map((item) => item.url)
   const media: PropertyMediaItem[] = listing.media
-    .filter((item) => item.media_type === 'image')
+    .filter((item) => ['image', '360', 'panorama'].includes(item.media_type))
     .map((item) => ({
       id: String(item.id),
-      type: 'photo',
+      type: item.media_type === 'image' ? 'photo' : '360',
       url: item.url,
+      thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,
     }))
   const landAreaSquareWah = numericDetail(listing, 'land_area_square_wah', (listing.land_area_sqm || 0) / 4)
