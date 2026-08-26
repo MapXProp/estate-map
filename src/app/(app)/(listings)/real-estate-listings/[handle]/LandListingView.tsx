@@ -54,7 +54,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
   return (
     <div className="pb-24 min-[744px]:pb-0">
-      <main className="mx-auto max-w-screen-xl px-3 py-4 sm:px-5 min-[744px]:px-6 min-[744px]:py-8 lg:px-8">
+      <main className="-mx-4 max-w-screen-xl px-3 py-4 sm:px-5 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 lg:px-8">
         <HeaderGallery images={images} media={media} gridType="grid2" />
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
