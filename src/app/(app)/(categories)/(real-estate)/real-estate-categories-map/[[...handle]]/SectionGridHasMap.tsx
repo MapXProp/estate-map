@@ -73,6 +73,8 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
         saleOff: null,
         isAds: null,
         listingKind: isEventBooth ? 'event_booth' : 'property',
+        isVerified: listing.is_verified,
+        isOwnerDirect: listing.source_type === 'owner',
         metadataSummary: isEventBooth
           ? `${listing.event_round_count} รอบ · ${listing.event_floor_label ? `ชั้น ${listing.event_floor_label}` : listing.event_name}`
           : isLand

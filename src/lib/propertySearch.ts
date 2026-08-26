@@ -68,6 +68,8 @@ export type PropertySearchListing = {
   event_starts_on?: string
   event_ends_on?: string
   price_on_request: boolean
+  is_verified: boolean
+  source_type: string
 }
 
 export type PropertyListingMedia = {

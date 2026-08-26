@@ -1111,6 +1111,8 @@ export const getRealEstateListingByHandle = async (handle: string) => {
 export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings>>[number] & {
   listingKind?: 'property' | 'event_booth'
   metadataSummary?: string
+  isVerified?: boolean
+  isOwnerDirect?: boolean
 }
 
 // FLIGHT LISTING //

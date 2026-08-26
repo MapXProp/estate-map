@@ -6,7 +6,7 @@ import { TRealEstateListing } from '@/data/listings'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { Badge } from '@/shared/Badge'
 import clsx from 'clsx'
-import { Eye } from 'lucide-react'
+import { CheckCircle2, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { FC, MouseEvent, useSyncExternalStore } from 'react'
 
@@ -58,6 +58,8 @@ const PropertyCard: FC<Props> = ({
     maxGuests,
     listingKind,
     metadataSummary,
+    isVerified,
+    isOwnerDirect,
   } = data
 
   const listingHref = `/real-estate-listings/${listingHandle}`
@@ -120,6 +122,16 @@ const PropertyCard: FC<Props> = ({
     return (
       <div className={clsx('flex flex-col', compactMobile ? 'mt-1 gap-y-1 p-1.5 sm:p-2 lg:mt-2 lg:gap-y-2 lg:p-3' : 'mt-2 gap-y-2 p-3')}>
         <div className="flex flex-col gap-y-2">
+          {(isVerified || isOwnerDirect) && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
+              {isOwnerDirect && <span className="rounded-full bg-[#edf5f1] px-2 py-1 text-[#176b50]">เจ้าของขายเอง</span>}
+              {isVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#edf5f1] px-2 py-1 text-[#176b50]">
+                  <CheckCircle2 className="size-3" /> ผู้ติดต่อเชื่อถือได้
+                </span>
+              )}
+            </div>
+          )}
           <div
             className={clsx(
               'flex flex-wrap gap-1 text-sm text-neutral-500 dark:text-neutral-400',

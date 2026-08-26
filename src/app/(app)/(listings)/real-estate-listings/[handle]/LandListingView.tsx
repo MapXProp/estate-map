@@ -8,8 +8,10 @@ import {
   MapPin,
   Phone,
   Ruler,
+  ShieldCheck,
   SplitSquareVertical,
   Trees,
+  UserRoundCheck,
   WalletCards,
 } from 'lucide-react'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
@@ -39,7 +41,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const landAreaSquareWah = numericDetail(listing, 'land_area_square_wah', (listing.land_area_sqm || 0) / 4)
   const plotCount = numericDetail(listing, 'plot_count', 2)
   const frontage = numericDetail(listing, 'road_frontage_meters', 87)
-  const pricePerSquareWah = numericDetail(listing, 'price_per_square_wah', 420000)
+  const pricePerSquareWah = numericDetail(listing, 'price_per_square_wah', 450000)
   const offerAmount = listing.offer_amount || 0
   const fullAddress = [listing.address, listing.province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
@@ -61,6 +63,14 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">ขาย</span>
               <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-700">ที่ดินเปล่า</span>
               <span className="rounded-full bg-[#fff7ed] px-3 py-1.5 text-sm font-medium text-[#c95a16]">ขายรวม 2 แปลง</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
+                <UserRoundCheck className="size-4" /> เจ้าของขายเอง
+              </span>
+              {listing.is_verified && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
+                  <ShieldCheck className="size-4" /> ผู้ติดต่อเชื่อถือได้
+                </span>
+              )}
             </div>
 
             <h1 className="mt-4 max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
