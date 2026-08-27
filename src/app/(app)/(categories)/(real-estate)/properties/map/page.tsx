@@ -2,18 +2,23 @@ import SectionGridHasMap from '@/app/(app)/(categories)/(real-estate)/real-estat
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
 import { getPropertyMapFilterOptions } from '@/data/propertyMapFilters'
+import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-type PageSearchParams = Promise<{ q?: string | string[] }>
+type PageSearchParams = Promise<{ q?: string | string[]; location?: string | string[] }>
 
-const getQuery = async (searchParams: PageSearchParams) => {
+const getFirstSearchParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value)?.trim() || ''
+
+const getMapSearch = async (searchParams: PageSearchParams) => {
   const search = await searchParams
-  return (Array.isArray(search.q) ? search.q[0] : search.q)?.trim() || ''
+  const location = getPropertyMapLocationPreset(getFirstSearchParam(search.location))
+  const query = getFirstSearchParam(search.q) || location?.nameTh || ''
+  return { location, query }
 }
 
 export async function generateMetadata({ searchParams }: { searchParams: PageSearchParams }): Promise<Metadata> {
-  const query = await getQuery(searchParams)
+  const { query } = await getMapSearch(searchParams)
 
   return {
     title: query ? `ค้นหา ${query} บนแผนที่` : 'ค้นหาอสังหาริมทรัพย์บนแผนที่',
@@ -26,7 +31,7 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
 }
 
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
-  const query = await getQuery(searchParams)
+  const { location, query } = await getMapSearch(searchParams)
   const category = await getRealEstateCategoryByHandle('all')
   const listings = await getRealEstateListings()
   const filterOptions = await getPropertyMapFilterOptions()
@@ -37,7 +42,14 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
 
   return (
     <div className="container lg:max-w-none lg:pe-0 lg:ps-5 xl:ps-8 2xl:ps-10">
-      <SectionGridHasMap listings={listings} category={category} filterOptions={filterOptions} query={query} />
+      <SectionGridHasMap
+        listings={listings}
+        category={category}
+        filterOptions={filterOptions}
+        query={query}
+        initialMapCenter={location ? { lat: location.latitude, lon: location.longitude } : undefined}
+        initialMapZoom={location?.zoom}
+      />
     </div>
   )
 }

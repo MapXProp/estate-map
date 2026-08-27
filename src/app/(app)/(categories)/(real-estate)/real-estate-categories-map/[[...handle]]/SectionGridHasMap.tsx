@@ -27,18 +27,34 @@ interface Props {
   category: TRealEstateCategory
   filterOptions: TPropertyMapFilterOptions
   query?: string
+  initialMapCenter?: { lat: number; lon: number }
+  initialMapZoom?: number
 }
 
-const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOptions, query = '' }) => {
+const SectionGridHasMap: FC<Props> = ({
+  className,
+  listings,
+  category,
+  filterOptions,
+  query = '',
+  initialMapCenter,
+  initialMapZoom,
+}) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const enableGalleryAutoPlay = useSyncExternalStore(
     subscribeGalleryAutoPlay,
     getGalleryAutoPlaySnapshot,
     getGalleryAutoPlayServerSnapshot
   )
-  const [areaResults, setAreaResults] = useState<TRealEstateListing[] | null>(null)
+  const [areaResults, setAreaResults] = useState<{ query: string; listings: TRealEstateListing[] } | null>(null)
   const [areaSearch, setAreaSearch] = useState<PropertyMapAreaSearch | null>(null)
-  const visibleListings = useMemo(() => areaResults ?? listings, [areaResults, listings])
+  const hasInitialQuery = Boolean(query.trim())
+  const currentQuery = query.trim()
+  const hasResultsForCurrentQuery = areaResults?.query === currentQuery
+  const visibleListings = useMemo(
+    () => (hasResultsForCurrentQuery ? areaResults.listings : hasInitialQuery ? [] : listings),
+    [areaResults, hasInitialQuery, hasResultsForCurrentQuery, listings]
+  )
 
   const mapDatabaseListing = useCallback(
     (listing: PropertySearchListing, index: number): TRealEstateListing => {
@@ -86,24 +102,22 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
   )
 
   useEffect(() => {
-    if (!query.trim()) return
+    if (!currentQuery) return
     const controller = new AbortController()
-    fetchPropertySearch(query, controller.signal)
+    fetchPropertySearch(currentQuery, controller.signal)
       .then((response) => {
         const databaseResults = response.listings
           .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
           .map(mapDatabaseListing)
-        if (databaseResults.length > 0) setAreaResults(databaseResults)
+        setAreaResults({ query: currentQuery, listings: databaseResults })
       })
-      .catch(() => undefined)
+      .catch(() => setAreaResults({ query: currentQuery, listings: [] }))
     return () => controller.abort()
-  }, [mapDatabaseListing, query])
+  }, [currentQuery, mapDatabaseListing])
 
   const handleSearchArea = useCallback(
     async (search: PropertyMapAreaSearch, listingIds: string[]) => {
-      const matches = new Set(listingIds)
-      const demoResults = listings.filter((listing) => matches.has(listing.id))
-      let nextResults = demoResults
+      let nextResults: TRealEstateListing[] = []
 
       try {
         const response = await fetchPropertyMapArea({
@@ -117,17 +131,15 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
         const databaseResults = response.listings
           .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
           .map(mapDatabaseListing)
-        if (databaseResults.length > 0) nextResults = databaseResults
-      } catch {
-        // The database is intentionally allowed to be empty/offline while the map flow is being built.
-      }
+        nextResults = databaseResults
+      } catch {}
 
-      setAreaResults(nextResults)
+      setAreaResults({ query: currentQuery, listings: nextResults })
       setAreaSearch(search)
       setCurrentHoverID('')
       return nextResults.length
     },
-    [listings, mapDatabaseListing, query]
+    [currentQuery, mapDatabaseListing, query]
   )
 
   return (
@@ -161,7 +173,12 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
             </div>
           ))}
         </div>
-        {areaSearch && visibleListings.length === 0 && (
+        {hasInitialQuery && !hasResultsForCurrentQuery && (
+          <div className="rounded-3xl border border-[#dbe7e2] bg-[#f7faf8] px-6 py-10 text-center">
+            <h2 className="text-lg font-semibold text-[#173f34]">กำลังค้นหาประกาศในพื้นที่นี้</h2>
+          </div>
+        )}
+        {(areaSearch || (hasInitialQuery && hasResultsForCurrentQuery)) && visibleListings.length === 0 && (
           <div className="rounded-3xl border border-[#dbe7e2] bg-[#f7faf8] px-6 py-10 text-center">
             <h2 className="text-lg font-semibold text-[#173f34]">ยังไม่พบประกาศในบริเวณนี้</h2>
             <p className="mt-1 text-sm text-neutral-500">ลองเลื่อนหรือซูมแผนที่ออก แล้วกดค้นหาในบริเวณนี้อีกครั้ง</p>
@@ -178,6 +195,8 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
         listings={visibleListings}
         searchSourceListings={listings}
         onSearchArea={handleSearchArea}
+        initialMapCenter={initialMapCenter}
+        initialMapZoom={initialMapZoom}
         listingType="RealEstates"
         splitAtLg
         resultCount={category.count}

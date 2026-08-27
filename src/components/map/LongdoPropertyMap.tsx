@@ -159,6 +159,8 @@ interface Props {
   onViewportChange?: () => void
   mobileControlsVisible?: boolean
   resizeRequestId?: number
+  initialCenter?: LongdoLocation
+  initialZoom?: number
 }
 
 const LongdoPropertyMap = ({
@@ -171,6 +173,8 @@ const LongdoPropertyMap = ({
   onViewportChange,
   mobileControlsVisible = true,
   resizeRequestId = 0,
+  initialCenter,
+  initialZoom = 12,
 }: Props) => {
   const pathname = usePathname()
   const router = useRouter()
@@ -221,8 +225,12 @@ const LongdoPropertyMap = ({
     }
   }, [])
 
-  const center = useMemo(() => locations[0] || { lon: 100.5018, lat: 13.7563 }, [locations])
+  const center = useMemo(
+    () => initialCenter || locations[0] || { lon: 100.5018, lat: 13.7563 },
+    [initialCenter, locations]
+  )
   const initialCenterRef = useRef<LongdoLocation>(center)
+  const initialZoomRef = useRef(initialZoom)
 
   useEffect(() => {
     const handleListingLink = (event: MouseEvent) => {
@@ -253,7 +261,6 @@ const LongdoPropertyMap = ({
     const keyword = searchText.trim()
     if (!isSearchFocused || keyword.length < 3) {
       // Reset the asynchronous suggestion UI when the input is no longer eligible for lookup.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestions([])
       setActiveSuggestionIndex(-1)
       setIsSuggesting(false)
@@ -372,7 +379,7 @@ const LongdoPropertyMap = ({
       placeholder: placeholderRef.current,
       language: 'th',
       location: initialCenterRef.current,
-      zoom: 12,
+      zoom: initialZoomRef.current,
       lastView: false,
       autoResize: true,
       ui: window.longdo.UiComponent.None,
@@ -402,6 +409,14 @@ const LongdoPropertyMap = ({
       mapRef.current = null
     }
   }, [sdkReady])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!mapReady || !map || !initialCenter) return
+
+    map.location(initialCenter, false)
+    map.zoom(initialZoom, false)
+  }, [initialCenter, initialZoom, mapReady])
 
   useEffect(() => {
     const map = mapRef.current

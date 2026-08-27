@@ -40,6 +40,8 @@ interface Props {
   resultCount?: number
   searchSourceListings?: TRealEstateListing[]
   onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
+  initialMapCenter?: { lon: number; lat: number }
+  initialMapZoom?: number
 }
 
 const MapFixedSection = ({
@@ -50,6 +52,8 @@ const MapFixedSection = ({
   splitAtLg = false,
   searchSourceListings,
   onSearchArea,
+  initialMapCenter,
+  initialMapZoom,
 }: Props) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const [mobileSheetState, setMobileSheetState] = useState<MobileMapSheetState>('collapsed')
@@ -266,6 +270,8 @@ const MapFixedSection = ({
               onViewportChange={handleMapViewportChange}
               mobileControlsVisible={mobileMapControlsVisible}
               resizeRequestId={mapResizeRequestId}
+              initialCenter={initialMapCenter}
+              initialZoom={initialMapZoom}
             />
           ) : (
             <Map center={listings[0].map} zoom={11}>
