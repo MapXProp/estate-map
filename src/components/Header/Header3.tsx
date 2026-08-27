@@ -61,7 +61,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
     guestsText = '$10k - $1M'
   } else if (isPropertyMap) {
     locationText = 'ค้นหาทำเลหรืออสังหา'
-    dateText = '3 ประกาศจริง'
+    dateText = '20,000 รายการ'
     guestsText = 'ตัวกรอง'
   }
 
