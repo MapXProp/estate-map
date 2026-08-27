@@ -79,7 +79,7 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
           ? `${listing.event_round_count} รอบ · ${listing.event_floor_label ? `ชั้น ${listing.event_floor_label}` : listing.event_name}`
           : isLand
             ? `${landAreaSquareWah.toLocaleString('th-TH')} ตร.ว. · ที่ดินเปล่า`
-            : undefined,
+            : '',
       }
     },
     [listings]

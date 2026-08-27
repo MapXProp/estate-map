@@ -18,6 +18,8 @@ import airlineLogo1 from '@/images/flights/logo1.png'
 import airlineLogo2 from '@/images/flights/logo2.png'
 import airlineLogo3 from '@/images/flights/logo3.png'
 import airlineLogo4 from '@/images/flights/logo4.png'
+import { getAuthApiUrl } from '@/lib/auth'
+import type { PropertySearchListing } from '@/lib/propertySearch'
 
 //  STAY LISTING  //
 export async function getStayListings() {
@@ -832,7 +834,10 @@ export const getExperienceListingByHandle = async (handle: string) => {
 export type TExperienceListing = Awaited<ReturnType<typeof getExperienceListings>>[number]
 
 //  REAL-ESTATE LISTING  //
-export async function getRealEstateListings() {
+// Kept only as an internal visual reference while we finish the real catalogue.
+// Public pages must use getRealEstateListings below, which reads published data
+// from PostgreSQL through the API.
+export async function getArchivedRealEstateMockListings() {
   return [
     {
       id: 'real-estate-listing://1',
@@ -1063,49 +1068,117 @@ export async function getRealEstateListings() {
     },
   ]
 }
-export const getRealEstateListingByHandle = async (handle: string) => {
-  const listings = await getRealEstateListings()
-  let listing = listings.find((listing) => listing.handle === handle)
-  if (!listing?.id) {
-    // return null
 
-    // for demo porpose, we will return the first listing if not found
-    listing = listings[0]
-  }
+type RealEstateListingGroup = 'residential' | 'rooms' | 'mixed_use' | 'commercial' | 'land'
+
+const propertyTypeLabels: Record<string, string> = {
+  land: 'ที่ดินเปล่า',
+  event_booth: 'พื้นที่ออกบูธ',
+  house: 'บ้าน',
+  condo: 'คอนโด',
+  townhouse: 'ทาวน์โฮม',
+  apartment: 'อพาร์ตเมนต์',
+  dormitory: 'หอพัก',
+  shophouse: 'ตึกแถว',
+  office: 'ออฟฟิศ',
+  warehouse: 'โกดัง',
+  factory: 'โรงงาน',
+}
+
+const roomPropertyTypes = new Set(['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'])
+const mixedUsePropertyTypes = new Set(['shophouse', 'home_office', 'mixed_use'])
+const commercialPropertyTypes = new Set(['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'])
+
+const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup => {
+  if (listing.space_type_code === 'event_booth' || commercialPropertyTypes.has(listing.property_type_code)) return 'commercial'
+  if (roomPropertyTypes.has(listing.property_type_code)) return 'rooms'
+  if (mixedUsePropertyTypes.has(listing.property_type_code)) return 'mixed_use'
+  if (listing.property_type_code === 'land') return 'land'
+  return 'residential'
+}
+
+const formatListingPrice = (amount?: number, suffix = '') =>
+  amount && amount > 0 ? `฿${new Intl.NumberFormat('th-TH').format(amount)}${suffix}` : 'สอบถามราคา'
+
+const toRealEstateListing = (listing: PropertySearchListing) => {
+  const group = getListingGroup(listing)
+  const isEvent = listing.space_type_code === 'event_booth'
+  const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
+  const facts = [
+    listing.land_area_sqm && group === 'land' ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.` : '',
+    listing.usable_area_sqm ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.` : '',
+    listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : '',
+    listing.event_round_count ? `${listing.event_round_count} รอบ` : '',
+  ].filter(Boolean)
 
   return {
-    ...(listing || {}),
-    galleryImgs: [
-      ...listing.galleryImgs,
-      'https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6438752/pexels-photo-6438752.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/261394/pexels-photo-261394.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/2861361/pexels-photo-2861361.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/2677398/pexels-photo-2677398.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
-      'https://images.pexels.com/photos/7163619/pexels-photo-7163619.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6527036/pexels-photo-6527036.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-    ],
+    id: `real-estate-listing://${listing.id}`,
+    title: listing.title,
+    handle: listing.slug || listing.public_listing_id,
+    description: listing.description || '',
+    date: listing.published_at || '',
+    listingCategory: propertyTypeLabels[listing.property_type_code] || listing.property_type_code || 'อสังหาริมทรัพย์',
+    featuredImage: listing.primary_image_url || '/M5.png',
+    galleryImgs: listing.primary_image_url ? [listing.primary_image_url] : ['/M5.png'],
+    like: false,
+    address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
+    reviewStart: 0,
+    reviewCount: 0,
+    price: listing.price_on_request
+      ? 'สอบถามราคา'
+      : isRental
+        ? formatListingPrice(listing.rent_price_monthly, ' / เดือน')
+        : formatListingPrice(listing.sale_price),
+    maxGuests: 0,
+    bedrooms: listing.bedroom_count || 0,
+    bathrooms: listing.bathroom_count || 0,
+    acreage: listing.usable_area_sqm || listing.land_area_sqm || 0,
+    saleOff: null,
+    isAds: null,
+    map: { lat: listing.latitude || 13.7563, lng: listing.longitude || 100.5018 },
+    listingKind: isEvent ? ('event_booth' as const) : ('property' as const),
+    metadataSummary: facts.join(' · '),
+    isVerified: listing.is_verified,
+    isOwnerDirect: listing.source_type === 'owner',
+    group,
+    offer: isEvent ? 'เปิดจอง' : isRental ? 'เช่า' : 'ขาย',
+    badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
+    priceLabel: listing.price_on_request ? 'สอบถามราคา' : undefined,
     host: {
-      displayName: 'John Doe',
+      displayName: 'MapxProp',
       avatarUrl: avatars2.src,
-      handle: 'john-doe',
-      description:
-        'Experienced real estate agent with over 10 years in the industry, specializing in residential properties.',
-      listingsCount: 15,
-      reviewsCount: 250,
-      rating: 4.9,
-      responseRate: 98,
-      responseTime: 'within an hour',
-      isSuperhost: true,
-      isVerified: true,
-      joinedDate: 'January 2020',
-      email: 'john-doe@gmail.com',
-      phone: '+1234567890',
+      handle: 'mapxprop',
+      description: '',
+      listingsCount: 0,
+      reviewsCount: 0,
+      rating: 0,
+      responseRate: 0,
+      responseTime: '',
+      isSuperhost: false,
+      isVerified: listing.is_verified,
+      joinedDate: '',
+      email: '',
+      phone: '',
     },
   }
+}
+
+export async function getRealEstateListings() {
+  try {
+    const response = await fetch(`${getAuthApiUrl('properties/search')}?limit=24`, {
+      cache: 'no-store',
+    })
+    if (!response.ok) return []
+    const data = (await response.json()) as { listings?: PropertySearchListing[] }
+    return (data.listings || []).map(toRealEstateListing)
+  } catch {
+    return []
+  }
+}
+
+export const getRealEstateListingByHandle = async (handle: string) => {
+  const listings = await getRealEstateListings()
+  return listings.find((listing) => listing.handle === handle) || null
 }
 
 export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings>>[number] & {
@@ -1113,6 +1186,10 @@ export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings
   metadataSummary?: string
   isVerified?: boolean
   isOwnerDirect?: boolean
+  group?: RealEstateListingGroup
+  offer?: string
+  badge?: string
+  priceLabel?: string
 }
 
 // FLIGHT LISTING //

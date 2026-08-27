@@ -205,6 +205,7 @@ const heroContent = {
 const siteThemes = {
   all: {
     hero: 'bg-[#edf4f0] dark:bg-[#10231d]',
+    intro: 'from-[#D5EEDF] via-[#E8F5ED] to-[#D8EEE3] dark:from-[#15372C] dark:via-[#102A21] dark:to-[#183A2E]',
     glow: 'bg-emerald-200/35 dark:bg-emerald-700/15',
     accent: 'text-[#176b50] dark:text-emerald-300',
     gradient: 'from-[#edf4f0] dark:from-[#10231d]',
@@ -212,6 +213,7 @@ const siteThemes = {
   },
   homes: {
     hero: 'bg-[#edf4f0] dark:bg-[#10231d]',
+    intro: 'from-[#D5EEDF] via-[#E8F5ED] to-[#D8EEE3] dark:from-[#15372C] dark:via-[#102A21] dark:to-[#183A2E]',
     glow: 'bg-emerald-200/35 dark:bg-emerald-700/15',
     accent: 'text-[#176b50] dark:text-emerald-300',
     gradient: 'from-[#edf4f0] dark:from-[#10231d]',
@@ -219,6 +221,7 @@ const siteThemes = {
   },
   rooms: {
     hero: 'bg-[#EFF8FD] dark:bg-[#102b3a]',
+    intro: 'from-[#D8F0FC] via-[#EAF7FD] to-[#DCEFFC] dark:from-[#153B50] dark:via-[#102B3A] dark:to-[#173C50]',
     glow: 'bg-sky-200/55 dark:bg-sky-700/18',
     accent: 'text-[#2D8FC7] dark:text-[#8fd4f4]',
     gradient: 'from-[#EFF8FD] dark:from-[#102b3a]',
@@ -226,6 +229,7 @@ const siteThemes = {
   },
   business: {
     hero: 'bg-[#FFF2EC] dark:bg-[#351B14]',
+    intro: 'from-[#FFE0D3] via-[#FFF0E9] to-[#FFE3D8] dark:from-[#4A2118] dark:via-[#351B14] dark:to-[#4A2219]',
     glow: 'bg-[#FFD0BE]/70 dark:bg-[#BE3E1B]/20',
     accent: 'text-[#E65A2F] dark:text-[#FFC2AD]',
     gradient: 'from-[#FFF2EC] dark:from-[#351B14]',
@@ -235,6 +239,7 @@ const siteThemes = {
   PropertySiteMode,
   {
     hero: string
+    intro: string
     glow: string
     accent: string
     gradient: string
@@ -245,8 +250,68 @@ const siteThemes = {
 const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) => {
   const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
+  const isMainLanding = mode === 'all'
   const content = heroContent[mode]
   const theme = siteThemes[mode]
+  const categoryIntro = {
+    all: {
+      eyebrowTh: 'เริ่มค้นหาพื้นที่',
+      eyebrowEn: 'Start exploring',
+      titleTh: 'พื้นที่ที่ใช่ เริ่มจากสิ่งที่คุณสนใจ',
+      titleEn: 'The right space starts with what interests you',
+      links: [
+        { th: 'ที่อยู่อาศัย', en: 'Homes', query: 'บ้าน คอนโด ที่อยู่อาศัย' },
+        { th: 'ห้องเช่า', en: 'Monthly rentals', query: 'ห้องเช่า ที่พักรายเดือน' },
+        { th: 'พื้นที่ธุรกิจ', en: 'Business spaces', query: 'พื้นที่ทำธุรกิจ' },
+        { th: 'ที่ดิน', en: 'Land', query: 'ที่ดิน' },
+      ],
+      icon: House,
+      iconTone: 'bg-[#E4F2EB] text-[#176B50] dark:bg-emerald-950 dark:text-emerald-200',
+    },
+    homes: {
+      eyebrowTh: 'ค้นหาที่อยู่อาศัย',
+      eyebrowEn: 'Explore homes',
+      titleTh: 'เริ่มค้นหาบ้านในแบบของคุณ',
+      titleEn: 'Start finding a home in your own way',
+      links: [
+        { th: 'บ้าน', en: 'Houses', query: 'บ้าน' },
+        { th: 'คอนโด', en: 'Condos', query: 'คอนโด' },
+        { th: 'ทาวน์โฮม', en: 'Townhouses', query: 'ทาวน์โฮม' },
+        { th: 'ที่ดิน', en: 'Land', query: 'ที่ดินสำหรับอยู่อาศัย' },
+      ],
+      icon: House,
+      iconTone: 'bg-[#E4F2EB] text-[#176B50] dark:bg-emerald-950 dark:text-emerald-200',
+    },
+    rooms: {
+      eyebrowTh: 'หาห้องเช่าและที่พัก',
+      eyebrowEn: 'Explore rentals',
+      titleTh: 'หาที่พักที่พอดีกับชีวิตคุณ',
+      titleEn: 'Find a place that fits your life',
+      links: [
+        { th: 'อพาร์ตเมนต์', en: 'Apartments', query: 'อพาร์ตเมนต์ให้เช่า' },
+        { th: 'หอพัก', en: 'Dormitories', query: 'หอพัก' },
+        { th: 'คอนโดเช่า', en: 'Condo rentals', query: 'คอนโดให้เช่า' },
+        { th: 'ที่พักรายเดือน', en: 'Monthly stays', query: 'ที่พักรายเดือน' },
+      ],
+      icon: BedDouble,
+      iconTone: 'bg-[#E1F3FD] text-[#2D8FC7] dark:bg-sky-950 dark:text-sky-200',
+    },
+    business: {
+      eyebrowTh: 'ค้นหาพื้นที่ทำธุรกิจ',
+      eyebrowEn: 'Explore business spaces',
+      titleTh: 'เริ่มจากพื้นที่ที่ทำงานได้จริง',
+      titleEn: 'Start with a space that works for you',
+      links: [
+        { th: 'พื้นที่ขายของ', en: 'Retail spaces', query: 'พื้นที่ขายของ' },
+        { th: 'ออกบูธ', en: 'Event booths', query: 'พื้นที่ออกบูธ' },
+        { th: 'ออฟฟิศ', en: 'Offices', query: 'ออฟฟิศ' },
+        { th: 'โกดัง', en: 'Warehouses', query: 'โกดัง' },
+      ],
+      icon: Store,
+      iconTone: 'bg-[#FDE8E1] text-[#E65A2F] dark:bg-orange-950 dark:text-orange-200',
+    },
+  }[mode]
+  const CategoryIcon = categoryIntro.icon
   const {
     props: { srcSet: desktopHeroSrcSet },
   } = getImageProps({
@@ -259,6 +324,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
 
   return (
     <main className="overflow-hidden bg-white dark:bg-neutral-900">
+      {isMainLanding ? (
       <section className="container pt-3 sm:pt-6 lg:pt-10">
         <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
           <div
@@ -322,8 +388,54 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
           </div>
         </div>
       </section>
+      ) : (
+        <section className="container pt-5 sm:pt-7 lg:pt-9">
+          <div className={`relative overflow-hidden rounded-[28px] border border-black/[0.055] bg-gradient-to-br shadow-[0_14px_38px_rgba(16,24,40,0.045)] dark:border-white/10 ${theme.intro}`}>
+            <div className={`pointer-events-none absolute -top-20 -right-10 size-56 rounded-full opacity-55 blur-3xl ${theme.glow}`} />
+            <div className="pointer-events-none absolute right-24 -bottom-20 size-48 rounded-full border border-white/45 dark:border-white/5" />
+            <div className="pointer-events-none absolute right-8 -bottom-10 size-24 rounded-full border border-white/35 dark:border-white/5" />
+            <div className="relative flex min-h-[148px] items-start justify-between gap-5 px-5 py-6 sm:min-h-[158px] sm:items-center sm:px-8 sm:py-7 lg:px-10">
+              <div className="flex min-w-0 items-start gap-3.5 sm:gap-4">
+                <div className={`mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-2xl sm:size-12 ${categoryIntro.iconTone}`}>
+                  <CategoryIcon className="size-5 sm:size-[22px]" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0">
+                  <p className={`mb-1 text-sm font-semibold ${theme.accent}`}>
+                    {isThai ? categoryIntro.eyebrowTh : categoryIntro.eyebrowEn}
+                  </p>
+                  <h1 className="text-[1.45rem]/[1.18] font-semibold tracking-tight text-neutral-950 sm:text-[1.7rem]/[1.18] dark:text-white">
+                    {isThai ? categoryIntro.titleTh : categoryIntro.titleEn}
+                  </h1>
+                  <nav
+                    className="mt-4 flex flex-wrap items-center gap-2"
+                    aria-label={isThai ? 'เลือกดูตามประเภท' : 'Browse by property type'}
+                  >
+                    {categoryIntro.links.map((item) => (
+                      <Link
+                        key={item.query}
+                        href={`/properties/map?q=${encodeURIComponent(item.query)}`}
+                        className={`rounded-full border border-white/70 bg-white/65 px-3 py-1.5 text-sm font-medium text-neutral-600 shadow-[0_1px_1px_rgba(16,24,40,0.025)] backdrop-blur-sm transition hover:-translate-y-px hover:bg-white hover:text-neutral-900 dark:border-white/10 dark:bg-neutral-900/30 dark:text-neutral-200 dark:hover:bg-neutral-900/60 dark:hover:text-white ${theme.link}`}
+                      >
+                        {isThai ? item.th : item.en}
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
+              </div>
+              <Link
+                href="/properties/map"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/75 bg-white/80 text-neutral-600 shadow-sm backdrop-blur-sm transition hover:-translate-y-px hover:border-[#176b50] hover:bg-white hover:text-[#176b50] sm:mt-0 sm:h-auto sm:w-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-sm sm:font-semibold dark:border-white/15 dark:bg-neutral-800/90 dark:text-neutral-200"
+                aria-label={isThai ? 'ดูบนแผนที่' : 'View on map'}
+              >
+                <MapPin className="size-4" />
+                <span className="hidden sm:inline">{isThai ? 'ดูบนแผนที่' : 'View on map'}</span>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
-      <PropertyListingShowcase mode={mode} />
+      <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 
       <section className="container py-10 sm:py-14 lg:py-16">
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">

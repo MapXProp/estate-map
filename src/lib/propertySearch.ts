@@ -19,6 +19,7 @@ export type PropertySearchIntent = {
   locale: 'th' | 'en'
   property_types?: string[]
   property_groups?: string[]
+  discovery_channels?: Array<'homes' | 'rooms' | 'business'>
   use_cases?: string[]
   offer_types?: string[]
   space_types?: string[]
@@ -85,6 +86,38 @@ export type PropertyListingMedia = {
   is_primary: boolean
 }
 
+export type PropertyListingContentBlock = {
+  code: string
+  type: 'rich_text' | 'feature_cards' | 'bullet_list' | 'notice' | 'faq' | string
+  heading_th: string
+  heading_en: string
+  body_th: string
+  body_en: string
+  content: unknown
+  sort_order: number
+}
+
+export type PropertyListingNearbyPlace = {
+  name_th: string
+  name_en: string
+  place_type_code: string
+  distance_meters?: number
+  travel_time_minutes?: number
+  sort_order: number
+}
+
+export type PropertyListingTransactionTerm = {
+  code: string
+  label_th: string
+  label_en: string
+  value_th: string
+  value_en: string
+  payer_code: string
+  numeric_value?: number
+  unit_code: string
+  sort_order: number
+}
+
 export type PropertyEventRound = {
   id: number
   label: string
@@ -131,6 +164,9 @@ export type PropertyListingDetail = {
   is_verified: boolean
   category_details: Record<string, unknown>
   media: PropertyListingMedia[]
+  content_blocks: PropertyListingContentBlock[]
+  nearby_places: PropertyListingNearbyPlace[]
+  transaction_terms: PropertyListingTransactionTerm[]
   event?: {
     name: string
     organizer_name: string
@@ -162,6 +198,13 @@ export type PropertySearchResponse = {
   total: number
   limit: number
   offset: number
+}
+
+export type PropertyDiscoveryChannel = 'homes' | 'rooms' | 'business'
+
+export type PropertySearchOptions = {
+  discoveryChannel?: PropertyDiscoveryChannel
+  limit?: number
 }
 
 export type PropertyMapAreaSearchRequest = {
@@ -212,10 +255,14 @@ export const fetchPropertySearchSuggestions = async (
 
 export const fetchPropertySearch = async (
   query: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options: PropertySearchOptions = {}
 ): Promise<PropertySearchResponse> => {
+  const params = new URLSearchParams({ q: query.trim() })
+  if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
+  if (options.limit) params.set('limit', String(options.limit))
   const response = await fetch(
-    `${getAuthApiUrl('properties/search')}?q=${encodeURIComponent(query.trim())}`,
+    `${getAuthApiUrl('properties/search')}?${params.toString()}`,
     { signal, cache: 'no-store', credentials: 'include' }
   )
   if (!response.ok) throw new Error('property search failed')
