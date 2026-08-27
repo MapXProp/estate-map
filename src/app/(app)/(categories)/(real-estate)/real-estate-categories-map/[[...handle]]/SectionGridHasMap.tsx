@@ -41,15 +41,13 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
   const visibleListings = useMemo(() => areaResults ?? listings, [areaResults, listings])
 
   const mapDatabaseListing = useCallback(
-    (listing: PropertySearchListing, index: number): TRealEstateListing => {
-      const fallback = listings[index % listings.length]
+    (listing: PropertySearchListing): TRealEstateListing => {
       const amount = listing.rent_price_monthly ?? listing.sale_price
-      const eventImage = listing.primary_image_url || fallback.featuredImage
+      const listingImage = listing.primary_image_url || '/M5.png'
       const isEventBooth = listing.space_type_code === 'event_booth'
       const isLand = listing.property_type_code === 'land'
       const landAreaSquareWah = isLand && listing.land_area_sqm ? Math.round(listing.land_area_sqm / 4) : 0
       return {
-        ...fallback,
         id: `property-listing://${listing.id}`,
         title: listing.title,
         handle: listing.slug || listing.public_listing_id,
@@ -62,8 +60,10 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
           : amount
           ? `฿${amount.toLocaleString('th-TH')}${listing.rent_price_monthly ? ' / เดือน' : ''}`
           : 'ติดต่อผู้ลงประกาศ',
-        featuredImage: eventImage,
-        galleryImgs: [eventImage],
+        featuredImage: listingImage,
+        galleryImgs: [listingImage],
+        like: false,
+        maxGuests: 0,
         bedrooms: listing.bedroom_count || 0,
         bathrooms: listing.bathroom_count || 0,
         acreage: listing.land_area_sqm || listing.usable_area_sqm || 0,
@@ -79,10 +79,10 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
           ? `${listing.event_round_count} รอบ · ${listing.event_floor_label ? `ชั้น ${listing.event_floor_label}` : listing.event_name}`
           : isLand
             ? `${landAreaSquareWah.toLocaleString('th-TH')} ตร.ว. · ที่ดินเปล่า`
-            : undefined,
+            : '',
       }
     },
-    [listings]
+    []
   )
 
   useEffect(() => {
@@ -102,8 +102,8 @@ const SectionGridHasMap: FC<Props> = ({ className, listings, category, filterOpt
   const handleSearchArea = useCallback(
     async (search: PropertyMapAreaSearch, listingIds: string[]) => {
       const matches = new Set(listingIds)
-      const demoResults = listings.filter((listing) => matches.has(listing.id))
-      let nextResults = demoResults
+      const matchingPublishedListings = listings.filter((listing) => matches.has(listing.id))
+      let nextResults = matchingPublishedListings
 
       try {
         const response = await fetchPropertyMapArea({

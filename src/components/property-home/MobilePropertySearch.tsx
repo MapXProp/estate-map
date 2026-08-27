@@ -578,7 +578,7 @@ const MobilePropertySearch = ({
                 : isThai
                   ? isMapResults
                     ? compactMapHeader
-                      ? '20,000 รายการ · แตะเพื่อค้นหา'
+                      ? '3 ประกาศจริง · แตะเพื่อค้นหา'
                       : 'ทุกประเภท · ไม่จำกัดงบ'
                     : 'พิมพ์หรือแตะตัวเลือกได้เลย'
                   : isMapResults

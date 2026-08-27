@@ -601,7 +601,15 @@ const DiscoveryChannelCard = ({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-sarabun text-base leading-6 font-semibold text-neutral-950 dark:text-white">
-          {title}
+          {title.split(/(\s*&\s*)/).map((part, index) =>
+            part.includes('&') ? (
+              <span key={`${part}-${index}`} className="mx-0.5 font-normal opacity-[0.52]">
+                &amp;
+              </span>
+            ) : (
+              <span key={`${part}-${index}`}>{part}</span>
+            )
+          )}
         </span>
         <span className="mt-1 block font-sarabun text-sm leading-5 text-neutral-500 dark:text-neutral-400">
           {description}

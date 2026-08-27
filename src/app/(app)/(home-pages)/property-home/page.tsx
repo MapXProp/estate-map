@@ -1,9 +1,9 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import heroImage from '@/images/hero-right-3.png'
 import {
   ArrowRight,
@@ -13,13 +13,12 @@ import {
   Factory,
   House,
   LandPlot,
-  MapPin,
   ShieldCheck,
   Store,
   Utensils,
   Warehouse,
 } from 'lucide-react'
-import Image, { getImageProps } from 'next/image'
+import { getImageProps } from 'next/image'
 import Link from 'next/link'
 
 const discoveryModes = [
@@ -100,33 +99,6 @@ const useCaseHighlights = [
     descriptionEn: 'Find land by intended use, road access and utilities',
     href: '/real-estate-categories/all?use_case=agriculture',
     icon: LandPlot,
-  },
-]
-
-const locations = [
-  {
-    name: 'กรุงเทพมหานคร',
-    nameEn: 'Bangkok',
-    count: '4,280 ประกาศ',
-    image: 'https://images.unsplash.com/photo-1563492065599-3520f775eeed?q=85&w=1200&auto=format&fit=crop',
-  },
-  {
-    name: 'เชียงใหม่',
-    nameEn: 'Chiang Mai',
-    count: '1,240 ประกาศ',
-    image: 'https://images.unsplash.com/photo-1528181304800-259b08848526?q=85&w=1200&auto=format&fit=crop',
-  },
-  {
-    name: 'ชลบุรี',
-    nameEn: 'Chon Buri',
-    count: '1,865 ประกาศ',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=85&w=1200&auto=format&fit=crop',
-  },
-  {
-    name: 'ภูเก็ต',
-    nameEn: 'Phuket',
-    count: '980 ประกาศ',
-    image: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?q=85&w=1200&auto=format&fit=crop',
   },
 ]
 
@@ -242,6 +214,21 @@ const siteThemes = {
   }
 >
 
+const zoneIntroContent = {
+  homes: {
+    titleTh: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    titleEn: 'Homes & residential',
+  },
+  rooms: {
+    titleTh: 'ห้องเช่า & ที่พักรายเดือน',
+    titleEn: 'Rooms & monthly stays',
+  },
+  business: {
+    titleTh: 'พื้นที่ทำธุรกิจ',
+    titleEn: 'Business spaces',
+  },
+} satisfies Record<Exclude<PropertySiteMode, 'all'>, { titleTh: string; titleEn: string }>
+
 const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) => {
   const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
@@ -259,126 +246,109 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
 
   return (
     <main className="overflow-hidden bg-white dark:bg-neutral-900">
-      <section className="container pt-3 sm:pt-6 lg:pt-10">
-        <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
-          <div
-            className={`pointer-events-none absolute -top-24 -left-24 size-72 rounded-full blur-3xl ${theme.glow}`}
-          />
-          <div className="grid min-[744px]:min-h-[360px] min-[744px]:grid-cols-[1.05fr_0.95fr] lg:min-h-[420px] lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="relative z-10 flex flex-col justify-center px-6 py-8 min-[744px]:px-8 min-[744px]:py-10 sm:px-8 sm:py-9 lg:px-12 lg:py-12 xl:px-14">
-              <h1 className="max-w-2xl text-[2.15rem]/[1.08] font-semibold tracking-[-0.035em] text-neutral-950 min-[744px]:text-[2.4rem]/[1.08] sm:text-4xl/[1.08] lg:text-5xl/[1.08] xl:text-6xl/[1.08] dark:text-white">
-                {isThai ? content.titleTh : content.titleEn}
-                <br />
-                <span className={theme.accent}>{isThai ? content.accentTh : content.accentEn}</span>
-              </h1>
-              <p className="mt-3 line-clamp-2 max-w-xl text-sm/6 text-neutral-600 min-[744px]:line-clamp-none sm:text-base/7 lg:text-lg/8 dark:text-neutral-300">
-                {isThai ? content.descriptionTh : content.descriptionEn}
-              </p>
-              <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 min-[744px]:flex dark:text-neutral-300">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className={`size-4 ${theme.accent}`} />{' '}
-                  {isThai ? 'ข้อมูลตรงประเภททรัพย์' : 'Property-specific details'}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className={`size-4 ${theme.accent}`} />{' '}
-                  {isThai ? 'มีสถานะยืนยันประกาศ' : 'Verified listing status'}
-                </span>
-              </div>
-            </div>
-
-            <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
-              <picture>
-                <source media="(min-width: 744px)" srcSet={desktopHeroSrcSet} sizes="(max-width: 1024px) 50vw, 620px" />
-                {/* The transparent fallback prevents phones from downloading this desktop-only image. */}
-                <img
-                  src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-                  alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
-                  fetchPriority="high"
-                  className="absolute inset-0 size-full object-cover object-center"
-                />
-              </picture>
-              <div className={`absolute inset-0 bg-gradient-to-r via-transparent to-transparent ${theme.gradient}`} />
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
-          <div className="hidden min-[744px]:block">
-            <PropertyHomeSearch mode={mode} />
-          </div>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
-            <span className="font-medium text-neutral-700 dark:text-neutral-200">
-              {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}
-            </span>
-            {content.popular.map(([label, labelEn]) => (
-              <Link
-                key={label}
-                href={`/real-estate-categories/all?q=${encodeURIComponent(label)}`}
-                className={`hover:underline ${theme.link}`}
-              >
-                {isThai ? label : labelEn}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <PropertyListingShowcase mode={mode} />
-
-      <section className="container py-10 sm:py-14 lg:py-16">
-        <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
-              {isThai ? 'สำรวจจากทำเล' : 'Explore by location'}
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {isThai ? 'เมืองที่คนกำลังค้นหา' : 'Cities people are searching'}
-            </h2>
-          </div>
-          <Link
-            href="/properties/map"
-            className="hidden items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:inline-flex dark:text-neutral-300 dark:hover:text-emerald-300"
-          >
-            {isThai ? 'ดูบนแผนที่' : 'View map'} <ArrowRight className="size-4" />
-          </Link>
-        </div>
-
-        <div className="-mx-4 flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-          {locations.map((location) => (
-            <Link
-              key={location.name}
-              href={`/real-estate-categories/all?location=${encodeURIComponent(location.name)}`}
-              className="group relative w-[78vw] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-3xl bg-neutral-200 sm:w-auto sm:max-w-none"
-            >
-              <div className="relative aspect-[4/3]">
-                <Image
-                  fill
-                  src={location.image}
-                  alt={isThai ? `อสังหาริมทรัพย์ใน${location.name}` : `Property in ${location.nameEn}`}
-                  sizes="(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                  <p className="flex items-center gap-1.5 text-lg font-semibold">
-                    <MapPin className="size-5" /> {isThai ? location.name : location.nameEn}
-                  </p>
-                  <p className="mt-1 text-sm text-white/75">
-                    {isThai ? location.count : `${location.count.replace(' ประกาศ', '')} listings`}
-                  </p>
+      {mode === 'all' ? (
+        <section className="container pt-3 sm:pt-6 lg:pt-10">
+          <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
+            <div
+              className={`pointer-events-none absolute -top-24 -left-24 size-72 rounded-full blur-3xl ${theme.glow}`}
+            />
+            <div className="grid min-[744px]:min-h-[360px] min-[744px]:grid-cols-[1.05fr_0.95fr] lg:min-h-[420px] lg:grid-cols-[1.02fr_0.98fr]">
+              <div className="relative z-10 flex flex-col justify-center px-6 py-8 min-[744px]:px-8 min-[744px]:py-10 sm:px-8 sm:py-9 lg:px-12 lg:py-12 xl:px-14">
+                <h1 className="max-w-2xl text-[2.15rem]/[1.08] font-semibold tracking-[-0.035em] text-neutral-950 min-[744px]:text-[2.4rem]/[1.08] sm:text-4xl/[1.08] lg:text-5xl/[1.08] xl:text-6xl/[1.08] dark:text-white">
+                  {isThai ? content.titleTh : content.titleEn}
+                  <br />
+                  <span className={theme.accent}>{isThai ? content.accentTh : content.accentEn}</span>
+                </h1>
+                <p className="mt-3 line-clamp-2 max-w-xl text-sm/6 text-neutral-600 min-[744px]:line-clamp-none sm:text-base/7 lg:text-lg/8 dark:text-neutral-300">
+                  {isThai ? content.descriptionTh : content.descriptionEn}
+                </p>
+                <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 min-[744px]:flex dark:text-neutral-300">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className={`size-4 ${theme.accent}`} />{' '}
+                    {isThai ? 'ข้อมูลตรงประเภททรัพย์' : 'Property-specific details'}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ShieldCheck className={`size-4 ${theme.accent}`} />{' '}
+                    {isThai ? 'มีสถานะยืนยันประกาศ' : 'Verified listing status'}
+                  </span>
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
 
-        <Link
-          href="/properties/map"
-          className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-700 hover:text-[#176b50] sm:hidden dark:text-neutral-300 dark:hover:text-emerald-300"
-        >
-          {isThai ? 'ดูบนแผนที่' : 'View map'} <ArrowRight className="size-4" />
-        </Link>
-      </section>
+              <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
+                <picture>
+                  <source
+                    media="(min-width: 744px)"
+                    srcSet={desktopHeroSrcSet}
+                    sizes="(max-width: 1024px) 50vw, 620px"
+                  />
+                  {/* The transparent fallback prevents phones from downloading this desktop-only image. */}
+                  <img
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+                    alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
+                    fetchPriority="high"
+                    className="absolute inset-0 size-full object-cover object-center"
+                  />
+                </picture>
+                <div className={`absolute inset-0 bg-gradient-to-r via-transparent to-transparent ${theme.gradient}`} />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
+            <div className="hidden min-[744px]:block">
+              <PropertyHomeSearch mode={mode} />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="font-medium text-neutral-700 dark:text-neutral-200">
+                {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}
+              </span>
+              {content.popular.map(([label, labelEn]) => (
+                <Link
+                  key={label}
+                  href={`/real-estate-categories/all?q=${encodeURIComponent(label)}`}
+                  className={`hover:underline ${theme.link}`}
+                >
+                  {isThai ? label : labelEn}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="container pt-2 sm:pt-4 lg:pt-5">
+          <div className={`relative overflow-hidden rounded-[22px] px-5 py-4 sm:px-6 sm:py-5 lg:px-8 ${theme.hero}`}>
+            <div
+              className={`pointer-events-none absolute -top-20 -left-12 size-48 rounded-full blur-3xl ${theme.glow}`}
+            />
+            <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <div className="min-w-0">
+                <p className={`text-xs font-semibold ${theme.accent}`}>
+                  {isThai ? 'สำรวจพื้นที่ที่ตรงกับคุณ' : 'Explore your property zone'}
+                </p>
+                <h1 className="mt-0.5 text-2xl font-semibold tracking-[-0.025em] text-neutral-950 sm:text-3xl dark:text-white">
+                  {isThai ? zoneIntroContent[mode].titleTh : zoneIntroContent[mode].titleEn}
+                </h1>
+                <p className="mt-1 hidden max-w-2xl truncate text-sm text-neutral-500 sm:block dark:text-neutral-400">
+                  {isThai ? content.descriptionTh : content.descriptionEn}
+                </p>
+              </div>
+              <div className="flex max-w-full gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {content.popular.slice(0, 3).map(([label, labelEn]) => (
+                  <Link
+                    key={label}
+                    href={`/properties/map?q=${encodeURIComponent(label)}`}
+                    className="shrink-0 rounded-full border border-white/70 bg-white/80 px-3 py-1.5 text-xs font-medium text-neutral-600 shadow-sm transition hover:bg-white hover:text-neutral-950 dark:border-white/10 dark:bg-white/5 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white"
+                  >
+                    {isThai ? label : labelEn}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <PropertyListingShowcase mode={mode} compactStart={mode !== 'all'} />
 
       <section className="container pt-16 pb-8 sm:pt-20 lg:pt-24">
         <div className="mb-7 flex items-end justify-between gap-5">

@@ -832,7 +832,13 @@ export const getExperienceListingByHandle = async (handle: string) => {
 export type TExperienceListing = Awaited<ReturnType<typeof getExperienceListings>>[number]
 
 //  REAL-ESTATE LISTING  //
-export async function getRealEstateListings() {
+/**
+ * Archived template data from the original UI kit.
+ *
+ * Keep this export only for visual regression work. Public property pages must
+ * use `getRealEstateListings`, which contains published MapxProp inventory only.
+ */
+export async function getArchivedMockRealEstateListings() {
   return [
     {
       id: 'real-estate-listing://1',
@@ -1063,47 +1069,130 @@ export async function getRealEstateListings() {
     },
   ]
 }
+
+/**
+ * Public fallback inventory.
+ *
+ * Production normally replaces these records with the same listings returned
+ * by the property API. Keeping the published records here means the map and
+ * category pages still show truthful content when the API is temporarily
+ * unavailable during local development or a deployment warm-up.
+ */
+export async function getRealEstateListings() {
+  return [
+    {
+      id: 'property-listing://land-sutthisan-700',
+      date: 'August 26, 2026',
+      listingCategory: 'ที่ดินเปล่า',
+      title: 'ขายที่ดิน 700 ตร.ว. สุทธิสาร 2 แปลงติดกัน หน้ากว้าง 87 ม.',
+      handle: 'land-for-sale-sutthisan-700-sq-wah',
+      description:
+        'ที่ดินเปล่า 2 แปลงติดกัน รวม 700 ตารางวา ในซอยจัดสรร ถนนสุทธิสารวินิจฉัย หน้ากว้างติดถนนรวมประมาณ 87 เมตร',
+      featuredImage: '/listing-media/mapxprop/sutthisan-700-sq-wah/01-cover.webp',
+      galleryImgs: [
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/01-cover.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/02-plot-map.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/03-land-view.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/04-land-view.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/05-land-view.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/06-land-view.webp',
+        '/listing-media/mapxprop/sutthisan-700-sq-wah/07-land-view.webp',
+      ],
+      like: false,
+      address: 'ซอยจัดสรร ถนนสุทธิสารวินิจฉัย กรุงเทพมหานคร',
+      reviewStart: 0,
+      reviewCount: 0,
+      price: '฿315,000,000',
+      maxGuests: 0,
+      bedrooms: 0,
+      bathrooms: 0,
+      acreage: 2800,
+      saleOff: null,
+      isAds: null,
+      map: { lat: 13.787660402989946, lng: 100.58811388023786 },
+      listingKind: 'property' as const,
+      metadataSummary: '700 ตร.ว. · 2 แปลง · หน้ากว้างรวม 87 ม.',
+      isVerified: true,
+      isOwnerDirect: true,
+    },
+    {
+      id: 'property-listing://food-o-clock-empire-tower-2026',
+      date: 'August 18, 2026',
+      listingCategory: 'พื้นที่ออกบูธ',
+      title: 'Food O’Clock — THE EMPIRE TOWER',
+      handle: 'food-o-clock-the-empire-tower-2026',
+      description: 'เปิดจองพื้นที่ออกบูธสำหรับอาหารและสินค้าไลฟ์สไตล์ ชั้น M อาคาร THE EMPIRE TOWER',
+      featuredImage: '/listing-media/hbd/food-o-clock-empire-tower-2026.jpg',
+      galleryImgs: ['/listing-media/hbd/food-o-clock-empire-tower-2026.jpg'],
+      like: false,
+      address: 'ชั้น M, THE EMPIRE TOWER, สาทร, กรุงเทพมหานคร',
+      reviewStart: 0,
+      reviewCount: 0,
+      price: 'สอบถามผู้จัด',
+      maxGuests: 0,
+      bedrooms: 0,
+      bathrooms: 0,
+      acreage: 0,
+      saleOff: null,
+      isAds: null,
+      map: { lat: 13.72015, lng: 100.52913 },
+      listingKind: 'event_booth' as const,
+      metadataSummary: '5 รอบ · พื้นที่ออกบูธชั้น M',
+      isVerified: true,
+      isOwnerDirect: false,
+    },
+    {
+      id: 'property-listing://local-favorites-emsphere-2026',
+      date: 'August 18, 2026',
+      listingCategory: 'พื้นที่ออกบูธ',
+      title: 'LOCAL FAVORITES — EMSPHERE',
+      handle: 'local-favorites-emsphere-2026',
+      description: 'เปิดรับร้านอาหาร เครื่องดื่ม เบเกอรี่ และของหวาน ที่ EM MARKET HALL ชั้น G, EMSPHERE',
+      featuredImage: '/listing-media/hbd/local-favorites-emsphere-2026.jpg',
+      galleryImgs: ['/listing-media/hbd/local-favorites-emsphere-2026.jpg'],
+      like: false,
+      address: 'EM MARKET HALL ชั้น G, EMSPHERE, กรุงเทพมหานคร',
+      reviewStart: 0,
+      reviewCount: 0,
+      price: 'สอบถามผู้จัด',
+      maxGuests: 0,
+      bedrooms: 0,
+      bathrooms: 0,
+      acreage: 0,
+      saleOff: null,
+      isAds: null,
+      map: { lat: 13.73026, lng: 100.56989 },
+      listingKind: 'event_booth' as const,
+      metadataSummary: '11–22 ก.ย. 2569 · EM MARKET HALL ชั้น G',
+      isVerified: true,
+      isOwnerDirect: false,
+    },
+  ]
+}
+
 export const getRealEstateListingByHandle = async (handle: string) => {
   const listings = await getRealEstateListings()
-  let listing = listings.find((listing) => listing.handle === handle)
-  if (!listing?.id) {
-    // return null
+  const listing = listings.find((item) => item.handle === handle)
 
-    // for demo porpose, we will return the first listing if not found
-    listing = listings[0]
-  }
+  if (!listing) return null
 
   return {
-    ...(listing || {}),
-    galleryImgs: [
-      ...listing.galleryImgs,
-      'https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6438752/pexels-photo-6438752.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/261394/pexels-photo-261394.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/2861361/pexels-photo-2861361.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/2677398/pexels-photo-2677398.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
-      'https://images.pexels.com/photos/7163619/pexels-photo-7163619.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6527036/pexels-photo-6527036.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-      'https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-    ],
+    ...listing,
     host: {
-      displayName: 'John Doe',
+      displayName: 'MapxProp',
       avatarUrl: avatars2.src,
-      handle: 'john-doe',
-      description:
-        'Experienced real estate agent with over 10 years in the industry, specializing in residential properties.',
-      listingsCount: 15,
-      reviewsCount: 250,
-      rating: 4.9,
-      responseRate: 98,
-      responseTime: 'within an hour',
-      isSuperhost: true,
+      handle: 'mapxprop',
+      description: 'ประกาศจริงที่เผยแพร่บน MapxProp',
+      listingsCount: 3,
+      reviewsCount: 0,
+      rating: 0,
+      responseRate: 100,
+      responseTime: 'ติดต่อผู้ลงประกาศโดยตรง',
+      isSuperhost: false,
       isVerified: true,
-      joinedDate: 'January 2020',
-      email: 'john-doe@gmail.com',
-      phone: '+1234567890',
+      joinedDate: 'August 2026',
+      email: 'mapxprop@gmail.com',
+      phone: '',
     },
   }
 }

@@ -27,6 +27,9 @@ mxp_logo/
 db_schema/
 adjust_code/
 deployment_step/
+Server Root/
+design-previews/
+Server Secret/
 
 # Additional ignore (แนะนำให้เพิ่ม)
 .git/
