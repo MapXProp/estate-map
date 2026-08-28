@@ -267,6 +267,9 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
   const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
   const isMainLanding = mode === 'all'
+  // Keep the compact discovery banner ready to restore later, but hide it on
+  // the three channel landing pages so new listings become the first content.
+  const showChannelHero = false
   const content = heroContent[mode]
   const theme = siteThemes[mode]
   const categoryIntro = {
@@ -435,7 +438,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
           </div>
         </div>
       </section>
-      ) : (
+      ) : showChannelHero ? (
         <section className="container pt-3 sm:pt-5 lg:pt-6">
           <div className={`relative isolate overflow-hidden rounded-[24px] border border-black/[0.055] bg-gradient-to-br shadow-[0_16px_40px_rgba(16,24,40,0.055)] sm:rounded-[28px] dark:border-white/10 ${theme.intro}`}>
             <div
@@ -514,7 +517,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 
