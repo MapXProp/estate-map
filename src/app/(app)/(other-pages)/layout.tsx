@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { ApplicationLayout } from '../application-layout'
+import OtherPagesFooter from './OtherPagesFooter'
 import OtherPagesHeader from './OtherPagesHeader'
 
 export const metadata: Metadata = {
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 }
 
 export default function Layout({ children, params }: { children: React.ReactNode; params: any }) {
-  return <ApplicationLayout header={<OtherPagesHeader />}>{children}</ApplicationLayout>
+  return (
+    <ApplicationLayout header={<OtherPagesHeader />} footer={<OtherPagesFooter />}>
+      {children}
+    </ApplicationLayout>
+  )
 }

@@ -11,6 +11,10 @@ const OtherPagesHeader = () => {
     return <PropertyHeaderPrototype />
   }
 
+  if (pathname.startsWith('/contact')) {
+    return <PropertyHeaderPrototype />
+  }
+
   return <Header hasBorderBottom />
 }
 
