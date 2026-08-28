@@ -296,8 +296,13 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
       links: [
         { th: 'บ้าน', en: 'Houses', query: 'บ้าน' },
         { th: 'คอนโด', en: 'Condos', query: 'คอนโด' },
-        { th: 'ทาวน์โฮม', en: 'Townhouses', query: 'ทาวน์โฮม' },
         { th: 'ที่ดิน', en: 'Land', query: 'ที่ดินสำหรับอยู่อาศัย' },
+        { th: 'บ้านแฝด', en: 'Semi-detached', query: 'บ้านแฝด' },
+        { th: 'ทาวน์โฮม', en: 'Townhouses', query: 'ทาวน์โฮม' },
+        { th: 'ตึกแถว', en: 'Shophouses', query: 'ตึกแถวสำหรับอยู่อาศัย' },
+        { th: 'ดูเพล็กซ์', en: 'Duplexes', query: 'บ้านดูเพล็กซ์' },
+        { th: 'โครงการใหม่', en: 'New projects', query: 'โครงการที่อยู่อาศัยใหม่' },
+        { th: 'โฮมออฟฟิศ', en: 'Home offices', query: 'โฮมออฟฟิศสำหรับอยู่อาศัย' },
       ],
       actionLinks: [
         { th: 'ดูประกาศใหม่', en: 'Newest listings', href: '/properties/map' },
@@ -314,8 +319,13 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
       links: [
         { th: 'อพาร์ตเมนต์', en: 'Apartments', query: 'อพาร์ตเมนต์ให้เช่า' },
         { th: 'หอพัก', en: 'Dormitories', query: 'หอพัก' },
-        { th: 'คอนโดเช่า', en: 'Condo rentals', query: 'คอนโดให้เช่า' },
+        { th: 'แฟลต', en: 'Flats', query: 'แฟลตให้เช่า' },
+        { th: 'บ้านเช่า', en: 'Rental houses', query: 'บ้านให้เช่า' },
         { th: 'ที่พักรายเดือน', en: 'Monthly stays', query: 'ที่พักรายเดือน' },
+        { th: 'ห้องเช่า', en: 'Rental rooms', query: 'ห้องเช่า' },
+        { th: 'รายเดือน', en: 'Monthly', query: 'ห้องพักรายเดือน' },
+        { th: 'คอนโดเช่า', en: 'Condo rentals', query: 'คอนโดให้เช่า' },
+        { th: 'เซอร์วิสอพาร์ตเมนต์', en: 'Serviced apartments', query: 'เซอร์วิสอพาร์ตเมนต์รายเดือน' },
       ],
       actionLinks: [
         { th: 'ดูห้องว่างใหม่', en: 'Newest vacancies', href: '/properties/map' },
@@ -331,9 +341,14 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
       titleEn: 'Start with a space that works for you',
       links: [
         { th: 'พื้นที่ขายของ', en: 'Retail spaces', query: 'พื้นที่ขายของ' },
-        { th: 'ออกบูธ', en: 'Event booths', query: 'พื้นที่ออกบูธ' },
         { th: 'ออฟฟิศ', en: 'Offices', query: 'ออฟฟิศ' },
         { th: 'โกดัง', en: 'Warehouses', query: 'โกดัง' },
+        { th: 'โรงงาน', en: 'Factories', query: 'โรงงาน' },
+        { th: 'ร้านค้า Standalone', en: 'Standalone shops', query: 'ร้านค้า Standalone' },
+        { th: 'ออกบูธ', en: 'Event booths', query: 'พื้นที่ออกบูธ' },
+        { th: 'ที่ดิน', en: 'Land', query: 'ที่ดินสำหรับทำธุรกิจ' },
+        { th: 'ล็อคในห้าง', en: 'Mall kiosks', query: 'ล็อคในห้าง' },
+        { th: 'ล็อคในตลาด', en: 'Market stalls', query: 'ล็อคในตลาด' },
       ],
       actionLinks: [
         { th: 'ดูพื้นที่ใหม่', en: 'Newest spaces', href: '/properties/map' },
@@ -467,14 +482,29 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
               </div>
 
               <nav
-                className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
+                className="mt-3 grid grid-cols-8 gap-1.5 sm:hidden"
                 aria-label={isThai ? 'เลือกดูตามประเภท' : 'Browse by property type'}
               >
-                {categoryIntro.links.map((item) => (
+                {categoryIntro.links.map((item, index) => (
                   <Link
                     key={item.query}
                     href={`/properties/map?q=${encodeURIComponent(item.query)}`}
-                    className={`rounded-xl border border-white/75 bg-white/75 px-3 py-2 text-center text-sm font-medium text-neutral-700 shadow-[0_1px_1px_rgba(16,24,40,0.025)] backdrop-blur-sm transition hover:-translate-y-px hover:bg-white hover:text-neutral-950 sm:rounded-full sm:px-3.5 sm:py-1.5 dark:border-white/10 dark:bg-neutral-900/35 dark:text-neutral-100 dark:hover:bg-neutral-900/60 ${theme.link}`}
+                    className={`h-9 rounded-xl border border-white/75 bg-white/80 px-1.5 text-center text-xs font-medium text-neutral-700 shadow-[0_1px_1px_rgba(16,24,40,0.025)] backdrop-blur-sm transition active:scale-[0.98] dark:border-white/10 dark:bg-neutral-900/35 dark:text-neutral-100 ${['col-span-4', 'col-span-2', 'col-span-2', 'col-span-2', 'col-span-4', 'col-span-2', 'col-span-2', 'col-span-2', 'col-span-4'][index] ?? 'col-span-2'} inline-flex items-center justify-center ${theme.link}`}
+                  >
+                    <span className="truncate">{isThai ? item.th : item.en}</span>
+                  </Link>
+                ))}
+              </nav>
+
+              <nav
+                className="mt-3 hidden flex-wrap gap-2 sm:flex"
+                aria-label={isThai ? 'เลือกดูตามประเภท' : 'Browse by property type'}
+              >
+                {categoryIntro.links.slice(0, 4).map((item) => (
+                  <Link
+                    key={item.query}
+                    href={`/properties/map?q=${encodeURIComponent(item.query)}`}
+                    className={`rounded-full border border-white/75 bg-white/75 px-3.5 py-1.5 text-center text-sm font-medium text-neutral-700 shadow-[0_1px_1px_rgba(16,24,40,0.025)] backdrop-blur-sm transition hover:-translate-y-px hover:bg-white hover:text-neutral-950 dark:border-white/10 dark:bg-neutral-900/35 dark:text-neutral-100 dark:hover:bg-neutral-900/60 ${theme.link}`}
                   >
                     {isThai ? item.th : item.en}
                   </Link>
