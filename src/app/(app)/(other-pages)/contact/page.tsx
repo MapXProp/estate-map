@@ -2,8 +2,8 @@ import ContactPageContent from './ContactPageContent'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ติดต่อเรา | MapxProp',
-  description: 'ติดต่อทีมงาน MapxProp ทางโทรศัพท์ อีเมล LINE และโซเชียลมีเดีย',
+  title: 'Contact MapxProp | ติดต่อเรา',
+  description: 'Contact MapxProp by phone, email, LINE, or social media. ติดต่อทีมงาน MapxProp ทางโทรศัพท์ อีเมล LINE และโซเชียลมีเดีย',
 }
 
 type ContactSearchParams = Promise<{ topic?: string | string[] }>
