@@ -424,10 +424,10 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
         <section className="container pt-3 sm:pt-5 lg:pt-6">
           <div className={`relative isolate overflow-hidden rounded-[24px] border border-black/[0.055] bg-gradient-to-br shadow-[0_16px_40px_rgba(16,24,40,0.055)] sm:rounded-[28px] dark:border-white/10 ${theme.intro}`}>
             <div
-              className="pointer-events-none absolute inset-y-0 left-[24%] right-0 opacity-30 sm:left-[30%] sm:opacity-45"
+              className="pointer-events-none absolute inset-y-0 left-[16%] right-0 opacity-35 sm:left-[22%] sm:opacity-50"
               style={{
-                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.3) 18%, #000 46%)',
-                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.3) 18%, #000 46%)',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
+                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
               }}
             >
               <Image
@@ -435,7 +435,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
                 src={theme.introImage}
                 alt=""
                 sizes="(max-width: 640px) 58vw, (max-width: 1024px) 52vw, 620px"
-                className={`object-cover ${theme.introImagePosition}`}
+                className={`scale-[1.02] object-cover ${theme.introImagePosition}`}
               />
             </div>
             <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${theme.introImageOverlay}`} />
@@ -481,18 +481,6 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
                 ))}
               </nav>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/55 pt-3 text-sm font-medium dark:border-white/10">
-                {categoryIntro.actionLinks.map((item) => (
-                  <Link
-                    key={item.th}
-                    href={item.href}
-                    className={`inline-flex items-center gap-1 text-neutral-600 transition dark:text-neutral-200 ${theme.link}`}
-                  >
-                    {isThai ? item.th : item.en}
-                    <ArrowRight className="size-3.5" />
-                  </Link>
-                ))}
-              </div>
             </div>
           </div>
         </section>
@@ -518,7 +506,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
           </Link>
         </div>
 
-        <div className="-mx-4 flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+        <div className="flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {locations.map((location) => (
             <Link
               key={location.name}
