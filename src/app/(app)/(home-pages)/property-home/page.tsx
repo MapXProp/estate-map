@@ -1,11 +1,12 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import ChannelHomeSearch from '@/components/property-home/ChannelHomeSearch'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
-import { getPropertyMapLocationHref } from '@/lib/propertyMapLocations'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import heroImage from '@/images/hero-right-3.png'
+import { getPropertyMapLocationHref } from '@/lib/propertyMapLocations'
 import {
   ArrowRight,
   BedDouble,
@@ -375,77 +376,85 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
   return (
     <main className="overflow-hidden bg-white dark:bg-neutral-900">
       {isMainLanding ? (
-      <section className="container pt-3 sm:pt-6 lg:pt-10">
-        <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
-          <div
-            className={`pointer-events-none absolute -top-24 -left-24 size-72 rounded-full blur-3xl ${theme.glow}`}
-          />
-          <div className="grid min-[744px]:min-h-[360px] min-[744px]:grid-cols-[1.05fr_0.95fr] lg:min-h-[420px] lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="relative z-10 flex flex-col justify-center px-6 py-8 min-[744px]:px-8 min-[744px]:py-10 sm:px-8 sm:py-9 lg:px-12 lg:py-12 xl:px-14">
-              <h1 className="max-w-2xl text-[2.15rem]/[1.08] font-semibold tracking-[-0.035em] text-neutral-950 min-[744px]:text-[2.4rem]/[1.08] sm:text-4xl/[1.08] lg:text-5xl/[1.08] xl:text-6xl/[1.08] dark:text-white">
-                {isThai ? content.titleTh : content.titleEn}
-                <br />
-                <span className={theme.accent}>{isThai ? content.accentTh : content.accentEn}</span>
-              </h1>
-              <p className="mt-3 line-clamp-2 max-w-xl text-sm/6 text-neutral-600 min-[744px]:line-clamp-none sm:text-base/7 lg:text-lg/8 dark:text-neutral-300">
-                {isThai ? content.descriptionTh : content.descriptionEn}
-              </p>
-              <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 min-[744px]:flex dark:text-neutral-300">
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className={`size-4 ${theme.accent}`} />{' '}
-                  {isThai ? 'ข้อมูลตรงประเภททรัพย์' : 'Property-specific details'}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className={`size-4 ${theme.accent}`} />{' '}
-                  {isThai ? 'มีสถานะยืนยันประกาศ' : 'Verified listing status'}
-                </span>
+        <section className="container pt-3 sm:pt-6 lg:pt-10">
+          <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
+            <div
+              className={`pointer-events-none absolute -top-24 -left-24 size-72 rounded-full blur-3xl ${theme.glow}`}
+            />
+            <div className="grid min-[744px]:min-h-[360px] min-[744px]:grid-cols-[1.05fr_0.95fr] lg:min-h-[420px] lg:grid-cols-[1.02fr_0.98fr]">
+              <div className="relative z-10 flex flex-col justify-center px-6 py-8 min-[744px]:px-8 min-[744px]:py-10 sm:px-8 sm:py-9 lg:px-12 lg:py-12 xl:px-14">
+                <h1 className="max-w-2xl text-[2.15rem]/[1.08] font-semibold tracking-[-0.035em] text-neutral-950 min-[744px]:text-[2.4rem]/[1.08] sm:text-4xl/[1.08] lg:text-5xl/[1.08] xl:text-6xl/[1.08] dark:text-white">
+                  {isThai ? content.titleTh : content.titleEn}
+                  <br />
+                  <span className={theme.accent}>{isThai ? content.accentTh : content.accentEn}</span>
+                </h1>
+                <p className="mt-3 line-clamp-2 max-w-xl text-sm/6 text-neutral-600 min-[744px]:line-clamp-none sm:text-base/7 lg:text-lg/8 dark:text-neutral-300">
+                  {isThai ? content.descriptionTh : content.descriptionEn}
+                </p>
+                <div className="mt-6 hidden flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-600 min-[744px]:flex dark:text-neutral-300">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className={`size-4 ${theme.accent}`} />{' '}
+                    {isThai ? 'ข้อมูลตรงประเภททรัพย์' : 'Property-specific details'}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <ShieldCheck className={`size-4 ${theme.accent}`} />{' '}
+                    {isThai ? 'มีสถานะยืนยันประกาศ' : 'Verified listing status'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
+                <picture>
+                  <source
+                    media="(min-width: 744px)"
+                    srcSet={desktopHeroSrcSet}
+                    sizes="(max-width: 1024px) 50vw, 620px"
+                  />
+                  {/* The transparent fallback prevents phones from downloading this desktop-only image. */}
+                  <img
+                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+                    alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
+                    fetchPriority="high"
+                    className="absolute inset-0 size-full object-cover object-center"
+                  />
+                </picture>
+                <div className={`absolute inset-0 bg-gradient-to-r via-transparent to-transparent ${theme.gradient}`} />
               </div>
             </div>
+          </div>
 
-            <div className="relative hidden min-h-full overflow-hidden min-[744px]:block">
-              <picture>
-                <source media="(min-width: 744px)" srcSet={desktopHeroSrcSet} sizes="(max-width: 1024px) 50vw, 620px" />
-                {/* The transparent fallback prevents phones from downloading this desktop-only image. */}
-                <img
-                  src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-                  alt={isThai ? 'พื้นที่อสังหาริมทรัพย์สำหรับชีวิตและธุรกิจ' : 'A space for life and business'}
-                  fetchPriority="high"
-                  className="absolute inset-0 size-full object-cover object-center"
-                />
-              </picture>
-              <div className={`absolute inset-0 bg-gradient-to-r via-transparent to-transparent ${theme.gradient}`} />
+          <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
+            <div className="hidden min-[744px]:block">
+              <PropertyHomeSearch mode={mode} />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="font-medium text-neutral-700 dark:text-neutral-200">
+                {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}
+              </span>
+              {content.popular.map(([label, labelEn]) => (
+                <Link
+                  key={label}
+                  href={`/real-estate-categories/all?q=${encodeURIComponent(label)}`}
+                  className={`hover:underline ${theme.link}`}
+                >
+                  {isThai ? label : labelEn}
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-
-        <div className="relative z-20 mx-auto -mt-4 max-w-[1180px] px-2 min-[744px]:-mt-12 sm:-mt-6 sm:px-5 lg:-mt-14">
-          <div className="hidden min-[744px]:block">
-            <PropertyHomeSearch mode={mode} />
-          </div>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-neutral-500 dark:text-neutral-400">
-            <span className="font-medium text-neutral-700 dark:text-neutral-200">
-              {isThai ? 'ค้นหายอดนิยม:' : 'Popular searches:'}
-            </span>
-            {content.popular.map(([label, labelEn]) => (
-              <Link
-                key={label}
-                href={`/real-estate-categories/all?q=${encodeURIComponent(label)}`}
-                className={`hover:underline ${theme.link}`}
-              >
-                {isThai ? label : labelEn}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
       ) : showChannelHero ? (
         <section className="container pt-3 sm:pt-5 lg:pt-6">
-          <div className={`relative isolate overflow-hidden rounded-[24px] border border-black/[0.055] bg-gradient-to-br shadow-[0_16px_40px_rgba(16,24,40,0.055)] sm:rounded-[28px] dark:border-white/10 ${theme.intro}`}>
+          <div
+            className={`relative isolate overflow-hidden rounded-[24px] border border-black/[0.055] bg-gradient-to-br shadow-[0_16px_40px_rgba(16,24,40,0.055)] sm:rounded-[28px] dark:border-white/10 ${theme.intro}`}
+          >
             <div
-              className="pointer-events-none absolute inset-y-0 left-[16%] right-0 opacity-35 sm:left-[22%] sm:opacity-50"
+              className="pointer-events-none absolute inset-y-0 right-0 left-[16%] opacity-35 sm:left-[22%] sm:opacity-50"
               style={{
-                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
-                maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
+                WebkitMaskImage:
+                  'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
+                maskImage:
+                  'linear-gradient(to right, transparent 0%, rgba(0,0,0,.18) 16%, rgba(0,0,0,.7) 38%, #000 58%)',
               }}
             >
               <Image
@@ -457,13 +466,17 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
               />
             </div>
             <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${theme.introImageOverlay}`} />
-            <div className={`pointer-events-none absolute -right-12 -top-14 size-48 rounded-full opacity-60 blur-3xl ${theme.glow}`} />
+            <div
+              className={`pointer-events-none absolute -top-14 -right-12 size-48 rounded-full opacity-60 blur-3xl ${theme.glow}`}
+            />
             <div className="pointer-events-none absolute -right-12 -bottom-20 size-52 rounded-full border border-white/40 dark:border-white/5" />
 
             <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-5">
               <div className="flex items-start justify-between gap-3 sm:gap-5">
                 <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-                  <div className={`flex size-10 shrink-0 items-center justify-center rounded-2xl sm:size-11 ${categoryIntro.iconTone}`}>
+                  <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-2xl sm:size-11 ${categoryIntro.iconTone}`}
+                  >
                     <CategoryIcon className="size-5 sm:size-[21px]" strokeWidth={1.75} />
                   </div>
                   <div className="min-w-0 pt-0.5">
@@ -513,11 +526,12 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
                   </Link>
                 ))}
               </nav>
-
             </div>
           </div>
         </section>
       ) : null}
+
+      {!isMainLanding && <ChannelHomeSearch mode={mode} />}
 
       <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 
@@ -539,7 +553,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
           </Link>
         </div>
 
-        <div className="flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {locations.map((location) => (
             <Link
               key={location.name}

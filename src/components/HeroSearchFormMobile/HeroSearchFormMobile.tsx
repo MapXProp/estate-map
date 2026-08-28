@@ -40,7 +40,13 @@ const formTabs: { name: ListingType; icon: IconSvgElement; formComponent: React.
   { name: 'Flights', icon: Airplane02Icon, formComponent: FlightSearchFormMobile },
 ]
 
-const HeroSearchFormMobile = ({ className, compactMapHeader = false }: { className?: string; compactMapHeader?: boolean }) => {
+const HeroSearchFormMobile = ({
+  className,
+  compactMapHeader = false,
+}: {
+  className?: string
+  compactMapHeader?: boolean
+}) => {
   const [showModal, setShowModal] = useState(false)
 
   // FOR RESET ALL DATA WHEN CLICK CLEAR BUTTON
@@ -57,6 +63,7 @@ const HeroSearchFormMobile = ({ className, compactMapHeader = false }: { classNa
     pathname === '/buy' ||
     pathname === '/rent' ||
     pathname === '/business' ||
+    pathname.startsWith('/contact') ||
     pathname === '/properties/map' ||
     pathname.startsWith('/add-listing') ||
     pathname.startsWith('/real-estate-categories') ||

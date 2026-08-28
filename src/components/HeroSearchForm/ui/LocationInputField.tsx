@@ -16,7 +16,7 @@ import {
 import { HugeiconsIcon, IconSvgElement } from '@hugeicons/react'
 import clsx from 'clsx'
 import _ from 'lodash'
-import { FC, useCallback, useEffect, useRef, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ClearDataButton } from './ClearDataButton'
 
 type Suggest = {
@@ -103,6 +103,7 @@ interface Props {
   initSuggests?: Suggest[]
   searchingSuggests?: Suggest[]
   fieldStyle: 'default' | 'small'
+  responsive?: boolean
 }
 
 export const LocationInputField: FC<Props> = ({
@@ -113,6 +114,7 @@ export const LocationInputField: FC<Props> = ({
   initSuggests = demoInitSuggests,
   searchingSuggests = demoSearchingSuggests,
   fieldStyle = 'default',
+  responsive = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -138,17 +140,18 @@ export const LocationInputField: FC<Props> = ({
   //  a custom hook that listens for clicks outside the container
   useInteractOutside(containerRef, closePopover)
 
-  const handleInputChange = useCallback(
-    _.debounce((e: React.ChangeEvent<HTMLInputElement>) => {
-      setShowPopover(true)
-      // If the input is empty, Combobox will automatically setSelected
-      if (e.target.value) {
-        setSelected({
-          id: Date.now().toString(), // Generate a unique id for the selected item
-          name: e.target.value,
-        })
-      }
-    }, 300),
+  const handleInputChange = useMemo(
+    () =>
+      _.debounce((value: string) => {
+        setShowPopover(true)
+        // If the input is empty, Combobox will automatically setSelected
+        if (value) {
+          setSelected({
+            id: 'manual-input',
+            name: value,
+          })
+        }
+      }, 300),
     []
   )
   useEffect(() => {
@@ -161,7 +164,7 @@ export const LocationInputField: FC<Props> = ({
   const suggestsToShow = isShowInitSuggests ? initSuggests : searchingSuggests
   return (
     <div
-      className={`group relative z-10 flex ${className}`}
+      className={`group relative z-10 flex data-open:z-50 ${className}`}
       ref={containerRef}
       {...(showPopover && {
         'data-open': 'true',
@@ -198,7 +201,7 @@ export const LocationInputField: FC<Props> = ({
               placeholder={placeholder}
               autoComplete="off"
               displayValue={(item?: Suggest) => item?.name || ''}
-              onChange={handleInputChange}
+              onChange={(event) => handleInputChange(event.target.value)}
             />
             <div className="mt-0.5 text-start text-sm font-light text-neutral-400">
               <span className="line-clamp-1">{description}</span>
@@ -216,7 +219,7 @@ export const LocationInputField: FC<Props> = ({
         </div>
 
         <Headless.Transition show={showPopover} unmount={false}>
-          <div className={clsx(styles.panel.base, styles.panel[fieldStyle])}>
+          <div className={clsx(styles.panel.base, styles.panel[fieldStyle], responsive && 'max-w-[calc(100vw-2rem)]')}>
             {isShowInitSuggests && (
               <p className="mt-2 mb-3 px-4 text-xs/6 font-normal text-neutral-600 sm:mt-0 sm:px-8 dark:text-neutral-400">
                 {T['HeroSearchForm']['Suggested locations']}

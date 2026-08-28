@@ -1,12 +1,12 @@
 'use client'
 
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import * as Headless from '@headlessui/react'
 import clsx from 'clsx'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { FC, useEffect, useState } from 'react'
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   ButtonSubmit,
   LocationInputField,
@@ -23,6 +23,7 @@ interface Props {
   selectedTab?: RealEstateSearchTab
   onSelectedTabChange?: (tab: RealEstateSearchTab) => void
   showTabs?: boolean
+  responsive?: boolean
 }
 
 const tabs = [
@@ -74,21 +75,27 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
   selectedTab,
   onSelectedTabChange,
   showTabs = true,
+  responsive = false,
 }) => {
   const { propertyZone, setPropertyZone } = usePreferences()
-  const [internalTab, setInternalTab] = useState<RealEstateSearchTab>(propertyZone)
+  const [uncontrolledSelection, setUncontrolledSelection] = useState<{
+    contextZone: RealEstateSearchTab
+    tab: RealEstateSearchTab
+  }>({ contextZone: propertyZone, tab: propertyZone })
+  const internalTab = uncontrolledSelection.contextZone === propertyZone ? uncontrolledSelection.tab : propertyZone
   const tabType = selectedTab ?? internalTab
   const router = useRouter()
 
   const handleTabChange = (tab: RealEstateSearchTab) => {
-    if (selectedTab === undefined) setInternalTab(tab)
+    if (selectedTab === undefined) {
+      setUncontrolledSelection({
+        contextZone: tab === 'all' ? propertyZone : tab,
+        tab,
+      })
+    }
     if (tab !== 'all') setPropertyZone(tab)
     onSelectedTabChange?.(tab)
   }
-
-  useEffect(() => {
-    if (selectedTab === undefined) setInternalTab(propertyZone)
-  }, [propertyZone, selectedTab])
 
   // Prefetch the stay categories page to improve performance
   useEffect(() => {
@@ -120,11 +127,13 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
     <Form
       action={handleFormSubmit}
       className={clsx(
-        'relative z-10 w-full bg-white [--form-bg:var(--color-white)] dark:bg-neutral-800 dark:[--form-bg:var(--color-neutral-800)]',
+        'relative z-20 w-full bg-white [--form-bg:var(--color-white)] dark:bg-neutral-800 dark:[--form-bg:var(--color-neutral-800)]',
         className,
         formStyle === 'small' && 'rounded-t-2xl rounded-b-4xl custom-shadow-1',
         formStyle === 'default' &&
-          'rounded-t-2xl rounded-b-[40px] shadow-xl xl:rounded-t-3xl xl:rounded-b-[48px] dark:shadow-2xl'
+          'rounded-t-2xl rounded-b-[40px] shadow-xl xl:rounded-t-3xl xl:rounded-b-[48px] dark:shadow-2xl',
+        responsive &&
+          'rounded-[28px]! border border-neutral-100 shadow-[0_18px_50px_-24px_rgba(18,63,50,0.32)] dark:border-neutral-700'
       )}
     >
       {/* RADIO */}
@@ -137,7 +146,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           className={clsx(
             'flex flex-wrap items-center gap-2.5 border-b border-neutral-100 dark:border-neutral-700',
             formStyle === 'small' && 'px-7 py-4 xl:px-8',
-            formStyle === 'default' && 'px-7 py-4 xl:px-8 xl:py-6'
+            formStyle === 'default' && 'px-7 py-4 xl:px-8 xl:py-6',
+            responsive &&
+              'grid grid-cols-2 gap-2 px-3.5 py-3 min-[744px]:flex min-[744px]:px-7 min-[744px]:py-4 xl:px-8 xl:py-5'
           )}
         >
           {tabs.map((tab) => (
@@ -146,6 +157,8 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                 value={tab.value}
                 className={clsx(
                   'flex cursor-pointer items-center rounded-full border px-4 py-1.5 text-xs font-semibold transition dark:border-neutral-700',
+                  responsive &&
+                    'min-h-10 justify-center px-2.5 text-center min-[744px]:min-h-0 min-[744px]:justify-start min-[744px]:px-4',
                   tab.value === 'business'
                     ? 'border-[#F2A086] text-[#D94A22] data-checked:border-[#E65A2F] data-checked:bg-[#E65A2F] data-checked:text-white data-checked:shadow-lg data-checked:shadow-[#E65A2F]/20'
                     : tab.value === 'rooms'
@@ -155,7 +168,18 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                         : 'border-neutral-200 text-neutral-700 data-checked:border-[#123f32] data-checked:bg-[#123f32] data-checked:text-white data-checked:shadow-lg data-checked:shadow-emerald-950/15'
                 )}
               >
-                <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-55" />
+                <span className={clsx(responsive && 'min-[744px]:hidden')}>
+                  {tab.value === 'all'
+                    ? 'ทั้งหมด'
+                    : tab.value === 'homes'
+                      ? 'ที่อยู่อาศัย'
+                      : tab.value === 'rooms'
+                        ? 'ห้องเช่ารายเดือน'
+                        : 'พื้นที่ธุรกิจ'}
+                </span>
+                <span className={clsx(responsive && 'hidden min-[744px]:inline')}>
+                  <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-55" />
+                </span>
               </Headless.Radio>
             </Headless.Field>
           ))}
@@ -163,18 +187,32 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
       )}
 
       {/*  */}
-      <div className="relative flex">
+      <div
+        className={clsx(
+          'relative flex',
+          responsive && 'flex-col gap-2 p-3 min-[744px]:flex-row min-[744px]:gap-0 min-[744px]:p-0'
+        )}
+      >
         <LocationInputField
-          className="hero-search-form__field-after flex-1"
+          className={clsx(
+            'hero-search-form__field-after flex-1',
+            responsive &&
+              'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
+          )}
           placeholder="ทำเลที่ต้องการ"
           description="จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ"
           fieldStyle={formStyle}
+          responsive={responsive}
         />
-        <VerticalDividerLine />
+        <VerticalDividerLine responsive={responsive} />
         <PropertyTypeSelectField
           key={tabType}
           fieldStyle={formStyle}
-          className="hero-search-form__field-before hero-search-form__field-after flex-1"
+          className={clsx(
+            'hero-search-form__field-before hero-search-form__field-after flex-1',
+            responsive &&
+              'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
+          )}
           propertyTypes={propertyTypesByTab[tabType]}
           defaultSelected={[]}
           placeholder="ทุกประเภท"
@@ -182,11 +220,15 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           panelTitle={tabs.find((tab) => tab.value === tabType)?.label}
           tone="mapx"
         />
-        <VerticalDividerLine />
+        <VerticalDividerLine responsive={responsive} />
         <PriceRangeInputField
           key={`price-${tabType}`}
           fieldStyle={formStyle}
-          className="hero-search-form__field-before flex-1"
+          className={clsx(
+            'hero-search-form__field-before flex-1',
+            responsive &&
+              'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
+          )}
           clearDataButtonClassName={clsx(formStyle === 'small' && 'sm:end-18', formStyle === 'default' && 'sm:end-22')}
           currency="THB"
           min={0}
@@ -195,6 +237,8 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
 
         <ButtonSubmit
           fieldStyle={formStyle}
+          responsive={responsive}
+          label="ค้นหา"
           className={
             tabType === 'business'
               ? 'bg-[#D94A22]! hover:bg-[#BE3E1B]!'

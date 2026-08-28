@@ -81,7 +81,7 @@ export const PropertyTypeSelectField: FC<Props> = ({
   )
   let typeStringConverted = selectedTypes.join(', ')
   return (
-    <Popover className={`group relative z-10 flex ${className}`}>
+    <Popover className={`group relative z-10 flex data-open:z-50 ${className}`}>
       {({ open: showPopover }) => (
         <>
           <PopoverButton

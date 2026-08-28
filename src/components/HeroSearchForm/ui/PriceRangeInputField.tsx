@@ -57,7 +57,7 @@ export const PriceRangeInputField: FC<Props> = ({
 
   return (
     <>
-      <Popover className={`group relative z-10 flex ${className}`}>
+      <Popover className={`group relative z-10 flex data-open:z-50 ${className}`}>
         {({ open: showPopover }) => (
           <>
             <PopoverButton
@@ -80,7 +80,10 @@ export const PriceRangeInputField: FC<Props> = ({
               onClick={() => setRangePrices([min, max])}
             />
 
-            <PopoverPanel transition className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle])}>
+            <PopoverPanel
+              transition
+              className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle], 'max-w-[calc(100vw-2rem)]')}
+            >
               <PriceRangeSlider
                 name={currency === 'THB' ? 'งบประมาณ' : T['HeroSearchForm']['Price range']}
                 min={min}

@@ -12,12 +12,24 @@ const styles = {
 interface Props {
   className?: string
   fieldStyle: 'default' | 'small'
+  label?: string
+  responsive?: boolean
 }
 
-export const ButtonSubmit: FC<Props> = ({ className, fieldStyle = 'default' }) => {
+export const ButtonSubmit: FC<Props> = ({ className, fieldStyle = 'default', label = 'ค้นหา', responsive = false }) => {
   return (
-    <button type="submit" className={clsx(styles.base, styles[fieldStyle], className)}>
+    <button
+      type="submit"
+      aria-label={label}
+      className={clsx(
+        responsive
+          ? 'relative z-10 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-primary-600 text-neutral-50 hover:bg-primary-700 focus:outline-hidden min-[744px]:absolute min-[744px]:end-2 min-[744px]:top-1/2 min-[744px]:size-16 min-[744px]:-translate-y-1/2 min-[744px]:rounded-full xl:end-4'
+          : [styles.base, styles[fieldStyle]],
+        className
+      )}
+    >
       <HugeiconsIcon icon={Search01Icon} size={24} />
+      {responsive && <span className="text-sm font-semibold min-[744px]:sr-only">{label}</span>}
     </button>
   )
 }

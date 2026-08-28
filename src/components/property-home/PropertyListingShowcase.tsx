@@ -110,7 +110,7 @@ export const archivedPrototypeListings: PrototypeListing[] = [
     group: 'commercial',
     type: 'พื้นที่ออกบูธ · กลุ่มออฟฟิศ',
     offer: 'เปิดจอง',
-    title: "Food O’Clock — THE EMPIRE TOWER",
+    title: 'Food O’Clock — THE EMPIRE TOWER',
     location: 'ชั้น M, THE EMPIRE TOWER, สาทร',
     facts: ['5 รอบ', '31 ส.ค.–2 ต.ค. 2569', 'อาหารและไลฟ์สไตล์'],
     price: '0',
@@ -263,7 +263,7 @@ export const archivedPrototypeListingTranslations: Record<
   9: {
     type: 'Event booth · Office crowd',
     offer: 'Booking open',
-    title: "Food O’Clock — THE EMPIRE TOWER",
+    title: 'Food O’Clock — THE EMPIRE TOWER',
     location: 'M Floor, THE EMPIRE TOWER, Sathon',
     facts: ['5 rounds', 'Aug 31–Oct 2, 2026', 'Food + lifestyle'],
     unit: '',
@@ -352,9 +352,19 @@ export const archivedPrototypeListingTranslations: Record<
 
 const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
   if (listing.space_type_code === 'event_booth') return 'commercial'
-  if (['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'].includes(listing.property_type_code)) return 'rooms'
+  if (
+    ['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'].includes(
+      listing.property_type_code
+    )
+  )
+    return 'rooms'
   if (['shophouse', 'home_office', 'mixed_use'].includes(listing.property_type_code)) return 'mixed_use'
-  if (['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'].includes(listing.property_type_code)) return 'commercial'
+  if (
+    ['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'].includes(
+      listing.property_type_code
+    )
+  )
+    return 'commercial'
   if (listing.property_type_code === 'land') return 'land'
   return 'residential'
 }
@@ -371,11 +381,12 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
   const group = getListingGroup(listing)
   const isEvent = listing.space_type_code === 'event_booth'
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
-  const area = listing.land_area_sqm && group === 'land'
-    ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
-    : listing.usable_area_sqm
-      ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.`
-      : ''
+  const area =
+    listing.land_area_sqm && group === 'land'
+      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
+      : listing.usable_area_sqm
+        ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.`
+        : ''
   const price = listing.price_on_request
     ? ''
     : new Intl.NumberFormat('th-TH').format(isRental ? listing.rent_price_monthly || 0 : listing.sale_price || 0)
@@ -384,7 +395,11 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
   return {
     id: listing.id,
     group,
-    type: isEvent ? 'พื้นที่ออกบูธ' : group === 'land' ? 'ที่ดินเปล่า' : listing.property_type_code || 'อสังหาริมทรัพย์',
+    type: isEvent
+      ? 'พื้นที่ออกบูธ'
+      : group === 'land'
+        ? 'ที่ดินเปล่า'
+        : listing.property_type_code || 'อสังหาริมทรัพย์',
     offer: isEvent ? 'เปิดจอง' : isRental ? 'เช่า' : 'ขาย',
     title: listing.title,
     location: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
@@ -434,22 +449,24 @@ const PropertyListingShowcase = ({
   const availableFilters = useMemo(() => {
     if (mode === 'homes') return filters.filter((filter) => ['all', 'residential', 'land'].includes(filter.value))
     if (mode === 'rooms') return filters.filter((filter) => filter.value === 'all')
-    if (mode === 'business') return filters.filter((filter) => ['all', 'mixed_use', 'commercial', 'land'].includes(filter.value))
+    if (mode === 'business')
+      return filters.filter((filter) => ['all', 'mixed_use', 'commercial', 'land'].includes(filter.value))
     return filters
   }, [mode])
 
-  const availableListings = useMemo(
-    () => {
-      if (mode === 'homes') return databaseListings.filter((listing) => listing.group === 'residential' || listing.group === 'land')
-      if (mode === 'rooms') return databaseListings.filter((listing) => listing.group === 'rooms')
-      // Land can be suitable for a residence or future commercial development.
-      // The database assigns those listings to both discovery channels, so the
-      // homepage must not hide land from the Business surface.
-      if (mode === 'business') return databaseListings.filter((listing) => listing.group === 'commercial' || listing.group === 'mixed_use' || listing.group === 'land')
-      return databaseListings
-    },
-    [databaseListings, mode]
-  )
+  const availableListings = useMemo(() => {
+    if (mode === 'homes')
+      return databaseListings.filter((listing) => listing.group === 'residential' || listing.group === 'land')
+    if (mode === 'rooms') return databaseListings.filter((listing) => listing.group === 'rooms')
+    // Land can be suitable for a residence or future commercial development.
+    // The database assigns those listings to both discovery channels, so the
+    // homepage must not hide land from the Business surface.
+    if (mode === 'business')
+      return databaseListings.filter(
+        (listing) => listing.group === 'commercial' || listing.group === 'mixed_use' || listing.group === 'land'
+      )
+    return databaseListings
+  }, [databaseListings, mode])
   const visibleListings = useMemo(() => {
     return activeFilter === 'all'
       ? availableListings
@@ -461,9 +478,13 @@ const PropertyListingShowcase = ({
   }
 
   return (
-    <section className={compact ? 'pt-7 pb-10 sm:pt-9 sm:pb-14 lg:pt-11 lg:pb-16' : 'pt-14 pb-10 sm:pt-18 sm:pb-14 lg:pt-24 lg:pb-16'}>
+    <section
+      className={
+        compact ? 'pt-5 pb-5 sm:pt-7 sm:pb-8 lg:pt-8 lg:pb-10' : 'pt-14 pb-10 sm:pt-18 sm:pb-14 lg:pt-24 lg:pb-16'
+      }
+    >
       <div className="container">
-        <div className="mb-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div className={`${compact ? 'mb-6' : 'mb-8'} flex flex-col justify-between gap-5 lg:flex-row lg:items-end`}>
           <div>
             <p className="mb-2 text-sm font-semibold tracking-wide text-[#176b50] dark:text-emerald-300">
               {isThai ? 'อัปเดตล่าสุด' : 'Recently updated'}
@@ -496,106 +517,110 @@ const PropertyListingShowcase = ({
             {isThai ? 'ยังไม่มีประกาศที่เผยแพร่ในหมวดนี้' : 'There are no published listings in this category yet.'}
           </div>
         ) : (
-        <div className="mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-          {visibleListings.map((listing, index) => {
-            const liked = likedIds.includes(listing.id)
-            const displayListing = listing
-            return (
-              <article
-                key={listing.id}
-                className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
-                  <DeferredListingImage
-                    src={listing.image}
-                    alt={displayListing.title}
-                    eager={index === 0}
-                    position={listing.imagePosition}
-                  />
-                  <Link
-                    href={listing.href || '/real-estate-categories/all'}
-                    aria-label={displayListing.title}
-                    className="absolute inset-0"
-                  />
-                  <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">
-                        {displayListing.offer}
+          <div className="mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+            {visibleListings.map((listing, index) => {
+              const liked = likedIds.includes(listing.id)
+              const displayListing = listing
+              return (
+                <article
+                  key={listing.id}
+                  className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
+                    <DeferredListingImage
+                      src={listing.image}
+                      alt={displayListing.title}
+                      eager={index === 0}
+                      position={listing.imagePosition}
+                    />
+                    <Link
+                      href={listing.href || '/real-estate-categories/all'}
+                      aria-label={displayListing.title}
+                      className="absolute inset-0"
+                    />
+                    <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">
+                          {displayListing.offer}
+                        </span>
+                        {listing.badge && (
+                          <span className="rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                            {displayListing.badge}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={
+                          liked
+                            ? isThai
+                              ? 'นำออกจากรายการโปรด'
+                              : 'Remove from favorites'
+                            : isThai
+                              ? 'บันทึกเป็นรายการโปรด'
+                              : 'Save to favorites'
+                        }
+                        onClick={() => toggleLike(listing.id)}
+                        className="flex size-10 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition hover:scale-105"
+                      >
+                        <Heart className={`size-5 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
+                    <div className="mb-1.5 flex items-center justify-between gap-3">
+                      <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        {displayListing.type}
                       </span>
-                      {listing.badge && (
-                        <span className="rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                          {displayListing.badge}
+                      {listing.verified && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
+                          <CheckCircle2 className="size-3.5" />{' '}
+                          {isThai
+                            ? listing.verificationLabel || 'ตรวจสอบแล้ว'
+                            : listing.verificationLabel
+                              ? 'Organizer checked'
+                              : 'Verified'}
                         </span>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      aria-label={
-                        liked
-                          ? isThai
-                            ? 'นำออกจากรายการโปรด'
-                            : 'Remove from favorites'
-                          : isThai
-                            ? 'บันทึกเป็นรายการโปรด'
-                            : 'Save to favorites'
-                      }
-                      onClick={() => toggleLike(listing.id)}
-                      className="flex size-10 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition hover:scale-105"
-                    >
-                      <Heart className={`size-5 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} strokeWidth={1.8} />
-                    </button>
-                  </div>
-                </div>
-
-                <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
-                  <div className="mb-1.5 flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                      {displayListing.type}
-                    </span>
-                    {listing.verified && (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
-                        <CheckCircle2 className="size-3.5" />{' '}
-                        {isThai ? listing.verificationLabel || 'ตรวจสอบแล้ว' : listing.verificationLabel ? 'Organizer checked' : 'Verified'}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="line-clamp-1 text-base font-semibold text-neutral-950 transition group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
-                    {displayListing.title}
-                  </h3>
-                  <p className="mt-2 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
-                    <MapPin className="size-4 shrink-0" strokeWidth={1.7} />
-                    <span className="truncate">{displayListing.location}</span>
-                  </p>
-                  <div className="mt-3 flex min-h-6 flex-wrap gap-x-2 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
-                    {displayListing.facts.map((fact, index) => (
-                      <span key={fact} className="whitespace-nowrap">
-                        {index > 0 && <span className="me-2 text-neutral-300 dark:text-neutral-600">·</span>}
-                        {fact}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                    {listing.priceLabel ? (
-                      <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
-                        {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
-                      </span>
-                    ) : (
-                      <>
-                        <span className="text-lg font-bold text-neutral-950 dark:text-white">฿{listing.price}</span>{' '}
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
+                    <h3 className="line-clamp-1 text-base font-semibold text-neutral-950 transition group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
+                      {displayListing.title}
+                    </h3>
+                    <p className="mt-2 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                      <MapPin className="size-4 shrink-0" strokeWidth={1.7} />
+                      <span className="truncate">{displayListing.location}</span>
+                    </p>
+                    <div className="mt-3 flex min-h-6 flex-wrap gap-x-2 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+                      {displayListing.facts.map((fact, index) => (
+                        <span key={fact} className="whitespace-nowrap">
+                          {index > 0 && <span className="me-2 text-neutral-300 dark:text-neutral-600">·</span>}
+                          {fact}
                         </span>
-                      </>
-                    )}
-                  </div>
-                </Link>
-              </article>
-            )
-          })}
-        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+                      {listing.priceLabel ? (
+                        <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
+                          {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-lg font-bold text-neutral-950 dark:text-white">฿{listing.price}</span>{' '}
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                            {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                </article>
+              )
+            })}
+          </div>
         )}
 
-        <div className="mt-10 text-center">
+        <div className={`${compact ? 'mt-7' : 'mt-10'} text-center`}>
           <Link
             href="/real-estate-categories/all"
             className="inline-flex min-h-12 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold text-neutral-900 transition hover:border-neutral-950 hover:bg-neutral-950 hover:text-white dark:border-neutral-700 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-neutral-950"
