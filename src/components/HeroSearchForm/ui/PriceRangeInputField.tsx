@@ -35,6 +35,10 @@ interface Props {
   min?: number
   max?: number
   currency?: 'USD' | 'THB'
+  description?: string
+  panelTitle?: string
+  minLabel?: string
+  maxLabel?: string
 }
 
 export const PriceRangeInputField: FC<Props> = ({
@@ -45,6 +49,10 @@ export const PriceRangeInputField: FC<Props> = ({
   min = 0,
   max = 1000000,
   currency = 'USD',
+  description = T['HeroSearchForm']['Choose price range'],
+  panelTitle,
+  minLabel,
+  maxLabel,
 }) => {
   const [rangePrices, setRangePrices] = useState([
     min,
@@ -70,7 +78,7 @@ export const PriceRangeInputField: FC<Props> = ({
               <div className="flex-1 text-start">
                 <span className={clsx('block font-semibold', styles.mainText[fieldStyle])}>{formattedRange}</span>
                 <span className="mt-1 block text-sm leading-none font-light text-neutral-400">
-                  {T['HeroSearchForm']['Choose price range']}
+                  {description}
                 </span>
               </div>
             </PopoverButton>
@@ -85,7 +93,7 @@ export const PriceRangeInputField: FC<Props> = ({
               className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle], 'max-w-[calc(100vw-2rem)]')}
             >
               <PriceRangeSlider
-                name={currency === 'THB' ? 'งบประมาณ' : T['HeroSearchForm']['Price range']}
+                name={panelTitle ?? (currency === 'THB' ? 'งบประมาณ' : T['HeroSearchForm']['Price range'])}
                 min={min}
                 max={max}
                 defaultValue={rangePrices}
@@ -93,6 +101,8 @@ export const PriceRangeInputField: FC<Props> = ({
                   setRangePrices(value)
                 }}
                 currency={currency}
+                minLabel={minLabel}
+                maxLabel={maxLabel}
               />
             </PopoverPanel>
           </>

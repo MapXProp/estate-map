@@ -63,6 +63,7 @@ interface Props {
   placeholder?: string
   defaultSelected?: string[]
   panelTitle?: string
+  panelDescription?: string
   tone?: 'default' | 'mapx'
 }
 
@@ -74,12 +75,16 @@ export const PropertyTypeSelectField: FC<Props> = ({
   placeholder = T['HeroSearchForm']['Type'],
   defaultSelected,
   panelTitle,
+  panelDescription = 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด',
   tone = 'default',
 }) => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>(
-    defaultSelected ?? (propertyTypes[0]?.name ? [propertyTypes[0].name] : [])
+    defaultSelected ?? (propertyTypes[0]?.value ? [propertyTypes[0].value] : [])
   )
-  let typeStringConverted = selectedTypes.join(', ')
+  const typeStringConverted = propertyTypes
+    .filter((propertyType) => selectedTypes.includes(propertyType.value))
+    .map((propertyType) => propertyType.name)
+    .join(', ')
   return (
     <Popover className={`group relative z-10 flex data-open:z-50 ${className}`}>
       {({ open: showPopover }) => (
@@ -111,9 +116,7 @@ export const PropertyTypeSelectField: FC<Props> = ({
             {panelTitle && (
               <div className="mb-4">
                 <p className="text-base font-semibold text-neutral-950 dark:text-white">{panelTitle}</p>
-                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด
-                </p>
+                <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{panelDescription}</p>
               </div>
             )}
             <CheckboxGroup className={clsx(tone === 'mapx' && 'grid grid-cols-2 gap-2.5 space-y-0')}>
@@ -129,11 +132,11 @@ export const PropertyTypeSelectField: FC<Props> = ({
                     color={tone === 'mapx' ? 'mapx' : 'dark/zinc'}
                     name="property_type"
                     value={item.value}
-                    checked={selectedTypes.includes(item.name)}
+                    checked={selectedTypes.includes(item.value)}
                     onChange={(e) => {
                       const newState = e
-                        ? [...selectedTypes, item.name]
-                        : selectedTypes.filter((type) => type !== item.name)
+                        ? [...selectedTypes, item.value]
+                        : selectedTypes.filter((type) => type !== item.value)
                       setSelectedTypes(newState)
                     }}
                   />

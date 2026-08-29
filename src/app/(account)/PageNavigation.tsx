@@ -1,29 +1,41 @@
 'use client'
 
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const navigation = [
   {
-    title: 'Account',
+    titleTh: 'บัญชีของฉัน',
+    titleEn: 'My account',
     href: '/account',
   },
   {
-    title: 'My listings',
+    titleTh: 'ประกาศของฉัน',
+    titleEn: 'My listings',
     href: '/account-listings',
   },
   {
-    title: 'Password',
+    titleTh: 'ประกาศที่บันทึก',
+    titleEn: 'Saved listings',
+    href: '/account-savelists',
+  },
+  {
+    titleTh: 'รหัสผ่าน',
+    titleEn: 'Password',
     href: '/account-password',
   },
   {
-    title: 'Payments & payouts',
+    titleTh: 'แพ็กเกจและการชำระเงิน',
+    titleEn: 'Plan & billing',
     href: '/account-billing',
   },
 ]
 
 export const PageNavigation = () => {
   const pathname = usePathname()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
 
   return (
     <div className="container">
@@ -32,13 +44,14 @@ export const PageNavigation = () => {
           const isActive = pathname === item.href
           return (
             <Link
-              key={item.title}
+              key={item.href}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={`block shrink-0 border-b-2 py-5 capitalize md:py-8 ${
                 isActive ? 'border-primary-500 font-medium' : 'border-transparent'
               }`}
             >
-              {item.title}
+              {isThai ? item.titleTh : item.titleEn}
             </Link>
           )
         })}

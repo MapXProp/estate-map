@@ -17,6 +17,8 @@ export const PriceRangeSlider = ({
   showTitle = true,
   currency = 'USD',
   step = 1,
+  minLabel,
+  maxLabel,
 }: {
   min: number
   max: number
@@ -29,6 +31,8 @@ export const PriceRangeSlider = ({
   showTitle?: boolean
   currency?: 'USD' | 'THB'
   step?: number
+  minLabel?: string
+  maxLabel?: string
 }) => {
   const [rangePrices, setRangePrices] = useState<number[]>([defaultValue?.[0] ?? min, defaultValue?.[1] ?? max])
 
@@ -68,7 +72,7 @@ export const PriceRangeSlider = ({
       <div className="flex justify-between gap-x-5">
         <div className="flex-1">
           <div className="ps-4 text-xs/6 text-neutral-700 dark:text-neutral-300">
-            {currency === 'THB' ? 'ราคาต่ำสุด' : 'Min price'}
+            {minLabel ?? (currency === 'THB' ? 'ราคาต่ำสุด' : 'Min price')}
           </div>
           <div className="relative mt-0.5 w-full rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-800">
             {formatPrice(rangePrices[0])}
@@ -77,7 +81,7 @@ export const PriceRangeSlider = ({
         </div>
         <div className="flex-1">
           <div className="ps-4 text-xs/6 text-neutral-700 dark:text-neutral-300">
-            {currency === 'THB' ? 'ราคาสูงสุด' : 'Max price'}
+            {maxLabel ?? (currency === 'THB' ? 'ราคาสูงสุด' : 'Max price')}
           </div>
           <div className="relative mt-0.5 w-full rounded-full bg-neutral-100 px-4 py-2 text-sm dark:bg-neutral-800">
             {formatPrice(rangePrices[1])}

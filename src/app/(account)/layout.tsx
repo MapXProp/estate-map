@@ -1,4 +1,6 @@
 import RequireAuth from '@/components/auth/RequireAuth'
+import PropertyHeaderPrototype from '@/components/Header/PropertyHeaderPrototype'
+import PropertyFooterPrototype from '@/components/property-home/PropertyFooterPrototype'
 import React, { FC } from 'react'
 import { ApplicationLayout } from '../(app)/application-layout'
 import { PageNavigation } from './PageNavigation'
@@ -9,7 +11,7 @@ interface Props {
 
 const Layout: FC<Props> = ({ children }) => {
   return (
-    <ApplicationLayout>
+    <ApplicationLayout header={<PropertyHeaderPrototype />} footer={<PropertyFooterPrototype />}>
       <div className="bg-neutral-50 dark:bg-neutral-900">
         <div className="border-b border-neutral-200 bg-white pt-12 dark:border-neutral-700 dark:bg-neutral-800">
           <PageNavigation />

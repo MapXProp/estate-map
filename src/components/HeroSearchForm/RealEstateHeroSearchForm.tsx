@@ -27,10 +27,28 @@ interface Props {
 }
 
 const tabs = [
-  { value: 'all', label: 'ทั้งหมด' },
-  { value: 'homes', label: 'บ้าน คอนโด & ที่อยู่อาศัย' },
-  { value: 'rooms', label: 'ห้องเช่า & ที่พักรายเดือน' },
-  { value: 'business', label: 'พื้นที่ทำธุรกิจ' },
+  { value: 'all', label: 'ทั้งหมด', labelEn: 'All', compactLabel: 'ทั้งหมด', compactLabelEn: 'All' },
+  {
+    value: 'homes',
+    label: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    labelEn: 'Homes, condos & residential',
+    compactLabel: 'ที่อยู่อาศัย',
+    compactLabelEn: 'Homes',
+  },
+  {
+    value: 'rooms',
+    label: 'ห้องเช่า & ที่พักรายเดือน',
+    labelEn: 'Rooms & monthly rentals',
+    compactLabel: 'ห้องเช่ารายเดือน',
+    compactLabelEn: 'Monthly rentals',
+  },
+  {
+    value: 'business',
+    label: 'พื้นที่ทำธุรกิจ',
+    labelEn: 'Business spaces',
+    compactLabel: 'พื้นที่ธุรกิจ',
+    compactLabelEn: 'Business',
+  },
 ] as const
 
 const propertyTypesByTab = {
@@ -69,6 +87,28 @@ const propertyTypesByTab = {
   ],
 }
 
+const englishPropertyTypes: Record<string, { name: string; description: string }> = {
+  house: { name: 'House', description: 'Detached, semi-detached and rental houses' },
+  condo: { name: 'Condo', description: 'Condominiums available to buy or rent' },
+  monthly_room: { name: 'Rental room', description: 'Apartments, dormitories and monthly rooms' },
+  rowhouse: { name: 'Rowhouse', description: 'For residential or business use' },
+  retail: { name: 'Retail space', description: 'Shops, market stalls and kiosks' },
+  office: { name: 'Office', description: 'Offices and workspaces' },
+  warehouse_factory: { name: 'Warehouse / Factory', description: 'Storage and production spaces' },
+  land: { name: 'Land', description: 'Land for residential or business use' },
+  townhome: { name: 'Townhome', description: 'Townhouses and townhomes' },
+  residential_land: { name: 'Residential land', description: 'Land suitable for building a home' },
+  apartment: { name: 'Apartment', description: 'Apartments and serviced apartments' },
+  dormitory: { name: 'Dormitory', description: 'Student and worker accommodation' },
+  flat: { name: 'Flat', description: 'Flats and long-term accommodation' },
+  rental_condo: { name: 'Condo for rent', description: 'Condo units available for monthly rent' },
+  commercial_rowhouse: { name: 'Commercial rowhouse', description: 'Commercial buildings and rowhouses' },
+  standalone_retail: { name: 'Standalone shop', description: 'Standalone retail and selling spaces' },
+  stall_kiosk: { name: 'Market stall / Kiosk', description: 'Stalls in markets and shopping centres' },
+  business_land: { name: 'Commercial land', description: 'Land for commercial and industrial use' },
+  event_space: { name: 'Event space', description: 'Event booths and temporary spaces' },
+}
+
 export const RealEstateHeroSearchForm: FC<Props> = ({
   className,
   formStyle = 'default',
@@ -77,7 +117,8 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
   showTabs = true,
   responsive = false,
 }) => {
-  const { propertyZone, setPropertyZone } = usePreferences()
+  const { locale, propertyZone, setPropertyZone } = usePreferences()
+  const isThai = locale === 'th'
   const [uncontrolledSelection, setUncontrolledSelection] = useState<{
     contextZone: RealEstateSearchTab
     tab: RealEstateSearchTab
@@ -108,12 +149,19 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
     // You can also redirect or perform other actions based on the form data
 
     const location = formDataEntries['location'] as string
-    const channelPrefix = {
-      all: '',
-      homes: 'บ้านและที่อยู่อาศัย',
-      rooms: 'ห้องเช่ารายเดือน',
-      business: 'พื้นที่ทำธุรกิจ',
-    }[tabType]
+    const channelPrefix = isThai
+      ? {
+          all: '',
+          homes: 'บ้านและที่อยู่อาศัย',
+          rooms: 'ห้องเช่ารายเดือน',
+          business: 'พื้นที่ทำธุรกิจ',
+        }[tabType]
+      : {
+          all: '',
+          homes: 'homes and residential',
+          rooms: 'monthly rentals',
+          business: 'business spaces',
+        }[tabType]
     const query = [channelPrefix, location].filter(Boolean).join(' ')
     let url = '/properties/map'
 
@@ -141,7 +189,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
         <Headless.RadioGroup
           value={tabType}
           onChange={handleTabChange}
-          aria-label="Real Estate Tab Type"
+          aria-label={isThai ? 'เลือกหมวดอสังหาริมทรัพย์' : 'Choose a property category'}
           name="real_estate_tab_type"
           className={clsx(
             'flex flex-wrap items-center gap-2.5 border-b border-neutral-100 dark:border-neutral-700',
@@ -169,16 +217,13 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
                 )}
               >
                 <span className={clsx(responsive && 'min-[744px]:hidden')}>
-                  {tab.value === 'all'
-                    ? 'ทั้งหมด'
-                    : tab.value === 'homes'
-                      ? 'ที่อยู่อาศัย'
-                      : tab.value === 'rooms'
-                        ? 'ห้องเช่ารายเดือน'
-                        : 'พื้นที่ธุรกิจ'}
+                  {isThai ? tab.compactLabel : tab.compactLabelEn}
                 </span>
                 <span className={clsx(responsive && 'hidden min-[744px]:inline')}>
-                  <PropertyCategoryLabel label={tab.label} ampersandClassName="text-current opacity-55" />
+                  <PropertyCategoryLabel
+                    label={isThai ? tab.label : tab.labelEn}
+                    ampersandClassName="text-current opacity-55"
+                  />
                 </span>
               </Headless.Radio>
             </Headless.Field>
@@ -199,8 +244,10 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
             responsive &&
               'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
           )}
-          placeholder="ทำเลที่ต้องการ"
-          description="จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ"
+          placeholder={isThai ? 'ทำเลที่ต้องการ' : 'Preferred location'}
+          description={isThai ? 'จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ' : 'Province, district, area, road or project name'}
+          ariaLabel={isThai ? 'ค้นหาทำเล' : 'Search for a location'}
+          suggestionsLabel={isThai ? 'ทำเลแนะนำ' : 'Suggested locations'}
           fieldStyle={formStyle}
           responsive={responsive}
         />
@@ -213,11 +260,16 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
             responsive &&
               'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
           )}
-          propertyTypes={propertyTypesByTab[tabType]}
+          propertyTypes={propertyTypesByTab[tabType].map((propertyType) =>
+            isThai ? propertyType : { ...propertyType, ...englishPropertyTypes[propertyType.value] }
+          )}
           defaultSelected={[]}
-          placeholder="ทุกประเภท"
-          description="เลือกประเภทอสังหา"
-          panelTitle={tabs.find((tab) => tab.value === tabType)?.label}
+          placeholder={isThai ? 'ทุกประเภท' : 'All property types'}
+          description={isThai ? 'เลือกประเภทอสังหา' : 'Choose property type'}
+          panelTitle={tabs.find((tab) => tab.value === tabType)?.[isThai ? 'label' : 'labelEn']}
+          panelDescription={
+            isThai ? 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด' : 'Select multiple types, or leave blank to view all'
+          }
           tone="mapx"
         />
         <VerticalDividerLine responsive={responsive} />
@@ -231,6 +283,10 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           )}
           clearDataButtonClassName={clsx(formStyle === 'small' && 'sm:end-18', formStyle === 'default' && 'sm:end-22')}
           currency="THB"
+          description={isThai ? 'เลือกช่วงราคา' : 'Choose price range'}
+          panelTitle={isThai ? 'งบประมาณ' : 'Budget'}
+          minLabel={isThai ? 'ราคาต่ำสุด' : 'Min price'}
+          maxLabel={isThai ? 'ราคาสูงสุด' : 'Max price'}
           min={0}
           max={tabType === 'rooms' ? 200_000 : tabType === 'business' || tabType === 'all' ? 100_000_000 : 50_000_000}
         />
@@ -238,7 +294,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
         <ButtonSubmit
           fieldStyle={formStyle}
           responsive={responsive}
-          label="ค้นหา"
+          label={isThai ? 'ค้นหา' : 'Search'}
           className={
             tabType === 'business'
               ? 'bg-[#D94A22]! hover:bg-[#BE3E1B]!'

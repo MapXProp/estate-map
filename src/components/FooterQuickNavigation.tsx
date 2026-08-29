@@ -1,6 +1,7 @@
 'use client'
 
 import { Bars3Icon, HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -10,22 +11,27 @@ import { useAside } from './aside'
 
 const FOOTER_QUICK_NAV = [
   {
-    name: 'Explore',
+    nameTh: 'ค้นหา',
+    nameEn: 'Explore',
     link: '/',
     icon: MagnifyingGlassIcon,
   },
   {
-    name: 'My listings',
-    link: '/account-listings',
+    nameTh: 'ที่บันทึก',
+    nameEn: 'Saved',
+    link: '/account-savelists',
     icon: HeartIcon,
   },
   {
-    name: 'Account',
+    nameTh: 'บัญชี',
+    nameEn: 'Account',
     link: '/account',
     icon: UserCircleIcon,
   },
   {
-    name: 'Menu',
+    nameTh: 'เมนู',
+    nameEn: 'Menu',
+    action: 'menu',
     icon: Bars3Icon,
   },
 ]
@@ -36,9 +42,12 @@ const FooterQuickNavigation = () => {
   const rafId = useRef<number | null>(null)
   const lastScrollY = useRef<number>(0)
   const pathname = usePathname()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const hideOnChannelHome = pathname === '/homes' || pathname === '/rooms' || pathname === '/business'
   const hideOnContact = pathname.startsWith('/contact')
   const hideOnAbout = pathname.startsWith('/about')
+  const hideOnAccount = pathname.startsWith('/account')
   const hideOnListingWizard = pathname.startsWith('/add-listing')
   const hideOnPropertyMap =
     pathname === '/properties/map' ||
@@ -95,7 +104,15 @@ const FooterQuickNavigation = () => {
 
   //
 
-  if (hideOnChannelHome || hideOnContact || hideOnAbout || hideOnPropertyMap || hideOnListingWizard) return null
+  if (
+    hideOnChannelHome ||
+    hideOnContact ||
+    hideOnAbout ||
+    hideOnAccount ||
+    hideOnPropertyMap ||
+    hideOnListingWizard
+  )
+    return null
 
   return (
     <div
@@ -106,39 +123,40 @@ const FooterQuickNavigation = () => {
         {/* MENU */}
         {FOOTER_QUICK_NAV.map((item) => {
           const isActive = pathname === item.link
+          const label = isThai ? item.nameTh : item.nameEn
           return item.link ? (
             <Link
-              key={item.name}
+              key={item.nameEn}
               href={item.link}
               tabIndex={0}
               role="menuitem"
-              aria-label={`Navigate to ${item.name}`}
+              aria-label={isThai ? `ไปที่${label}` : `Navigate to ${label}`}
               className={clsx(
                 '-mx-2 flex flex-col items-center justify-between px-2 text-neutral-500 dark:text-neutral-300',
                 isActive && 'text-red-600'
               )}
             >
               <item.icon className="size-6" />
-              <p className="text-xs/6">{item.name}</p>
+              <p className="text-xs/6">{label}</p>
             </Link>
           ) : (
             <button
               type="button"
-              key={item.name}
+              key={item.nameEn}
               role="menuitem"
-              aria-label={`Open menu`}
+              aria-label={isThai ? 'เปิดเมนู' : 'Open menu'}
               className={clsx(
                 '-mx-2 flex cursor-pointer touch-manipulation flex-col items-center justify-between px-2 text-neutral-500 dark:text-neutral-300',
                 isActive && 'text-red-600'
               )}
               onClick={() => {
-                if (item.name === 'Menu') {
+                if (item.action === 'menu') {
                   openAside('sidebar-navigation')
                 }
               }}
             >
               <item.icon className="size-6" />
-              <p className="text-xs/6">{item.name}</p>
+              <p className="text-xs/6">{label}</p>
             </button>
           )
         })}

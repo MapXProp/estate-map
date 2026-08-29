@@ -5,11 +5,14 @@ import {
   type RealEstateSearchTab,
 } from '@/components/HeroSearchForm/RealEstateHeroSearchForm'
 import type { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 const ChannelHomeSearch = ({ mode }: { mode: Exclude<PropertySiteMode, 'all'> }) => {
   const router = useRouter()
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const [selectedTab, setSelectedTab] = useState<RealEstateSearchTab>(mode)
 
   useEffect(() => {
@@ -29,7 +32,7 @@ const ChannelHomeSearch = ({ mode }: { mode: Exclude<PropertySiteMode, 'all'> })
   return (
     <section
       className="container hidden pt-3 min-[744px]:block min-[744px]:pt-4 lg:pt-5"
-      aria-label="ค้นหาอสังหาริมทรัพย์"
+      aria-label={isThai ? 'ค้นหาอสังหาริมทรัพย์' : 'Search properties'}
     >
       <div className="mx-auto max-w-[1180px]">
         <RealEstateHeroSearchForm

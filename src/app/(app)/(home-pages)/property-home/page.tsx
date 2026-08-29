@@ -535,7 +535,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
 
       <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 
-      <section className="container py-10 sm:py-14 lg:py-16">
+      <section className="container pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-10 lg:pb-12">
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">
           <div>
             <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
@@ -590,7 +590,7 @@ const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) 
         </Link>
       </section>
 
-      <section className="container pt-16 pb-8 sm:pt-20 lg:pt-24">
+      <section className="container pt-10 pb-8 sm:pt-12 lg:pt-14">
         <div className="mb-7 flex items-end justify-between gap-5">
           <div>
             <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">

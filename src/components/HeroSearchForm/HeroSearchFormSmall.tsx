@@ -11,26 +11,47 @@ import { formTabs } from './HeroSearchForm'
 import { RealEstateHeroSearchForm, RealEstateSearchTab } from './RealEstateHeroSearchForm'
 
 const propertyTabs = [
-  { value: 'all', label: 'ทั้งหมด', labelParts: null, icon: Grid2X2, tone: 'text-[#123f32]' },
+  {
+    value: 'all',
+    label: 'ทั้งหมด',
+    labelEn: 'All',
+    labelParts: null,
+    labelPartsEn: null,
+    icon: Grid2X2,
+    tone: 'text-[#123f32]',
+  },
   {
     value: 'homes',
     label: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    labelEn: 'Homes & residential',
     labelParts: ['บ้าน คอนโด', 'ที่อยู่อาศัย'],
+    labelPartsEn: ['Homes', 'residential'],
     icon: House,
     tone: 'text-[#176b50]',
   },
   {
     value: 'rooms',
     label: 'ห้องเช่า & ที่พักรายเดือน',
+    labelEn: 'Rooms & monthly rentals',
     labelParts: ['ห้องเช่า', 'ที่พักรายเดือน'],
+    labelPartsEn: ['Rooms', 'monthly rentals'],
     icon: BedDouble,
     tone: 'text-[#2D8FC7]',
   },
-  { value: 'business', label: 'พื้นที่ทำธุรกิจ', labelParts: null, icon: Store, tone: 'text-[#E65A2F]' },
+  {
+    value: 'business',
+    label: 'พื้นที่ทำธุรกิจ',
+    labelEn: 'Business spaces',
+    labelParts: null,
+    labelPartsEn: null,
+    icon: Store,
+    tone: 'text-[#E65A2F]',
+  },
 ] as const
 
 const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: string; initTab: ListingType }) => {
-  const { propertyZone, setPropertyZone } = usePreferences()
+  const { locale, propertyZone, setPropertyZone } = usePreferences()
+  const isThai = locale === 'th'
   const [propertyTab, setPropertyTab] = useState<RealEstateSearchTab>(propertyZone)
 
   const selectPropertyTab = (tab: RealEstateSearchTab) => {
@@ -49,12 +70,14 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
           {propertyTabs.map((tab) => {
             const Icon = tab.icon
             const isActive = propertyTab === tab.value
+            const label = isThai ? tab.label : tab.labelEn
+            const labelParts = isThai ? tab.labelParts : tab.labelPartsEn
             return (
               <button
                 key={tab.value}
                 type="button"
-                title={tab.label}
-                aria-label={tab.label}
+                title={label}
+                aria-label={label}
                 aria-pressed={isActive}
                 onClick={() => selectPropertyTab(tab.value)}
                 className={clsx(
@@ -64,16 +87,16 @@ const HeroSearchFormSmall = ({ className, initTab = 'Stays' }: { className?: str
               >
                 <Icon className="size-6" strokeWidth={isActive ? 2 : 1.7} />
                 <span className="flex items-baseline text-[11px] font-medium whitespace-nowrap">
-                  {tab.labelParts ? (
+                  {labelParts ? (
                     <>
-                      <span>{tab.labelParts[0]}</span>
+                      <span>{labelParts[0]}</span>
                       <span aria-hidden="true" className="mx-1 text-[0.72em] font-normal opacity-45">
                         &amp;
                       </span>
-                      <span>{tab.labelParts[1]}</span>
+                      <span>{labelParts[1]}</span>
                     </>
                   ) : (
-                    tab.label
+                    label
                   )}
                 </span>
                 <span

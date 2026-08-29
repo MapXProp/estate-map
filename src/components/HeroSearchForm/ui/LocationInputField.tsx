@@ -98,6 +98,8 @@ const styles = {
 interface Props {
   placeholder?: string
   description?: string
+  ariaLabel?: string
+  suggestionsLabel?: string
   className?: string
   inputName?: string
   initSuggests?: Suggest[]
@@ -109,6 +111,8 @@ interface Props {
 export const LocationInputField: FC<Props> = ({
   placeholder = T['HeroSearchForm']['Location'],
   description = T['HeroSearchForm']['Where are you going?'],
+  ariaLabel = 'Search for a location',
+  suggestionsLabel = T['HeroSearchForm']['Suggested locations'],
   className = 'flex-1',
   inputName = 'location',
   initSuggests = demoInitSuggests,
@@ -195,7 +199,7 @@ export const LocationInputField: FC<Props> = ({
           <div className="grow">
             <Headless.ComboboxInput
               ref={inputRef}
-              aria-label="Search for a location"
+              aria-label={ariaLabel}
               className={clsx(styles.input.base, styles.input[fieldStyle])}
               name={inputName}
               placeholder={placeholder}
@@ -222,7 +226,7 @@ export const LocationInputField: FC<Props> = ({
           <div className={clsx(styles.panel.base, styles.panel[fieldStyle], responsive && 'max-w-[calc(100vw-2rem)]')}>
             {isShowInitSuggests && (
               <p className="mt-2 mb-3 px-4 text-xs/6 font-normal text-neutral-600 sm:mt-0 sm:px-8 dark:text-neutral-400">
-                {T['HeroSearchForm']['Suggested locations']}
+                {suggestionsLabel}
               </p>
             )}
             {isShowInitSuggests && <Divider className="opacity-50" />}
