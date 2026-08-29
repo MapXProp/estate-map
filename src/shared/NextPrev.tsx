@@ -1,6 +1,7 @@
 'use client'
 
 import React, { FC } from 'react'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import twFocusClass from '@/utils/twFocusClass'
 import { ChevronLeftIcon } from '@heroicons/react/24/outline'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
@@ -24,6 +25,8 @@ const NextPrev: FC<NextPrevProps> = ({
 	onlyNext = false,
 	onlyPrev = false,
 }) => {
+	const { locale } = usePreferences()
+
 	return (
 		<div
 			className={`nc-NextPrev relative flex items-center text-neutral-900 dark:text-neutral-300 ${className}`}
@@ -36,7 +39,8 @@ const NextPrev: FC<NextPrevProps> = ({
 						!onlyPrev ? 'mr-[6px]' : ''
 					} flex items-center justify-center rounded-full border border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:hover:border-neutral-500 ${twFocusClass()}`}
 					onClick={onClickPrev}
-					title="Prev"
+					title={locale === 'th' ? 'ก่อนหน้า' : 'Previous'}
+					aria-label={locale === 'th' ? 'ก่อนหน้า' : 'Previous'}
 					data-glide-dir="<"
 				>
 					<ChevronLeftIcon className="h-4 w-4" />
@@ -46,7 +50,8 @@ const NextPrev: FC<NextPrevProps> = ({
 				<button
 					className={`${btnClassName} flex items-center justify-center rounded-full border border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-900 dark:hover:border-neutral-500 ${twFocusClass()}`}
 					onClick={onClickNext}
-					title="Next"
+					title={locale === 'th' ? 'ถัดไป' : 'Next'}
+					aria-label={locale === 'th' ? 'ถัดไป' : 'Next'}
 					data-glide-dir=">"
 				>
 					<ChevronRightIcon className="h-4 w-4" />

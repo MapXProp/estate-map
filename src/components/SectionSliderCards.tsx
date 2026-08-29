@@ -1,6 +1,7 @@
 'use client'
 
 import { TExperienceListing, TStayListing } from '@/data/listings'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import useSnapSlider from '@/hooks/useSnapSlider'
 import { ButtonCircle } from '@/shared/Button'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
@@ -22,6 +23,7 @@ const SectionSliderCards: FC<Props> = ({
   listings = [],
   cardType,
 }) => {
+  const { locale } = usePreferences()
   const sliderRef = useRef<HTMLDivElement>(null)
   const { scrollToNextSlide, scrollToPrevSlide, isAtEnd, isAtStart } = useSnapSlider({ sliderRef })
 
@@ -50,13 +52,25 @@ const SectionSliderCards: FC<Props> = ({
       </div>
 
       <div className="absolute -start-3 top-[40%] z-1 -translate-y-1/2 sm:-start-5 xl:-start-5">
-        <ButtonCircle color="white" onClick={scrollToPrevSlide} className={'xl:size-11'} disabled={isAtStart}>
+        <ButtonCircle
+          color="white"
+          onClick={scrollToPrevSlide}
+          className={'xl:size-11'}
+          disabled={isAtStart}
+          aria-label={locale === 'th' ? 'รายการก่อนหน้า' : 'Previous items'}
+        >
           <ChevronLeftIcon className="size-5 rtl:rotate-180" />
         </ButtonCircle>
       </div>
 
       <div className="absolute -end-3 top-[40%] z-1 -translate-y-1/2 sm:-end-5 xl:-end-6">
-        <ButtonCircle color="white" onClick={scrollToNextSlide} className={'xl:size-11'} disabled={isAtEnd}>
+        <ButtonCircle
+          color="white"
+          onClick={scrollToNextSlide}
+          className={'xl:size-11'}
+          disabled={isAtEnd}
+          aria-label={locale === 'th' ? 'รายการถัดไป' : 'Next items'}
+        >
           <ChevronRightIcon className="size-5 rtl:rotate-180" />
         </ButtonCircle>
       </div>

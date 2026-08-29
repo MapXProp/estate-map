@@ -67,28 +67,14 @@ type BudgetConfig = {
   presets: BudgetPreset[]
 }
 
-const buildPriceScale = (segments: Array<[number, number]>) => {
-  const values = [0]
-  for (const [end, step] of segments) {
-    for (let value = values[values.length - 1] + step; value <= end; value += step) values.push(value)
-  }
-  return values
-}
-
-const salePriceScale = buildPriceScale([
-  [5_000_000, 100_000],
-  [10_000_000, 250_000],
-  [20_000_000, 500_000],
-  [50_000_000, 2_500_000],
-  [100_000_000, 5_000_000],
-])
-
-const rentPriceScale = buildPriceScale([
-  [20_000, 500],
-  [50_000, 1_000],
-  [100_000, 5_000],
-  [300_000, 10_000],
-])
+const saleHomePriceScale = [
+  0, 500_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000,
+  15_000_000, 20_000_000, 30_000_000, 50_000_000, 75_000_000, 100_000_000,
+]
+const saleLargePriceScale = [...saleHomePriceScale, 150_000_000, 200_000_000]
+const rentRoomPriceScale = [0, 2_000, 3_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000]
+const rentHomePriceScale = [0, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000, 500_000]
+const rentBusinessPriceScale = [0, 5_000, 10_000, 20_000, 30_000, 50_000, 100_000, 200_000, 500_000, 1_000_000]
 
 const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term: string; termEn: string }> = [
   { value: '', label: 'ทั้งหมด', labelEn: 'All', term: '', termEn: '' },
@@ -309,67 +295,82 @@ const propertyTypes = [
   },
 ] as const
 
-const budgetConfigs: Record<BudgetOfferType, BudgetConfig> = {
-  sale: {
-    min: 0,
-    max: 100_000_000,
-    priceScale: salePriceScale,
-    presets: [
-      {
-        label: 'ไม่เกิน 2 ล้าน',
-        labelEn: 'Up to ฿2M',
-        term: 'ไม่เกิน 2 ล้าน',
-        termEn: 'under 2m',
-        min: 0,
-        max: 2_000_000,
-      },
-      { label: '2–3 ล้าน', labelEn: '฿2–3M', term: '2-3 ล้าน', termEn: '2-3m', min: 2_000_000, max: 3_000_000 },
-      { label: '3–5 ล้าน', labelEn: '฿3–5M', term: '3-5 ล้าน', termEn: '3-5m', min: 3_000_000, max: 5_000_000 },
-      { label: '5–10 ล้าน', labelEn: '฿5–10M', term: '5-10 ล้าน', termEn: '5-10m', min: 5_000_000, max: 10_000_000 },
-      {
-        label: '10–20 ล้าน',
-        labelEn: '฿10–20M',
-        term: '10-20 ล้าน',
-        termEn: '10-20m',
-        min: 10_000_000,
-        max: 20_000_000,
-      },
-      {
-        label: '20 ล้านขึ้นไป',
-        labelEn: '฿20M+',
-        term: 'ตั้งแต่ 20 ล้าน',
-        termEn: 'from 20m',
-        min: 20_000_000,
-        max: 100_000_000,
-      },
-    ],
+const createBudgetPreset = (label: string, labelEn: string, min: number, max: number): BudgetPreset => ({
+  label,
+  labelEn,
+  term: `${min}-${max}`,
+  termEn: `${min}-${max}`,
+  min,
+  max,
+})
+
+const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>> = {
+  homes: {
+    sale: {
+      min: 0,
+      max: 100_000_000,
+      priceScale: saleHomePriceScale,
+      presets: [
+        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to ฿3M', 0, 3_000_000),
+        createBudgetPreset('3–5 ล้าน', '฿3–5M', 3_000_000, 5_000_000),
+        createBudgetPreset('5–10 ล้าน', '฿5–10M', 5_000_000, 10_000_000),
+        createBudgetPreset('10 ล้านขึ้นไป', '฿10M+', 10_000_000, 100_000_000),
+      ],
+    },
+    rent: {
+      min: 0,
+      max: 500_000,
+      priceScale: rentHomePriceScale,
+      presets: [
+        createBudgetPreset('ไม่เกิน 10,000', 'Up to ฿10K', 0, 10_000),
+        createBudgetPreset('10,000–20,000', '฿10–20K', 10_000, 20_000),
+        createBudgetPreset('20,000–50,000', '฿20–50K', 20_000, 50_000),
+        createBudgetPreset('50,000 ขึ้นไป', '฿50K+', 50_000, 500_000),
+      ],
+    },
   },
-  rent: {
-    min: 0,
-    max: 300_000,
-    priceScale: rentPriceScale,
-    presets: [
-      { label: 'ไม่เกิน 8,000', labelEn: 'Up to ฿8K', term: 'ไม่เกิน 8000', termEn: 'under 8k', min: 0, max: 8_000 },
-      { label: '8,000–15,000', labelEn: '฿8–15K', term: '8000-15000', termEn: '8k-15k', min: 8_000, max: 15_000 },
-      { label: '15,000–25,000', labelEn: '฿15–25K', term: '15000-25000', termEn: '15k-25k', min: 15_000, max: 25_000 },
-      { label: '25,000–50,000', labelEn: '฿25–50K', term: '25000-50000', termEn: '25k-50k', min: 25_000, max: 50_000 },
-      {
-        label: '50,000–100,000',
-        labelEn: '฿50–100K',
-        term: '50000-100000',
-        termEn: '50k-100k',
-        min: 50_000,
-        max: 100_000,
-      },
-      {
-        label: '100,000 ขึ้นไป',
-        labelEn: '฿100K+',
-        term: 'ตั้งแต่ 100000',
-        termEn: 'from 100k',
-        min: 100_000,
-        max: 300_000,
-      },
-    ],
+  rooms: {
+    sale: {
+      min: 0,
+      max: 100_000_000,
+      priceScale: saleHomePriceScale,
+      presets: [],
+    },
+    rent: {
+      min: 0,
+      max: 200_000,
+      priceScale: rentRoomPriceScale,
+      presets: [
+        createBudgetPreset('ไม่เกิน 5,000', 'Up to ฿5K', 0, 5_000),
+        createBudgetPreset('5,000–10,000', '฿5–10K', 5_000, 10_000),
+        createBudgetPreset('10,000–20,000', '฿10–20K', 10_000, 20_000),
+        createBudgetPreset('20,000 ขึ้นไป', '฿20K+', 20_000, 200_000),
+      ],
+    },
+  },
+  business: {
+    sale: {
+      min: 0,
+      max: 200_000_000,
+      priceScale: saleLargePriceScale,
+      presets: [
+        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to ฿3M', 0, 3_000_000),
+        createBudgetPreset('3–10 ล้าน', '฿3–10M', 3_000_000, 10_000_000),
+        createBudgetPreset('10–30 ล้าน', '฿10–30M', 10_000_000, 30_000_000),
+        createBudgetPreset('30 ล้านขึ้นไป', '฿30M+', 30_000_000, 200_000_000),
+      ],
+    },
+    rent: {
+      min: 0,
+      max: 1_000_000,
+      priceScale: rentBusinessPriceScale,
+      presets: [
+        createBudgetPreset('ไม่เกิน 20,000', 'Up to ฿20K', 0, 20_000),
+        createBudgetPreset('20,000–50,000', '฿20–50K', 20_000, 50_000),
+        createBudgetPreset('50,000–200,000', '฿50–200K', 50_000, 200_000),
+        createBudgetPreset('200,000 ขึ้นไป', '฿200K+', 200_000, 1_000_000),
+      ],
+    },
   },
 }
 
@@ -406,13 +407,16 @@ const MobilePropertySearch = ({
   const [budget, setBudget] = useState<BudgetPreset | null>(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [budgetOfferType, setBudgetOfferType] = useState<OfferType>('')
-  const [budgetRange, setBudgetRange] = useState<[number, number]>([0, budgetConfigs.sale.max])
+  const [budgetRange, setBudgetRange] = useState<[number, number]>([0, budgetConfigs[activePropertyGroup].sale.max])
 
   useEffect(() => {
+    // Navigation changes are external to this persistent header, so reset its draft filters to the new route context.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setPropertyGroup(activePropertyGroup)
     setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
     setSelectedPropertyTypes([])
     setBudget(null)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [activePropertyGroup])
 
   const selectedOffer = useMemo(() => offerTypes.find((item) => item.value === offerType) ?? offerTypes[0], [offerType])
@@ -430,7 +434,7 @@ const MobilePropertySearch = ({
   }
 
   const openBudget = () => {
-    const config = budgetConfigs[offerType || 'sale']
+    const config = budgetConfigs[propertyGroup][offerType || 'sale']
     setBudgetOfferType(offerType)
     setBudgetRange(budget && offerType ? [budget.min, budget.max] : [config.min, config.max])
     setBudgetOpen(true)
@@ -439,10 +443,11 @@ const MobilePropertySearch = ({
   const chooseBudgetOffer = (value: OfferType) => {
     setBudgetOfferType(value)
     if (!value) {
-      setBudgetRange([budgetConfigs.sale.min, budgetConfigs.sale.max])
+      const config = budgetConfigs[propertyGroup].sale
+      setBudgetRange([config.min, config.max])
       return
     }
-    const config = budgetConfigs[value]
+    const config = budgetConfigs[propertyGroup][value]
     setBudgetRange(offerType === value && budget ? [budget.min, budget.max] : [config.min, config.max])
   }
 
@@ -454,7 +459,7 @@ const MobilePropertySearch = ({
       return
     }
 
-    const config = budgetConfigs[budgetOfferType]
+    const config = budgetConfigs[propertyGroup][budgetOfferType]
     const [min, max] = budgetRange
     const hasMin = min > config.min
     const hasMax = max < config.max
@@ -514,7 +519,7 @@ const MobilePropertySearch = ({
   }
 
   const hasQuickFilters = Boolean(offerType || selectedPropertyTypes.length || budget)
-  const draftBudgetConfig = budgetConfigs[budgetOfferType || 'sale']
+  const draftBudgetConfig = budgetConfigs[propertyGroup][budgetOfferType || 'sale']
   const draftSliderValue: [number, number] = [
     Math.max(0, draftBudgetConfig.priceScale.indexOf(budgetRange[0])),
     Math.max(0, draftBudgetConfig.priceScale.indexOf(budgetRange[1])),

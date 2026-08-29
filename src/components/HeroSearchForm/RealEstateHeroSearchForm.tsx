@@ -125,9 +125,11 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
   }>({ contextZone: propertyZone, tab: propertyZone })
   const internalTab = uncontrolledSelection.contextZone === propertyZone ? uncontrolledSelection.tab : propertyZone
   const tabType = selectedTab ?? internalTab
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([])
   const router = useRouter()
 
   const handleTabChange = (tab: RealEstateSearchTab) => {
+    setSelectedPropertyTypes([])
     if (selectedTab === undefined) {
       setUncontrolledSelection({
         contextZone: tab === 'all' ? propertyZone : tab,
@@ -163,12 +165,17 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           business: 'business spaces',
         }[tabType]
     const query = [channelPrefix, location].filter(Boolean).join(' ')
-    let url = '/properties/map'
-
-    if (query) {
-      url = url + `?q=${encodeURIComponent(query)}`
-    }
-    router.push(url)
+    const searchParams = new URLSearchParams()
+    if (query) searchParams.set('q', query)
+    const offerType = String(formDataEntries['offer_type'] || '')
+    const minPrice = String(formDataEntries['price_min'] || '')
+    const maxPrice = String(formDataEntries['price_max'] || '')
+    if (offerType) searchParams.set('offer_type', offerType)
+    if (minPrice) searchParams.set('price_min', minPrice)
+    if (maxPrice) searchParams.set('price_max', maxPrice)
+    formData.getAll('property_type').forEach((propertyType) => searchParams.append('property_type', String(propertyType)))
+    const searchString = searchParams.toString()
+    router.push(searchString ? `/properties/map?${searchString}` : '/properties/map')
   }
 
   return (
@@ -271,10 +278,10 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
             isThai ? 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด' : 'Select multiple types, or leave blank to view all'
           }
           tone="mapx"
+          onSelectionChange={setSelectedPropertyTypes}
         />
         <VerticalDividerLine responsive={responsive} />
         <PriceRangeInputField
-          key={`price-${tabType}`}
           fieldStyle={formStyle}
           className={clsx(
             'hero-search-form__field-before flex-1',
@@ -287,8 +294,8 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           panelTitle={isThai ? 'งบประมาณ' : 'Budget'}
           minLabel={isThai ? 'ราคาต่ำสุด' : 'Min price'}
           maxLabel={isThai ? 'ราคาสูงสุด' : 'Max price'}
-          min={0}
-          max={tabType === 'rooms' ? 200_000 : tabType === 'business' || tabType === 'all' ? 100_000_000 : 50_000_000}
+          priceContext={tabType}
+          selectedPropertyTypes={selectedPropertyTypes}
         />
 
         <ButtonSubmit

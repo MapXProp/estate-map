@@ -1,3 +1,6 @@
+'use client'
+
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { ArrowLeft02Icon, ArrowRight02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import clsx from 'clsx'
@@ -5,29 +8,38 @@ import type React from 'react'
 import { Button } from './Button'
 
 export function Pagination({
-  'aria-label': ariaLabel = 'Page navigation',
+  'aria-label': ariaLabel,
   className,
   ...props
 }: React.ComponentPropsWithoutRef<'nav'>) {
-  return <nav aria-label={ariaLabel} {...props} className={clsx(className, 'flex gap-x-2')} />
+  const { locale } = usePreferences()
+  return (
+    <nav
+      aria-label={ariaLabel ?? (locale === 'th' ? 'การนำทางระหว่างหน้า' : 'Page navigation')}
+      {...props}
+      className={clsx(className, 'flex gap-x-2')}
+    />
+  )
 }
 
 export function PaginationPrevious({
   href = null,
   className,
-  children = 'Previous',
+  children,
 }: React.PropsWithChildren<{ href?: string | null; className?: string }>) {
+  const { locale } = usePreferences()
+
   return (
     <span className={clsx(className, 'grow basis-0')}>
       <Button
         {...(href === null ? { disabled: true } : { href })}
         className="rounded-lg"
         plain
-        aria-label="Previous page"
+        aria-label={locale === 'th' ? 'หน้าก่อนหน้า' : 'Previous page'}
       >
         <HugeiconsIcon icon={ArrowLeft02Icon} size={16} color="currentColor" strokeWidth={1.5} />
 
-        {children}
+        {children ?? (locale === 'th' ? 'ก่อนหน้า' : 'Previous')}
       </Button>
     </span>
   )
@@ -36,12 +48,19 @@ export function PaginationPrevious({
 export function PaginationNext({
   href = null,
   className,
-  children = 'Next',
+  children,
 }: React.PropsWithChildren<{ href?: string | null; className?: string }>) {
+  const { locale } = usePreferences()
+
   return (
     <span className={clsx(className, 'flex grow basis-0 justify-end')}>
-      <Button {...(href === null ? { disabled: true } : { href })} className="rounded-lg" plain aria-label="Next page">
-        {children}
+      <Button
+        {...(href === null ? { disabled: true } : { href })}
+        className="rounded-lg"
+        plain
+        aria-label={locale === 'th' ? 'หน้าถัดไป' : 'Next page'}
+      >
+        {children ?? (locale === 'th' ? 'ถัดไป' : 'Next')}
         <HugeiconsIcon icon={ArrowRight02Icon} size={16} color="currentColor" strokeWidth={1.5} />
       </Button>
     </span>
@@ -58,11 +77,13 @@ export function PaginationPage({
   current = false,
   children,
 }: React.PropsWithChildren<{ href: string; className?: string; current?: boolean }>) {
+  const { locale } = usePreferences()
+
   return (
     <Button
       href={href}
       plain
-      aria-label={`Page ${children}`}
+      aria-label={`${locale === 'th' ? 'หน้า' : 'Page'} ${children}`}
       aria-current={current ? 'page' : undefined}
       className={clsx(
         className,

@@ -1,13 +1,13 @@
 'use client'
 
 import { useInteractOutside } from '@/hooks/useInteractOutside'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { Divider } from '@/shared/divider'
 import T from '@/utils/getT'
 import * as Headless from '@headlessui/react'
 import { MapPinIcon } from '@heroicons/react/24/outline'
 import {
   BeachIcon,
-  EiffelTowerIcon,
   HutIcon,
   LakeIcon,
   Location01Icon,
@@ -22,33 +22,45 @@ import { ClearDataButton } from './ClearDataButton'
 type Suggest = {
   id: string
   name: string
+  nameTh?: string
+  nameEn?: string
   icon?: IconSvgElement
 }
 
 const demoInitSuggests: Suggest[] = [
   {
     id: '1',
-    name: 'Bangkok, Thailand',
-    icon: HutIcon,
-  },
-  {
-    id: '2',
-    name: 'Ueno, Taito, Tokyo',
-    icon: EiffelTowerIcon,
-  },
-  {
-    id: '3',
-    name: 'Ikebukuro, Toshima, Tokyo',
+    name: 'กรุงเทพมหานคร',
+    nameTh: 'กรุงเทพมหานคร',
+    nameEn: 'Bangkok, Thailand',
     icon: TwinTowerIcon,
   },
   {
+    id: '2',
+    name: 'เชียงใหม่',
+    nameTh: 'เชียงใหม่',
+    nameEn: 'Chiang Mai, Thailand',
+    icon: HutIcon,
+  },
+  {
+    id: '3',
+    name: 'ภูเก็ต',
+    nameTh: 'ภูเก็ต',
+    nameEn: 'Phuket, Thailand',
+    icon: BeachIcon,
+  },
+  {
     id: '4',
-    name: 'San Diego, CA',
+    name: 'พัทยา ชลบุรี',
+    nameTh: 'พัทยา, ชลบุรี',
+    nameEn: 'Pattaya, Chon Buri',
     icon: BeachIcon,
   },
   {
     id: '5',
-    name: 'Humboldt Park, Chicago, IL',
+    name: 'ขอนแก่น',
+    nameTh: 'ขอนแก่น',
+    nameEn: 'Khon Kaen, Thailand',
     icon: LakeIcon,
   },
 ]
@@ -56,23 +68,33 @@ const demoInitSuggests: Suggest[] = [
 const demoSearchingSuggests: Suggest[] = [
   {
     id: '1',
-    name: 'San Diego, CA',
+    name: 'อโศก–สุขุมวิท กรุงเทพมหานคร',
+    nameTh: 'อโศก–สุขุมวิท, กรุงเทพมหานคร',
+    nameEn: 'Asok–Sukhumvit, Bangkok',
   },
   {
     id: '2',
-    name: 'Humboldt Park, Chicago, IL',
+    name: 'อารีย์ กรุงเทพมหานคร',
+    nameTh: 'อารีย์, กรุงเทพมหานคร',
+    nameEn: 'Ari, Bangkok',
   },
   {
     id: '3',
-    name: 'Bangor, Northern Ireland',
+    name: 'นิมมานเหมินท์ เชียงใหม่',
+    nameTh: 'นิมมานเหมินท์, เชียงใหม่',
+    nameEn: 'Nimman, Chiang Mai',
   },
   {
     id: '4',
-    name: 'New York, NY, United States',
+    name: 'บางเทา ภูเก็ต',
+    nameTh: 'บางเทา, ภูเก็ต',
+    nameEn: 'Bang Tao, Phuket',
   },
   {
     id: '5',
-    name: 'Los Angeles, CA, United States',
+    name: 'เขาใหญ่ นครราชสีมา',
+    nameTh: 'เขาใหญ่, นครราชสีมา',
+    nameEn: 'Khao Yai, Nakhon Ratchasima',
   },
 ]
 
@@ -120,6 +142,7 @@ export const LocationInputField: FC<Props> = ({
   fieldStyle = 'default',
   responsive = false,
 }) => {
+  const { locale } = usePreferences()
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [showPopover, setShowPopover] = useState(false)
@@ -166,6 +189,11 @@ export const LocationInputField: FC<Props> = ({
 
   const isShowInitSuggests = !selected?.id
   const suggestsToShow = isShowInitSuggests ? initSuggests : searchingSuggests
+  const getSuggestName = (item?: Suggest) => {
+    if (!item) return ''
+    return locale === 'th' ? item.nameTh || item.name : item.nameEn || item.name
+  }
+
   return (
     <div
       className={`group relative z-10 flex data-open:z-50 ${className}`}
@@ -204,7 +232,7 @@ export const LocationInputField: FC<Props> = ({
               name={inputName}
               placeholder={placeholder}
               autoComplete="off"
-              displayValue={(item?: Suggest) => item?.name || ''}
+              displayValue={getSuggestName}
               onChange={(event) => handleInputChange(event.target.value)}
             />
             <div className="mt-0.5 text-start text-sm font-light text-neutral-400">
@@ -241,7 +269,7 @@ export const LocationInputField: FC<Props> = ({
                     icon={item.icon || Location01Icon}
                     className="size-4 text-neutral-400 sm:size-6 dark:text-neutral-500"
                   />
-                  <span className="block font-medium text-neutral-700 dark:text-neutral-200">{item.name}</span>
+                  <span className="block font-medium text-neutral-700 dark:text-neutral-200">{getSuggestName(item)}</span>
                 </Headless.ComboboxOption>
               ))}
             </Headless.ComboboxOptions>

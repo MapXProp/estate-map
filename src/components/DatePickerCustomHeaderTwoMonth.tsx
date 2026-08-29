@@ -1,3 +1,6 @@
+'use client'
+
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { ReactDatePickerCustomHeaderProps } from 'react-datepicker'
 
@@ -7,10 +10,12 @@ const DatePickerCustomHeaderTwoMonth = ({
   decreaseMonth,
   increaseMonth,
 }: ReactDatePickerCustomHeaderProps) => {
+  const { locale } = usePreferences()
+
   return (
     <div>
       <button
-        aria-label="Previous Month"
+        aria-label={locale === 'th' ? 'เดือนก่อนหน้า' : 'Previous month'}
         className={
           'react-datepicker__navigation react-datepicker__navigation--previous absolute -top-1 left-0 flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700'
         }
@@ -23,13 +28,13 @@ const DatePickerCustomHeaderTwoMonth = ({
         </span>
       </button>
       <span className="react-datepicker__current-month">
-        {monthDate.toLocaleString('en-US', {
+        {monthDate.toLocaleString(locale === 'th' ? 'th-TH' : 'en-US', {
           month: 'long',
           year: 'numeric',
         })}
       </span>
       <button
-        aria-label="Next Month"
+        aria-label={locale === 'th' ? 'เดือนถัดไป' : 'Next month'}
         className="react-datepicker__navigation react-datepicker__navigation--next absolute -top-1 -right-0 flex items-center justify-center rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
         style={customHeaderCount === 0 ? { visibility: 'hidden' } : {}}
         type="button"

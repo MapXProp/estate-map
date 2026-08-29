@@ -1,6 +1,7 @@
 'use client'
 
 import { ButtonCircle } from '@/shared/Button'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { variants } from '@/utils/animationVariants'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
@@ -44,6 +45,7 @@ export default function GallerySlider({
   autoPlayDelay = 0,
   openInNewTab = false,
 }: GallerySliderProps) {
+  const { locale } = usePreferences()
   const sliderRef = useRef<HTMLDivElement>(null)
   const manualPauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -239,6 +241,7 @@ export default function GallerySlider({
                 <div className="absolute start-3 top-[calc(50%-1rem)]">
                   <ButtonCircle
                     color="white"
+                    aria-label={locale === 'th' ? 'รูปก่อนหน้า' : 'Previous image'}
                     onClick={() => {
                       pauseAfterInteraction()
                       changePhotoId(index - 1)
@@ -253,6 +256,7 @@ export default function GallerySlider({
                 <div className="absolute end-3 top-[calc(50%-1rem)]">
                   <ButtonCircle
                     color="white"
+                    aria-label={locale === 'th' ? 'รูปถัดไป' : 'Next image'}
                     onClick={() => {
                       pauseAfterInteraction()
                       changePhotoId(index + 1)
@@ -271,6 +275,8 @@ export default function GallerySlider({
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center justify-center gap-x-1.5">
             {images.map((_, i) => (
               <button
+                type="button"
+                aria-label={`${locale === 'th' ? 'ดูรูปที่' : 'View image'} ${i + 1}`}
                 className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-white' : 'bg-white/60'}`}
                 onClick={() => {
                   pauseAfterInteraction()

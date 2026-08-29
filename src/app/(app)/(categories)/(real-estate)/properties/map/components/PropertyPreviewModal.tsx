@@ -1,6 +1,7 @@
 'use client'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import type { TRealEstateListing } from '@/data/listings'
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
 import { Bath, BedDouble, ChevronLeft, ChevronRight, ExternalLink, MapPin, Maximize2, Phone, Share2, X } from 'lucide-react'
@@ -16,6 +17,7 @@ type PropertyPreviewListing = TRealEstateListing & {
 
 const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) => {
   const router = useRouter()
+  const { locale } = usePreferences()
   const images = listing.galleryImgs.length ? listing.galleryImgs : [listing.featuredImage]
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [activeImage, setActiveImage] = useState<number | null>(null)
@@ -226,7 +228,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                 <button
                   type="button"
                   onClick={() => setActiveImage((activeImage - 1 + images.length) % images.length)}
-                  aria-label="รูปก่อนหน้า"
+                  aria-label={locale === 'th' ? 'รูปก่อนหน้า' : 'Previous image'}
                   className="absolute top-1/2 left-0 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-sm transition hover:bg-white/20"
                 >
                   <ChevronLeft className="size-7" />
@@ -234,7 +236,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                 <button
                   type="button"
                   onClick={() => setActiveImage((activeImage + 1) % images.length)}
-                  aria-label="รูปถัดไป"
+                  aria-label={locale === 'th' ? 'รูปถัดไป' : 'Next image'}
                   className="absolute top-1/2 right-0 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-sm transition hover:bg-white/20"
                 >
                   <ChevronRight className="size-7" />

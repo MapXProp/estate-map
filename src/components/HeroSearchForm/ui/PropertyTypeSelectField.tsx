@@ -65,6 +65,7 @@ interface Props {
   panelTitle?: string
   panelDescription?: string
   tone?: 'default' | 'mapx'
+  onSelectionChange?: (values: string[]) => void
 }
 
 export const PropertyTypeSelectField: FC<Props> = ({
@@ -77,6 +78,7 @@ export const PropertyTypeSelectField: FC<Props> = ({
   panelTitle,
   panelDescription = 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด',
   tone = 'default',
+  onSelectionChange,
 }) => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>(
     defaultSelected ?? (propertyTypes[0]?.value ? [propertyTypes[0].value] : [])
@@ -138,6 +140,7 @@ export const PropertyTypeSelectField: FC<Props> = ({
                         ? [...selectedTypes, item.value]
                         : selectedTypes.filter((type) => type !== item.value)
                       setSelectedTypes(newState)
+                      onSelectionChange?.(newState)
                     }}
                   />
                   <Label className={clsx(tone === 'mapx' && 'cursor-pointer text-sm font-semibold!')}>

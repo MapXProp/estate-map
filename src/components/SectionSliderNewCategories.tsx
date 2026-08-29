@@ -3,6 +3,7 @@
 import CardCategory3 from '@/components/CardCategory3'
 import CardCategory4 from '@/components/CardCategory4'
 import CardCategory5 from '@/components/CardCategory5'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TCategory } from '@/data/categories'
 import useSnapSlider from '@/hooks/useSnapSlider'
 import { ButtonCircle } from '@/shared/Button'
@@ -23,6 +24,7 @@ const SectionSliderNewCategories: FC<Props> = ({
   categories = [],
   categoryCardType = 'card3',
 }) => {
+  const { locale } = usePreferences()
   const sliderRef = useRef<HTMLDivElement>(null)
   const { scrollToNextSlide, scrollToPrevSlide, isAtEnd, isAtStart } = useSnapSlider({ sliderRef })
 
@@ -51,13 +53,25 @@ const SectionSliderNewCategories: FC<Props> = ({
       </div>
 
       <div className="absolute -start-3 top-[40%] z-1 -translate-y-1/2 sm:-start-5 xl:-start-5">
-        <ButtonCircle color="white" onClick={scrollToPrevSlide} className={'xl:size-11'} disabled={isAtStart}>
+        <ButtonCircle
+          color="white"
+          onClick={scrollToPrevSlide}
+          className={'xl:size-11'}
+          disabled={isAtStart}
+          aria-label={locale === 'th' ? 'หมวดก่อนหน้า' : 'Previous categories'}
+        >
           <ChevronLeftIcon className="size-5 rtl:rotate-180" />
         </ButtonCircle>
       </div>
 
       <div className="absolute -end-3 top-[40%] z-1 -translate-y-1/2 sm:-end-5 xl:-end-6">
-        <ButtonCircle color="white" onClick={scrollToNextSlide} className={'xl:size-11'} disabled={isAtEnd}>
+        <ButtonCircle
+          color="white"
+          onClick={scrollToNextSlide}
+          className={'xl:size-11'}
+          disabled={isAtEnd}
+          aria-label={locale === 'th' ? 'หมวดถัดไป' : 'Next categories'}
+        >
           <ChevronRightIcon className="size-5 rtl:rotate-180" />
         </ButtonCircle>
       </div>
