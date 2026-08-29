@@ -1176,6 +1176,20 @@ export async function getRealEstateListings() {
   }
 }
 
+export async function getRealEstateListingCount() {
+  try {
+    const response = await fetch(`${getAuthApiUrl('properties/search')}?limit=1`, {
+      cache: 'no-store',
+    })
+    if (!response.ok) return 0
+
+    const data = (await response.json()) as { total?: number }
+    return Number.isFinite(data.total) && data.total && data.total > 0 ? data.total : 0
+  } catch {
+    return 0
+  }
+}
+
 export const getRealEstateListingByHandle = async (handle: string) => {
   const listings = await getRealEstateListings()
   return listings.find((listing) => listing.handle === handle) || null

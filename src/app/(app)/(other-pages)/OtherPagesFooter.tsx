@@ -7,6 +7,10 @@ import { usePathname } from 'next/navigation'
 const OtherPagesFooter = () => {
   const pathname = usePathname()
 
+  if (pathname.startsWith('/about')) {
+    return <PropertyFooterPrototype />
+  }
+
   if (pathname.startsWith('/contact')) {
     return <PropertyFooterPrototype showListingCta={false} />
   }

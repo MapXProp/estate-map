@@ -11,7 +11,7 @@ const OtherPagesHeader = () => {
     return <PropertyHeaderPrototype />
   }
 
-  if (pathname.startsWith('/contact')) {
+  if (pathname.startsWith('/contact') || pathname.startsWith('/about')) {
     return <PropertyHeaderPrototype />
   }
 

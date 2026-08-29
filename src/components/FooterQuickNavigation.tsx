@@ -38,6 +38,7 @@ const FooterQuickNavigation = () => {
   const pathname = usePathname()
   const hideOnChannelHome = pathname === '/homes' || pathname === '/rooms' || pathname === '/business'
   const hideOnContact = pathname.startsWith('/contact')
+  const hideOnAbout = pathname.startsWith('/about')
   const hideOnListingWizard = pathname.startsWith('/add-listing')
   const hideOnPropertyMap =
     pathname === '/properties/map' ||
@@ -94,7 +95,7 @@ const FooterQuickNavigation = () => {
 
   //
 
-  if (hideOnChannelHome || hideOnContact || hideOnPropertyMap || hideOnListingWizard) return null
+  if (hideOnChannelHome || hideOnContact || hideOnAbout || hideOnPropertyMap || hideOnListingWizard) return null
 
   return (
     <div

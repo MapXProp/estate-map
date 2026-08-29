@@ -1,43 +1,22 @@
-import BackgroundSection from '@/components/BackgroundSection'
-import BgGlassmorphism from '@/components/BgGlassmorphism'
-import SectionClientSay from '@/components/SectionClientSay'
-import SectionSubscribe2 from '@/components/SectionSubscribe2'
-import rightImg from '@/images/about-hero-right.png'
+import { getRealEstateListingCount } from '@/data/listings'
+import { discoveryChannels, propertyTypes } from '@/data/propertyTaxonomy'
 import { Metadata } from 'next'
-import SectionFounder from './SectionFounder'
-import SectionHero from './SectionHero'
-import SectionStatistic from './SectionStatistic'
+import AboutPageContent from './AboutPageContent'
 
 export const metadata: Metadata = {
   title: 'About Us',
-  description:
-    'The about us page provides an overview of our mission, values, and the team behind our company. It highlights our commitment to excellence and innovation in our industry.',
+  description: 'About MapXProp and the published property listings on our platform.',
 }
 
-const PageAbout = () => {
+const PageAbout = async () => {
+  const listingCount = await getRealEstateListingCount()
+
   return (
-    <div className="relative overflow-hidden">
-      {/* ======== BG GLASS ======== */}
-      <BgGlassmorphism />
-
-      <div className="container flex flex-col gap-y-16 py-16 lg:gap-y-28 lg:py-28">
-        <SectionHero
-          rightImg={rightImg}
-          heading="👋 About Us."
-          subHeading="We're impartial and independent, and every day we create distinctive, world-class programmes and content which inform, educate and entertain millions of people in the around the world."
-        />
-
-        <SectionFounder />
-        <div className="relative py-20">
-          <BackgroundSection />
-          <SectionClientSay />
-        </div>
-
-        <SectionStatistic />
-
-        <SectionSubscribe2 />
-      </div>
-    </div>
+    <AboutPageContent
+      listingCount={listingCount}
+      discoveryChannelCount={discoveryChannels.length}
+      propertyTypeCount={propertyTypes.length}
+    />
   )
 }
 
