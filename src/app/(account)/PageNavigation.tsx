@@ -6,27 +6,27 @@ import { usePathname } from 'next/navigation'
 
 const navigation = [
   {
-    titleTh: 'บัญชีของฉัน',
-    titleEn: 'My account',
+    titleTh: 'ข้อมูลส่วนตัว',
+    titleEn: 'Personal details',
     href: '/account',
   },
   {
-    titleTh: 'ประกาศของฉัน',
-    titleEn: 'My listings',
+    titleTh: 'ทรัพย์ของฉัน',
+    titleEn: 'My properties',
     href: '/account-listings',
   },
   {
-    titleTh: 'ประกาศที่บันทึก',
-    titleEn: 'Saved listings',
+    titleTh: 'ที่บันทึกไว้',
+    titleEn: 'Saved',
     href: '/account-savelists',
   },
   {
-    titleTh: 'รหัสผ่าน',
-    titleEn: 'Password',
+    titleTh: 'ความปลอดภัย',
+    titleEn: 'Security',
     href: '/account-password',
   },
   {
-    titleTh: 'แพ็กเกจและการชำระเงิน',
+    titleTh: 'แพ็กเกจและบิล',
     titleEn: 'Plan & billing',
     href: '/account-billing',
   },
