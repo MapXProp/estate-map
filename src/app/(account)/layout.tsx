@@ -16,7 +16,7 @@ const Layout: FC<Props> = ({ children }) => {
       footer={<PropertyFooterPrototype showListingCta={false} />}
     >
       <div className="bg-neutral-50 dark:bg-neutral-900">
-        <div className="border-b border-neutral-200 bg-white pt-12 dark:border-neutral-700 dark:bg-neutral-800">
+        <div className="border-b border-neutral-200 bg-white py-4 min-[744px]:py-5 dark:border-neutral-700 dark:bg-neutral-900">
           <PageNavigation />
         </div>
         <div className="container pt-14 pb-24 sm:pt-16 lg:pb-32">
