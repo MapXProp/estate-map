@@ -178,18 +178,22 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   onClick={() => setNotificationsOpen(true)}
                   className="flex min-h-11 w-full items-center rounded-2xl px-2.5 py-1.5 text-start transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-blue-500/25 dark:hover:bg-neutral-700"
                 >
-                  <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
                     <BellIcon className="size-5" />
-                    <span className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-neutral-800" />
                   </span>
                   <span className="ms-3 min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{locale === 'th' ? 'แจ้งเตือน' : 'Notifications'}</span>
-                    <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {locale === 'th' ? 'มี 3 รายการใหม่' : '3 new updates'}
+                    <span className="block text-sm font-medium">
+                      {locale === 'th' ? 'การแจ้งเตือน' : 'Notifications'}
                     </span>
-                  </span>
-                  <span className="me-1 grid min-w-6 place-items-center rounded-full bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-                    3
+                    <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
+                      {isAuthenticated
+                        ? locale === 'th'
+                          ? 'ยินดีต้อนรับกลับมา'
+                          : 'Welcome back'
+                        : locale === 'th'
+                          ? 'ยินดีต้อนรับสู่ MapxProp'
+                          : 'Welcome to MapxProp'}
+                    </span>
                   </span>
                   <ChevronRightIcon className="size-4 shrink-0 text-neutral-400" />
                 </CloseButton>
@@ -205,10 +209,10 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   </span>
                   <span className="ms-3 min-w-0 flex-1">
                     <span className="block text-sm font-medium">
-                      {locale === 'th' ? 'ภาษาและสกุลเงิน' : 'Language and currency'}
+                      {locale === 'th' ? 'ภาษา / สกุลเงิน' : 'Language / currency'}
                     </span>
                     <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {locale === 'th' ? 'ภาษาไทย' : 'English'} · {currency}
+                      {locale === 'th' ? 'ไทย' : 'English'} · {currency}
                     </span>
                   </span>
                   <ChevronRightIcon className="size-4 shrink-0 text-neutral-400" />
@@ -247,7 +251,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   {locale === 'th' ? 'การแจ้งเตือน' : 'Notifications'}
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  {locale === 'th' ? 'อัปเดตการค้นหาและประกาศของคุณ' : 'Updates about your searches and listings'}
+                  {locale === 'th' ? 'ข้อความจาก MapxProp' : 'A message from MapxProp'}
                 </p>
               </div>
               <button
@@ -260,44 +264,32 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
               </button>
             </div>
 
-            <div className="divide-y divide-neutral-100 px-3 dark:divide-neutral-800">
-              {[
-                {
-                  title: locale === 'th' ? 'มีประกาศใหม่ตรงกับการค้นหาของคุณ' : 'New listings match your search',
-                  detail: locale === 'th' ? 'คอนโดอารีย์ · 5 นาทีที่แล้ว' : 'Ari condos · 5 minutes ago',
-                  tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
-                },
-                {
-                  title: locale === 'th' ? 'มีผู้สนใจบันทึกประกาศของคุณ' : 'Someone saved your listing',
-                  detail:
-                    locale === 'th' ? 'ประกาศบ้านเดี่ยว · 2 ชั่วโมงที่แล้ว' : 'Detached house listing · 2 hours ago',
-                  tone: 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-200',
-                },
-                {
-                  title: locale === 'th' ? 'ระบบตรวจสอบประกาศเรียบร้อยแล้ว' : 'Your listing review is complete',
-                  detail: locale === 'th' ? 'พร้อมแสดงผลบน MapxProp' : 'Ready to appear on MapxProp',
-                  tone: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-200',
-                },
-              ].map((notification) => (
-                <button
-                  key={notification.title}
-                  type="button"
-                  className="flex w-full gap-3 rounded-2xl px-2 py-4 text-start transition hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-[#176b50]/25 focus-visible:outline-hidden dark:hover:bg-neutral-800/70"
-                >
-                  <span className={`grid size-10 shrink-0 place-items-center rounded-full ${notification.tone}`}>
-                    <BellIcon className="size-5" />
+            <div className="px-4 py-4">
+              <div className="flex gap-3 rounded-2xl bg-blue-50/70 px-4 py-4 dark:bg-blue-950/25">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-200">
+                  <BellIcon className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    {isAuthenticated
+                      ? locale === 'th'
+                        ? 'ยินดีต้อนรับกลับมา'
+                        : 'Welcome back'
+                      : locale === 'th'
+                        ? 'ยินดีต้อนรับสู่ MapxProp'
+                        : 'Welcome to MapxProp'}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                      {notification.title}
-                    </span>
-                    <span className="mt-1 block text-xs text-neutral-500 dark:text-neutral-400">
-                      {notification.detail}
-                    </span>
+                  <span className="mt-1 block text-xs/5 text-neutral-600 dark:text-neutral-400">
+                    {isAuthenticated
+                      ? locale === 'th'
+                        ? 'ค้นหาหรือจัดการทรัพย์ของคุณได้จากเมนูบัญชี'
+                        : 'Search or manage your properties from the account menu.'
+                      : locale === 'th'
+                        ? 'ค้นหาอสังหาริมทรัพย์ที่ใช่ หรือลงประกาศได้ง่ายในที่เดียว'
+                        : 'Find the right property or create a listing, all in one place.'}
                   </span>
-                  <span className="mt-2 size-2 shrink-0 rounded-full bg-blue-500" />
-                </button>
-              ))}
+                </span>
+              </div>
             </div>
 
             <div className="border-t border-neutral-100 p-4 dark:border-neutral-800">
