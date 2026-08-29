@@ -3,6 +3,7 @@
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
+import { useWelcomeNotification } from '@/hooks/useWelcomeNotification'
 import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
 import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
@@ -29,6 +30,11 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
   const { openAuthModal } = useAuthModal()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const { currency, locale, setCurrency, setLocale } = usePreferences()
+  const welcomeNotification = useWelcomeNotification({
+    isAuthenticated,
+    locale,
+    userId: user?.public_user_id || user?.email,
+  })
   const displayName =
     [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || (locale === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')
 
@@ -178,23 +184,23 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   onClick={() => setNotificationsOpen(true)}
                   className="flex min-h-11 w-full items-center rounded-2xl px-2.5 py-1.5 text-start transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-blue-500/25 dark:hover:bg-neutral-700"
                 >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
                     <BellIcon className="size-5" />
+                    {welcomeNotification.isUnread && (
+                      <span className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-neutral-800" />
+                    )}
                   </span>
                   <span className="ms-3 min-w-0 flex-1">
-                    <span className="block text-sm font-medium">
-                      {locale === 'th' ? 'การแจ้งเตือน' : 'Notifications'}
-                    </span>
+                    <span className="block text-sm font-medium">{welcomeNotification.panelLabel}</span>
                     <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {isAuthenticated
-                        ? locale === 'th'
-                          ? 'ยินดีต้อนรับกลับมา'
-                          : 'Welcome back'
-                        : locale === 'th'
-                          ? 'ยินดีต้อนรับสู่ MapxProp'
-                          : 'Welcome to MapxProp'}
+                      {welcomeNotification.title}
                     </span>
                   </span>
+                  {welcomeNotification.unreadCount > 0 && (
+                    <span className="me-1 grid min-w-6 place-items-center rounded-full bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
+                      {welcomeNotification.unreadCount}
+                    </span>
+                  )}
                   <ChevronRightIcon className="size-4 shrink-0 text-neutral-400" />
                 </CloseButton>
 
@@ -248,10 +254,10 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
               <div>
                 <DialogTitle className="text-lg font-semibold text-neutral-950 dark:text-white">
-                  {locale === 'th' ? 'การแจ้งเตือน' : 'Notifications'}
+                  {welcomeNotification.panelLabel}
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  {locale === 'th' ? 'ข้อความจาก MapxProp' : 'A message from MapxProp'}
+                  {welcomeNotification.sourceLabel}
                 </p>
               </div>
               <button
@@ -271,34 +277,26 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {isAuthenticated
-                      ? locale === 'th'
-                        ? 'ยินดีต้อนรับกลับมา'
-                        : 'Welcome back'
-                      : locale === 'th'
-                        ? 'ยินดีต้อนรับสู่ MapxProp'
-                        : 'Welcome to MapxProp'}
+                    {welcomeNotification.title}
                   </span>
                   <span className="mt-1 block text-xs/5 text-neutral-600 dark:text-neutral-400">
-                    {isAuthenticated
-                      ? locale === 'th'
-                        ? 'ค้นหาหรือจัดการทรัพย์ของคุณได้จากเมนูบัญชี'
-                        : 'Search or manage your properties from the account menu.'
-                      : locale === 'th'
-                        ? 'ค้นหาอสังหาริมทรัพย์ที่ใช่ หรือลงประกาศได้ง่ายในที่เดียว'
-                        : 'Find the right property or create a listing, all in one place.'}
+                    {welcomeNotification.detail}
                   </span>
                 </span>
+                {welcomeNotification.isUnread && <span className="mt-2 size-2 shrink-0 rounded-full bg-blue-500" />}
               </div>
             </div>
 
             <div className="border-t border-neutral-100 p-4 dark:border-neutral-800">
               <button
                 type="button"
-                onClick={() => setNotificationsOpen(false)}
+                onClick={() => {
+                  welcomeNotification.markAsRead()
+                  setNotificationsOpen(false)
+                }}
                 className="min-h-11 w-full rounded-full bg-[#124e3c] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3d2f] focus-visible:ring-3 focus-visible:ring-[#176b50]/30 focus-visible:outline-hidden"
               >
-                {locale === 'th' ? 'รับทราบ' : 'Done'}
+                {welcomeNotification.doneLabel}
               </button>
             </div>
           </DialogPanel>
