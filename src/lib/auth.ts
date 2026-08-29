@@ -114,6 +114,15 @@ export const setStoredAuth = (data: LoginLikeResponse) => {
   return null
 }
 
+export const setStoredUser = (user: AuthUser) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+  notifyAuthChange()
+}
+
 export const clearStoredAuth = () => {
   if (typeof window === 'undefined') {
     return

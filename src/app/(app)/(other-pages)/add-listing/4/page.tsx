@@ -72,7 +72,7 @@ const Page = () => {
             : `Your listing has been saved and sent for review · Listing ID ${successId}`}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <ButtonSecondary href="/account">{isThai ? 'ดูบัญชีของฉัน' : 'View my account'}</ButtonSecondary>
+          <ButtonSecondary href="/account-listings">{isThai ? 'ดูประกาศของฉัน' : 'View my listings'}</ButtonSecondary>
           <ButtonPrimary type="button" onClick={() => router.push('/add-listing/1')}>
             {isThai ? 'ลงประกาศใหม่' : 'Create another listing'}
           </ButtonPrimary>

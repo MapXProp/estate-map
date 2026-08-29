@@ -1,13 +1,15 @@
+'use client'
+
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
 import { Badge } from '@/shared/Badge'
-import { UserIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { FC } from 'react'
-import { Bathtub01Icon, BedSingle01Icon, CropIcon, Share07Icon } from './Icons'
+import { Bathtub01Icon, BedSingle01Icon, CropIcon } from './Icons'
 
 interface PropertyCardHProps {
   className?: string
@@ -15,6 +17,8 @@ interface PropertyCardHProps {
 }
 
 const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
+  const { locale } = usePreferences()
+  const isThai = locale === 'th'
   const {
     galleryImgs,
     title,
@@ -30,9 +34,15 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     bedrooms,
     address,
     date,
-    listingCategory,
-    maxGuests,
   } = data
+  const displayPrice =
+    price === 'สอบถามราคา'
+      ? isThai
+        ? 'สอบถามราคา'
+        : 'Price on request'
+      : isThai
+        ? price
+        : price.replace('/ เดือน', '/ month')
 
   const listingHref = `/real-estate-listings/${listingHandle}`
 
@@ -58,7 +68,9 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <span className="hidden sm:inline-block">
             <BedSingle01Icon className="h-4 w-4" />
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">{bedrooms} beds</span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            {bedrooms} {isThai ? 'ห้องนอน' : 'beds'}
+          </span>
         </div>
 
         {/* ---- */}
@@ -66,7 +78,9 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <span className="hidden sm:inline-block">
             <Bathtub01Icon className="h-4 w-4" />
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">{bathrooms} baths</span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            {bathrooms} {isThai ? 'ห้องน้ำ' : 'baths'}
+          </span>
         </div>
 
         {/* ---- */}
@@ -74,7 +88,9 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <span className="hidden sm:inline-block">
             <CropIcon className="h-4 w-4" />
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">{acreage} Sq. Fit</span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            {acreage} {isThai ? 'ตร.ม.' : 'sq.m.'}
+          </span>
         </div>
       </div>
     )
@@ -84,22 +100,8 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     return (
       <div className="flex grow flex-col items-start p-3 sm:pe-6">
         <div className="w-full space-y-4">
-          <div className="inline-flex gap-x-3">
-            <Badge>
-              <div className="flex items-center">
-                <Share07Icon className="h-3 w-3" />
-                <span className="ms-1">4 Network</span>
-              </div>
-            </Badge>
-            <Badge color="yellow">
-              <div className="flex items-center">
-                <UserIcon className="h-3 w-3" />
-                <span className="ms-1">Family</span>
-              </div>
-            </Badge>
-          </div>
           <div className="flex items-center gap-x-2">
-            {isAds && <Badge color="green">Ads</Badge>}
+            {isAds && <Badge color="green">{isThai ? 'โฆษณา' : 'Ads'}</Badge>}
             <h2 className="text-lg font-medium capitalize">
               <span className="line-clamp-2">{title}</span>
             </h2>
@@ -109,7 +111,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <div className="flex w-full items-end justify-between">
             <StartRating reviewCount={reviewCount} point={reviewStart} />
             <span className="flex items-center justify-center rounded-lg border-2 border-secondary-500 px-2.5 py-1.5 text-sm leading-none font-medium text-secondary-500">
-              {price}
+              {displayPrice}
             </span>
           </div>
         </div>

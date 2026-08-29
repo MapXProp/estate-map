@@ -9,8 +9,8 @@ const navigation = [
     href: '/account',
   },
   {
-    title: 'Saved listings',
-    href: '/account-savelists',
+    title: 'My listings',
+    href: '/account-listings',
   },
   {
     title: 'Password',

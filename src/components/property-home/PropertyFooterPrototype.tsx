@@ -3,6 +3,7 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import SocialMediaLinks from '@/components/SocialMediaLinks'
+import PropertyFooterPreferencesDialog from './PropertyFooterPreferencesDialog'
 import Logo from '@/shared/Logo'
 import { ArrowRight, CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
@@ -27,7 +28,7 @@ const footerNavigation = [
     links: [
       ['ลงประกาศฟรี', 'List for free', '/add-listing/1'],
       ['จัดการบัญชี', 'Manage account', '/account'],
-      ['รายการที่บันทึก', 'Saved listings', '/account-savelists'],
+      ['ประกาศของฉัน', 'My listings', '/account-listings'],
       ['สอบถามการลงประกาศ', 'Listing support', '/contact?topic=listing'],
     ],
   },
@@ -72,7 +73,7 @@ interface PropertyFooterPrototypeProps {
 }
 
 const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterPrototypeProps) => {
-  const { locale, currency } = usePreferences()
+  const { locale } = usePreferences()
   const isThai = locale === 'th'
 
   return (
@@ -194,9 +195,7 @@ const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterProtot
             <Link href="/contact" className="transition hover:text-neutral-900 dark:hover:text-white">
               {isThai ? 'ติดต่อเรา' : 'Contact us'}
             </Link>
-            <span className="rounded-full border border-neutral-200 px-3 py-1.5 dark:border-neutral-800">
-              {isThai ? 'ภาษาไทย' : 'English'} · {currency}
-            </span>
+            <PropertyFooterPreferencesDialog />
           </div>
         </div>
       </div>

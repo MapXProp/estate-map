@@ -1,40 +1,33 @@
 import ButtonPrimary from '@/shared/ButtonPrimary'
-import { Divider } from '@/shared/divider'
-import T from '@/utils/getT'
+import { BanknotesIcon } from '@heroicons/react/24/outline'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Account - Payments & Payouts',
-  description: 'Manage your payments and payouts ',
+  title: 'แพ็กเกจและการชำระเงิน | MapXProp',
+  description: 'สถานะแพ็กเกจ MapXProp',
 }
 
-const AccountBilling = () => {
-  return (
-    <div>
-      {/* HEADING */}
-      <h1 className="text-3xl font-semibold">{T['accountPage']['Payments & payouts']}</h1>
+const AccountBilling = () => (
+  <div className="max-w-2xl">
+    <span className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+      <BanknotesIcon className="size-6" />
+    </span>
+    <h1 className="mt-4 font-sarabun text-3xl font-semibold text-neutral-900 dark:text-white">แพ็กเกจและการชำระเงิน</h1>
+    <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+      ปัจจุบันการลงประกาศบน MapXProp ไม่มีค่าใช้จ่าย และระบบยังไม่มีการเรียกเก็บเงินหรือข้อมูลบัตรของคุณ
+    </p>
 
-      <Divider className="my-8 w-14!" />
-
-      <div className="max-w-2xl">
-        <span className="block text-xl font-semibold">{T['accountPage']['Payout methods']}</span>
-        <br />
-        <span className="block text-neutral-700 dark:text-neutral-300">
-          {` When you receive a payment for a reservation, we call that payment
-              to you a "payout." Our secure payment system supports several
-              payout methods, which can be set up below. Go to FAQ.`}
-          <br />
-          <br />
-          To get paid, you need to set up a payout method Airbnb releases payouts about 24 hours after a guest’s
-          scheduled check-in time. The time it takes for the funds to appear in your account depends on your payout
-          method. Learn more
-        </span>
-        <div className="pt-10">
-          <ButtonPrimary>{T['accountPage']['Add payout method']}</ButtonPrimary>
-        </div>
-      </div>
-    </div>
-  )
-}
+    <section className="mt-8 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+      <p className="font-sarabun text-sm font-medium text-emerald-800 dark:text-emerald-200">แพ็กเกจปัจจุบัน</p>
+      <p className="mt-2 font-sarabun text-xl font-semibold text-neutral-900 dark:text-white">ลงประกาศฟรี</p>
+      <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+        ส่งประกาศเพื่อให้ทีมงานตรวจสอบ แล้วติดตามสถานะได้จากหน้า “ประกาศของฉัน”
+      </p>
+      <ButtonPrimary href="/add-listing/1" className="mt-5 h-11">
+        ลงประกาศใหม่
+      </ButtonPrimary>
+    </section>
+  </div>
+)
 
 export default AccountBilling

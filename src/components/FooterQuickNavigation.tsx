@@ -15,13 +15,13 @@ const FOOTER_QUICK_NAV = [
     icon: MagnifyingGlassIcon,
   },
   {
-    name: 'Wishlists',
-    link: '/account-savelists',
+    name: 'My listings',
+    link: '/account-listings',
     icon: HeartIcon,
   },
   {
     name: 'Account',
-    link: '/authors/john-doe',
+    link: '/account',
     icon: UserCircleIcon,
   },
   {
