@@ -72,5 +72,9 @@ export const useWelcomeNotification = ({ isAuthenticated, locale, userId }: Welc
     sourceLabel: locale === 'th' ? 'ข้อความจาก MapxProp' : 'A message from MapxProp',
     title,
     unreadCount: isUnread ? 1 : 0,
+    unreadSummary:
+      locale === 'th'
+        ? `มี ${isUnread ? 1 : 0} รายการใหม่`
+        : `${isUnread ? 1 : 0} new ${isUnread ? 'item' : 'items'}`,
   }
 }

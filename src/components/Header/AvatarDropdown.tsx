@@ -193,7 +193,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   <span className="ms-3 min-w-0 flex-1">
                     <span className="block text-sm font-medium">{welcomeNotification.panelLabel}</span>
                     <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {welcomeNotification.title}
+                      {welcomeNotification.unreadSummary}
                     </span>
                   </span>
                   {welcomeNotification.unreadCount > 0 && (

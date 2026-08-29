@@ -47,7 +47,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               <div>
                 <h3 className="text-xl font-semibold">{welcomeNotification.panelLabel}</h3>
                 <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  {welcomeNotification.sourceLabel}
+                  {welcomeNotification.unreadSummary}
                 </p>
               </div>
               {welcomeNotification.unreadCount > 0 && (
