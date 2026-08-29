@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import BgGlassmorphism from '@/components/BgGlassmorphism'
+import aboutPropertyCollage from '@/images/about-property-collage-v3.png'
 import Image from 'next/image'
 
 type AboutPageContentProps = {
@@ -9,34 +10,6 @@ type AboutPageContentProps = {
   propertyTypeCount: number
   discoveryChannelCount: number
 }
-
-const aboutPropertyImages = [
-  {
-    src: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=84',
-    alt: 'Modern detached house',
-    className: 'mt-8 h-40 sm:h-56 lg:h-52 xl:h-60',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=700&q=84',
-    alt: 'Condominium interior',
-    className: 'h-52 sm:h-72 lg:h-[17rem] xl:h-[19rem]',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1535401991746-da3d9055713e?auto=format&fit=crop&w=700&q=84',
-    alt: 'Retail storefront',
-    className: 'h-60 sm:h-80 lg:h-[19rem] xl:h-[22rem]',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=700&q=84',
-    alt: 'Office workspace with seating',
-    className: 'h-52 sm:h-72 lg:h-[17rem] xl:h-[19rem]',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1745757392529-c04da3b8a116?auto=format&fit=crop&w=700&q=84',
-    alt: 'Vacant land plot',
-    className: 'mt-8 h-40 sm:h-56 lg:h-52 xl:h-60',
-  },
-] as const
 
 const aboutCopy = {
   th: {
@@ -111,23 +84,17 @@ const AboutPageContent = ({ listingCount, propertyTypeCount, discoveryChannelCou
             </div>
 
             <div className="grow">
-              <div className="flex items-start justify-center gap-1.5 sm:gap-3 lg:gap-4">
-                {aboutPropertyImages.map((image, index) => (
-                  <div
-                    key={image.alt}
-                    className={`relative w-[16%] shrink-0 overflow-hidden rounded-[18px] shadow-[0_12px_24px_rgba(15,23,42,0.14)] sm:rounded-[24px] lg:w-[15%] ${image.className}`}
-                  >
-                    <Image
-                      fill
-                      src={image.src}
-                      alt={image.alt}
-                      sizes="(max-width: 640px) 16vw, (max-width: 1024px) 15vw, 9vw"
-                      className="object-cover"
-                      priority={index < 2}
-                    />
-                  </div>
-                ))}
-              </div>
+              <Image
+                src={aboutPropertyCollage}
+                alt={
+                  isThai
+                    ? 'บ้าน ห้องพักคอนโด หน้าร้าน ออฟฟิศ และที่ดิน'
+                    : 'A house, condominium room, storefront, office and vacant land'
+                }
+                sizes="(max-width: 1024px) 100vw, 58vw"
+                className="h-auto w-full"
+                priority
+              />
             </div>
           </div>
         </section>
