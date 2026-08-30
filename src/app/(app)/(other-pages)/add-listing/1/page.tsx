@@ -241,8 +241,8 @@ const Page = () => {
     if (!retailSpace) return
 
     const alreadySelected = businessSpaceTypes.includes(spaceTypeCode)
-    if (!alreadySelected && businessSpaceTypes.length >= 3) {
-      setError(isThai ? 'เลือกได้สูงสุด 3 ลักษณะพื้นที่' : 'Choose up to 3 space types.')
+    if (!alreadySelected && businessSpaceTypes.length >= 2) {
+      setError(isThai ? 'เลือกได้สูงสุด 2 ลักษณะพื้นที่' : 'Choose up to 2 space types.')
       return
     }
 
@@ -376,8 +376,8 @@ const Page = () => {
           description={
             selectedChannel === 'business'
               ? isThai
-                ? 'อาคารเลือก 1 ประเภท ส่วนพื้นที่ค้าขายเลือกได้สูงสุด 3 ลักษณะที่ซ้อนกัน'
-                : 'Choose one building type, or up to 3 overlapping retail space types.'
+                ? 'อาคารเลือก 1 ประเภท ส่วนพื้นที่ค้าขายเลือกได้สูงสุด 2 ลักษณะที่ซ้อนกัน'
+                : 'Choose one building type, or up to 2 overlapping retail space types.'
               : isThai
                 ? 'เลือก 1 ประเภทหลักเพื่อให้ระบบแสดงช่องกรอกและตัวกรองที่ถูกต้อง'
                 : 'Choose one primary type so we can show the right fields and search filters.'
@@ -413,15 +413,15 @@ const Page = () => {
                 </h3>
                 <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
                   {isThai
-                    ? 'เลือกได้สูงสุด 3 รายการตามสภาพจริง รายการแรกจะเป็นประเภทหลัก'
-                    : 'Choose up to 3 matching types. Your first choice is the primary type.'}
+                    ? 'เลือกได้สูงสุด 2 รายการตามสภาพจริง รายการแรกจะเป็นประเภทหลัก'
+                    : 'Choose up to 2 matching types. Your first choice is the primary type.'}
                 </p>
                 <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-orange-50 px-3 py-2 font-sarabun text-xs text-orange-800 dark:bg-orange-950/25 dark:text-orange-200">
                   <span>
                     {businessSpaceTypes.length
                       ? isThai
-                        ? `เลือกแล้ว ${businessSpaceTypes.length} จาก 3 รายการ`
-                        : `${businessSpaceTypes.length} of 3 selected`
+                        ? `เลือกแล้ว ${businessSpaceTypes.length} จาก 2 รายการ`
+                        : `${businessSpaceTypes.length} of 2 selected`
                       : isThai
                         ? 'ยังไม่ได้เลือกลักษณะพื้นที่'
                         : 'No space type selected yet'}

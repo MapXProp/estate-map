@@ -23,16 +23,33 @@ const amenities = [
   { code: 'pet_friendly', labelTh: 'เลี้ยงสัตว์ได้', labelEn: 'Pet friendly' },
 ]
 
-const BANGKOK_CENTER = { lng: 100.5018, lat: 13.7563 }
+const THAILAND_CENTER = { lng: 100.9925, lat: 15.87 }
+
+type LongdoAddress = {
+  country?: string
+  province?: string
+  district?: string
+  subdistrict?: string
+  postcode?: string | number
+  house_num?: string
+  road?: string
+  error?: string
+}
 
 const Page = () => {
   const router = useRouter()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
-  const [marker, setMarker] = useState(BANGKOK_CENTER)
+  const [marker, setMarker] = useState(THAILAND_CENTER)
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
   const [locationError, setLocationError] = useState('')
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false)
+  const [street, setStreet] = useState('')
+  const [subdistrict, setSubdistrict] = useState('')
+  const [district, setDistrict] = useState('')
+  const [province, setProvince] = useState('')
+  const [postalCode, setPostalCode] = useState('')
 
   useEffect(() => {
     router.prefetch('/add-listing/3')
@@ -42,12 +59,64 @@ const Page = () => {
       const savedLat = readText(savedDraft.latMapPosition)
       const savedPosition = parseSavedLocation(savedLng, savedLat)
       setDraft(savedDraft)
-      setMarker(savedPosition || BANGKOK_CENTER)
+      setMarker(savedPosition || THAILAND_CENTER)
       setHasConfirmedMarker(Boolean(savedPosition))
+      setStreet(readText(savedDraft.Street))
+      setSubdistrict(readText(savedDraft.subdistrict))
+      setDistrict(readText(savedDraft.city))
+      setProvince(readText(savedDraft.state))
+      setPostalCode(readText(savedDraft.Postal))
     })
 
     return () => cancelAnimationFrame(frame)
   }, [router])
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
+    if (!hasConfirmedMarker || !apiKey) return
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
+      setIsResolvingAddress(true)
+      try {
+        const params = new URLSearchParams({
+          lon: String(marker.lng),
+          lat: String(marker.lat),
+          locale: isThai ? 'th' : 'en',
+          noelevation: '1',
+          key: apiKey,
+        })
+        const response = await fetch(`https://api.longdo.com/map/services/address?${params}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) throw new Error('reverse geocoding failed')
+        const address = (await response.json()) as LongdoAddress
+        if (address.error) throw new Error(address.error)
+
+        const roadAddress = [address.house_num, address.road].filter(Boolean).join(' ')
+        setStreet((current) => current || roadAddress)
+        setSubdistrict(address.subdistrict || '')
+        setDistrict(address.district || '')
+        setProvince(address.province || '')
+        setPostalCode(address.postcode ? String(address.postcode) : '')
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          setLocationError(
+            isThai
+              ? 'อ่านที่อยู่จากหมุดไม่สำเร็จ กรุณาตรวจสอบและกรอกที่อยู่ด้านล่าง'
+              : 'Unable to read the address from the pin. Please check and complete the address below.'
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsResolvingAddress(false)
+      }
+    }, 450)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [hasConfirmedMarker, isThai, marker.lat, marker.lng])
 
   const propertyGroup = readText(draft?.property_group_code) || 'residential'
   const discoveryChannel = readText(draft?.discovery_channel_code) || 'homes'
@@ -83,6 +152,14 @@ const Page = () => {
   }
 
   const handleSubmitForm = async (formData: FormData) => {
+    if (!hasConfirmedMarker) {
+      setLocationError(
+        isThai
+          ? 'กรุณาค้นหาสถานที่หรือแตะแผนที่เพื่อยืนยันตำแหน่งอสังหา'
+          : 'Search for the place or tap the map to confirm the property location.'
+      )
+      return
+    }
     const savedDraft = saveListingStep(2, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/3')
@@ -136,72 +213,36 @@ const Page = () => {
           </div>
         </section>
 
-        <SectionCard title={isThai ? 'ตำแหน่งที่ตั้ง' : 'Location'}>
+        <SectionCard title={isThai ? 'ปักหมุดที่ตั้งอสังหา' : 'Pin the property location'}>
           <div className="space-y-5">
-            <button
-              type="button"
-              onClick={useCurrentLocation}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2.5 font-sarabun text-sm font-medium text-neutral-700 transition hover:border-orange-300 hover:text-orange-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
-            >
-              <MapPinIcon className="size-5" />
-              {isThai ? 'ใช้ตำแหน่งปัจจุบัน' : 'Use current location'}
-            </button>
-            {locationError ? <p className="font-sarabun text-sm text-red-600">{locationError}</p> : null}
-
-            <FormItem label={isThai ? 'ที่อยู่ / ถนน / ซอย (ไม่บังคับ)' : 'Address / road / soi (optional)'}>
-              <Input
-                name="Street"
-                defaultValue={readText(draft.Street)}
-                placeholder={isThai ? 'เช่น ถนนสุขุมวิท 24' : 'e.g. Sukhumvit Soi 24'}
-              />
-            </FormItem>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
-                <Input
-                  name="subdistrict"
-                  defaultValue={readText(draft.subdistrict)}
-                  placeholder={isThai ? 'เช่น คลองตัน' : 'e.g. Khlong Tan'}
-                />
-              </FormItem>
-              <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
-                <Input
-                  name="city"
-                  defaultValue={readText(draft.city)}
-                  placeholder={isThai ? 'เช่น คลองเตย' : 'e.g. Khlong Toei'}
-                />
-              </FormItem>
-              <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
-                <Input
-                  name="state"
-                  defaultValue={readText(draft.state)}
-                  placeholder={isThai ? 'เช่น กรุงเทพมหานคร' : 'e.g. Bangkok'}
-                  required
-                />
-              </FormItem>
-              <FormItem label={isThai ? 'รหัสไปรษณีย์' : 'Postal code'}>
-                <Input
-                  name="Postal"
-                  defaultValue={readText(draft.Postal)}
-                  inputMode="numeric"
-                  pattern="[0-9]{5}"
-                  placeholder="10110"
-                />
-              </FormItem>
-              <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ไม่บังคับ)' : 'Room / unit number (optional)'}>
-                <Input
-                  name="room-number"
-                  defaultValue={readText(draft['room-number'])}
-                  placeholder={isThai ? 'เช่น A-1208' : 'e.g. A-1208'}
-                />
-              </FormItem>
+            <div className="flex flex-col gap-3 rounded-2xl bg-[#f1f7f4] p-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:bg-emerald-950/25">
+              <div>
+                <p className="font-sarabun text-sm font-semibold text-[#123f32] dark:text-emerald-200">
+                  {isThai ? '1. ค้นหาชื่อโครงการ ถนน หรือสถานที่ใกล้เคียง' : '1. Search a project, road or nearby place'}
+                </p>
+                <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-600 dark:text-neutral-300">
+                  {isThai
+                    ? 'แผนที่เริ่มจากประเทศไทย เลือกผลค้นหาแล้วลากหมุดให้ตรงหน้าทรัพย์มากที่สุด'
+                    : 'The map starts at Thailand. Select a result, then drag the pin to the exact property entrance.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={useCurrentLocation}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2.5 font-sarabun text-sm font-medium text-emerald-800 transition hover:border-emerald-400 dark:border-emerald-900 dark:bg-neutral-900 dark:text-emerald-200"
+              >
+                <MapPinIcon className="size-5" />
+                {isThai ? 'ใช้ตำแหน่งปัจจุบัน' : 'Use current location'}
+              </button>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] shadow-sm dark:border-neutral-700">
-              <div className="h-72 lg:h-96 xl:h-[26rem]">
+              <div className="h-[22rem] lg:h-[28rem]">
                 <LongdoLocationPicker
                   apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
                   value={marker}
+                  hasMarker={hasConfirmedMarker}
+                  initialZoom={hasConfirmedMarker ? 16 : 6}
                   locale={isThai ? 'th' : 'en'}
                   onChange={(location) => {
                     setMarker(location)
@@ -211,22 +252,92 @@ const Page = () => {
                 />
               </div>
             </div>
-            <p
+
+            <div
               role="status"
-              className={`inline-flex rounded-full px-3 py-1.5 font-sarabun text-xs font-medium ${
+              className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 font-sarabun text-sm sm:flex-row sm:items-center sm:justify-between ${
                 hasConfirmedMarker
-                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
+                  : 'border-neutral-200 bg-neutral-50 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300'
               }`}
             >
-              {hasConfirmedMarker
-                ? isThai
-                  ? 'บันทึกตำแหน่งแล้ว'
-                  : 'Location saved'
-                : isThai
-                  ? 'ค้นหา แตะแผนที่ ลากหมุด หรือใช้ตำแหน่งปัจจุบัน'
-                  : 'Search, tap the map, drag the pin, or use your current location'}
-            </p>
+              <span className="font-medium">
+                {hasConfirmedMarker
+                  ? isResolvingAddress
+                    ? isThai
+                      ? 'กำลังอ่านที่อยู่จากหมุด...'
+                      : 'Reading the address from the pin...'
+                    : isThai
+                      ? 'ยืนยันพิกัดแล้ว ตรวจสอบที่อยู่ด้านล่างอีกครั้ง'
+                      : 'Coordinates confirmed. Check the address below.'
+                  : isThai
+                    ? 'ยังไม่ได้ปักหมุด กรุณาค้นหาหรือแตะแผนที่'
+                    : 'No pin yet. Search or tap the map.'}
+              </span>
+              {hasConfirmedMarker ? (
+                <span className="font-mono text-xs opacity-75">
+                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                </span>
+              ) : null}
+            </div>
+
+            {locationError ? (
+              <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700">
+                {locationError}
+              </p>
+            ) : null}
+
+            <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
+              <h3 className="font-sarabun text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                {isThai ? '2. ตรวจสอบที่อยู่จากหมุด' : '2. Check the address from the pin'}
+              </h3>
+              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                {isThai
+                  ? 'ระบบเติมเขตการปกครองให้อัตโนมัติ คุณแก้เลขที่ ถนน ซอย หรือรายละเอียดเพิ่มเติมได้'
+                  : 'Administrative fields are filled automatically. You can edit the house number, road or soi.'}
+              </p>
+
+              <div className="mt-5 space-y-5">
+                <FormItem label={isThai ? 'บ้านเลขที่ ถนน และซอย' : 'House number, road and soi'}>
+                  <Input
+                    name="Street"
+                    value={street}
+                    onChange={(event) => setStreet(event.target.value)}
+                    placeholder={isThai ? 'เช่น 24 ถนนสุขุมวิท ซอย 39' : 'e.g. 24 Sukhumvit Road, Soi 39'}
+                  />
+                </FormItem>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
+                    <Input name="subdistrict" value={subdistrict} onChange={(event) => setSubdistrict(event.target.value)} />
+                  </FormItem>
+                  <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
+                    <Input name="city" value={district} onChange={(event) => setDistrict(event.target.value)} />
+                  </FormItem>
+                  <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
+                    <Input name="state" value={province} onChange={(event) => setProvince(event.target.value)} required />
+                  </FormItem>
+                  <FormItem label={isThai ? 'รหัสไปรษณีย์' : 'Postal code'}>
+                    <Input
+                      name="Postal"
+                      value={postalCode}
+                      onChange={(event) => setPostalCode(event.target.value)}
+                      inputMode="numeric"
+                      pattern="[0-9]{5}"
+                      placeholder="10110"
+                    />
+                  </FormItem>
+                  <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ไม่บังคับ)' : 'Room / unit number (optional)'}>
+                    <Input
+                      name="room-number"
+                      defaultValue={readText(draft['room-number'])}
+                      placeholder={isThai ? 'เช่น A-1208' : 'e.g. A-1208'}
+                    />
+                  </FormItem>
+                </div>
+              </div>
+            </div>
+
             <input type="hidden" name="country-region" value="Thailand" />
             <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
             <input type="hidden" name="lngMapPosition" value={hasConfirmedMarker ? marker.lng : ''} />

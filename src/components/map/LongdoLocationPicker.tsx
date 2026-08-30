@@ -60,6 +60,8 @@ interface Props {
   apiKey?: string
   value: LongdoPickerLocation
   locale: 'th' | 'en'
+  hasMarker?: boolean
+  initialZoom?: number
   onChange: (location: LongdoPickerLocation) => void
 }
 
@@ -114,7 +116,7 @@ const copy = {
   },
 } as const
 
-const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
+const LongdoLocationPicker = ({ apiKey, value, locale, hasMarker = false, initialZoom = 6, onChange }: Props) => {
   const text = copy[locale]
   const placeholderRef = useRef<HTMLDivElement>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
@@ -123,6 +125,8 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
   const markerRef = useRef<LongdoOverlay | null>(null)
   const onChangeRef = useRef(onChange)
   const valueRef = useRef(value)
+  const hasMarkerRef = useRef(hasMarker)
+  const initialZoomRef = useRef(initialZoom)
   const skipNextValueSyncRef = useRef(false)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
@@ -141,6 +145,14 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
   useEffect(() => {
     valueRef.current = value
   }, [value])
+
+  useEffect(() => {
+    hasMarkerRef.current = hasMarker
+  }, [hasMarker])
+
+  useEffect(() => {
+    initialZoomRef.current = initialZoom
+  }, [initialZoom])
 
   useEffect(() => {
     const touchSurface = placeholderRef.current
@@ -195,7 +207,6 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
     const keyword = searchText.trim()
     if (!apiKey || !isSearchFocused || keyword.length < 3) {
       // Reset asynchronous suggestions when the field is no longer eligible for lookup.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSuggestions([])
       setActiveSuggestionIndex(-1)
       setIsSuggesting(false)
@@ -305,8 +316,7 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
       placeholder: placeholderRef.current,
       language: locale,
       location: initialLocation,
-      // Start with a useful Bangkok overview; searching or selecting a place still zooms in to street level.
-      zoom: 11,
+      zoom: initialZoomRef.current,
       lastView: false,
       autoResize: true,
       ui: longdo.UiComponent.None,
@@ -314,7 +324,7 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
     mapRef.current = map
 
     map.Event.bind('ready', () => {
-      createMarker(initialLocation)
+      if (hasMarkerRef.current) createMarker(initialLocation)
       setMapReady(true)
       window.requestAnimationFrame(() => {
         map.resize()
@@ -342,6 +352,13 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
   useEffect(() => {
     const map = mapRef.current
     if (!mapReady || !map) return
+    if (!hasMarker) {
+      if (markerRef.current) map.Overlays.remove(markerRef.current)
+      markerRef.current = null
+      map.location({ lon: value.lng, lat: value.lat }, true)
+      map.zoom(initialZoom, true)
+      return
+    }
     if (skipNextValueSyncRef.current) {
       skipNextValueSyncRef.current = false
       return
@@ -350,7 +367,8 @@ const LongdoLocationPicker = ({ apiKey, value, locale, onChange }: Props) => {
     const location = { lon: value.lng, lat: value.lat }
     createMarker(location)
     map.location(location, true)
-  }, [createMarker, mapReady, value.lat, value.lng])
+    map.zoom(initialZoom, true)
+  }, [createMarker, hasMarker, initialZoom, mapReady, value.lat, value.lng])
 
   if (!apiKey) {
     return (

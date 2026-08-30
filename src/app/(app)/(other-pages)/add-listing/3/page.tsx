@@ -7,17 +7,28 @@ import {
   getListingDraft,
   saveListingDraftToCloud,
   saveListingStep,
-  uploadListingPhotos,
+  uploadListingMedia,
   type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
-import { BanknotesIcon, PhoneIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import {
+  BanknotesIcon,
+  ChevronDownIcon,
+  PhoneIcon,
+  PhotoIcon,
+  VideoCameraIcon,
+  ViewfinderCircleIcon,
+} from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import FormItem from '../FormItem'
+
+const MAX_PHOTOS = 12
+const MAX_VIDEOS = 4
+const MAX_PANORAMAS = 4
 
 const Page = () => {
   const router = useRouter()
@@ -35,7 +46,11 @@ const Page = () => {
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState('')
   const [priceOnRequest, setPriceOnRequest] = useState(false)
   const [photos, setPhotos] = useState<File[]>([])
+  const [videos, setVideos] = useState<File[]>([])
+  const [panoramas, setPanoramas] = useState<File[]>([])
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
+  const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
+  const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
@@ -54,16 +69,31 @@ const Page = () => {
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
       setPriceOnRequest(readText(savedDraft.priceOnRequest) === 'yes')
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
+      setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
+      setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
     })
 
     return () => cancelAnimationFrame(frame)
   }, [router])
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
+  const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
+  const panoramaPreviewUrls = useMemo(
+    () => panoramas.map((panorama) => URL.createObjectURL(panorama)),
+    [panoramas]
+  )
 
   useEffect(() => {
     return () => previewUrls.forEach((url) => URL.revokeObjectURL(url))
   }, [previewUrls])
+
+  useEffect(() => {
+    return () => videoPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+  }, [videoPreviewUrls])
+
+  useEffect(() => {
+    return () => panoramaPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+  }, [panoramaPreviewUrls])
 
   const hasSale = offers.includes('sale')
   const hasRent = offers.includes('rent') || offers.includes('sublease')
@@ -73,8 +103,24 @@ const Page = () => {
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || [])
       .filter((file) => file.type.startsWith('image/'))
-      .slice(0, Math.max(0, 12 - uploadedPhotoUrls.length))
+      .slice(0, Math.max(0, MAX_PHOTOS - uploadedPhotoUrls.length))
     setPhotos(selected)
+    setUploadError('')
+  }
+
+  const handleVideos = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files || [])
+      .filter((file) => ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type))
+      .slice(0, Math.max(0, MAX_VIDEOS - uploadedVideoUrls.length))
+    setVideos(selected)
+    setUploadError('')
+  }
+
+  const handlePanoramas = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files || [])
+      .filter((file) => file.type.startsWith('image/'))
+      .slice(0, Math.max(0, MAX_PANORAMAS - uploadedPanoramaUrls.length))
+    setPanoramas(selected)
     setUploadError('')
   }
 
@@ -82,21 +128,35 @@ const Page = () => {
     setUploadError('')
     setIsUploading(true)
     let nextPhotoUrls = uploadedPhotoUrls
+    let nextVideoUrls = uploadedVideoUrls
+    let nextPanoramaUrls = uploadedPanoramaUrls
 
     try {
       if (photos.length) {
-        const uploaded = await uploadListingPhotos(photos)
-        nextPhotoUrls = [...new Set([...uploadedPhotoUrls, ...uploaded])].slice(0, 12)
+        const uploaded = await uploadListingMedia(photos, 'image')
+        nextPhotoUrls = [...new Set([...uploadedPhotoUrls, ...uploaded])].slice(0, MAX_PHOTOS)
         setUploadedPhotoUrls(nextPhotoUrls)
         setPhotos([])
+      }
+      if (videos.length) {
+        const uploaded = await uploadListingMedia(videos, 'video')
+        nextVideoUrls = [...new Set([...uploadedVideoUrls, ...uploaded])].slice(0, MAX_VIDEOS)
+        setUploadedVideoUrls(nextVideoUrls)
+        setVideos([])
+      }
+      if (panoramas.length) {
+        const uploaded = await uploadListingMedia(panoramas, '360')
+        nextPanoramaUrls = [...new Set([...uploadedPanoramaUrls, ...uploaded])].slice(0, MAX_PANORAMAS)
+        setUploadedPanoramaUrls(nextPanoramaUrls)
+        setPanoramas([])
       }
     } catch (error) {
       setUploadError(
         isThai && error instanceof Error
           ? error.message
           : isThai
-            ? 'อัปโหลดรูปไม่สำเร็จ กรุณาลองอีกครั้ง'
-            : 'Unable to upload photos. Please try again.'
+            ? 'อัปโหลดสื่อไม่สำเร็จ กรุณาลองอีกครั้ง'
+            : 'Unable to upload media. Please try again.'
       )
       setIsUploading(false)
       return
@@ -108,7 +168,11 @@ const Page = () => {
     if (!hasEventBooking) formData.set('eventBookingPrice', '')
     formData.set('priceOnRequest', priceOnRequest ? 'yes' : '')
     formData.set('selectedPhotoCount', String(nextPhotoUrls.length))
+    formData.set('selectedVideoCount', String(nextVideoUrls.length))
+    formData.set('selectedPanoramaCount', String(nextPanoramaUrls.length))
     nextPhotoUrls.forEach((url) => formData.append('listingPhotoUrls[]', url))
+    nextVideoUrls.forEach((url) => formData.append('listingVideoUrls[]', url))
+    nextPanoramaUrls.forEach((url) => formData.append('listingPanoramaUrls[]', url))
     const savedDraft = saveListingStep(3, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     setIsUploading(false)
@@ -141,7 +205,9 @@ const Page = () => {
               {isThai ? 'เลือกรูปจากอุปกรณ์' : 'Choose photos from your device'}
             </span>
             <span className="mt-1 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
-              {isThai ? 'สูงสุด 12 รูป · รูปแรกเป็นภาพหน้าปก' : 'Up to 12 photos · the first photo is the cover'}
+              {isThai
+                ? 'แนะนำ 6–8 รูป · เพิ่มได้สูงสุด 12 รูป · รูปแรกเป็นภาพหน้าปก'
+                : '6–8 recommended · up to 12 photos · the first photo is the cover'}
             </span>
             <input
               name="listingPhotos"
@@ -174,7 +240,7 @@ const Page = () => {
 
           {isUploading ? (
             <p className="mt-3 font-sarabun text-sm font-medium text-emerald-700">
-              {isThai ? 'กำลังอัปโหลดรูป กรุณารอสักครู่...' : 'Uploading photos. Please wait...'}
+              {isThai ? 'กำลังอัปโหลดสื่อ กรุณารอสักครู่...' : 'Uploading media. Please wait...'}
             </p>
           ) : null}
           {uploadError ? (
@@ -186,6 +252,115 @@ const Page = () => {
             </p>
           ) : null}
         </SectionCard>
+
+        <SectionCard
+          icon={<VideoCameraIcon className="size-5" />}
+          title={isThai ? 'วิดีโอของทรัพย์ (ไม่บังคับ)' : 'Property videos (optional)'}
+        >
+          <p className="mb-4 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+            {isThai
+              ? 'เพิ่มคลิปพาชม ห้องจริง หรือบรรยากาศรอบทรัพย์ได้สูงสุด 4 ไฟล์'
+              : 'Add walkthroughs, room tours or surroundings — up to 4 files.'}
+          </p>
+          <label className="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
+              <VideoCameraIcon className="size-6" />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {isThai ? 'เลือกวิดีโอ' : 'Choose videos'}
+              </span>
+              <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+                MP4, WebM, MOV · {isThai ? 'ไฟล์ละไม่เกิน 50 MB' : 'up to 50 MB each'} ·{' '}
+                {uploadedVideoUrls.length + videos.length}/{MAX_VIDEOS}
+              </span>
+            </span>
+            <input
+              name="listingVideos"
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,.mov"
+              multiple
+              onChange={handleVideos}
+              className="sr-only"
+            />
+          </label>
+
+          {uploadedVideoUrls.length || videoPreviewUrls.length ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[...uploadedVideoUrls.map(resolveListingMediaUrl), ...videoPreviewUrls].map((url, index) => (
+                <video
+                  key={url}
+                  src={url}
+                  controls
+                  preload="metadata"
+                  className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+                  aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </SectionCard>
+
+        <details
+          open={Boolean(uploadedPanoramaUrls.length || panoramas.length)}
+          className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-3 p-5 sm:p-7 [&::-webkit-details-marker]:hidden">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-950/40">
+              <ViewfinderCircleIcon className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+                {isThai ? 'ภาพ 360° (ส่วนเสริม)' : '360° photos (optional)'}
+              </span>
+              <span className="mt-0.5 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+                {isThai ? 'มีภาพพาโนรามาค่อยเปิดเพิ่ม · สูงสุด 4 รูป' : 'Open only when you have panoramas · up to 4 photos'}
+              </span>
+            </span>
+            <ChevronDownIcon className="size-5 text-neutral-400 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-neutral-100 px-5 pt-5 pb-6 sm:px-7 sm:pb-7 dark:border-neutral-800">
+            <label className="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
+                <ViewfinderCircleIcon className="size-6" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {isThai ? 'เลือกภาพพาโนรามา 360°' : 'Choose 360° panoramas'}
+                </span>
+                <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+                  JPG, PNG, WebP · {isThai ? 'ไฟล์ละไม่เกิน 15 MB' : 'up to 15 MB each'} ·{' '}
+                  {uploadedPanoramaUrls.length + panoramas.length}/{MAX_PANORAMAS}
+                </span>
+              </span>
+              <input
+                name="listingPanoramas"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                onChange={handlePanoramas}
+                className="sr-only"
+              />
+            </label>
+
+            {uploadedPanoramaUrls.length || panoramaPreviewUrls.length ? (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[...uploadedPanoramaUrls.map(resolveListingMediaUrl), ...panoramaPreviewUrls].map((url, index) => (
+                  <div
+                    key={url}
+                    className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
+                    style={{ backgroundImage: `url(${url})` }}
+                    aria-label={isThai ? `ภาพ 360 ที่ ${index + 1}` : `360 photo ${index + 1}`}
+                  >
+                    <span className="absolute right-2 bottom-2 rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] font-semibold text-white">
+                      360°
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </details>
 
         <section className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <p className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -352,8 +527,25 @@ const Page = () => {
                 required
               />
             </FormItem>
+            <FormItem label={isThai ? 'เบอร์โทรสำรอง (ไม่บังคับ)' : 'Backup phone (optional)'}>
+              <Input
+                name="contactPhoneSecondary"
+                defaultValue={readText(draft.contactPhoneSecondary)}
+                inputMode="tel"
+                placeholder="08x-xxx-xxxx"
+              />
+            </FormItem>
             <FormItem label={isThai ? 'LINE ID (ไม่บังคับ)' : 'LINE ID (optional)'}>
               <Input name="lineId" defaultValue={readText(draft.lineId)} placeholder="Line ID" />
+            </FormItem>
+            <FormItem label={isThai ? 'Instagram (ไม่บังคับ)' : 'Instagram (optional)'}>
+              <Input
+                name="instagramHandle"
+                defaultValue={readText(draft.instagramHandle)}
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="@username"
+              />
             </FormItem>
             <FormItem label={isThai ? 'อีเมล (ไม่บังคับ)' : 'Email (optional)'}>
               <Input

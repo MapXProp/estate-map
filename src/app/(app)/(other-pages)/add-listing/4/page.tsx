@@ -179,6 +179,16 @@ const Page = () => {
             }
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
+          <ReviewItem
+            label={isThai ? 'วิดีโอ' : 'Videos'}
+            value={formatMediaCount(summary?.payload.media_items, 'video', isThai, 'วิดีโอ', 'videos')}
+            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'None added'}
+          />
+          <ReviewItem
+            label={isThai ? 'ภาพ 360°' : '360° photos'}
+            value={formatMediaCount(summary?.payload.media_items, '360', isThai, 'ภาพ', 'photos')}
+            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'None added'}
+          />
         </ReviewCard>
 
         <ReviewCard
@@ -204,9 +214,19 @@ const Page = () => {
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
           <ReviewItem
+            label={isThai ? 'เบอร์สำรอง' : 'Backup phone'}
+            value={summary?.payload.contact_phone_secondary}
+            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'Not added'}
+          />
+          <ReviewItem
             label="LINE ID"
             value={summary?.payload.line_id}
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label="Instagram"
+            value={summary?.payload.instagram_handle}
+            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'Not added'}
           />
           <ReviewItem
             label={isThai ? 'อีเมล' : 'Email'}
@@ -290,5 +310,16 @@ const ReviewItem = ({
     <p className="mt-1 font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">{value || fallback}</p>
   </div>
 )
+
+const formatMediaCount = (
+  media: Array<{ media_type: string }> | undefined,
+  mediaType: string,
+  isThai: boolean,
+  thaiUnit: string,
+  englishUnit: string
+) => {
+  const count = media?.filter((item) => item.media_type === mediaType).length || 0
+  return count ? `${count} ${isThai ? thaiUnit : englishUnit}` : ''
+}
 
 export default Page

@@ -156,8 +156,10 @@ export type PropertyListingDetail = {
   longitude?: number
   contact_name: string
   contact_phone: string
+  contact_phone_secondary: string
   contact_email: string
   line_id: string
+  instagram_handle: string
   offer_type: string
   offer_amount?: number
   price_unit: string

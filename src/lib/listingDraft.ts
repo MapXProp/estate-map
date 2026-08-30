@@ -12,6 +12,12 @@ export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
 
 export type ListingDraftValue = string | string[]
 export type ListingDraft = Record<string, ListingDraftValue>
+export type ListingMediaType = 'image' | 'video' | '360'
+
+export type ListingMediaInput = {
+  url: string
+  media_type: ListingMediaType
+}
 
 type CloudListingDraftResponse = {
   draft?: {
@@ -54,10 +60,16 @@ export type CreateListingPayload = {
   pet_policy_code?: string
   contact_name?: string
   contact_phone?: string
+  contact_phone_secondary?: string
   contact_email?: string
   line_id?: string
+  instagram_handle?: string
   address_line1?: string
   address_line2?: string
+  road?: string
+  province_name?: string
+  district_name?: string
+  subdistrict_name?: string
   postal_code?: string
   latitude?: string
   longitude?: string
@@ -73,6 +85,7 @@ export type CreateListingPayload = {
   amenities?: string[]
   category_details?: Record<string, string | boolean | string[]>
   media_urls?: string[]
+  media_items?: ListingMediaInput[]
 }
 
 export type CreateListingResponse = {
@@ -222,12 +235,14 @@ export const publishListingDraft = async () => {
   return data
 }
 
-export const uploadListingPhotos = async (files: File[]) => {
+export const uploadListingMedia = async (files: File[], mediaType: ListingMediaType) => {
   const urls: string[] = []
+  const limit = mediaType === 'image' ? 12 : 4
 
-  for (const file of files.slice(0, 12)) {
+  for (const file of files.slice(0, limit)) {
     const formData = new FormData()
     formData.set('file', file)
+    formData.set('media_type', mediaType)
     const response = await fetch(getAuthApiUrl('listing-media'), {
       method: 'POST',
       credentials: 'include',
@@ -235,13 +250,15 @@ export const uploadListingPhotos = async (files: File[]) => {
     })
     const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string }
     if (!response.ok || !data.url) {
-      throw new Error(data.error || `อัปโหลดรูป ${file.name} ไม่สำเร็จ`)
+      throw new Error(data.error || `Unable to upload ${file.name}`)
     }
     urls.push(data.url)
   }
 
   return urls
 }
+
+export const uploadListingPhotos = (files: File[]) => uploadListingMedia(files, 'image')
 
 export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPayload => {
   const title = text(draft.listingTitle) || text(draft.placeName) || 'New property listing'
@@ -261,6 +278,9 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const spaceTypeCodes = [primarySpaceTypeCode, ...values(draft['spaceTypeCodes[]']).map(normalizeCode)].filter(
     (value, index, all) => Boolean(value) && all.indexOf(value) === index
   )
+  const photoURLs = values(draft['listingPhotoUrls[]'])
+  const videoURLs = values(draft['listingVideoUrls[]'])
+  const panoramaURLs = values(draft['listingPanoramaUrls[]'])
 
   return {
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
@@ -295,10 +315,16 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     pet_policy_code: normalizeCode(text(draft.Pets)),
     contact_name: text(draft.contactName),
     contact_phone: text(draft.contactPhone),
+    contact_phone_secondary: text(draft.contactPhoneSecondary),
     contact_email: text(draft.contactEmail),
     line_id: text(draft.lineId),
+    instagram_handle: text(draft.instagramHandle),
     address_line1: text(draft.Street),
     address_line2: [text(draft.subdistrict), text(draft.city), text(draft.state)].filter(Boolean).join(', '),
+    road: text(draft.Street),
+    province_name: text(draft.state),
+    district_name: text(draft.city),
+    subdistrict_name: text(draft.subdistrict),
     postal_code: text(draft.Postal),
     latitude: text(draft.latMapPosition),
     longitude: text(draft.lngMapPosition),
@@ -322,8 +348,15 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
       can_complete_later: true,
       discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
       selected_photo_count: text(draft.selectedPhotoCount),
+      selected_video_count: text(draft.selectedVideoCount),
+      selected_panorama_count: text(draft.selectedPanoramaCount),
     },
-    media_urls: values(draft['listingPhotoUrls[]']),
+    media_urls: photoURLs,
+    media_items: [
+      ...photoURLs.map((url) => ({ url, media_type: 'image' as const })),
+      ...videoURLs.map((url) => ({ url, media_type: 'video' as const })),
+      ...panoramaURLs.map((url) => ({ url, media_type: '360' as const })),
+    ],
   }
 }
 
