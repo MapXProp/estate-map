@@ -99,22 +99,25 @@ const discoveryChannelVisuals = {
     selected: 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600 dark:bg-emerald-950/30',
     icon: 'bg-emerald-600 text-white',
     check: 'text-emerald-700 dark:text-emerald-300',
+    focus: 'focus-visible:outline-emerald-600',
   },
   rooms: {
     Icon: BedDouble,
     selected: 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/30',
     icon: 'bg-sky-600 text-white',
     check: 'text-sky-700 dark:text-sky-300',
+    focus: 'focus-visible:outline-sky-500',
   },
   business: {
     Icon: BuildingStorefrontIcon,
     selected: 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/30',
     icon: 'bg-orange-500 text-white',
     check: 'text-orange-700 dark:text-orange-300',
+    focus: 'focus-visible:outline-orange-500',
   },
 } satisfies Record<
   DiscoveryChannelCode,
-  { Icon: React.ComponentType<{ className?: string }>; selected: string; icon: string; check: string }
+  { Icon: React.ComponentType<{ className?: string }>; selected: string; icon: string; check: string; focus: string }
 >
 
 const Page = () => {
@@ -616,6 +619,7 @@ const Page = () => {
                     compact
                     checked={selectedOffers.includes(offer.code)}
                     title={isThai ? offer.nameTh : offer.nameEn}
+                    tone={selectedChannel}
                     onClick={() => toggleOffer(offer.code)}
                   />
                 ))}
@@ -651,6 +655,7 @@ const Page = () => {
                     key={scope.code}
                     selected={selectedScope === scope.code}
                     title={isThai ? scope.nameTh : scope.nameEn}
+                    tone={selectedChannel}
                     onClick={() => setSelectedScope(scope.code)}
                   />
                 ))}
@@ -667,6 +672,7 @@ const Page = () => {
                     key={useCase.code}
                     checked={selectedUseCases.includes(useCase.code)}
                     title={isThai ? useCase.nameTh : useCase.nameEn}
+                    tone={selectedChannel}
                     onClick={() => toggleUseCase(useCase.code)}
                   />
                 ))}
@@ -808,7 +814,7 @@ const DiscoveryChannelCard = ({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`relative flex min-h-28 w-full items-center gap-4 rounded-3xl border p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 min-[744px]:min-h-44 min-[744px]:flex-col min-[744px]:items-start min-[744px]:p-5 ${
+      className={`relative flex min-h-28 w-full items-center gap-4 rounded-3xl border p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 ${visual.focus} min-[744px]:min-h-44 min-[744px]:flex-col min-[744px]:items-start min-[744px]:p-5 ${
         selected
           ? visual.selected
           : 'border-neutral-200 bg-white hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-600'
@@ -863,13 +869,19 @@ const ChoiceCard = ({
         : 'border-orange-500 bg-orange-50/75 shadow-[0_10px_24px_-20px_rgba(249,115,22,0.95)] dark:bg-orange-950/25'
   const iconStyle = tone === 'homes' ? 'bg-emerald-600' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
   const checkStyle = tone === 'homes' ? 'text-emerald-700' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
+  const focusStyle =
+    tone === 'homes'
+      ? 'focus-visible:outline-emerald-600'
+      : tone === 'rooms'
+        ? 'focus-visible:outline-sky-500'
+        : 'focus-visible:outline-orange-500'
 
   return (
     <button
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`relative flex w-full touch-manipulation select-none rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+      className={`relative flex w-full touch-manipulation select-none rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusStyle} ${
         compact
           ? 'min-h-[68px] flex-row items-center gap-2.5 px-3 py-2.5 min-[744px]:min-h-16 min-[744px]:p-3'
           : 'min-h-20 items-center gap-4 p-4'
@@ -916,34 +928,57 @@ const ToggleCard = ({
   checked,
   title,
   compact = false,
+  tone = 'business',
   onClick,
 }: {
   checked: boolean
   title: string
   compact?: boolean
+  tone?: DiscoveryChannelCode
   onClick: () => void
-}) => (
-  <button
-    type="button"
-    role="checkbox"
-    aria-checked={checked}
-    onClick={onClick}
-    className={`flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-      compact ? 'min-h-12 gap-2.5 px-3 py-2.5' : 'min-h-16 gap-3 p-4'
-    } ${
-      checked
-        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
-        : 'border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500'
-    }`}
-  >
-    <span
-      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? 'border-orange-500 bg-orange-500 text-white' : 'border-neutral-300 dark:border-neutral-600'}`}
+}) => {
+  const selectedStyle =
+    tone === 'homes'
+      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/25'
+      : tone === 'rooms'
+        ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/25'
+        : 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
+  const indicatorStyle =
+    tone === 'homes'
+      ? 'border-emerald-600 bg-emerald-600'
+      : tone === 'rooms'
+        ? 'border-sky-600 bg-sky-600'
+        : 'border-orange-500 bg-orange-500'
+  const focusStyle =
+    tone === 'homes'
+      ? 'focus-visible:outline-emerald-600'
+      : tone === 'rooms'
+        ? 'focus-visible:outline-sky-500'
+        : 'focus-visible:outline-orange-500'
+
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={onClick}
+      className={`flex w-full touch-manipulation items-center rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusStyle} ${
+        compact ? 'min-h-12 gap-2.5 px-3 py-2.5' : 'min-h-16 gap-3 p-4'
+      } ${
+        checked
+          ? selectedStyle
+          : 'border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500'
+      }`}
     >
-      {checked ? <CheckCircleIcon className="h-4 w-4" /> : null}
-    </span>
-    <span className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
-  </button>
-)
+      <span
+        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${checked ? `${indicatorStyle} text-white` : 'border-neutral-300 dark:border-neutral-600'}`}
+      >
+        {checked ? <CheckCircleIcon className="h-4 w-4" /> : null}
+      </span>
+      <span className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
+    </button>
+  )
+}
 
 const readDraftText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readDraftValues = (value: ListingDraftValue | undefined) =>
