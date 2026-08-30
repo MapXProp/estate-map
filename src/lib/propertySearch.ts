@@ -62,6 +62,7 @@ export type PropertySearchListing = {
   longitude?: number
   published_at?: string
   space_type_code: string
+  space_type_codes?: string[]
   primary_image_url: string
   event_name: string
   event_floor_label: string
@@ -141,6 +142,7 @@ export type PropertyListingDetail = {
   listing_type: string
   listing_scope: string
   space_type_code: string
+  space_type_codes?: string[]
   project_name: string
   building_name: string
   address: string

@@ -61,7 +61,8 @@ const SectionGridHasMap: FC<Props> = ({
       const fallback = listings[index % listings.length]
       const amount = listing.rent_price_monthly ?? listing.sale_price
       const eventImage = listing.primary_image_url || fallback.featuredImage
-      const isEventBooth = listing.space_type_code === 'event_booth'
+      const isEventBooth =
+        listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
       const isLand = listing.property_type_code === 'land'
       const landAreaSquareWah = isLand && listing.land_area_sqm ? Math.round(listing.land_area_sqm / 4) : 0
       return {

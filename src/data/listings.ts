@@ -1090,7 +1090,12 @@ const mixedUsePropertyTypes = new Set(['shophouse', 'home_office', 'mixed_use'])
 const commercialPropertyTypes = new Set(['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'])
 
 const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup => {
-  if (listing.space_type_code === 'event_booth' || commercialPropertyTypes.has(listing.property_type_code)) return 'commercial'
+  if (
+    listing.space_type_code === 'event_booth' ||
+    listing.space_type_codes?.includes('event_booth') ||
+    commercialPropertyTypes.has(listing.property_type_code)
+  )
+    return 'commercial'
   if (roomPropertyTypes.has(listing.property_type_code)) return 'rooms'
   if (mixedUsePropertyTypes.has(listing.property_type_code)) return 'mixed_use'
   if (listing.property_type_code === 'land') return 'land'
@@ -1102,7 +1107,7 @@ const formatListingPrice = (amount?: number, suffix = '') =>
 
 const toRealEstateListing = (listing: PropertySearchListing) => {
   const group = getListingGroup(listing)
-  const isEvent = listing.space_type_code === 'event_booth'
+  const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
   const facts = [
     listing.land_area_sqm && group === 'land' ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.` : '',

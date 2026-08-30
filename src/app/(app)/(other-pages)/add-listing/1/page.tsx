@@ -1,6 +1,7 @@
 'use client'
 
 import ListingAuthCheckpoint from '@/components/add-listing/ListingAuthCheckpoint'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   discoveryChannels,
@@ -67,9 +68,15 @@ const propertyTypeIcons = {
 } satisfies Record<PropertyTypeCode, LucideIcon>
 
 const businessSpaceTypeIcons = {
+  standalone_shop: Store,
   market_stall: Store,
   mall_kiosk: Building2,
-  standalone_shop: House,
+  mall_shop: Store,
+  food_court_counter: Store,
+  school_canteen: Store,
+  office_canteen: Store,
+  dormitory_shop: Store,
+  street_food_space: Store,
   shophouse_ground_floor: Building,
   event_booth: CalendarRange,
 } satisfies Record<(typeof primaryBusinessSpaceTypeCodes)[number], LucideIcon>
@@ -83,14 +90,6 @@ const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
   homes: 'Houses, condos, townhomes, shophouses and land',
   rooms: 'Rental rooms, apartments, dorms, flats and long-term stays',
   business: 'Shophouses, retail spaces, offices, warehouses, factories and land',
-}
-
-const businessSpaceTypeDescriptionsEn: Record<(typeof primaryBusinessSpaceTypeCodes)[number], string> = {
-  market_stall: 'A permanent stall in a market or community market',
-  mall_kiosk: 'A kiosk, counter or common-area retail space in a mall',
-  standalone_shop: 'A standalone shop with its own entrance and space',
-  shophouse_ground_floor: 'A ground-floor shop in a shophouse or commercial building',
-  event_booth: 'A booth available for a specific event or booking period',
 }
 
 const discoveryChannelVisuals = {
@@ -126,7 +125,7 @@ const Page = () => {
   const [selectedScope, setSelectedScope] = useState<ListingScopeCode>('whole_property')
   const [selectedUseCases, setSelectedUseCases] = useState<UseCaseCode[]>(['residential'])
   const [selectedOffers, setSelectedOffers] = useState<OfferTypeCode[]>(['rent'])
-  const [businessSpaceType, setBusinessSpaceType] = useState<BusinessSpaceTypeCode | ''>('')
+  const [businessSpaceTypes, setBusinessSpaceTypes] = useState<BusinessSpaceTypeCode[]>([])
   const [title, setTitle] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
@@ -137,12 +136,15 @@ const Page = () => {
   const propertyType = getPropertyType(selectedPropertyType) ?? getPropertyType('detached_house')!
   const selectedGroup = propertyType.groupCode
   const propertyTypesForChannel = useMemo(() => getPropertyTypesForDiscoveryChannel(selectedChannel), [selectedChannel])
+  const businessPropertyTypes = propertyTypesForChannel.filter((item) => item.code !== 'retail_space')
+  const primaryBusinessSpaceType = businessSpaceTypes[0] ?? ''
+  const hasEventBooth = businessSpaceTypes.includes('event_booth')
   const availableScopes = listingScopes.filter((scope) => propertyType.allowedScopes.includes(scope.code))
   const availableUseCases = useCases.filter((useCase) => propertyType.allowedUseCases.includes(useCase.code))
   const availableOffers = offerTypes.filter(
     (offer) =>
       propertyType.allowedOffers.includes(offer.code) &&
-      (businessSpaceType === 'event_booth' ? offer.code === 'event_booking' : offer.code !== 'event_booking')
+      (hasEventBooth ? offer.code === 'event_booking' : offer.code !== 'event_booking')
   )
 
   useEffect(() => {
@@ -176,8 +178,15 @@ const Page = () => {
       setSelectedOffers(
         nextChannel === 'rooms' ? ['rent'] : savedOffers.length ? savedOffers : offersFromLegacy(draft.listing_type)
       )
-      const savedBusinessSpaceType = getBusinessSpaceType(readDraftText(draft.space_type_code))
-      setBusinessSpaceType(savedBusinessSpaceType?.code ?? '')
+      const savedPrimarySpaceType = getBusinessSpaceType(readDraftText(draft.space_type_code))?.code
+      const savedBusinessSpaceTypes = [
+        savedPrimarySpaceType,
+        ...readDraftValues(draft['spaceTypeCodes[]']).map((code) => getBusinessSpaceType(code)?.code),
+      ]
+        .filter((code): code is BusinessSpaceTypeCode => Boolean(code))
+        .filter((code, index, all) => all.indexOf(code) === index)
+        .slice(0, 3)
+      setBusinessSpaceTypes(savedBusinessSpaceTypes)
       setTitle(readDraftText(draft.listingTitle))
       setPlaceName(readDraftText(draft.placeName))
       setDescription(readDraftText(draft.listingDescription))
@@ -206,7 +215,7 @@ const Page = () => {
           ? ['rent']
           : [nextPropertyType.allowedOffers[0]]
     )
-    setBusinessSpaceType('')
+    setBusinessSpaceTypes([])
     setError('')
   }
 
@@ -223,7 +232,45 @@ const Page = () => {
       if (selectedChannel === 'rooms') return ['rent']
       return nextPropertyType.allowedOffers.includes('rent') ? ['rent'] : [nextPropertyType.allowedOffers[0]]
     })
-    setBusinessSpaceType('')
+    setBusinessSpaceTypes([])
+    setError('')
+  }
+
+  const toggleBusinessSpaceType = (spaceTypeCode: BusinessSpaceTypeCode) => {
+    const retailSpace = getPropertyType('retail_space')
+    if (!retailSpace) return
+
+    const alreadySelected = businessSpaceTypes.includes(spaceTypeCode)
+    if (!alreadySelected && businessSpaceTypes.length >= 3) {
+      setError(isThai ? 'เลือกได้สูงสุด 3 ลักษณะพื้นที่' : 'Choose up to 3 space types.')
+      return
+    }
+
+    const nextSpaceTypes = alreadySelected
+      ? businessSpaceTypes.filter((code) => code !== spaceTypeCode)
+      : [...businessSpaceTypes, spaceTypeCode]
+    const hasFoodSpace = nextSpaceTypes.some((code) =>
+      ['food_court_counter', 'street_food_space', 'school_canteen', 'office_canteen'].includes(code)
+    )
+    const nextHasEventBooth = nextSpaceTypes.includes('event_booth')
+
+    setSelectedPropertyType(retailSpace.code)
+    setSelectedScope(retailSpace.defaultScope)
+    setSelectedUseCases((current) => {
+      const compatible = current.filter((code) => retailSpace.allowedUseCases.includes(code))
+      const withRetail: UseCaseCode[] = compatible.includes('retail') ? compatible : ['retail', ...compatible]
+      if (hasFoodSpace && !withRetail.includes('food_service')) return [...withRetail, 'food_service']
+      if (!hasFoodSpace) return withRetail.filter((code) => code !== 'food_service')
+      return withRetail
+    })
+    setSelectedOffers((current) => {
+      if (nextHasEventBooth) return ['event_booking']
+      const compatible = current.filter(
+        (offer) => retailSpace.allowedOffers.includes(offer) && offer !== 'event_booking'
+      )
+      return compatible.length ? compatible : ['rent']
+    })
+    setBusinessSpaceTypes(nextSpaceTypes)
     setError('')
   }
 
@@ -242,7 +289,7 @@ const Page = () => {
   }
 
   const handleSubmitForm = async (formData: FormData) => {
-    if (propertyType.supportsBusinessSpaceType && !businessSpaceType) {
+    if (propertyType.supportsBusinessSpaceType && !businessSpaceTypes.length) {
       setError(isThai ? 'กรุณาเลือกรูปแบบพื้นที่ค้าขาย' : 'Choose a business space type.')
       return
     }
@@ -295,7 +342,10 @@ const Page = () => {
         <input type="hidden" name="discovery_channel_code" value={selectedChannel} />
         <input type="hidden" name="property_type_code" value={selectedPropertyType} />
         <input type="hidden" name="listing_scope" value={selectedScope} />
-        <input type="hidden" name="space_type_code" value={businessSpaceType} />
+        <input type="hidden" name="space_type_code" value={primaryBusinessSpaceType} />
+        {businessSpaceTypes.map((code) => (
+          <input key={code} type="hidden" name="spaceTypeCodes[]" value={code} />
+        ))}
         <input type="hidden" name="usage_type" value={mapUseCasesToLegacyUsage(selectedUseCases)} />
         <input type="hidden" name="listing_type" value={offersToLegacyListingType(selectedOffers)} />
         {selectedUseCases.map((code) => (
@@ -320,62 +370,120 @@ const Page = () => {
           </div>
         </WizardSection>
 
-        <WizardSection number="2" title={isThai ? 'เลือกประเภทที่ต้องการลง' : 'Choose a property type'}>
-          <div className="grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
-            {propertyTypesForChannel.map((item) => {
-              const Icon = propertyTypeIcons[item.code]
-              return (
-                <ChoiceCard
-                  key={item.code}
-                  compact
-                  selected={selectedPropertyType === item.code}
-                  title={isThai ? item.nameTh : item.nameEn}
-                  icon={<Icon className="size-5" />}
-                  tone={selectedChannel}
-                  onClick={() => selectPropertyType(item.code)}
-                />
-              )
-            })}
-          </div>
+        <WizardSection
+          number="2"
+          title={isThai ? 'เลือกประเภทหลักที่ตรงที่สุด' : 'Choose the best matching property type'}
+          description={
+            selectedChannel === 'business'
+              ? isThai
+                ? 'อาคารเลือก 1 ประเภท ส่วนพื้นที่ค้าขายเลือกได้สูงสุด 3 ลักษณะที่ซ้อนกัน'
+                : 'Choose one building type, or up to 3 overlapping retail space types.'
+              : isThai
+                ? 'เลือก 1 ประเภทหลักเพื่อให้ระบบแสดงช่องกรอกและตัวกรองที่ถูกต้อง'
+                : 'Choose one primary type so we can show the right fields and search filters.'
+          }
+        >
+          {selectedChannel === 'business' ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-sarabun text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                  {isThai ? 'อาคารและที่ดิน' : 'Buildings and land'}
+                </h3>
+                <div className="mt-3 grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
+                  {businessPropertyTypes.map((item) => {
+                    const Icon = propertyTypeIcons[item.code]
+                    return (
+                      <ChoiceCard
+                        key={item.code}
+                        compact
+                        selected={selectedPropertyType === item.code}
+                        title={isThai ? item.nameTh : item.nameEn}
+                        icon={<Icon className="size-5" />}
+                        tone="business"
+                        onClick={() => selectPropertyType(item.code)}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
 
-          {propertyType.supportsBusinessSpaceType ? (
-            <div className="mt-5 rounded-3xl border border-orange-200/80 bg-orange-50/60 p-3 min-[744px]:mt-6 min-[744px]:p-5 dark:border-orange-900/60 dark:bg-orange-950/20">
-              <h3 className="px-1 font-sarabun text-base font-semibold text-neutral-950 dark:text-white">
-                {isThai ? 'พื้นที่ค้าขายของคุณเป็นแบบไหน' : 'What type of business space is this?'}
-              </h3>
-              <div className="mt-3 grid gap-3 min-[1100px]:grid-cols-3 sm:grid-cols-2">
-                {primaryBusinessSpaceTypes.map((item) => {
-                  const Icon = businessSpaceTypeIcons[item.code]
-                  return (
-                    <BusinessSpaceTypeCard
-                      key={item.code}
-                      selected={businessSpaceType === item.code}
-                      title={isThai ? item.nameTh : item.nameEn}
-                      description={isThai ? item.description : businessSpaceTypeDescriptionsEn[item.code]}
-                      icon={<Icon className="size-5" />}
-                      onClick={() => {
-                        setBusinessSpaceType(item.code)
-                        setSelectedOffers((current) =>
-                          item.code === 'event_booth'
-                            ? ['event_booking']
-                            : current.includes('event_booking')
-                              ? ['rent']
-                              : current
-                        )
-                        setError('')
-                      }}
-                    />
-                  )
-                })}
+              <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
+                <h3 className="font-sarabun text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                  {isThai ? 'ร้านค้า ล็อก และพื้นที่ชั่วคราว' : 'Retail, stalls and temporary spaces'}
+                </h3>
+                <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isThai
+                    ? 'เลือกได้สูงสุด 3 รายการตามสภาพจริง รายการแรกจะเป็นประเภทหลัก'
+                    : 'Choose up to 3 matching types. Your first choice is the primary type.'}
+                </p>
+                <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-orange-50 px-3 py-2 font-sarabun text-xs text-orange-800 dark:bg-orange-950/25 dark:text-orange-200">
+                  <span>
+                    {businessSpaceTypes.length
+                      ? isThai
+                        ? `เลือกแล้ว ${businessSpaceTypes.length} จาก 3 รายการ`
+                        : `${businessSpaceTypes.length} of 3 selected`
+                      : isThai
+                        ? 'ยังไม่ได้เลือกลักษณะพื้นที่'
+                        : 'No space type selected yet'}
+                  </span>
+                  {primaryBusinessSpaceType ? (
+                    <span className="shrink-0 rounded-full bg-white px-2 py-1 font-semibold text-orange-700 shadow-sm dark:bg-neutral-900 dark:text-orange-300">
+                      {isThai ? 'รายการแรก = หลัก' : 'First = primary'}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
+                  {primaryBusinessSpaceTypes.map((item) => {
+                    const Icon = businessSpaceTypeIcons[item.code]
+                    const selectionIndex = businessSpaceTypes.indexOf(item.code)
+                    return (
+                      <ChoiceCard
+                        key={item.code}
+                        compact
+                        selected={selectedPropertyType === 'retail_space' && selectionIndex >= 0}
+                        selectionBadge={
+                          selectionIndex === 0
+                            ? isThai
+                              ? 'หลัก'
+                              : 'Primary'
+                            : selectionIndex > 0
+                              ? String(selectionIndex + 1)
+                              : undefined
+                        }
+                        title={isThai ? item.nameTh : item.nameEn}
+                        icon={<Icon className="size-5" />}
+                        tone="business"
+                        onClick={() => toggleBusinessSpaceType(item.code)}
+                      />
+                    )
+                  })}
+                </div>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
+              {propertyTypesForChannel.map((item) => {
+                const Icon = propertyTypeIcons[item.code]
+                return (
+                  <ChoiceCard
+                    key={item.code}
+                    compact
+                    selected={selectedPropertyType === item.code}
+                    title={isThai ? item.nameTh : item.nameEn}
+                    icon={<Icon className="size-5" />}
+                    tone={selectedChannel}
+                    onClick={() => selectPropertyType(item.code)}
+                  />
+                )
+              })}
+            </div>
+          )}
         </WizardSection>
 
         <WizardSection
           number="3"
           title={
-            selectedChannel === 'rooms' || businessSpaceType === 'event_booth'
+            selectedChannel === 'rooms' || hasEventBooth
               ? isThai
                 ? 'รูปแบบประกาศ'
                 : 'Listing option'
@@ -384,50 +492,58 @@ const Page = () => {
                 : 'For sale or rent'
           }
         >
-          {businessSpaceType === 'event_booth' ? (
-            <div className="flex min-h-20 items-center gap-4 rounded-2xl bg-orange-50 p-4 ring-1 ring-orange-200 ring-inset dark:bg-orange-950/30 dark:ring-orange-800">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white">
-                <CalendarRange className="size-6" />
+          {hasEventBooth ? (
+            <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-orange-50 p-3 ring-1 ring-orange-200 ring-inset dark:bg-orange-950/30 dark:ring-orange-800">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white">
+                <CalendarRange className="size-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-sarabun font-semibold text-orange-950 dark:text-orange-100">
+                <p className="font-sarabun text-sm font-semibold text-orange-950 dark:text-orange-100">
                   {isThai ? 'จองพื้นที่ตามรอบงาน' : 'Book by event period'}
                 </p>
-                <p className="mt-0.5 font-sarabun text-sm text-orange-700/80 dark:text-orange-300">
+                <p className="mt-0.5 font-sarabun text-xs leading-5 text-orange-700/80 dark:text-orange-300">
                   {isThai
                     ? 'ระบุวันจัดงาน รอบที่เปิดรับ และราคาของแต่ละรอบเพิ่มเติมได้'
                     : 'Add event dates, available rounds and the price for each period.'}
                 </p>
               </div>
-              <CheckCircleIcon className="size-6 shrink-0 text-orange-600" />
+              <CheckCircleIcon className="size-5 shrink-0 text-orange-600" />
             </div>
           ) : selectedChannel === 'rooms' ? (
-            <div className="flex min-h-20 items-center gap-4 rounded-2xl bg-sky-50 p-4 ring-1 ring-sky-200 ring-inset dark:bg-sky-950/30 dark:ring-sky-800">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
-                <BedDouble className="size-6" />
+            <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-200 ring-inset dark:bg-sky-950/30 dark:ring-sky-800">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
+                <BedDouble className="size-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-sarabun font-semibold text-sky-950 dark:text-sky-100">
+                <p className="font-sarabun text-sm font-semibold text-sky-950 dark:text-sky-100">
                   {isThai ? 'ให้เช่ารายเดือน' : 'Monthly rental'}
                 </p>
-                <p className="mt-0.5 font-sarabun text-sm text-sky-700/80 dark:text-sky-300">
+                <p className="mt-0.5 font-sarabun text-xs leading-5 text-sky-700/80 dark:text-sky-300">
                   {isThai
                     ? 'หมวดนี้จะแสดงกับผู้ที่กำลังหาห้องเช่าและที่พักระยะยาว'
                     : 'This category is shown to people looking for rooms and long-term stays.'}
                 </p>
               </div>
-              <CheckCircleIcon className="size-6 shrink-0 text-sky-600" />
+              <CheckCircleIcon className="size-5 shrink-0 text-sky-600" />
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {availableOffers.map((offer) => (
-                <ToggleCard
-                  key={offer.code}
-                  checked={selectedOffers.includes(offer.code)}
-                  title={isThai ? offer.nameTh : offer.nameEn}
-                  onClick={() => toggleOffer(offer.code)}
-                />
-              ))}
+            <div>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
+                {availableOffers.map((offer) => (
+                  <ToggleCard
+                    key={offer.code}
+                    compact
+                    checked={selectedOffers.includes(offer.code)}
+                    title={isThai ? offer.nameTh : offer.nameEn}
+                    onClick={() => toggleOffer(offer.code)}
+                  />
+                ))}
+              </div>
+              {availableOffers.length > 1 ? (
+                <p className="mt-2.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+                  {isThai ? 'เลือกได้มากกว่า 1 รูปแบบ' : 'You can choose more than one option.'}
+                </p>
+              ) : null}
             </div>
           )}
         </WizardSection>
@@ -478,8 +594,16 @@ const Page = () => {
           </div>
         </details>
 
-        <WizardSection number="4" title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}>
-          <div className="grid gap-5">
+        <WizardSection
+          number="4"
+          title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}
+          description={
+            isThai
+              ? 'เขียนข้อมูลสั้น กระชับ และเจาะจง รายละเอียดอื่นเพิ่มได้ในขั้นถัดไป'
+              : 'Keep it clear and specific. You can add more details in the next step.'
+          }
+        >
+          <div className="grid gap-6 [&_[data-slot=label]]:font-sarabun [&_[data-slot=label]]:text-base">
             <FormItem label={isThai ? 'หัวข้อประกาศ' : 'Listing title'}>
               <Input
                 name="listingTitle"
@@ -492,7 +616,7 @@ const Page = () => {
                 }
                 maxLength={160}
                 required
-                className="h-13 rounded-2xl border-neutral-200 bg-neutral-50 px-4 text-[15px] shadow-none dark:bg-neutral-950"
+                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none sm:text-base dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{title.length}/160</p>
             </FormItem>
@@ -512,7 +636,7 @@ const Page = () => {
                     : 'e.g. Ideo Sukhumvit 93, ABC Building, XYZ Market'
                 }
                 maxLength={160}
-                className="h-13 rounded-2xl border-neutral-200 bg-neutral-50 px-4 text-[15px] shadow-none dark:bg-neutral-950"
+                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none sm:text-base dark:bg-neutral-950"
               />
             </FormItem>
 
@@ -527,7 +651,7 @@ const Page = () => {
                     : 'Describe the property highlights, transport access and important terms...'
                 }
                 maxLength={1000}
-                className="min-h-52 rounded-2xl border-neutral-200 bg-neutral-50 px-4 py-3 text-[15px] shadow-none min-[744px]:min-h-60 dark:bg-neutral-950"
+                className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none sm:text-base min-[744px]:min-h-72 dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{description.length}/1000</p>
             </FormItem>
@@ -553,13 +677,30 @@ const Page = () => {
   )
 }
 
-const WizardSection = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
+const WizardSection = ({
+  number,
+  title,
+  description,
+  children,
+}: {
+  number: string
+  title: string
+  description?: string
+  children: React.ReactNode
+}) => (
   <section className="overflow-hidden rounded-[28px] border border-neutral-200/80 bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.32)] dark:border-neutral-800 dark:bg-neutral-900">
     <div className="flex items-start gap-3 border-b border-neutral-100 bg-neutral-50/80 px-4 py-4 min-[744px]:gap-4 min-[744px]:px-7 min-[744px]:py-5 dark:border-neutral-800 dark:bg-neutral-900">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">
         {number}
       </span>
-      <h2 className="self-center font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
+      <span className="min-w-0 self-center">
+        <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
+        {description ? (
+          <span className="mt-0.5 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+            {description}
+          </span>
+        ) : null}
+      </span>
     </div>
     <div className="p-3 min-[744px]:p-7">{children}</div>
   </section>
@@ -601,7 +742,7 @@ const DiscoveryChannelCard = ({
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-sarabun text-base leading-6 font-semibold text-neutral-950 dark:text-white">
-          {title}
+          <PropertyCategoryLabel label={title} ampersandClassName="text-neutral-400/60" />
         </span>
         <span className="mt-1 block font-sarabun text-sm leading-5 text-neutral-500 dark:text-neutral-400">
           {description}
@@ -622,6 +763,7 @@ const ChoiceCard = ({
   icon,
   tone,
   compact = false,
+  selectionBadge,
   onClick,
 }: {
   selected: boolean
@@ -629,6 +771,7 @@ const ChoiceCard = ({
   icon?: React.ReactNode
   tone?: DiscoveryChannelCode
   compact?: boolean
+  selectionBadge?: string
   onClick: () => void
 }) => {
   const selectedStyle =
@@ -647,7 +790,7 @@ const ChoiceCard = ({
       onClick={onClick}
       className={`relative flex w-full rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
         compact
-          ? 'min-h-[5.25rem] flex-col items-start gap-2.5 p-3 min-[744px]:min-h-[4.5rem] min-[744px]:flex-row min-[744px]:items-center'
+          ? 'min-h-16 flex-row items-center gap-2.5 p-3'
           : 'min-h-20 items-center gap-4 p-4'
       } ${
         selected
@@ -666,7 +809,9 @@ const ChoiceCard = ({
           {icon}
         </span>
       ) : null}
-      <span className={`min-w-0 flex-1 ${compact ? 'pe-5 min-[744px]:pe-4' : ''}`}>
+      <span
+        className={`min-w-0 flex-1 ${compact ? (selectionBadge ? 'pe-14' : 'pe-5 min-[744px]:pe-4') : ''}`}
+      >
         <span
           className={`block font-sarabun font-semibold text-neutral-900 dark:text-neutral-50 ${
             compact ? 'text-sm leading-5' : 'text-base'
@@ -675,22 +820,36 @@ const ChoiceCard = ({
           {title}
         </span>
       </span>
-      {selected ? (
-        <CheckCircleIcon
-          className={`${compact ? 'absolute top-3 right-3 size-5' : 'h-6 w-6 shrink-0'} ${checkStyle}`}
-        />
+      {selected && selectionBadge ? (
+        <span className="absolute top-2 right-2 rounded-full bg-orange-600 px-2 py-0.5 font-sarabun text-[10px] leading-4 font-semibold text-white shadow-sm">
+          {selectionBadge}
+        </span>
+      ) : selected ? (
+        <CheckCircleIcon className={`${compact ? 'absolute top-3 right-3 size-5' : 'h-6 w-6 shrink-0'} ${checkStyle}`} />
       ) : null}
     </button>
   )
 }
 
-const ToggleCard = ({ checked, title, onClick }: { checked: boolean; title: string; onClick: () => void }) => (
+const ToggleCard = ({
+  checked,
+  title,
+  compact = false,
+  onClick,
+}: {
+  checked: boolean
+  title: string
+  compact?: boolean
+  onClick: () => void
+}) => (
   <button
     type="button"
     role="checkbox"
     aria-checked={checked}
     onClick={onClick}
-    className={`flex min-h-16 w-full items-center gap-3 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+    className={`flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+      compact ? 'min-h-12 gap-2.5 px-3 py-2.5' : 'min-h-16 gap-3 p-4'
+    } ${
       checked
         ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
         : 'border-neutral-200 bg-white hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500'
@@ -702,48 +861,6 @@ const ToggleCard = ({ checked, title, onClick }: { checked: boolean; title: stri
       {checked ? <CheckCircleIcon className="h-4 w-4" /> : null}
     </span>
     <span className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-50">{title}</span>
-  </button>
-)
-
-const BusinessSpaceTypeCard = ({
-  selected,
-  title,
-  description,
-  icon,
-  onClick,
-}: {
-  selected: boolean
-  title: string
-  description: string
-  icon: React.ReactNode
-  onClick: () => void
-}) => (
-  <button
-    type="button"
-    aria-pressed={selected}
-    onClick={onClick}
-    className={`relative flex min-h-24 w-full items-start gap-3 rounded-2xl border p-4 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-      selected
-        ? 'border-orange-500 bg-white shadow-sm ring-1 ring-orange-500 dark:bg-orange-950/40'
-        : 'border-orange-100 bg-white/80 hover:border-orange-300 hover:bg-white dark:border-orange-900/60 dark:bg-neutral-900/80 dark:hover:border-orange-700'
-    }`}
-  >
-    <span
-      className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-        selected ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
-      }`}
-    >
-      {icon}
-    </span>
-    <span className="min-w-0 flex-1">
-      <span className="block font-sarabun text-sm leading-5 font-semibold text-neutral-950 dark:text-white">
-        {title}
-      </span>
-      <span className="mt-1 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-        {description}
-      </span>
-    </span>
-    {selected ? <CheckCircleIcon className="absolute top-3 right-3 size-5 text-orange-600" /> : null}
   </button>
 )
 

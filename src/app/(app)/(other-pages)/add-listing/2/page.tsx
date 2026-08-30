@@ -52,7 +52,10 @@ const Page = () => {
   const propertyGroup = readText(draft?.property_group_code) || 'residential'
   const discoveryChannel = readText(draft?.discovery_channel_code) || 'homes'
   const propertyType = getPropertyType(readText(draft?.property_type_code))
-  const businessSpaceType = getBusinessSpaceType(readText(draft?.space_type_code))
+  const businessSpaceTypes = [readText(draft?.space_type_code), ...readValues(draft?.['spaceTypeCodes[]'])]
+    .filter((code, index, all) => Boolean(code) && all.indexOf(code) === index)
+    .map((code) => getBusinessSpaceType(code))
+    .filter((item): item is NonNullable<ReturnType<typeof getBusinessSpaceType>> => Boolean(item))
   const selectedAmenities = useMemo(() => readValues(draft?.['amenities[]']), [draft])
   const showsRooms = propertyGroup === 'residential' || propertyGroup === 'mixed_use'
   const isLand = propertyGroup === 'land'
@@ -125,7 +128,7 @@ const Page = () => {
                   ? getDiscoveryChannel(discoveryChannel)?.nameTh || discoveryChannel
                   : getDiscoveryChannel(discoveryChannel)?.nameEn || discoveryChannel,
                 isThai ? propertyType?.nameTh : propertyType?.nameEn,
-                isThai ? businessSpaceType?.nameTh : businessSpaceType?.nameEn,
+                businessSpaceTypes.map((item) => (isThai ? item.nameTh : item.nameEn)).join(', '),
               ]
                 .filter(Boolean)
                 .join(' · ')}

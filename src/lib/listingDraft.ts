@@ -63,6 +63,7 @@ export type CreateListingPayload = {
   longitude?: string
   business_type_code?: string
   space_type_code?: string
+  space_type_codes?: string[]
   target_tenant_type?: string
   price_unit?: string
   key_money_amount?: string
@@ -256,6 +257,10 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     ...values(draft['allowedBusinessTypes[]']),
     ...useCaseCodes.filter((code) => code !== 'residential'),
   ].filter((value, index, all) => all.indexOf(value) === index)
+  const primarySpaceTypeCode = normalizeCode(text(draft.space_type_code))
+  const spaceTypeCodes = [primarySpaceTypeCode, ...values(draft['spaceTypeCodes[]']).map(normalizeCode)].filter(
+    (value, index, all) => Boolean(value) && all.indexOf(value) === index
+  )
 
   return {
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
@@ -298,7 +303,8 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     latitude: text(draft.latMapPosition),
     longitude: text(draft.lngMapPosition),
     business_type_code: normalizeCode(text(draft.business_type_code)),
-    space_type_code: normalizeCode(text(draft.space_type_code)),
+    space_type_code: spaceTypeCodes[0] || '',
+    space_type_codes: spaceTypeCodes,
     price_unit:
       normalizeCode(text(draft.price_unit)) ||
       (listingType === 'event_booking' ? 'event_round' : listingType.includes('rent') ? 'month' : ''),
@@ -330,10 +336,9 @@ export const getListingDraftSummary = (locale: 'th' | 'en' = 'th') => {
     payload,
     discoveryChannel: discoveryChannelLabel(payload.discovery_channel_code, locale),
     propertyType: propertyTypeLabel(payload.property_type_code, locale),
-    businessSpaceType:
-      (locale === 'th'
-        ? getBusinessSpaceType(payload.space_type_code || '')?.nameTh
-        : getBusinessSpaceType(payload.space_type_code || '')?.nameEn) || '',
+    businessSpaceType: (payload.space_type_codes || [])
+      .map((code) => (locale === 'th' ? getBusinessSpaceType(code)?.nameTh : getBusinessSpaceType(code)?.nameEn) || code)
+      .join(', '),
     propertyGroup: propertyGroupLabel(payload.property_group_code, locale),
     listingScope: listingScopeLabel(payload.listing_scope, locale),
     listingType: offerTypeLabels(payload.offer_types, payload.listing_type, locale),

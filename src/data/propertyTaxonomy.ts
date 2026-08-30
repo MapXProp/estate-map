@@ -451,7 +451,7 @@ export const businessSpaceTypes = [
   },
   {
     code: 'standalone_shop',
-    nameTh: 'ร้านค้า Standalone',
+    nameTh: 'ร้านค้า / พื้นที่หน้าร้าน',
     nameEn: 'Standalone shop',
     description: 'ร้านเดี่ยวที่มีพื้นที่และทางเข้าของตัวเอง',
   },
@@ -506,9 +506,15 @@ export const businessSpaceTypes = [
 ] as const
 
 export const primaryBusinessSpaceTypeCodes = [
+  'standalone_shop',
   'market_stall',
   'mall_kiosk',
-  'standalone_shop',
+  'mall_shop',
+  'food_court_counter',
+  'school_canteen',
+  'office_canteen',
+  'dormitory_shop',
+  'street_food_space',
   'shophouse_ground_floor',
   'event_booth',
 ] as const
