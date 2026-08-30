@@ -47,7 +47,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         className="pointer-events-none absolute top-80 -left-40 size-96 rounded-full bg-emerald-100/45 blur-3xl dark:bg-emerald-950/15"
       />
 
-      <div className="relative mx-auto w-full max-w-[1440px] px-2 pt-4 pb-28 min-[744px]:px-8 sm:pt-10 lg:pb-32 xl:px-10">
+      <div className="relative mx-auto w-full max-w-[1440px] px-2 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
         <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
           <SellerGuide />
 
@@ -220,7 +220,7 @@ const Pagination = ({ pathname }: { pathname: string }) => {
 
   return (
     <div
-      className={`sticky bottom-2 z-20 mt-5 grid items-center gap-2.5 rounded-[22px] border border-neutral-200/80 bg-white/95 p-2.5 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.45)] backdrop-blur-xl min-[744px]:static min-[744px]:mt-8 min-[744px]:flex min-[744px]:border-0 min-[744px]:bg-transparent min-[744px]:p-0 min-[744px]:shadow-none dark:border-neutral-800 dark:bg-neutral-900/95 min-[744px]:dark:bg-transparent ${
+      className={`mt-6 grid items-center gap-2.5 rounded-[22px] border border-neutral-200/80 bg-white p-2.5 shadow-sm min-[744px]:mt-8 min-[744px]:flex min-[744px]:border-0 min-[744px]:bg-transparent min-[744px]:p-0 min-[744px]:shadow-none dark:border-neutral-800 dark:bg-neutral-900 min-[744px]:dark:bg-transparent ${
         index === 1
           ? 'grid-cols-1 min-[744px]:justify-end'
           : 'grid-cols-[auto_minmax(0,1fr)] min-[744px]:justify-between'
