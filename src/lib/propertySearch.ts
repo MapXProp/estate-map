@@ -46,6 +46,7 @@ export type PropertySearchListing = {
   title: string
   description: string
   property_type_code: string
+  accommodation_model: string
   listing_type: string
   project_name: string
   address: string
@@ -138,6 +139,7 @@ export type PropertyListingDetail = {
   title: string
   description: string
   property_type_code: string
+  accommodation_model: string
   usage_type: string
   listing_type: string
   listing_scope: string

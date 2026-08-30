@@ -17,6 +17,7 @@ import {
   primaryBusinessSpaceTypeCodes,
   useCases,
   type BusinessSpaceTypeCode,
+  type AccommodationModelCode,
   type DiscoveryChannelCode,
   type ListingScopeCode,
   type OfferTypeCode,
@@ -88,7 +89,7 @@ const primaryBusinessSpaceTypes = primaryBusinessSpaceTypeCodes.flatMap((code) =
 
 const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
   homes: 'Houses, condos, townhomes, shophouses and land',
-  rooms: 'Rental rooms, apartments, dorms, flats and long-term stays',
+  rooms: 'Rooms in shared properties, apartments, dorms, condos and long-term stays',
   business: 'Shophouses, retail spaces, offices, warehouses, factories and land',
 }
 
@@ -126,6 +127,7 @@ const Page = () => {
   const [selectedUseCases, setSelectedUseCases] = useState<UseCaseCode[]>(['residential'])
   const [selectedOffers, setSelectedOffers] = useState<OfferTypeCode[]>(['rent'])
   const [businessSpaceTypes, setBusinessSpaceTypes] = useState<BusinessSpaceTypeCode[]>([])
+  const [accommodationModel, setAccommodationModel] = useState<AccommodationModelCode>('standard')
   const [title, setTitle] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
@@ -152,7 +154,8 @@ const Page = () => {
 
     const frame = requestAnimationFrame(() => {
       const draft = getListingDraft()
-      const nextPropertyTypeCode = normalizeLegacyPropertyType(readDraftText(draft.property_type_code))
+      const savedPropertyTypeCode = readDraftText(draft.property_type_code)
+      const nextPropertyTypeCode = normalizeLegacyPropertyType(savedPropertyTypeCode)
       const nextPropertyType = getPropertyType(nextPropertyTypeCode) ?? getPropertyType('detached_house')!
       const savedUseCases = readDraftValues(draft['useCaseCodes[]']).filter((code): code is UseCaseCode =>
         nextPropertyType.allowedUseCases.includes(code as UseCaseCode)
@@ -169,6 +172,13 @@ const Page = () => {
 
       setSelectedChannel(nextChannel)
       setSelectedPropertyType(nextPropertyType.code)
+      const savedAccommodationModel = readDraftText(draft.accommodation_model)
+      setAccommodationModel(
+        nextPropertyType.code === 'apartment' &&
+          (savedPropertyTypeCode === 'serviced_apartment' || savedAccommodationModel === 'serviced')
+          ? 'serviced'
+          : 'standard'
+      )
       setSelectedScope(nextPropertyType.allowedScopes.includes(savedScope) ? savedScope : nextPropertyType.defaultScope)
       setSelectedUseCases(
         savedUseCases.length
@@ -216,6 +226,7 @@ const Page = () => {
           : [nextPropertyType.allowedOffers[0]]
     )
     setBusinessSpaceTypes([])
+    setAccommodationModel('standard')
     setError('')
   }
 
@@ -233,6 +244,7 @@ const Page = () => {
       return nextPropertyType.allowedOffers.includes('rent') ? ['rent'] : [nextPropertyType.allowedOffers[0]]
     })
     setBusinessSpaceTypes([])
+    setAccommodationModel('standard')
     setError('')
   }
 
@@ -305,6 +317,7 @@ const Page = () => {
     formData.set('property_group_code', selectedGroup)
     formData.set('discovery_channel_code', selectedChannel)
     formData.set('property_type_code', selectedPropertyType)
+    formData.set('accommodation_model', selectedPropertyType === 'apartment' ? accommodationModel : '')
     formData.set('listing_scope', selectedScope)
     const effectiveUseCases = selectedUseCases.length ? selectedUseCases : propertyType.defaultUseCases
     formData.delete('useCaseCodes[]')
@@ -341,6 +354,11 @@ const Page = () => {
         <input type="hidden" name="property_group_code" value={selectedGroup} />
         <input type="hidden" name="discovery_channel_code" value={selectedChannel} />
         <input type="hidden" name="property_type_code" value={selectedPropertyType} />
+        <input
+          type="hidden"
+          name="accommodation_model"
+          value={selectedPropertyType === 'apartment' ? accommodationModel : ''}
+        />
         <input type="hidden" name="listing_scope" value={selectedScope} />
         <input type="hidden" name="space_type_code" value={primaryBusinessSpaceType} />
         {businessSpaceTypes.map((code) => (
@@ -416,7 +434,7 @@ const Page = () => {
                     ? 'เลือกได้สูงสุด 2 รายการตามสภาพจริง รายการแรกจะเป็นประเภทหลัก'
                     : 'Choose up to 2 matching types. Your first choice is the primary type.'}
                 </p>
-                <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-orange-50 px-3 py-2 font-sarabun text-xs text-orange-800 dark:bg-orange-950/25 dark:text-orange-200">
+                <div className="mt-3 flex min-h-9 items-center justify-between gap-2 rounded-xl bg-orange-50/70 px-2.5 py-1.5 font-sarabun text-xs text-orange-800 dark:bg-orange-950/25 dark:text-orange-200">
                   <span>
                     {businessSpaceTypes.length
                       ? isThai
@@ -427,12 +445,12 @@ const Page = () => {
                         : 'No space type selected yet'}
                   </span>
                   {primaryBusinessSpaceType ? (
-                    <span className="shrink-0 rounded-full bg-white px-2 py-1 font-semibold text-orange-700 shadow-sm dark:bg-neutral-900 dark:text-orange-300">
+                    <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-orange-700 shadow-sm dark:bg-neutral-900 dark:text-orange-300">
                       {isThai ? 'รายการแรก = หลัก' : 'First = primary'}
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
+                <div className="mt-3 grid grid-cols-2 gap-2 min-[744px]:grid-cols-3 min-[744px]:gap-2.5">
                   {primaryBusinessSpaceTypes.map((item) => {
                     const Icon = businessSpaceTypeIcons[item.code]
                     const selectionIndex = businessSpaceTypes.indexOf(item.code)
@@ -461,21 +479,84 @@ const Page = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
-              {propertyTypesForChannel.map((item) => {
-                const Icon = propertyTypeIcons[item.code]
-                return (
-                  <ChoiceCard
-                    key={item.code}
-                    compact
-                    selected={selectedPropertyType === item.code}
-                    title={isThai ? item.nameTh : item.nameEn}
-                    icon={<Icon className="size-5" />}
-                    tone={selectedChannel}
-                    onClick={() => selectPropertyType(item.code)}
-                  />
-                )
-              })}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
+                {propertyTypesForChannel.map((item) => {
+                  const Icon = propertyTypeIcons[item.code]
+                  return (
+                    <ChoiceCard
+                      key={item.code}
+                      compact
+                      selected={selectedPropertyType === item.code}
+                      title={isThai ? item.nameTh : item.nameEn}
+                      icon={<Icon className="size-5" />}
+                      tone={selectedChannel}
+                      onClick={() => selectPropertyType(item.code)}
+                    />
+                  )
+                })}
+              </div>
+
+              {selectedChannel === 'rooms' && selectedPropertyType === 'apartment' ? (
+                <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3.5 dark:border-sky-900/60 dark:bg-sky-950/20">
+                  <div className="font-sarabun text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                    {isThai ? 'อพาร์ตเมนต์นี้ให้บริการแบบไหน' : 'How is this apartment serviced?'}
+                  </div>
+                  <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                    {isThai
+                      ? 'รวมอาคารชื่อ Court / คอร์ท, Residence หรือ Mansion ที่เจ้าของอาคารบริหารห้องเช่า เลือกแบบมีบริการเฉพาะเมื่อมีแม่บ้าน เปลี่ยนผ้า หรือ Reception ระหว่างเข้าพัก'
+                      : 'Includes Court, Residence or Mansion buildings operated by one rental owner. Choose serviced only when ongoing services such as housekeeping, linen changes or reception are provided.'}
+                  </p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {([
+                      {
+                        code: 'standard' as const,
+                        title: isThai ? 'อพาร์ตเมนต์ทั่วไป' : 'Standard apartment',
+                        description: isThai ? 'เช่าห้องเป็นหลัก ไม่มีบริการแบบโรงแรม' : 'Room rental without hotel-style services',
+                      },
+                      {
+                        code: 'serviced' as const,
+                        title: isThai ? 'เซอร์วิสอพาร์ตเมนต์' : 'Serviced apartment',
+                        description: isThai ? 'มีบริการดูแลระหว่างเข้าพักเป็นประจำ' : 'Includes ongoing services during the stay',
+                      },
+                    ] satisfies Array<{
+                      code: AccommodationModelCode
+                      title: string
+                      description: string
+                    }>).map((option) => {
+                      const selected = accommodationModel === option.code
+                      return (
+                        <button
+                          key={option.code}
+                          type="button"
+                          onClick={() => setAccommodationModel(option.code)}
+                          className={`flex min-h-20 items-start gap-3 rounded-xl border px-3 py-3 text-left transition ${
+                            selected
+                              ? 'border-sky-500 bg-white shadow-sm ring-1 ring-sky-500 dark:bg-neutral-900'
+                              : 'border-neutral-200 bg-white/70 hover:border-sky-300 dark:border-neutral-700 dark:bg-neutral-900/60'
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border ${
+                              selected ? 'border-sky-600 bg-sky-600 text-white' : 'border-neutral-300 text-transparent'
+                            }`}
+                          >
+                            <CheckCircleIcon className="size-4" />
+                          </span>
+                          <span>
+                            <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-white">
+                              {option.title}
+                            </span>
+                            <span className="mt-0.5 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                              {option.description}
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
         </WizardSection>
@@ -776,10 +857,10 @@ const ChoiceCard = ({
 }) => {
   const selectedStyle =
     tone === 'homes'
-      ? 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600 dark:bg-emerald-950/25'
+      ? 'border-emerald-600 bg-emerald-50/80 shadow-[0_10px_24px_-20px_rgba(5,150,105,0.9)] dark:bg-emerald-950/25'
       : tone === 'rooms'
-        ? 'border-sky-500 bg-sky-50 ring-1 ring-sky-500 dark:bg-sky-950/25'
-        : 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/25'
+        ? 'border-sky-500 bg-sky-50/80 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.9)] dark:bg-sky-950/25'
+        : 'border-orange-500 bg-orange-50/75 shadow-[0_10px_24px_-20px_rgba(249,115,22,0.95)] dark:bg-orange-950/25'
   const iconStyle = tone === 'homes' ? 'bg-emerald-600' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
   const checkStyle = tone === 'homes' ? 'text-emerald-700' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
 
@@ -788,19 +869,19 @@ const ChoiceCard = ({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`relative flex w-full rounded-2xl border text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+      className={`relative flex w-full touch-manipulation select-none rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
         compact
-          ? 'min-h-16 flex-row items-center gap-2.5 p-3'
+          ? 'min-h-[68px] flex-row items-center gap-2.5 px-3 py-2.5 min-[744px]:min-h-16 min-[744px]:p-3'
           : 'min-h-20 items-center gap-4 p-4'
       } ${
         selected
           ? selectedStyle
-          : 'border-neutral-200 bg-white hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500 dark:hover:bg-neutral-800/60'
+          : 'border-neutral-200/90 bg-white hover:border-neutral-400 hover:bg-neutral-50 active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-neutral-500 dark:hover:bg-neutral-800/60 dark:active:bg-neutral-800/60'
       }`}
     >
       {icon ? (
         <span
-          className={`flex shrink-0 items-center justify-center rounded-xl ${compact ? 'size-9' : 'h-11 w-11'} ${
+          className={`flex shrink-0 items-center justify-center rounded-xl ${compact ? 'size-10 min-[744px]:size-9' : 'h-11 w-11'} ${
             selected
               ? `${iconStyle} text-white`
               : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'

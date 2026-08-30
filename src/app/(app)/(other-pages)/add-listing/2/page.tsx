@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import MonthlyStayDetails from '@/components/add-listing/MonthlyStayDetails'
 import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
@@ -128,6 +129,8 @@ const Page = () => {
   const selectedAmenities = useMemo(() => readValues(draft?.['amenities[]']), [draft])
   const showsRooms = propertyGroup === 'residential' || propertyGroup === 'mixed_use'
   const isLand = propertyGroup === 'land'
+  const listingScope = readText(draft?.listing_scope)
+  const accommodationModel = readText(draft?.accommodation_model)
 
   const useCurrentLocation = () => {
     setLocationError('')
@@ -422,6 +425,16 @@ const Page = () => {
             ) : null}
           </div>
         </SectionCard>
+
+        {discoveryChannel === 'rooms' && propertyType ? (
+          <MonthlyStayDetails
+            draft={draft}
+            propertyTypeCode={propertyType.code}
+            listingScope={listingScope}
+            accommodationModel={accommodationModel}
+            isThai={isThai}
+          />
+        ) : null}
 
         {!isLand ? (
           <SectionCard title={isThai ? 'จุดเด่นและสิ่งอำนวยความสะดวก' : 'Features & amenities'}>

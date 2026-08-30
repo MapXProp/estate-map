@@ -31,6 +31,7 @@ export type CreateListingPayload = {
   discovery_channel_code?: string
   property_group_code?: string
   property_type_code: string
+  accommodation_model?: string
   listing_scope?: string
   use_case_codes?: string[]
   offer_types?: string[]
@@ -55,9 +56,12 @@ export type CreateListingPayload = {
   floor_no?: string
   total_floors?: string
   furnishing_status?: string
+  property_condition?: string
+  occupancy_status?: string
   minimum_lease_months?: string
   pet_allowed?: boolean
   pet_policy_code?: string
+  utilities_included?: boolean
   contact_name?: string
   contact_phone?: string
   contact_phone_secondary?: string
@@ -281,11 +285,13 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const photoURLs = values(draft['listingPhotoUrls[]'])
   const videoURLs = values(draft['listingVideoUrls[]'])
   const panoramaURLs = values(draft['listingPanoramaUrls[]'])
+  const petPolicyCode = normalizeCode(text(draft.Pets))
 
   return {
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
     property_group_code: normalizeCode(text(draft.property_group_code)),
     property_type_code: normalizeCode(text(draft.property_type_code) || text(draft.propertyType) || 'condo'),
+    accommodation_model: normalizeCode(text(draft.accommodation_model)),
     listing_scope: normalizeCode(text(draft.listing_scope)) || 'whole_property',
     use_case_codes: useCaseCodes.map(normalizeCode),
     offer_types: offerTypeCodes.map(normalizeCode),
@@ -310,9 +316,12 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     floor_no: text(draft.floorNo),
     total_floors: text(draft.totalFloors),
     furnishing_status: normalizeCode(text(draft.furnishingStatus)),
+    property_condition: normalizeCode(text(draft.propertyCondition)),
+    occupancy_status: normalizeCode(text(draft.occupancyStatus)),
     minimum_lease_months: text(draft.minimumLeaseMonths || draft['Nights-min']),
-    pet_allowed: text(draft.Pets) !== 'not',
-    pet_policy_code: normalizeCode(text(draft.Pets)),
+    pet_allowed: petPolicyCode === 'allowed' || petPolicyCode === 'case_by_case',
+    pet_policy_code: petPolicyCode,
+    utilities_included: text(draft.utilitiesIncluded) === 'yes',
     contact_name: text(draft.contactName),
     contact_phone: text(draft.contactPhone),
     contact_phone_secondary: text(draft.contactPhoneSecondary),
@@ -343,14 +352,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
       ...values(draft['otherAmenities[]']),
       ...values(draft['safeAmenities[]']),
     ],
-    category_details: {
-      details_status: 'basic',
-      can_complete_later: true,
-      discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
-      selected_photo_count: text(draft.selectedPhotoCount),
-      selected_video_count: text(draft.selectedVideoCount),
-      selected_panorama_count: text(draft.selectedPanoramaCount),
-    },
+    category_details: buildCategoryDetails(draft),
     media_urls: photoURLs,
     media_items: [
       ...photoURLs.map((url) => ({ url, media_type: 'image' as const })),
@@ -358,6 +360,75 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
       ...panoramaURLs.map((url) => ({ url, media_type: '360' as const })),
     ],
   }
+}
+
+const buildCategoryDetails = (draft: ListingDraft): Record<string, string | boolean | string[]> => {
+  const details: Record<string, string | boolean | string[]> = {
+    details_status: 'structured',
+    can_complete_later: true,
+    discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
+    accommodation_model: normalizeCode(text(draft.accommodation_model)),
+    selected_photo_count: text(draft.selectedPhotoCount),
+    selected_video_count: text(draft.selectedVideoCount),
+    selected_panorama_count: text(draft.selectedPanoramaCount),
+  }
+
+  const textFields: Array<[string, string, boolean?]> = [
+    ['room_type_code', 'roomTypeCode', true],
+    ['available_from', 'availableFrom'],
+    ['available_room_count', 'availableRoomCount'],
+    ['bathroom_type', 'bathroomType', true],
+    ['room_inventory_details', 'roomInventoryDetails'],
+    ['security_deposit_amount', 'securityDepositAmount'],
+    ['advance_rent_months', 'advanceRentMonths'],
+    ['utility_deposit_amount', 'utilityDepositAmount'],
+    ['water_billing_type', 'waterBillingType', true],
+    ['water_rate', 'waterRate'],
+    ['electricity_billing_type', 'electricityBillingType', true],
+    ['electricity_rate', 'electricityRate'],
+    ['utilities_included', 'utilitiesIncluded', true],
+    ['parking_fee_monthly', 'parkingFeeMonthly'],
+    ['laundry_available', 'laundryAvailable', true],
+    ['smoking_policy', 'smokingPolicy', true],
+    ['foreign_tenant_allowed', 'foreignTenantAllowed', true],
+    ['visitor_policy', 'visitorPolicy'],
+    ['private_entrance', 'privateEntrance', true],
+    ['owner_lives_on_site', 'ownerLivesOnSite', true],
+    ['housekeeping_frequency', 'housekeepingFrequency'],
+    ['reception_hours', 'receptionHours'],
+    ['total_units', 'totalUnits'],
+    ['occupied_units', 'occupiedUnits'],
+    ['monthly_income', 'monthlyIncome'],
+    ['monthly_expenses', 'monthlyExpenses'],
+    ['building_license_info', 'buildingLicenseInfo'],
+    ['curfew_time', 'curfewTime'],
+    ['nearby_institution', 'nearbyInstitution'],
+    ['dormitory_license_number', 'dormitoryLicenseNumber'],
+    ['managing_agency', 'managingAgency'],
+    ['occupancy_right_type', 'occupancyRightType', true],
+    ['rights_transfer_allowed', 'rightsTransferAllowed', true],
+    ['project_conditions', 'projectConditions'],
+    ['common_fee_included', 'commonFeeIncluded', true],
+    ['juristic_rules', 'juristicRules'],
+    ['cancellation_policy', 'cancellationPolicy'],
+  ]
+
+  for (const [detailKey, draftKey, normalize] of textFields) {
+    const value = text(draft[draftKey])
+    if (value) details[detailKey] = normalize ? normalizeCode(value) : value
+  }
+
+  const arrayFields: Array<[string, string]> = [
+    ['shared_facilities', 'sharedFacilities[]'],
+    ['services_included', 'servicesIncluded[]'],
+    ['resident_groups', 'residentGroups[]'],
+  ]
+  for (const [detailKey, draftKey] of arrayFields) {
+    const selected = values(draft[draftKey]).map(normalizeCode).filter(Boolean)
+    if (selected.length) details[detailKey] = selected
+  }
+
+  return details
 }
 
 export const getListingDraftSummary = (locale: 'th' | 'en' = 'th') => {
@@ -368,7 +439,12 @@ export const getListingDraftSummary = (locale: 'th' | 'en' = 'th') => {
     draft,
     payload,
     discoveryChannel: discoveryChannelLabel(payload.discovery_channel_code, locale),
-    propertyType: propertyTypeLabel(payload.property_type_code, locale),
+    propertyType:
+      payload.property_type_code === 'apartment' && payload.accommodation_model === 'serviced'
+        ? locale === 'th'
+          ? 'เซอร์วิสอพาร์ตเมนต์'
+          : 'Serviced apartment'
+        : propertyTypeLabel(payload.property_type_code, locale),
     businessSpaceType: (payload.space_type_codes || [])
       .map((code) => (locale === 'th' ? getBusinessSpaceType(code)?.nameTh : getBusinessSpaceType(code)?.nameEn) || code)
       .join(', '),

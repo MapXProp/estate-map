@@ -6,6 +6,7 @@ export type MyListing = {
   slug: string
   title: string
   property_type_code: string
+  accommodation_model: string
   listing_type: string
   listing_status: string
   moderation_status: string

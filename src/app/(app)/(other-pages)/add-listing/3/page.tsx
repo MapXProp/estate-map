@@ -40,6 +40,7 @@ const Page = () => {
   const [offers, setOffers] = useState<OfferTypeCode[]>(['rent'])
   const [salePrice, setSalePrice] = useState('')
   const [rentPriceMonthly, setRentPriceMonthly] = useState('')
+  const [rentPriceDaily, setRentPriceDaily] = useState('')
   const [keyMoneyAmount, setKeyMoneyAmount] = useState('')
   const [eventBookingPrice, setEventBookingPrice] = useState('')
   const [serviceFeeMonthly, setServiceFeeMonthly] = useState('')
@@ -63,6 +64,7 @@ const Page = () => {
       setOffers(savedOffers.length ? savedOffers : offersFromLegacy(readText(savedDraft.listing_type)))
       setSalePrice(readText(savedDraft.salePrice))
       setRentPriceMonthly(readText(savedDraft.rentPriceMonthly))
+      setRentPriceDaily(readText(savedDraft.rentPriceDaily))
       setKeyMoneyAmount(readText(savedDraft.keyMoneyAmount))
       setEventBookingPrice(readText(savedDraft.eventBookingPrice))
       setServiceFeeMonthly(readText(savedDraft.serviceFeeMonthly))
@@ -99,6 +101,7 @@ const Page = () => {
   const hasRent = offers.includes('rent') || offers.includes('sublease')
   const hasTransfer = offers.includes('business_transfer')
   const hasEventBooking = offers.includes('event_booking')
+  const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
 
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || [])
@@ -164,6 +167,7 @@ const Page = () => {
 
     if (!hasSale) formData.set('salePrice', '')
     if (!hasRent && !hasTransfer) formData.set('rentPriceMonthly', '')
+    if (!isMonthlyHotel) formData.set('rentPriceDaily', '')
     if (!hasTransfer) formData.set('keyMoneyAmount', '')
     if (!hasEventBooking) formData.set('eventBookingPrice', '')
     formData.set('priceOnRequest', priceOnRequest ? 'yes' : '')
@@ -426,6 +430,17 @@ const Page = () => {
                   symbol={currencySymbol}
                 />
               </FormItem>
+              {isMonthlyHotel ? (
+                <FormItem label={isThai ? 'ราคารายวัน (ไม่บังคับ)' : 'Daily rate (optional)'}>
+                  <PriceInput
+                    name="rentPriceDaily"
+                    value={rentPriceDaily}
+                    onChange={setRentPriceDaily}
+                    suffix={isThai ? 'บาท/คืน' : `${currencyName}/night`}
+                    symbol={currencySymbol}
+                  />
+                </FormItem>
+              ) : null}
               <FormItem label={isThai ? 'ระยะสัญญาขั้นต่ำ' : 'Minimum lease'}>
                 <Select
                   name="minimumLeaseMonths"

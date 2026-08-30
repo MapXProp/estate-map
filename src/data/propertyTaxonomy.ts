@@ -25,6 +25,7 @@ export type UseCaseCode =
 export type ListingScopeCode = 'single_unit' | 'whole_property' | 'multi_unit' | 'land_plot' | 'space_slot'
 export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer' | 'event_booking'
 export type DiscoveryChannelCode = 'homes' | 'rooms' | 'business'
+export type AccommodationModelCode = 'standard' | 'serviced'
 
 export type TaxonomyOption<TCode extends string> = {
   code: TCode
@@ -73,16 +74,8 @@ export const discoveryChannels: DiscoveryChannelDefinition[] = [
     route: '/rooms',
     nameTh: 'ห้องเช่า & ที่พักรายเดือน',
     nameEn: 'Rooms & monthly stays',
-    description: 'ห้องเช่า อพาร์ตเมนต์ หอพัก แฟลต และที่พักระยะยาว',
-    propertyTypeCodes: [
-      'rental_room',
-      'apartment',
-      'dormitory',
-      'condo',
-      'flat',
-      'serviced_apartment',
-      'monthly_hotel',
-    ],
+    description: 'ห้องแบ่งเช่า อพาร์ตเมนต์ แฟลต หอพัก คอนโด และที่พักระยะยาว',
+    propertyTypeCodes: ['rental_room', 'apartment', 'flat', 'dormitory', 'condo', 'monthly_hotel'],
     defaultPropertyTypeCode: 'rental_room',
   },
   {
@@ -183,8 +176,8 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     groupCode: 'residential',
     nameTh: 'อพาร์ตเมนต์',
     nameEn: 'Apartment',
-    description: 'ห้องเช่าหรืออาคารที่มีหลายห้องให้เช่า',
-    aliases: ['apartment_building'],
+    description: 'อาคารที่เจ้าของเดียวบริหารห้องเช่า รวมชื่อแบบ Court, Residence หรือ Mansion',
+    aliases: ['apartment_building', 'court', 'residence', 'mansion', 'serviced_apartment', 'service_apartment'],
     allowedUseCases: ['residential'],
     defaultUseCases: ['residential'],
     allowedScopes: ['single_unit', 'multi_unit', 'whole_property'],
@@ -207,10 +200,10 @@ export const propertyTypes: PropertyTypeDefinition[] = [
   {
     code: 'rental_room',
     groupCode: 'residential',
-    nameTh: 'ห้องเช่า',
-    nameEn: 'Rental room',
-    description: 'ห้องเดี่ยวหรือยูนิตสำหรับเช่ารายเดือน',
-    aliases: ['monthly_room', 'room_for_rent'],
+    nameTh: 'ห้องแบ่งเช่า',
+    nameEn: 'Room in a house or building',
+    description: 'ห้องที่แบ่งให้เช่าภายในบ้าน ตึกแถว หรืออาคารทั่วไป และอาจใช้พื้นที่บางส่วนร่วมกัน',
+    aliases: ['monthly_room', 'room_for_rent', 'shared_room', 'room_in_house'],
     allowedUseCases: ['residential'],
     defaultUseCases: ['residential'],
     allowedScopes: ['single_unit', 'multi_unit'],
@@ -222,8 +215,8 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     groupCode: 'residential',
     nameTh: 'แฟลต',
     nameEn: 'Flat',
-    description: 'ห้องพักในอาคารแฟลตหรือโครงการที่พักอาศัย',
-    aliases: ['housing_flat'],
+    description: 'อาคารพักอาศัยแบบแฟลต เช่น แฟลตดินแดง แฟลตการเคหะ หรือแฟลตของหน่วยงาน',
+    aliases: ['housing_flat', 'public_housing_flat'],
     allowedUseCases: ['residential'],
     defaultUseCases: ['residential'],
     allowedScopes: ['single_unit', 'multi_unit'],
@@ -542,6 +535,7 @@ export const getPropertyTypesForDiscoveryChannel = (channelCode: DiscoveryChanne
 export const normalizeLegacyPropertyType = (code: string): PropertyTypeCode => {
   if (code === 'house') return 'detached_house'
   if (code === 'commercial_building') return 'shophouse'
+  if (code === 'serviced_apartment') return 'apartment'
   if (propertyTypes.some((item) => item.code === code)) return code as PropertyTypeCode
   return 'detached_house'
 }

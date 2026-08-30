@@ -47,13 +47,13 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         className="pointer-events-none absolute top-80 -left-40 size-96 rounded-full bg-emerald-100/45 blur-3xl dark:bg-emerald-950/15"
       />
 
-      <div className="relative mx-auto w-full max-w-[1440px] px-2 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
+      <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
         <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
           <SellerGuide />
 
           <main className="min-w-0">
             <ProgressHeader pathname={pathname} />
-            <div className="mt-3 flex w-full flex-col gap-y-5 rounded-[22px] border border-orange-100/80 bg-white/95 p-2.5 leading-relaxed shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] backdrop-blur-sm min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:p-8 lg:p-10 dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-orange-100/80 min-[744px]:bg-white/95 min-[744px]:p-8 min-[744px]:shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] min-[744px]:backdrop-blur-sm lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900/95">
               {children}
             </div>
             <Pagination pathname={pathname} />
@@ -220,7 +220,7 @@ const Pagination = ({ pathname }: { pathname: string }) => {
 
   return (
     <div
-      className={`mt-6 grid items-center gap-2.5 rounded-[22px] border border-neutral-200/80 bg-white p-2.5 shadow-sm min-[744px]:mt-8 min-[744px]:flex min-[744px]:border-0 min-[744px]:bg-transparent min-[744px]:p-0 min-[744px]:shadow-none dark:border-neutral-800 dark:bg-neutral-900 min-[744px]:dark:bg-transparent ${
+      className={`mt-6 grid items-center gap-2.5 min-[744px]:mt-8 min-[744px]:flex ${
         index === 1
           ? 'grid-cols-1 min-[744px]:justify-end'
           : 'grid-cols-[auto_minmax(0,1fr)] min-[744px]:justify-between'
