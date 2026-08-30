@@ -41,11 +41,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-28 -right-28 size-80 rounded-full bg-orange-200/30 blur-3xl dark:bg-orange-900/10"
+        className="pointer-events-none absolute -top-28 -right-28 hidden size-80 rounded-full bg-orange-200/30 blur-3xl min-[744px]:block dark:bg-orange-900/10"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-80 -left-40 size-96 rounded-full bg-emerald-100/45 blur-3xl dark:bg-emerald-950/15"
+        className="pointer-events-none absolute top-80 -left-40 hidden size-96 rounded-full bg-emerald-100/45 blur-3xl min-[744px]:block dark:bg-emerald-950/15"
       />
 
       <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
