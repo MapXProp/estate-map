@@ -609,6 +609,7 @@ const Page = () => {
                       <ChoiceCard
                         key={item.code}
                         compact
+                        mobileStacked
                         selected={selectedPropertyType === 'retail_space' && selectionIndex >= 0}
                         selectionBadge={
                           selectionIndex === 0
@@ -1096,6 +1097,7 @@ const ChoiceCard = ({
   icon,
   tone,
   compact = false,
+  mobileStacked = false,
   selectionBadge,
   onClick,
 }: {
@@ -1104,6 +1106,7 @@ const ChoiceCard = ({
   icon?: React.ReactNode
   tone?: DiscoveryChannelCode
   compact?: boolean
+  mobileStacked?: boolean
   selectionBadge?: string
   onClick: () => void
 }) => {
@@ -1129,7 +1132,9 @@ const ChoiceCard = ({
       onClick={onClick}
       className={`relative flex w-full touch-manipulation rounded-2xl border text-left transition duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.985] ${focusStyle} ${
         compact
-          ? 'min-h-[68px] flex-row items-center gap-2.5 px-3 py-2.5 min-[744px]:min-h-16 min-[744px]:p-3'
+          ? mobileStacked
+            ? 'min-h-[102px] flex-col items-start gap-2 px-3 py-3 min-[744px]:min-h-16 min-[744px]:flex-row min-[744px]:items-center min-[744px]:gap-2.5 min-[744px]:p-3'
+            : 'min-h-[68px] flex-row items-center gap-2.5 px-3 py-2.5 min-[744px]:min-h-16 min-[744px]:p-3'
           : 'min-h-20 items-center gap-4 p-4'
       } ${
         selected
@@ -1139,7 +1144,9 @@ const ChoiceCard = ({
     >
       {icon ? (
         <span
-          className={`flex shrink-0 items-center justify-center rounded-xl ${compact ? 'size-10 min-[744px]:size-9' : 'h-11 w-11'} ${
+          className={`flex shrink-0 items-center justify-center rounded-xl ${
+            compact ? (mobileStacked ? 'size-9' : 'size-10 min-[744px]:size-9') : 'h-11 w-11'
+          } ${
             selected
               ? `${iconStyle} text-white`
               : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
@@ -1148,7 +1155,17 @@ const ChoiceCard = ({
           {icon}
         </span>
       ) : null}
-      <span className={`min-w-0 flex-1 ${compact ? (selectionBadge ? 'pe-14' : 'pe-5 min-[744px]:pe-4') : ''}`}>
+      <span
+        className={`min-w-0 flex-1 ${
+          compact
+            ? mobileStacked
+              ? `w-full ${selectionBadge ? 'min-[744px]:pe-14' : 'min-[744px]:pe-4'}`
+              : selectionBadge
+                ? 'pe-14'
+                : 'pe-5 min-[744px]:pe-4'
+            : ''
+        }`}
+      >
         <span
           className={`block font-sarabun font-semibold text-neutral-900 dark:text-neutral-50 ${
             compact ? 'text-sm leading-5' : 'text-base'
