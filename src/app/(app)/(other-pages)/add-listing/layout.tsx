@@ -6,6 +6,7 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { ArrowRightIcon, CheckIcon, ClockIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React from 'react'
 
@@ -113,29 +114,51 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         {steps.map((step) => {
           const isComplete = step.number < index
           const isCurrent = step.number === index
+          const label = isThai ? step.labelTh : step.labelEn
+          const content = (
+            <>
+              <span
+                className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                  isComplete
+                    ? 'bg-white text-[#123f32] group-hover:bg-orange-100 group-hover:text-orange-700'
+                    : isCurrent
+                      ? 'bg-orange-500 text-white ring-4 ring-orange-300/20'
+                      : 'bg-white/10 text-white/55'
+                }`}
+              >
+                {isComplete ? <CheckIcon className="size-4" /> : step.number}
+              </span>
+              <span
+                className={`hidden truncate font-sarabun text-xs sm:block ${
+                  isCurrent ? 'font-medium text-white' : isComplete ? 'text-white/80' : 'text-white/45'
+                }`}
+              >
+                {label}
+              </span>
+            </>
+          )
 
           return (
             <li key={step.number} className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                    isComplete
-                      ? 'bg-white text-[#123f32]'
-                      : isCurrent
-                        ? 'bg-orange-500 text-white ring-4 ring-orange-300/20'
-                        : 'bg-white/10 text-white/55'
-                  }`}
+              {isComplete ? (
+                <Link
+                  href={`/add-listing/${step.number}`}
+                  aria-label={
+                    isThai ? `ย้อนกลับไปขั้นที่ ${step.number}: ${label}` : `Go back to step ${step.number}: ${label}`
+                  }
+                  className="group flex min-h-11 w-full items-center gap-2 rounded-xl px-1.5 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
                 >
-                  {isComplete ? <CheckIcon className="size-4" /> : step.number}
-                </span>
-                <span
-                  className={`hidden truncate font-sarabun text-xs sm:block ${
-                    isCurrent ? 'font-medium text-white' : isComplete ? 'text-white/80' : 'text-white/45'
-                  }`}
+                  {content}
+                </Link>
+              ) : (
+                <div
+                  aria-current={isCurrent ? 'step' : undefined}
+                  aria-disabled={!isCurrent}
+                  className="flex min-h-11 w-full items-center gap-2 px-1.5"
                 >
-                  {isThai ? step.labelTh : step.labelEn}
-                </span>
-              </div>
+                  {content}
+                </div>
+              )}
             </li>
           )
         })}

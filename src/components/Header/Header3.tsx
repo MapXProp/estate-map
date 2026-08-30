@@ -16,8 +16,8 @@ import AvatarDropdown from './AvatarDropdown'
 import CurrLangDropdown from './CurrLangDropdown'
 import HamburgerBtnMenu from './HamburgerBtnMenu'
 import NotifyDropdown from './NotifyDropdown'
-import PropertyListingCta from './PropertyListingCta'
 import ProjectSearchPopover from './ProjectSearchPopover'
+import PropertyListingCta from './PropertyListingCta'
 
 interface Header3Props {
   hasBorderBottom?: boolean
@@ -237,7 +237,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
               ) : (
                 <>
                   <div className="hidden xl:block">
-                    <Button color="light" className="-mx-1 py-1.75!" href={'/add-listing/1'}>
+                    <Button color="light" className="-mx-1 py-1.75!" href={'/add-listing/1?new=1'}>
                       {T['Header']['List your property']}
                     </Button>
                   </div>

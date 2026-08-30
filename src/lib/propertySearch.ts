@@ -153,7 +153,16 @@ export type PropertyListingDetail = {
   subdistrict: string
   postal_code: string
   road: string
+  usable_area_sqm?: number
   land_area_sqm?: number
+  bedroom_count?: number
+  bathroom_count?: number
+  parking_count?: number
+  floor_no?: number
+  total_floors?: number
+  furnishing_status: string
+  property_condition: string
+  occupancy_status: string
   latitude?: number
   longitude?: number
   contact_name: string
@@ -241,18 +250,18 @@ const fallbackSuggestions: PropertySearchSuggestion[] = [
 export const getPropertySearchUrl = (query: string) =>
   `/real-estate-categories/all?q=${encodeURIComponent(query.trim())}`
 
-export const getPropertyMapSearchUrl = (query: string) =>
-  `/properties/map?q=${encodeURIComponent(query.trim())}`
+export const getPropertyMapSearchUrl = (query: string) => `/properties/map?q=${encodeURIComponent(query.trim())}`
 
 export const fetchPropertySearchSuggestions = async (
   query: string,
   signal?: AbortSignal
 ): Promise<PropertySearchSuggestion[]> => {
   try {
-    const response = await fetch(
-      `${getAuthApiUrl('search/suggestions')}?q=${encodeURIComponent(query.trim())}`,
-      { signal, cache: 'no-store', credentials: 'include' }
-    )
+    const response = await fetch(`${getAuthApiUrl('search/suggestions')}?q=${encodeURIComponent(query.trim())}`, {
+      signal,
+      cache: 'no-store',
+      credentials: 'include',
+    })
     if (!response.ok) return query.trim() ? [] : fallbackSuggestions
     const data = (await response.json()) as { suggestions?: PropertySearchSuggestion[] }
     return data.suggestions?.length ? data.suggestions : query.trim() ? [] : fallbackSuggestions
@@ -269,10 +278,11 @@ export const fetchPropertySearch = async (
   const params = new URLSearchParams({ q: query.trim() })
   if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
   if (options.limit) params.set('limit', String(options.limit))
-  const response = await fetch(
-    `${getAuthApiUrl('properties/search')}?${params.toString()}`,
-    { signal, cache: 'no-store', credentials: 'include' }
-  )
+  const response = await fetch(`${getAuthApiUrl('properties/search')}?${params.toString()}`, {
+    signal,
+    cache: 'no-store',
+    credentials: 'include',
+  })
   if (!response.ok) throw new Error('property search failed')
   return response.json() as Promise<PropertySearchResponse>
 }

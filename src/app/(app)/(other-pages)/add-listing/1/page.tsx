@@ -1,8 +1,8 @@
 'use client'
 
 import ListingAuthCheckpoint from '@/components/add-listing/ListingAuthCheckpoint'
-import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import {
   discoveryChannels,
   getBusinessSpaceType,
@@ -16,8 +16,8 @@ import {
   offerTypes,
   primaryBusinessSpaceTypeCodes,
   useCases,
-  type BusinessSpaceTypeCode,
   type AccommodationModelCode,
+  type BusinessSpaceTypeCode,
   type DiscoveryChannelCode,
   type ListingScopeCode,
   type OfferTypeCode,
@@ -25,7 +25,15 @@ import {
   type UseCaseCode,
 } from '@/data/propertyTaxonomy'
 import { useAuth } from '@/hooks/useAuth'
-import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraftValue } from '@/lib/listingDraft'
+import {
+  clearCloudListingDraft,
+  clearListingDraft,
+  getListingDraft,
+  resetListingDetailsForCategoryChange,
+  saveListingDraftToCloud,
+  saveListingStep,
+  type ListingDraftValue,
+} from '@/lib/listingDraft'
 import Input from '@/shared/Input'
 import Textarea from '@/shared/Textarea'
 import { BuildingStorefrontIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
@@ -124,42 +132,140 @@ const Page = () => {
   const router = useRouter()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
-  const [selectedChannel, setSelectedChannel] = useState<DiscoveryChannelCode>('homes')
-  const [selectedPropertyType, setSelectedPropertyType] = useState<PropertyTypeCode>('detached_house')
-  const [selectedScope, setSelectedScope] = useState<ListingScopeCode>('whole_property')
-  const [selectedUseCases, setSelectedUseCases] = useState<UseCaseCode[]>(['residential'])
-  const [selectedOffers, setSelectedOffers] = useState<OfferTypeCode[]>(['rent'])
+  const [selectedChannel, setSelectedChannel] = useState<DiscoveryChannelCode | ''>('')
+  const [selectedPropertyType, setSelectedPropertyType] = useState<PropertyTypeCode | ''>('')
+  const [selectedScope, setSelectedScope] = useState<ListingScopeCode | ''>('')
+  const [selectedUseCases, setSelectedUseCases] = useState<UseCaseCode[]>([])
+  const [selectedOffers, setSelectedOffers] = useState<OfferTypeCode[]>([])
   const [businessSpaceTypes, setBusinessSpaceTypes] = useState<BusinessSpaceTypeCode[]>([])
-  const [accommodationModel, setAccommodationModel] = useState<AccommodationModelCode>('standard')
+  const [accommodationModel, setAccommodationModel] = useState<AccommodationModelCode | ''>('')
   const [title, setTitle] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
   const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
+  const [draftReady, setDraftReady] = useState(false)
   const { isAuthenticated, refresh } = useAuth()
 
-  const propertyType = getPropertyType(selectedPropertyType) ?? getPropertyType('detached_house')!
-  const selectedGroup = propertyType.groupCode
-  const propertyTypesForChannel = useMemo(() => getPropertyTypesForDiscoveryChannel(selectedChannel), [selectedChannel])
+  const propertyType = selectedPropertyType ? getPropertyType(selectedPropertyType) : undefined
+  const selectedGroup = propertyType?.groupCode ?? ''
+  const propertyTypesForChannel = useMemo(
+    () => (selectedChannel ? getPropertyTypesForDiscoveryChannel(selectedChannel) : []),
+    [selectedChannel]
+  )
   const businessPropertyTypes = propertyTypesForChannel.filter((item) => item.code !== 'retail_space')
   const primaryBusinessSpaceType = businessSpaceTypes[0] ?? ''
   const hasEventBooth = businessSpaceTypes.includes('event_booth')
-  const availableScopes = listingScopes.filter((scope) => propertyType.allowedScopes.includes(scope.code))
-  const availableUseCases = useCases.filter((useCase) => propertyType.allowedUseCases.includes(useCase.code))
+  const availableScopes = propertyType
+    ? listingScopes.filter((scope) => propertyType.allowedScopes.includes(scope.code))
+    : []
+  const availableUseCases = propertyType
+    ? useCases.filter((useCase) => propertyType.allowedUseCases.includes(useCase.code))
+    : []
   const availableOffers = offerTypes.filter(
     (offer) =>
-      propertyType.allowedOffers.includes(offer.code) &&
+      propertyType?.allowedOffers.includes(offer.code) &&
       (hasEventBooth ? offer.code === 'event_booking' : offer.code !== 'event_booking')
   )
+  const selectedChannelOption = selectedChannel ? getDiscoveryChannel(selectedChannel) : undefined
+  const selectedChannelLabel = selectedChannelOption
+    ? isThai
+      ? selectedChannelOption.nameTh
+      : selectedChannelOption.nameEn
+    : ''
+  const selectedBusinessSpaceLabels = businessSpaceTypes
+    .map((code) => getBusinessSpaceType(code))
+    .filter((item): item is NonNullable<ReturnType<typeof getBusinessSpaceType>> => Boolean(item))
+    .map((item) => (isThai ? item.nameTh : item.nameEn))
+  const apartmentModelLabel =
+    selectedPropertyType === 'apartment' && accommodationModel
+      ? accommodationModel === 'serviced'
+        ? isThai
+          ? 'เซอร์วิสอพาร์ตเมนต์'
+          : 'Serviced apartment'
+        : isThai
+          ? 'อพาร์ตเมนต์ทั่วไป'
+          : 'Standard apartment'
+      : ''
+  const propertySelectionLabel = propertyType
+    ? [
+        selectedBusinessSpaceLabels.length
+          ? selectedBusinessSpaceLabels.join(', ')
+          : isThai
+            ? propertyType.nameTh
+            : propertyType.nameEn,
+        apartmentModelLabel,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : ''
+  const hasCompletePropertySelection = Boolean(
+    propertyType &&
+    (!propertyType.supportsBusinessSpaceType || businessSpaceTypes.length) &&
+    (selectedPropertyType !== 'apartment' || accommodationModel)
+  )
+  const selectedOfferLabels = selectedOffers
+    .map((code) => offerTypes.find((offer) => offer.code === code))
+    .filter((item): item is (typeof offerTypes)[number] => Boolean(item))
+    .map((item) => (isThai ? item.nameTh : item.nameEn))
+  const listingOptionLabel =
+    selectedChannel === 'rooms' && propertyType
+      ? isThai
+        ? 'ให้เช่ารายเดือน'
+        : 'Monthly rental'
+      : hasEventBooth
+        ? isThai
+          ? 'จองพื้นที่ตามรอบงาน'
+          : 'Book by event period'
+        : selectedOfferLabels.join(', ')
+  const hasCompleteListingOption = Boolean(hasCompletePropertySelection && propertyType && listingOptionLabel)
 
   useEffect(() => {
     router.prefetch('/add-listing/2')
 
-    const frame = requestAnimationFrame(() => {
+    let cancelled = false
+    const initializeDraft = async () => {
+      const shouldStartNew = new URLSearchParams(window.location.search).get('new') === '1'
+      if (shouldStartNew) {
+        clearListingDraft()
+        await clearCloudListingDraft().catch(() => undefined)
+        if (cancelled) return
+
+        window.history.replaceState(window.history.state, '', '/add-listing/1')
+        setSelectedChannel('')
+        setSelectedPropertyType('')
+        setSelectedScope('')
+        setSelectedUseCases([])
+        setSelectedOffers([])
+        setBusinessSpaceTypes([])
+        setAccommodationModel('')
+        setTitle('')
+        setPlaceName('')
+        setDescription('')
+        setDraftReady(true)
+        return
+      }
+
       const draft = getListingDraft()
       const savedPropertyTypeCode = readDraftText(draft.property_type_code)
       const nextPropertyTypeCode = normalizeLegacyPropertyType(savedPropertyTypeCode)
-      const nextPropertyType = getPropertyType(nextPropertyTypeCode) ?? getPropertyType('detached_house')!
+      const nextPropertyType = savedPropertyTypeCode ? getPropertyType(nextPropertyTypeCode) : undefined
+      setTitle(readDraftText(draft.listingTitle))
+      setPlaceName(readDraftText(draft.placeName))
+      setDescription(readDraftText(draft.listingDescription))
+
+      if (!nextPropertyType) {
+        setSelectedChannel('')
+        setSelectedPropertyType('')
+        setSelectedScope('')
+        setSelectedUseCases([])
+        setSelectedOffers([])
+        setBusinessSpaceTypes([])
+        setAccommodationModel('')
+        setDraftReady(true)
+        return
+      }
+
       const savedUseCases = readDraftValues(draft['useCaseCodes[]']).filter((code): code is UseCaseCode =>
         nextPropertyType.allowedUseCases.includes(code as UseCaseCode)
       )
@@ -180,7 +286,9 @@ const Page = () => {
         nextPropertyType.code === 'apartment' &&
           (savedPropertyTypeCode === 'serviced_apartment' || savedAccommodationModel === 'serviced')
           ? 'serviced'
-          : 'standard'
+          : nextPropertyType.code === 'apartment'
+            ? 'standard'
+            : ''
       )
       setSelectedScope(nextPropertyType.allowedScopes.includes(savedScope) ? savedScope : nextPropertyType.defaultScope)
       setSelectedUseCases(
@@ -200,54 +308,40 @@ const Page = () => {
         .filter((code, index, all) => all.indexOf(code) === index)
         .slice(0, 3)
       setBusinessSpaceTypes(savedBusinessSpaceTypes)
-      setTitle(readDraftText(draft.listingTitle))
-      setPlaceName(readDraftText(draft.placeName))
-      setDescription(readDraftText(draft.listingDescription))
-    })
+      setDraftReady(true)
+    }
 
-    return () => cancelAnimationFrame(frame)
+    void initializeDraft()
+
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   const selectChannel = (channelCode: DiscoveryChannelCode) => {
     const channel = getDiscoveryChannel(channelCode)
-    if (!channel) return
-
-    const nextPropertyType =
-      (channel.propertyTypeCodes.includes(selectedPropertyType) ? getPropertyType(selectedPropertyType) : undefined) ??
-      getPropertyType(channel.defaultPropertyTypeCode)
-    if (!nextPropertyType) return
+    if (!channel || channelCode === selectedChannel) return
 
     setSelectedChannel(channelCode)
-    setSelectedPropertyType(nextPropertyType.code)
-    setSelectedScope(nextPropertyType.defaultScope)
-    setSelectedUseCases(nextPropertyType.defaultUseCases)
-    setSelectedOffers(
-      channelCode === 'rooms'
-        ? ['rent']
-        : nextPropertyType.allowedOffers.includes('rent')
-          ? ['rent']
-          : [nextPropertyType.allowedOffers[0]]
-    )
+    setSelectedPropertyType('')
+    setSelectedScope('')
+    setSelectedUseCases([])
+    setSelectedOffers([])
     setBusinessSpaceTypes([])
-    setAccommodationModel('standard')
+    setAccommodationModel('')
     setError('')
   }
 
   const selectPropertyType = (propertyTypeCode: PropertyTypeCode) => {
     const nextPropertyType = getPropertyType(propertyTypeCode)
-    if (!nextPropertyType) return
+    if (!nextPropertyType || propertyTypeCode === selectedPropertyType) return
 
     setSelectedPropertyType(propertyTypeCode)
     setSelectedScope(nextPropertyType.defaultScope)
     setSelectedUseCases(nextPropertyType.defaultUseCases)
-    setSelectedOffers((current) => {
-      const compatible = current.filter((offer) => nextPropertyType.allowedOffers.includes(offer))
-      if (compatible.length) return compatible
-      if (selectedChannel === 'rooms') return ['rent']
-      return nextPropertyType.allowedOffers.includes('rent') ? ['rent'] : [nextPropertyType.allowedOffers[0]]
-    })
+    setSelectedOffers(selectedChannel === 'rooms' ? ['rent'] : [])
     setBusinessSpaceTypes([])
-    setAccommodationModel('standard')
+    setAccommodationModel('')
     setError('')
   }
 
@@ -283,7 +377,7 @@ const Page = () => {
       const compatible = current.filter(
         (offer) => retailSpace.allowedOffers.includes(offer) && offer !== 'event_booking'
       )
-      return compatible.length ? compatible : ['rent']
+      return compatible
     })
     setBusinessSpaceTypes(nextSpaceTypes)
     setError('')
@@ -304,6 +398,18 @@ const Page = () => {
   }
 
   const handleSubmitForm = async (formData: FormData) => {
+    if (!selectedChannel) {
+      setError(isThai ? 'กรุณาเลือกหมวดหลักในข้อ 1' : 'Choose a main category in section 1.')
+      return
+    }
+    if (!propertyType || !selectedPropertyType) {
+      setError(isThai ? 'กรุณาเลือกประเภททรัพย์ในข้อ 2' : 'Choose a property type in section 2.')
+      return
+    }
+    if (selectedPropertyType === 'apartment' && !accommodationModel) {
+      setError(isThai ? 'กรุณาเลือกรูปแบบอพาร์ตเมนต์ในข้อ 2' : 'Choose the apartment model in section 2.')
+      return
+    }
     if (propertyType.supportsBusinessSpaceType && !businessSpaceTypes.length) {
       setError(isThai ? 'กรุณาเลือกรูปแบบพื้นที่ค้าขาย' : 'Choose a business space type.')
       return
@@ -323,10 +429,11 @@ const Page = () => {
     formData.set('accommodation_model', selectedPropertyType === 'apartment' ? accommodationModel : '')
     formData.set('listing_scope', selectedScope)
     const effectiveUseCases = selectedUseCases.length ? selectedUseCases : propertyType.defaultUseCases
-    formData.delete('useCaseCodes[]')
+    formData.set('useCaseCodes[]', '')
     effectiveUseCases.forEach((code) => formData.append('useCaseCodes[]', code))
     formData.set('usage_type', mapUseCasesToLegacyUsage(effectiveUseCases))
     formData.set('listing_type', offersToLegacyListingType(selectedOffers))
+    resetListingDetailsForCategoryChange(selectedChannel, selectedPropertyType)
     const savedDraft = saveListingStep(1, formData)
     const authenticated = isAuthenticated || Boolean(await refresh())
 
@@ -337,6 +444,10 @@ const Page = () => {
 
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/2')
+  }
+
+  if (!draftReady) {
+    return <div className="h-64 animate-pulse rounded-[28px] bg-neutral-100 dark:bg-neutral-800" />
   }
 
   return (
@@ -376,7 +487,20 @@ const Page = () => {
           <input key={code} type="hidden" name="offerTypes[]" value={code} />
         ))}
 
-        <WizardSection number="1" title={isThai ? 'เลือกหมวดหลัก' : 'Choose a main category'}>
+        <WizardSection
+          number="1"
+          title={isThai ? 'เลือกหมวดหลัก' : 'Choose a main category'}
+          complete={Boolean(selectedChannel)}
+          statusText={
+            selectedChannelLabel
+              ? isThai
+                ? `เลือกแล้ว: ${selectedChannelLabel}`
+                : `Selected: ${selectedChannelLabel}`
+              : ''
+          }
+          pendingText={isThai ? 'ยังไม่ได้เลือกหมวดหลัก' : 'No main category selected yet'}
+          tone={selectedChannel || undefined}
+        >
           <div className="grid gap-3 min-[744px]:grid-cols-3">
             {discoveryChannels.map((channel) => (
               <DiscoveryChannelCard
@@ -394,6 +518,24 @@ const Page = () => {
         <WizardSection
           number="2"
           title={isThai ? 'เลือกประเภทหลักที่ตรงที่สุด' : 'Choose the best matching property type'}
+          complete={hasCompletePropertySelection}
+          statusText={
+            propertySelectionLabel
+              ? isThai
+                ? `เลือกแล้ว: ${propertySelectionLabel}`
+                : `Selected: ${propertySelectionLabel}`
+              : ''
+          }
+          pendingText={
+            selectedChannel
+              ? isThai
+                ? 'ยังไม่ได้เลือกประเภททรัพย์'
+                : 'No property type selected yet'
+              : isThai
+                ? 'เลือกหมวดหลักในข้อ 1 ก่อน'
+                : 'Choose a main category in section 1 first'
+          }
+          tone={selectedChannel || undefined}
           description={
             selectedChannel === 'business'
               ? isThai
@@ -404,7 +546,13 @@ const Page = () => {
                 : 'Choose one primary type so we can show the right fields and search filters.'
           }
         >
-          {selectedChannel === 'business' ? (
+          {!selectedChannel ? (
+            <StepPrompt
+              isThai={isThai}
+              textTh="เมื่อเลือกหมวดหลักแล้ว ประเภททรัพย์ที่เกี่ยวข้องจะแสดงตรงนี้"
+              textEn="Relevant property types will appear here after you choose a main category."
+            />
+          ) : selectedChannel === 'business' ? (
             <div className="space-y-6">
               <div>
                 <h3 className="font-sarabun text-sm font-semibold text-neutral-700 dark:text-neutral-200">
@@ -493,7 +641,7 @@ const Page = () => {
                       selected={selectedPropertyType === item.code}
                       title={isThai ? item.nameTh : item.nameEn}
                       icon={<Icon className="size-5" />}
-                      tone={selectedChannel}
+                      tone={selectedChannel || undefined}
                       onClick={() => selectPropertyType(item.code)}
                     />
                   )
@@ -511,28 +659,37 @@ const Page = () => {
                       : 'Includes Court, Residence or Mansion buildings operated by one rental owner. Choose serviced only when ongoing services such as housekeeping, linen changes or reception are provided.'}
                   </p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                    {([
-                      {
-                        code: 'standard' as const,
-                        title: isThai ? 'อพาร์ตเมนต์ทั่วไป' : 'Standard apartment',
-                        description: isThai ? 'เช่าห้องเป็นหลัก ไม่มีบริการแบบโรงแรม' : 'Room rental without hotel-style services',
-                      },
-                      {
-                        code: 'serviced' as const,
-                        title: isThai ? 'เซอร์วิสอพาร์ตเมนต์' : 'Serviced apartment',
-                        description: isThai ? 'มีบริการดูแลระหว่างเข้าพักเป็นประจำ' : 'Includes ongoing services during the stay',
-                      },
-                    ] satisfies Array<{
-                      code: AccommodationModelCode
-                      title: string
-                      description: string
-                    }>).map((option) => {
+                    {(
+                      [
+                        {
+                          code: 'standard' as const,
+                          title: isThai ? 'อพาร์ตเมนต์ทั่วไป' : 'Standard apartment',
+                          description: isThai
+                            ? 'เช่าห้องเป็นหลัก ไม่มีบริการแบบโรงแรม'
+                            : 'Room rental without hotel-style services',
+                        },
+                        {
+                          code: 'serviced' as const,
+                          title: isThai ? 'เซอร์วิสอพาร์ตเมนต์' : 'Serviced apartment',
+                          description: isThai
+                            ? 'มีบริการดูแลระหว่างเข้าพักเป็นประจำ'
+                            : 'Includes ongoing services during the stay',
+                        },
+                      ] satisfies Array<{
+                        code: AccommodationModelCode
+                        title: string
+                        description: string
+                      }>
+                    ).map((option) => {
                       const selected = accommodationModel === option.code
                       return (
                         <button
                           key={option.code}
                           type="button"
-                          onClick={() => setAccommodationModel(option.code)}
+                          onClick={() => {
+                            setAccommodationModel(option.code)
+                            setError('')
+                          }}
                           className={`flex min-h-20 items-start gap-3 rounded-xl border px-3 py-3 text-left transition ${
                             selected
                               ? 'border-sky-500 bg-white shadow-sm ring-1 ring-sky-500 dark:bg-neutral-900'
@@ -566,6 +723,20 @@ const Page = () => {
 
         <WizardSection
           number="3"
+          complete={hasCompleteListingOption}
+          statusText={
+            listingOptionLabel ? (isThai ? `เลือกแล้ว: ${listingOptionLabel}` : `Selected: ${listingOptionLabel}`) : ''
+          }
+          pendingText={
+            hasCompletePropertySelection
+              ? isThai
+                ? 'ยังไม่ได้เลือกรูปแบบประกาศ'
+                : 'No listing option selected yet'
+              : isThai
+                ? 'เลือกประเภททรัพย์ในข้อ 2 ก่อน'
+                : 'Choose a property type in section 2 first'
+          }
+          tone={selectedChannel || undefined}
           title={
             selectedChannel === 'rooms' || hasEventBooth
               ? isThai
@@ -576,7 +747,13 @@ const Page = () => {
                 : 'For sale or rent'
           }
         >
-          {hasEventBooth ? (
+          {!hasCompletePropertySelection ? (
+            <StepPrompt
+              isThai={isThai}
+              textTh="เมื่อเลือกประเภททรัพย์แล้ว ตัวเลือกขาย ให้เช่า หรือรูปแบบที่เกี่ยวข้องจะแสดงตรงนี้"
+              textEn="Sale, rental or other relevant listing options will appear after you choose a property type."
+            />
+          ) : hasEventBooth ? (
             <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-orange-50 p-3 ring-1 ring-orange-200 ring-inset dark:bg-orange-950/30 dark:ring-orange-800">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white">
                 <CalendarRange className="size-5" />
@@ -619,7 +796,7 @@ const Page = () => {
                     compact
                     checked={selectedOffers.includes(offer.code)}
                     title={isThai ? offer.nameTh : offer.nameEn}
-                    tone={selectedChannel}
+                    tone={selectedChannel || undefined}
                     onClick={() => toggleOffer(offer.code)}
                   />
                 ))}
@@ -655,7 +832,7 @@ const Page = () => {
                     key={scope.code}
                     selected={selectedScope === scope.code}
                     title={isThai ? scope.nameTh : scope.nameEn}
-                    tone={selectedChannel}
+                    tone={selectedChannel || undefined}
                     onClick={() => setSelectedScope(scope.code)}
                   />
                 ))}
@@ -672,7 +849,7 @@ const Page = () => {
                     key={useCase.code}
                     checked={selectedUseCases.includes(useCase.code)}
                     title={isThai ? useCase.nameTh : useCase.nameEn}
-                    tone={selectedChannel}
+                    tone={selectedChannel || undefined}
                     onClick={() => toggleUseCase(useCase.code)}
                   />
                 ))}
@@ -684,6 +861,10 @@ const Page = () => {
         <WizardSection
           number="4"
           title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}
+          complete={Boolean(title.trim())}
+          statusText={title.trim() ? (isThai ? `กรอกแล้ว: ${title.trim()}` : `Added: ${title.trim()}`) : ''}
+          pendingText={isThai ? 'ยังไม่ได้กรอกหัวข้อประกาศ' : 'Listing title has not been added yet'}
+          tone={selectedChannel || undefined}
           description={
             isThai
               ? 'เขียนข้อมูลสั้น กระชับ และเจาะจง รายละเอียดอื่นเพิ่มได้ในขั้นถัดไป'
@@ -738,7 +919,7 @@ const Page = () => {
                     : 'Describe the property highlights, transport access and important terms...'
                 }
                 maxLength={1000}
-                className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none sm:text-base min-[744px]:min-h-72 dark:bg-neutral-950"
+                className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none min-[744px]:min-h-72 sm:text-base dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{description.length}/1000</p>
             </FormItem>
@@ -768,29 +949,94 @@ const WizardSection = ({
   number,
   title,
   description,
+  complete,
+  statusText,
+  pendingText,
+  tone,
   children,
 }: {
   number: string
   title: string
   description?: string
+  complete: boolean
+  statusText: string
+  pendingText: string
+  tone?: DiscoveryChannelCode
   children: React.ReactNode
-}) => (
-  <section className="overflow-hidden rounded-[28px] border border-neutral-200/80 bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.32)] dark:border-neutral-800 dark:bg-neutral-900">
-    <div className="flex items-start gap-3 border-b border-neutral-100 bg-neutral-50/80 px-4 py-4 min-[744px]:gap-4 min-[744px]:px-7 min-[744px]:py-5 dark:border-neutral-800 dark:bg-neutral-900">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-sm font-semibold text-white dark:bg-white dark:text-neutral-900">
-        {number}
-      </span>
-      <span className="min-w-0 self-center">
-        <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-        {description ? (
-          <span className="mt-0.5 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-            {description}
+}) => {
+  const completedBorder =
+    tone === 'homes'
+      ? 'border-emerald-300 dark:border-emerald-800'
+      : tone === 'rooms'
+        ? 'border-sky-300 dark:border-sky-800'
+        : 'border-orange-300 dark:border-orange-800'
+  const completedHeader =
+    tone === 'homes'
+      ? 'border-emerald-100 bg-emerald-50/75 dark:border-emerald-900 dark:bg-emerald-950/20'
+      : tone === 'rooms'
+        ? 'border-sky-100 bg-sky-50/75 dark:border-sky-900 dark:bg-sky-950/20'
+        : 'border-orange-100 bg-orange-50/75 dark:border-orange-900 dark:bg-orange-950/20'
+  const completedNumber = tone === 'homes' ? 'bg-emerald-600' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
+  const completedStatus =
+    tone === 'homes'
+      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200'
+      : tone === 'rooms'
+        ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200'
+        : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
+
+  return (
+    <section
+      className={`overflow-hidden rounded-[28px] border bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.32)] transition-colors dark:bg-neutral-900 ${
+        complete ? completedBorder : 'border-neutral-200/80 dark:border-neutral-800'
+      }`}
+    >
+      <div
+        className={`flex items-start gap-3 border-b px-4 py-4 transition-colors min-[744px]:gap-4 min-[744px]:px-7 min-[744px]:py-5 ${
+          complete ? completedHeader : 'border-neutral-100 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900'
+        }`}
+      >
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white transition-colors ${
+            complete ? completedNumber : 'bg-neutral-900 dark:bg-white dark:text-neutral-900'
+          }`}
+        >
+          {number}
+        </span>
+        <span className="min-w-0 flex-1 self-center">
+          <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
+          {description ? (
+            <span className="mt-0.5 block font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+              {description}
+            </span>
+          ) : null}
+          <span
+            aria-live="polite"
+            className={`mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 font-sarabun text-xs font-medium ${
+              complete
+                ? completedStatus
+                : 'bg-neutral-200/70 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
+            }`}
+          >
+            {complete ? (
+              <CheckCircleIcon className="size-4 shrink-0" />
+            ) : (
+              <span className="size-1.5 shrink-0 rounded-full bg-current opacity-50" />
+            )}
+            <span className="truncate">{complete ? statusText : pendingText}</span>
           </span>
-        ) : null}
-      </span>
-    </div>
-    <div className="p-3 min-[744px]:p-7">{children}</div>
-  </section>
+        </span>
+      </div>
+      <div className="p-3 min-[744px]:p-7">{children}</div>
+    </section>
+  )
+}
+
+const StepPrompt = ({ isThai, textTh, textEn }: { isThai: boolean; textTh: string; textEn: string }) => (
+  <div className="flex min-h-24 items-center justify-center rounded-2xl border border-dashed border-neutral-200 bg-neutral-50/70 px-5 py-6 text-center dark:border-neutral-700 dark:bg-neutral-950/40">
+    <p className="max-w-xl font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+      {isThai ? textTh : textEn}
+    </p>
+  </div>
 )
 
 const DiscoveryChannelCard = ({
@@ -881,7 +1127,7 @@ const ChoiceCard = ({
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`relative flex w-full touch-manipulation select-none rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusStyle} ${
+      className={`relative flex w-full touch-manipulation rounded-2xl border text-left transition duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.985] ${focusStyle} ${
         compact
           ? 'min-h-[68px] flex-row items-center gap-2.5 px-3 py-2.5 min-[744px]:min-h-16 min-[744px]:p-3'
           : 'min-h-20 items-center gap-4 p-4'
@@ -902,9 +1148,7 @@ const ChoiceCard = ({
           {icon}
         </span>
       ) : null}
-      <span
-        className={`min-w-0 flex-1 ${compact ? (selectionBadge ? 'pe-14' : 'pe-5 min-[744px]:pe-4') : ''}`}
-      >
+      <span className={`min-w-0 flex-1 ${compact ? (selectionBadge ? 'pe-14' : 'pe-5 min-[744px]:pe-4') : ''}`}>
         <span
           className={`block font-sarabun font-semibold text-neutral-900 dark:text-neutral-50 ${
             compact ? 'text-sm leading-5' : 'text-base'
@@ -918,7 +1162,9 @@ const ChoiceCard = ({
           {selectionBadge}
         </span>
       ) : selected ? (
-        <CheckCircleIcon className={`${compact ? 'absolute top-3 right-3 size-5' : 'h-6 w-6 shrink-0'} ${checkStyle}`} />
+        <CheckCircleIcon
+          className={`${compact ? 'absolute top-3 right-3 size-5' : 'h-6 w-6 shrink-0'} ${checkStyle}`}
+        />
       ) : null}
     </button>
   )
@@ -962,7 +1208,7 @@ const ToggleCard = ({
       role="checkbox"
       aria-checked={checked}
       onClick={onClick}
-      className={`flex w-full touch-manipulation items-center rounded-2xl border text-left transition duration-150 active:scale-[0.985] focus-visible:outline-2 focus-visible:outline-offset-2 ${focusStyle} ${
+      className={`flex w-full touch-manipulation items-center rounded-2xl border text-left transition duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.985] ${focusStyle} ${
         compact ? 'min-h-12 gap-2.5 px-3 py-2.5' : 'min-h-16 gap-3 p-4'
       } ${
         checked

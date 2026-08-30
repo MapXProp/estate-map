@@ -4,7 +4,14 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
 import ButtonPrimary from '@/shared/ButtonPrimary'
-import { ArrowPathIcon, CheckCircleIcon, ClockIcon, DocumentPlusIcon, MapPinIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import {
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  DocumentPlusIcon,
+  MapPinIcon,
+  PhotoIcon,
+} from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
@@ -60,7 +67,7 @@ const MyListingsPanel = () => {
               : 'See every listing you submitted, including listings waiting for review.'}
           </p>
         </div>
-        <ButtonPrimary href="/add-listing/1" className="h-11 shrink-0">
+        <ButtonPrimary href="/add-listing/1?new=1" className="h-11 shrink-0">
           <DocumentPlusIcon className="size-5" />
           {isThai ? 'ลงประกาศใหม่' : 'Create listing'}
         </ButtonPrimary>
@@ -99,7 +106,9 @@ const MyListingsPanel = () => {
       ) : null}
 
       {loading ? <ListingSkeleton /> : null}
-      {!loading && !error && visibleListings.length === 0 ? <EmptyState isThai={isThai} hasListings={listings.length > 0} /> : null}
+      {!loading && !error && visibleListings.length === 0 ? (
+        <EmptyState isThai={isThai} hasListings={listings.length > 0} />
+      ) : null}
       {!loading && !error && visibleListings.length > 0 ? (
         <div className="mt-7 grid gap-4">
           {visibleListings.map((listing) => (
@@ -114,11 +123,13 @@ const MyListingsPanel = () => {
 const ListingRow = ({ listing, isThai }: { listing: MyListing; isThai: boolean }) => {
   const status = statusFor(listing, isThai)
   const propertyType = getPropertyType(listing.property_type_code)
-  const propertyLabel = isThai ? propertyType?.nameTh || listing.property_type_code : propertyType?.nameEn || listing.property_type_code
+  const propertyLabel = isThai
+    ? propertyType?.nameTh || listing.property_type_code
+    : propertyType?.nameEn || listing.property_type_code
   const listingIsLive = listingGroup(listing) === 'active'
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:flex">
+    <article className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm sm:flex dark:border-neutral-800 dark:bg-neutral-900">
       <div className="relative h-44 bg-neutral-100 sm:h-auto sm:w-56 dark:bg-neutral-800">
         {listing.primary_image_url ? (
           <img src={getListingMediaUrl(listing.primary_image_url)} alt="" className="h-full w-full object-cover" />
@@ -130,21 +141,29 @@ const ListingRow = ({ listing, isThai }: { listing: MyListing; isThai: boolean }
       </div>
       <div className="min-w-0 flex-1 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sarabun text-xs font-semibold ${status.className}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sarabun text-xs font-semibold ${status.className}`}
+          >
             {status.kind === 'active' ? <CheckCircleIcon className="size-4" /> : <ClockIcon className="size-4" />}
             {status.label}
           </span>
           <time className="font-sarabun text-xs text-neutral-400 dark:text-neutral-500" dateTime={listing.updated_at}>
-            {isThai ? `อัปเดต ${formatDate(listing.updated_at, 'th-TH')}` : `Updated ${formatDate(listing.updated_at, 'en-US')}`}
+            {isThai
+              ? `อัปเดต ${formatDate(listing.updated_at, 'th-TH')}`
+              : `Updated ${formatDate(listing.updated_at, 'en-US')}`}
           </time>
         </div>
-        <h2 className="mt-3 line-clamp-2 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">{listing.title}</h2>
+        <h2 className="mt-3 line-clamp-2 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
+          {listing.title}
+        </h2>
         <p className="mt-1 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
           {propertyLabel}
           {listing.address ? ` · ${listing.address}` : ''}
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">{formatPrice(listing, isThai)}</p>
+          <p className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">
+            {formatPrice(listing, isThai)}
+          </p>
           {listingIsLive ? (
             <Link
               href={`/real-estate-listings/${listing.slug}`}
@@ -190,7 +209,13 @@ const EmptyState = ({ isThai, hasListings }: { isThai: boolean; hasListings: boo
   <div className="mt-7 rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
     <DocumentPlusIcon className="mx-auto size-10 text-neutral-400 dark:text-neutral-500" />
     <h2 className="mt-4 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
-      {hasListings ? (isThai ? 'ไม่พบประกาศในสถานะนี้' : 'No listings in this status') : isThai ? 'คุณยังไม่มีประกาศ' : 'You have not created a listing yet'}
+      {hasListings
+        ? isThai
+          ? 'ไม่พบประกาศในสถานะนี้'
+          : 'No listings in this status'
+        : isThai
+          ? 'คุณยังไม่มีประกาศ'
+          : 'You have not created a listing yet'}
     </h2>
     <p className="mt-2 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
       {hasListings
@@ -202,7 +227,7 @@ const EmptyState = ({ isThai, hasListings }: { isThai: boolean; hasListings: boo
           : 'Create a listing for free, then track its review status here.'}
     </p>
     {!hasListings ? (
-      <ButtonPrimary href="/add-listing/1" className="mt-6 h-11">
+      <ButtonPrimary href="/add-listing/1?new=1" className="mt-6 h-11">
         {isThai ? 'เริ่มลงประกาศ' : 'Create listing'}
       </ButtonPrimary>
     ) : null}
@@ -214,12 +239,24 @@ const listingGroup = (listing: MyListing): ListingFilter =>
 
 const statusFor = (listing: MyListing, isThai: boolean) => {
   if (listingGroup(listing) === 'active') {
-    return { kind: 'active', label: isThai ? 'เผยแพร่แล้ว' : 'Live', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' }
+    return {
+      kind: 'active',
+      label: isThai ? 'เผยแพร่แล้ว' : 'Live',
+      className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+    }
   }
   if (listing.moderation_status === 'rejected') {
-    return { kind: 'pending', label: isThai ? 'ต้องแก้ไขก่อนเผยแพร่' : 'Changes required', className: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300' }
+    return {
+      kind: 'pending',
+      label: isThai ? 'ต้องแก้ไขก่อนเผยแพร่' : 'Changes required',
+      className: 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300',
+    }
   }
-  return { kind: 'pending', label: isThai ? 'รอตรวจสอบ' : 'In review', className: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' }
+  return {
+    kind: 'pending',
+    label: isThai ? 'รอตรวจสอบ' : 'In review',
+    className: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  }
 }
 
 const formatPrice = (listing: MyListing, isThai: boolean) => {

@@ -3,10 +3,10 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import SocialMediaLinks from '@/components/SocialMediaLinks'
-import PropertyFooterPreferencesDialog from './PropertyFooterPreferencesDialog'
 import Logo from '@/shared/Logo'
 import { ArrowRight, CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
+import PropertyFooterPreferencesDialog from './PropertyFooterPreferencesDialog'
 
 const footerNavigation = [
   {
@@ -26,7 +26,7 @@ const footerNavigation = [
     title: 'เจ้าของทรัพย์',
     titleEn: 'Property owners',
     links: [
-      ['ลงประกาศฟรี', 'List for free', '/add-listing/1'],
+      ['ลงประกาศฟรี', 'List for free', '/add-listing/1?new=1'],
       ['จัดการบัญชี', 'Manage account', '/account'],
       ['ประกาศของฉัน', 'My listings', '/account-listings'],
       ['สอบถามการลงประกาศ', 'Listing support', '/contact?topic=listing'],
@@ -98,7 +98,7 @@ const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterProtot
             </div>
             <div className="relative mt-6 flex flex-wrap gap-3 min-[744px]:mt-0 min-[744px]:shrink-0">
               <Link
-                href="/add-listing/1"
+                href="/add-listing/1?new=1"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-500 px-6 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-orange-600"
               >
                 {isThai ? 'ลงประกาศฟรี' : 'List for free'}

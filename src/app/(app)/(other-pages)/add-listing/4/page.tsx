@@ -73,7 +73,7 @@ const Page = () => {
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <ButtonSecondary href="/account-listings">{isThai ? 'ดูประกาศของฉัน' : 'View my listings'}</ButtonSecondary>
-          <ButtonPrimary type="button" onClick={() => router.push('/add-listing/1')}>
+          <ButtonPrimary type="button" onClick={() => router.push('/add-listing/1?new=1')}>
             {isThai ? 'ลงประกาศใหม่' : 'Create another listing'}
           </ButtonPrimary>
         </div>
@@ -141,13 +141,16 @@ const Page = () => {
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
           <ReviewItem
-            label={isThai ? 'พื้นที่' : 'Area'}
+            label={isThai ? 'ขนาดที่ดิน' : 'Land area'}
             value={
-              summary?.payload.land_area_sqm
-                ? `${summary.payload.land_area_sqm} ${isThai ? 'ตร.ม. (ที่ดิน)' : 'sq.m. (land)'}`
-                : summary?.payload.usable_area_sqm
-                  ? `${summary.payload.usable_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
-                  : ''
+              summary?.payload.land_area_sqm ? `${summary.payload.land_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}` : ''
+            }
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'}
+            value={
+              summary?.payload.usable_area_sqm ? `${summary.payload.usable_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}` : ''
             }
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
@@ -164,6 +167,24 @@ const Page = () => {
           <ReviewItem
             label={isThai ? 'ที่จอดรถ' : 'Parking spaces'}
             value={summary?.payload.parking_count}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'สภาพทรัพย์' : 'Condition'}
+            value={formatDetailCode(summary?.payload.property_condition, isThai)}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'สถานะปัจจุบัน' : 'Occupancy'}
+            value={formatDetailCode(summary?.payload.occupancy_status, isThai)}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'เอกสารสิทธิ์ / รูปแบบสิทธิ์' : 'Title / tenure'}
+            value={formatDetailCode(
+              summary?.payload.category_details?.title_deed_type || summary?.payload.category_details?.tenure_type,
+              isThai
+            )}
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
           <ReviewItem
@@ -310,6 +331,31 @@ const ReviewItem = ({
     <p className="mt-1 font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">{value || fallback}</p>
   </div>
 )
+
+const formatDetailCode = (value: string | boolean | string[] | undefined, isThai: boolean) => {
+  if (Array.isArray(value)) return value.join(', ')
+  if (typeof value === 'boolean') return value ? (isThai ? 'ใช่' : 'Yes') : isThai ? 'ไม่ใช่' : 'No'
+  if (!value) return ''
+
+  const labels: Record<string, [string, string]> = {
+    new: ['ใหม่ / สร้างเสร็จใหม่', 'Newly completed'],
+    like_new: ['สภาพเหมือนใหม่', 'Like new'],
+    good: ['สภาพดี พร้อมใช้งาน', 'Good, ready to use'],
+    needs_renovation: ['ควรปรับปรุง', 'Needs renovation'],
+    under_construction: ['อยู่ระหว่างก่อสร้าง', 'Under construction'],
+    vacant: ['ว่าง พร้อมเข้าอยู่', 'Vacant'],
+    owner_occupied: ['เจ้าของพักอยู่', 'Owner occupied'],
+    tenant_occupied: ['มีผู้เช่าอยู่', 'Tenant occupied'],
+    freehold: ['กรรมสิทธิ์ (Freehold)', 'Freehold'],
+    leasehold: ['สิทธิการเช่า (Leasehold)', 'Leasehold'],
+    right_of_possession: ['สิทธิครอบครอง', 'Right of possession'],
+    chanote: ['โฉนดที่ดิน (น.ส.4)', 'Chanote (Nor Sor 4)'],
+    nor_sor_3_gor: ['น.ส.3 ก.', 'Nor Sor 3 Gor'],
+    nor_sor_3: ['น.ส.3', 'Nor Sor 3'],
+    sor_kor_1: ['ส.ค.1', 'Sor Kor 1'],
+  }
+  return labels[value]?.[isThai ? 0 : 1] || value.replaceAll('_', ' ')
+}
 
 const formatMediaCount = (
   media: Array<{ media_type: string }> | undefined,

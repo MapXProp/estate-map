@@ -1,8 +1,9 @@
 'use client'
 
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import HomesDetails from '@/components/add-listing/HomesDetails'
 import MonthlyStayDetails from '@/components/add-listing/MonthlyStayDetails'
 import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import Input from '@/shared/Input'
@@ -128,7 +129,11 @@ const Page = () => {
     .filter((item): item is NonNullable<ReturnType<typeof getBusinessSpaceType>> => Boolean(item))
   const selectedAmenities = useMemo(() => readValues(draft?.['amenities[]']), [draft])
   const showsRooms = propertyGroup === 'residential' || propertyGroup === 'mixed_use'
-  const isLand = propertyGroup === 'land'
+  const propertyTypeCode = propertyType?.code || ''
+  const isLand = propertyTypeCode === 'land' || propertyGroup === 'land'
+  const needsLandArea =
+    isLand ||
+    ['detached_house', 'semi_detached_house', 'townhouse', 'shophouse', 'home_office'].includes(propertyTypeCode)
   const listingScope = readText(draft?.listing_scope)
   const accommodationModel = readText(draft?.accommodation_model)
 
@@ -162,6 +167,14 @@ const Page = () => {
           : 'Search for the place or tap the map to confirm the property location.'
       )
       return
+    }
+    if (isLand) {
+      const rai = parseDecimal(formData.get('landAreaRai'))
+      const ngan = parseDecimal(formData.get('landAreaNgan'))
+      const squareWah = parseDecimal(formData.get('landAreaSqWah'))
+      if (rai > 0 || ngan > 0 || squareWah > 0) {
+        formData.set('landAreaSqm', formatDecimal(rai * 1600 + ngan * 400 + squareWah * 4))
+      }
     }
     const savedDraft = saveListingStep(2, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
@@ -221,7 +234,9 @@ const Page = () => {
             <div className="flex flex-col gap-3 rounded-2xl bg-[#f1f7f4] p-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:bg-emerald-950/25">
               <div>
                 <p className="font-sarabun text-sm font-semibold text-[#123f32] dark:text-emerald-200">
-                  {isThai ? '1. ค้นหาชื่อโครงการ ถนน หรือสถานที่ใกล้เคียง' : '1. Search a project, road or nearby place'}
+                  {isThai
+                    ? '1. ค้นหาชื่อโครงการ ถนน หรือสถานที่ใกล้เคียง'
+                    : '1. Search a project, road or nearby place'}
                 </p>
                 <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-600 dark:text-neutral-300">
                   {isThai
@@ -285,7 +300,10 @@ const Page = () => {
             </div>
 
             {locationError ? (
-              <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700">
+              <p
+                role="alert"
+                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700"
+              >
                 {locationError}
               </p>
             ) : null}
@@ -312,13 +330,22 @@ const Page = () => {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
-                    <Input name="subdistrict" value={subdistrict} onChange={(event) => setSubdistrict(event.target.value)} />
+                    <Input
+                      name="subdistrict"
+                      value={subdistrict}
+                      onChange={(event) => setSubdistrict(event.target.value)}
+                    />
                   </FormItem>
                   <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
                     <Input name="city" value={district} onChange={(event) => setDistrict(event.target.value)} />
                   </FormItem>
                   <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
-                    <Input name="state" value={province} onChange={(event) => setProvince(event.target.value)} required />
+                    <Input
+                      name="state"
+                      value={province}
+                      onChange={(event) => setProvince(event.target.value)}
+                      required
+                    />
                   </FormItem>
                   <FormItem label={isThai ? 'รหัสไปรษณีย์' : 'Postal code'}>
                     <Input
@@ -351,7 +378,7 @@ const Page = () => {
           title={isLand ? (isThai ? 'ขนาดที่ดิน' : 'Land size') : isThai ? 'ขนาดและข้อมูลหลัก' : 'Size & key details'}
         >
           <div className="grid gap-5 sm:grid-cols-2">
-            {isLand ? (
+            {needsLandArea ? (
               <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
                 <UnitInput
                   name="landAreaSqm"
@@ -359,7 +386,9 @@ const Page = () => {
                   suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
                 />
               </FormItem>
-            ) : (
+            ) : null}
+
+            {!isLand ? (
               <FormItem label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'}>
                 <UnitInput
                   name="usableAreaSqm"
@@ -367,7 +396,7 @@ const Page = () => {
                   suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
                 />
               </FormItem>
-            )}
+            ) : null}
 
             {showsRooms ? (
               <>
@@ -425,6 +454,10 @@ const Page = () => {
             ) : null}
           </div>
         </SectionCard>
+
+        {discoveryChannel === 'homes' && propertyType ? (
+          <HomesDetails draft={draft} propertyTypeCode={propertyType.code} isThai={isThai} />
+        ) : null}
 
         {discoveryChannel === 'rooms' && propertyType ? (
           <MonthlyStayDetails
@@ -504,6 +537,12 @@ const UnitInput = ({
 
 const readText = (value: ListingDraft[string] | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readValues = (value: ListingDraft[string] | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
+const parseDecimal = (value: FormDataEntryValue | null) => {
+  if (typeof value !== 'string') return 0
+  const parsed = Number(value.replace(/,/g, '').trim())
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+const formatDecimal = (value: number) => String(Math.round(value * 100) / 100)
 const parseSavedLocation = (lngValue: string, latValue: string) => {
   if (!lngValue.trim() || !latValue.trim()) return null
 

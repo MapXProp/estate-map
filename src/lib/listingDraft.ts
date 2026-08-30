@@ -125,6 +125,126 @@ export const clearListingDraft = () => {
   localStorage.removeItem(LISTING_DRAFT_KEY)
 }
 
+const CATEGORY_DETAIL_DRAFT_KEYS = [
+  'usableAreaSqm',
+  'landAreaSqm',
+  'Bedroom',
+  'Bathroom',
+  'Parking',
+  'floorNo',
+  'totalFloors',
+  'furnishingStatus',
+  'propertyCondition',
+  'occupancyStatus',
+  'availableFrom',
+  'yearBuilt',
+  'renovatedYear',
+  'tenureType',
+  'facingDirection',
+  'houseStyleCode',
+  'unitPosition',
+  'landWidthM',
+  'landDepthM',
+  'frontageM',
+  'roadWidthM',
+  'gatedCommunity',
+  'projectCommonFeeMonthly',
+  'kitchenType',
+  'maidRoomCount',
+  'privateGarden',
+  'privatePool',
+  'condoUnitType',
+  'buildingTower',
+  'balconyDirection',
+  'viewType',
+  'ownershipQuota',
+  'commonFeeMonthly',
+  'sinkingFundPerSqm',
+  'hasBalcony',
+  'buildingWidthM',
+  'buildingDepthM',
+  'hasMezzanine',
+  'hasElevator',
+  'signageSpace',
+  'threePhasePower',
+  'officeRoomCount',
+  'meetingRoomCount',
+  'hasPantry',
+  'landAreaRai',
+  'landAreaNgan',
+  'landAreaSqWah',
+  'titleDeedType',
+  'landShape',
+  'accessType',
+  'roadSurface',
+  'landFillStatus',
+  'electricityAvailable',
+  'waterAvailable',
+  'drainageAvailable',
+  'zoningColor',
+  'currentLandUse',
+  'existingStructures',
+  'roomTypeCode',
+  'availableRoomCount',
+  'bathroomType',
+  'roomInventoryDetails',
+  'securityDepositAmount',
+  'advanceRentMonths',
+  'utilityDepositAmount',
+  'waterBillingType',
+  'waterRate',
+  'electricityBillingType',
+  'electricityRate',
+  'utilitiesIncluded',
+  'parkingFeeMonthly',
+  'laundryAvailable',
+  'Pets',
+  'smokingPolicy',
+  'foreignTenantAllowed',
+  'visitorPolicy',
+  'privateEntrance',
+  'ownerLivesOnSite',
+  'housekeepingFrequency',
+  'receptionHours',
+  'totalUnits',
+  'occupiedUnits',
+  'monthlyIncome',
+  'monthlyExpenses',
+  'buildingLicenseInfo',
+  'curfewTime',
+  'nearbyInstitution',
+  'dormitoryLicenseNumber',
+  'managingAgency',
+  'occupancyRightType',
+  'rightsTransferAllowed',
+  'projectConditions',
+  'commonFeeIncluded',
+  'juristicRules',
+  'cancellationPolicy',
+  'amenities[]',
+  'sharedFacilities[]',
+  'servicesIncluded[]',
+  'residentGroups[]',
+]
+
+export const resetListingDetailsForCategoryChange = (nextChannel: string, nextPropertyType: string) => {
+  if (typeof window === 'undefined') return
+
+  const draft = getListingDraft()
+  const currentChannel = text(draft.discovery_channel_code)
+  const currentPropertyType = text(draft.property_type_code)
+  if (
+    (!currentChannel && !currentPropertyType) ||
+    (currentChannel === nextChannel && currentPropertyType === nextPropertyType)
+  ) {
+    return
+  }
+
+  const next = { ...draft }
+  CATEGORY_DETAIL_DRAFT_KEYS.forEach((key) => delete next[key])
+  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(next))
+}
+
 export const saveListingStep = (step: number, formData: FormData): ListingDraft => {
   if (typeof window === 'undefined') {
     return {}
@@ -374,8 +494,55 @@ const buildCategoryDetails = (draft: ListingDraft): Record<string, string | bool
   }
 
   const textFields: Array<[string, string, boolean?]> = [
-    ['room_type_code', 'roomTypeCode', true],
     ['available_from', 'availableFrom'],
+    ['year_built', 'yearBuilt'],
+    ['renovated_year', 'renovatedYear'],
+    ['tenure_type', 'tenureType', true],
+    ['facing_direction', 'facingDirection', true],
+    ['house_style_code', 'houseStyleCode', true],
+    ['unit_position', 'unitPosition', true],
+    ['land_width_m', 'landWidthM'],
+    ['land_depth_m', 'landDepthM'],
+    ['frontage_m', 'frontageM'],
+    ['road_width_m', 'roadWidthM'],
+    ['gated_community', 'gatedCommunity', true],
+    ['project_common_fee_monthly', 'projectCommonFeeMonthly'],
+    ['kitchen_type', 'kitchenType', true],
+    ['maid_room_count', 'maidRoomCount'],
+    ['private_garden', 'privateGarden', true],
+    ['private_pool', 'privatePool', true],
+    ['condo_unit_type', 'condoUnitType', true],
+    ['building_tower', 'buildingTower'],
+    ['balcony_direction', 'balconyDirection', true],
+    ['view_type', 'viewType', true],
+    ['ownership_quota', 'ownershipQuota', true],
+    ['common_fee_monthly', 'commonFeeMonthly'],
+    ['sinking_fund_per_sqm', 'sinkingFundPerSqm'],
+    ['has_balcony', 'hasBalcony', true],
+    ['building_width_m', 'buildingWidthM'],
+    ['building_depth_m', 'buildingDepthM'],
+    ['has_mezzanine', 'hasMezzanine', true],
+    ['has_elevator', 'hasElevator', true],
+    ['signage_space', 'signageSpace', true],
+    ['three_phase_power', 'threePhasePower', true],
+    ['office_room_count', 'officeRoomCount'],
+    ['meeting_room_count', 'meetingRoomCount'],
+    ['has_pantry', 'hasPantry', true],
+    ['land_area_rai', 'landAreaRai'],
+    ['land_area_ngan', 'landAreaNgan'],
+    ['land_area_sq_wah', 'landAreaSqWah'],
+    ['title_deed_type', 'titleDeedType', true],
+    ['land_shape', 'landShape', true],
+    ['access_type', 'accessType', true],
+    ['road_surface', 'roadSurface', true],
+    ['land_fill_status', 'landFillStatus', true],
+    ['electricity_available', 'electricityAvailable', true],
+    ['water_available', 'waterAvailable', true],
+    ['drainage_available', 'drainageAvailable', true],
+    ['zoning_color', 'zoningColor'],
+    ['current_land_use', 'currentLandUse'],
+    ['existing_structures', 'existingStructures'],
+    ['room_type_code', 'roomTypeCode', true],
     ['available_room_count', 'availableRoomCount'],
     ['bathroom_type', 'bathroomType', true],
     ['room_inventory_details', 'roomInventoryDetails'],
@@ -446,7 +613,9 @@ export const getListingDraftSummary = (locale: 'th' | 'en' = 'th') => {
           : 'Serviced apartment'
         : propertyTypeLabel(payload.property_type_code, locale),
     businessSpaceType: (payload.space_type_codes || [])
-      .map((code) => (locale === 'th' ? getBusinessSpaceType(code)?.nameTh : getBusinessSpaceType(code)?.nameEn) || code)
+      .map(
+        (code) => (locale === 'th' ? getBusinessSpaceType(code)?.nameTh : getBusinessSpaceType(code)?.nameEn) || code
+      )
       .join(', '),
     propertyGroup: propertyGroupLabel(payload.property_group_code, locale),
     listingScope: listingScopeLabel(payload.listing_scope, locale),

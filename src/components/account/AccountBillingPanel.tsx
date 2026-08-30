@@ -34,7 +34,7 @@ const AccountBillingPanel = () => {
             ? 'ส่งประกาศเพื่อให้ทีมงานตรวจสอบ แล้วติดตามสถานะได้จากหน้า “ประกาศของฉัน”'
             : 'Submit a listing for review, then track its status from My listings.'}
         </p>
-        <ButtonPrimary href="/add-listing/1" className="mt-5 h-11">
+        <ButtonPrimary href="/add-listing/1?new=1" className="mt-5 h-11">
           {isThai ? 'ลงประกาศใหม่' : 'Create listing'}
         </ButtonPrimary>
       </section>

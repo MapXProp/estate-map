@@ -87,7 +87,7 @@ export async function getNavigation(): Promise<TNavigationItem[]> {
             { id: '4-5', href: '/contact', name: 'Contact' },
             { id: '4-6', href: '/login', name: 'Login/Signup' },
             { id: '4-8', href: '/account', name: 'Account' },
-            { id: '4-7', href: '/add-listing/1', name: 'Add listing' },
+            { id: '4-7', href: '/add-listing/1?new=1', name: 'Add listing' },
           ],
         },
       ],
@@ -208,7 +208,7 @@ export const getCurrencies = async () => {
 </svg>`,
       active: true,
     },
-    
+
     /*{
       id: 'GBF',
       name: 'GBF',

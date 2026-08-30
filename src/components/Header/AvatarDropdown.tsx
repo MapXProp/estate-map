@@ -89,7 +89,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             </div>
 
             <Link
-              href="/add-listing/1"
+              href="/add-listing/1?new=1"
               className="mt-4 flex min-h-14 items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-3.5 py-2.5 transition hover:border-orange-200 hover:bg-orange-100/70 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/35 dark:border-orange-900/50 dark:bg-orange-950/25 dark:hover:bg-orange-950/40"
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-orange-500 text-white shadow-sm shadow-orange-500/20">
