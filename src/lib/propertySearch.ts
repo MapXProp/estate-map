@@ -163,6 +163,8 @@ export type PropertyListingDetail = {
   offer_type: string
   offer_amount?: number
   price_unit: string
+  currency: string
+  amenities: string[]
   published_at?: string
   expires_at?: string
   is_verified: boolean

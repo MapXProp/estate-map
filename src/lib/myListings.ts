@@ -12,6 +12,7 @@ export type MyListing = {
   address: string
   price?: number
   price_unit: string
+  currency: string
   primary_image_url: string
   created_at: string
   updated_at: string
