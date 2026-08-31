@@ -34,15 +34,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [pathname])
 
   const content = (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-[#f3f0ea] dark:bg-neutral-950">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-[#ebe6de] via-[#f3f0ea]/75 to-transparent dark:from-neutral-900 dark:via-neutral-950"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-24 -right-24 hidden size-72 rounded-full bg-[#f2c69d]/25 blur-[90px] min-[744px]:block dark:bg-orange-900/10"
-      />
+    <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
       <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
         <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
           <SellerGuide />
