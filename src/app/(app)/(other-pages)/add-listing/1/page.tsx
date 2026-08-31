@@ -105,10 +105,10 @@ const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
 const discoveryChannelVisuals = {
   homes: {
     Icon: House,
-    selected: 'border-[#409F55] bg-[#F2FAF0] ring-1 ring-[#409F55] dark:border-[#70A47A] dark:bg-[#173520]',
-    icon: 'bg-[#409F55] text-white',
-    check: 'text-[#275D36] dark:text-[#B9DABF]',
-    focus: 'focus-visible:outline-[#409F55]',
+    selected: 'border-[#35B952] bg-[#F1FCF3] ring-1 ring-[#35B952] dark:border-[#68D27E] dark:bg-[#173520]',
+    icon: 'bg-[#37A14F] text-white',
+    check: 'text-[#17662E] dark:text-[#C9F0D1]',
+    focus: 'focus-visible:outline-[#35B952]',
   },
   rooms: {
     Icon: BedDouble,
@@ -454,7 +454,7 @@ const Page = () => {
   return (
     <>
       <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
+        <div className="inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-[#fff8f1] px-3 py-1 text-xs font-medium text-orange-700 shadow-[0_8px_20px_-16px_rgba(194,82,17,0.7)] dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300">
           <PencilSquareIcon className="h-4 w-4" />
           <span>{isThai ? 'เริ่มลงประกาศ' : 'Start your listing'}</span>
         </div>
@@ -968,20 +968,20 @@ const WizardSection = ({
 }) => {
   const completedBorder =
     tone === 'homes'
-      ? 'border-[#76BE83] dark:border-[#3E744A]'
+      ? 'border-[#68D27E] dark:border-[#2A7A3D]'
       : tone === 'rooms'
         ? 'border-sky-300 dark:border-sky-800'
         : 'border-orange-300 dark:border-orange-800'
   const completedHeader =
     tone === 'homes'
-      ? 'border-[#CDE8D2] bg-[#F2FAF0] dark:border-[#285837] dark:bg-[#173520]'
+      ? 'border-[#C9F0D1] bg-[#F1FCF3] dark:border-[#205E30] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-100 bg-sky-50/75 dark:border-sky-900 dark:bg-sky-950/20'
         : 'border-orange-100 bg-orange-50/75 dark:border-orange-900 dark:bg-orange-950/20'
-  const completedNumber = tone === 'homes' ? 'bg-[#409F55]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
+  const completedNumber = tone === 'homes' ? 'bg-[#37A14F]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
   const completedStatus =
     tone === 'homes'
-      ? 'bg-[#DDF3E2] text-[#275D36] dark:bg-[#234B2F] dark:text-[#C9E6CE]'
+      ? 'bg-[#DDF7E3] text-[#17662E] dark:bg-[#234B2F] dark:text-[#C9F0D1]'
       : tone === 'rooms'
         ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200'
         : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
@@ -1113,15 +1113,15 @@ const ChoiceCard = ({
 }) => {
   const selectedStyle =
     tone === 'homes'
-      ? 'border-[#409F55] bg-[#F2FAF0] shadow-[0_10px_24px_-20px_rgba(64,159,85,0.55)] dark:border-[#70A47A] dark:bg-[#173520]'
+      ? 'border-[#35B952] bg-[#F1FCF3] shadow-[0_10px_24px_-20px_rgba(53,185,82,0.65)] dark:border-[#68D27E] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-500 bg-sky-50/80 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.9)] dark:bg-sky-950/25'
         : 'border-orange-500 bg-orange-50/75 shadow-[0_10px_24px_-20px_rgba(249,115,22,0.95)] dark:bg-orange-950/25'
-  const iconStyle = tone === 'homes' ? 'bg-[#409F55]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
-  const checkStyle = tone === 'homes' ? 'text-[#275D36]' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
+  const iconStyle = tone === 'homes' ? 'bg-[#37A14F]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
+  const checkStyle = tone === 'homes' ? 'text-[#17662E]' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
   const focusStyle =
     tone === 'homes'
-      ? 'focus-visible:outline-[#409F55]'
+      ? 'focus-visible:outline-[#35B952]'
       : tone === 'rooms'
         ? 'focus-visible:outline-sky-500'
         : 'focus-visible:outline-orange-500'
@@ -1203,19 +1203,19 @@ const ToggleCard = ({
 }) => {
   const selectedStyle =
     tone === 'homes'
-      ? 'border-[#409F55] bg-[#F2FAF0] dark:border-[#70A47A] dark:bg-[#173520]'
+      ? 'border-[#35B952] bg-[#F1FCF3] dark:border-[#68D27E] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/25'
         : 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
   const indicatorStyle =
     tone === 'homes'
-      ? 'border-[#409F55] bg-[#409F55]'
+      ? 'border-[#35B952] bg-[#35B952]'
       : tone === 'rooms'
         ? 'border-sky-600 bg-sky-600'
         : 'border-orange-500 bg-orange-500'
   const focusStyle =
     tone === 'homes'
-      ? 'focus-visible:outline-[#409F55]'
+      ? 'focus-visible:outline-[#35B952]'
       : tone === 'rooms'
         ? 'focus-visible:outline-sky-500'
         : 'focus-visible:outline-orange-500'

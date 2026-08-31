@@ -34,14 +34,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [pathname])
 
   const content = (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-[#f3f0ea] dark:bg-neutral-950">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-orange-50 via-[#fffaf6] to-transparent dark:from-orange-950/15 dark:via-neutral-950"
+        className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-[#ebe6de] via-[#f3f0ea]/75 to-transparent dark:from-neutral-900 dark:via-neutral-950"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-28 -right-28 hidden size-80 rounded-full bg-orange-200/30 blur-3xl min-[744px]:block dark:bg-orange-900/10"
+        className="pointer-events-none absolute -top-24 -right-24 hidden size-72 rounded-full bg-[#f2c69d]/25 blur-[90px] min-[744px]:block dark:bg-orange-900/10"
       />
       <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
         <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
@@ -49,7 +49,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
           <main className="min-w-0">
             <ProgressHeader pathname={pathname} />
-            <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-orange-100/80 min-[744px]:bg-white/95 min-[744px]:p-8 min-[744px]:shadow-[0_28px_90px_-52px_rgba(74,44,20,0.45)] min-[744px]:backdrop-blur-sm lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900/95">
+            <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-[#e1dcd3] min-[744px]:bg-white min-[744px]:p-8 min-[744px]:shadow-[0_30px_80px_-55px_rgba(45,37,27,0.38)] lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900">
               {children}
             </div>
             <Pagination pathname={pathname} />
@@ -74,9 +74,9 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const isThai = locale === 'th'
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] bg-[#123f32] px-5 py-5 text-white shadow-[0_26px_70px_-38px_rgba(18,63,50,0.75)] sm:px-7 sm:py-6">
+    <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#174c3d] via-[#123f32] to-[#0d3228] px-5 py-5 text-white shadow-[0_28px_72px_-42px_rgba(12,47,37,0.62)] ring-1 ring-black/5 sm:px-7 sm:py-6">
       <div aria-hidden="true" className="absolute -top-24 -right-14 size-64 rounded-full border border-white/10" />
-      <div aria-hidden="true" className="absolute -right-6 -bottom-28 size-56 rounded-full bg-white/5" />
+      <div aria-hidden="true" className="absolute -right-6 -bottom-28 size-56 rounded-full bg-orange-200/[0.06]" />
 
       <div className="relative flex items-end justify-between gap-4">
         <div className="min-w-0">
@@ -84,7 +84,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
             <p className="font-sarabun text-xs font-semibold tracking-[0.14em] text-orange-300 uppercase">
               {isThai ? 'ลงประกาศฟรี' : 'List for free'}
             </p>
-            <span className="rounded-full bg-white/10 px-2.5 py-1 font-sarabun text-[11px] text-white/75">
+            <span className="rounded-full bg-white/[0.08] px-2.5 py-1 font-sarabun text-[11px] text-white/80 ring-1 ring-white/10">
               {isThai ? 'บันทึกร่างอัตโนมัติ' : 'Draft saved automatically'}
             </span>
           </div>
@@ -98,7 +98,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         </span>
       </div>
 
-      <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-white/15">
+      <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-black/15 ring-1 ring-white/10">
         <div
           className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-500"
           style={{ width: `${(index / steps.length) * 100}%` }}
@@ -187,7 +187,7 @@ const SellerGuide = () => {
 
   return (
     <aside className="hidden xl:sticky xl:top-28 xl:block">
-      <section className="relative overflow-hidden rounded-[30px] bg-[#123f32] p-6 text-white shadow-[0_28px_70px_-42px_rgba(18,63,50,0.8)]">
+      <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#174c3d] via-[#123f32] to-[#0d3228] p-6 text-white shadow-[0_30px_74px_-44px_rgba(12,47,37,0.65)] ring-1 ring-black/5">
         <div aria-hidden="true" className="absolute -top-16 -right-16 size-40 rounded-full border border-white/10" />
         <span className="relative flex size-11 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-lg shadow-orange-950/20">
           <SparklesIcon className="size-5" />
@@ -213,7 +213,7 @@ const SellerGuide = () => {
         <ul className="relative mt-6 space-y-3 border-t border-white/10 pt-5">
           {benefits.map((item) => (
             <li key={item} className="flex items-center gap-2.5 font-sarabun text-sm text-white/85">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-orange-300">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-orange-300/10 text-orange-300 ring-1 ring-orange-200/10">
                 <CheckIcon className="size-3.5" />
               </span>
               {item}
