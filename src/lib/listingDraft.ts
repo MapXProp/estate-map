@@ -423,7 +423,7 @@ export const publishListingDraft = async () => {
 
 export const uploadListingMedia = async (files: File[], mediaType: ListingMediaType) => {
   const urls: string[] = []
-  const limit = mediaType === 'image' ? 12 : 4
+  const limit = mediaType === 'image' ? 10 : 4
 
   for (const file of files.slice(0, limit)) {
     const formData = new FormData()

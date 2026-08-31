@@ -28,15 +28,39 @@ import {
   UserCircleIcon,
   VideoCameraIcon,
   ViewfinderCircleIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import FormItem from '../FormItem'
 
-const MAX_PHOTOS = 12
+const MAX_PHOTOS = 10
 const MAX_VIDEOS = 4
 const MAX_PANORAMAS = 4
+
+const fileIdentity = (file: File) => `${file.name}:${file.size}:${file.lastModified}`
+
+const appendUniqueFiles = (current: File[], incoming: File[], limit: number) => {
+  const identities = new Set(current.map(fileIdentity))
+  const uniqueIncoming = incoming.filter((file) => {
+    const identity = fileIdentity(file)
+    if (identities.has(identity)) return false
+    identities.add(identity)
+    return true
+  })
+
+  return [...current, ...uniqueIncoming].slice(0, limit)
+}
+
+const replaceFormDataValues = (formData: FormData, key: string, values: string[]) => {
+  formData.delete(key)
+  if (!values.length) {
+    formData.set(key, '')
+    return
+  }
+  values.forEach((value) => formData.append(key, value))
+}
 
 type ContactRoleCode =
   | ''
@@ -140,27 +164,55 @@ const Page = () => {
   const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
 
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || [])
-      .filter((file) => file.type.startsWith('image/'))
-      .slice(0, Math.max(0, MAX_PHOTOS - uploadedPhotoUrls.length))
-    setPhotos(selected)
+    const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
+    setPhotos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_PHOTOS - uploadedPhotoUrls.length)))
+    event.target.value = ''
     setUploadError('')
   }
 
   const handleVideos = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || [])
-      .filter((file) => ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type))
-      .slice(0, Math.max(0, MAX_VIDEOS - uploadedVideoUrls.length))
-    setVideos(selected)
+    const selected = Array.from(event.target.files || []).filter((file) =>
+      ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)
+    )
+    setVideos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_VIDEOS - uploadedVideoUrls.length)))
+    event.target.value = ''
     setUploadError('')
   }
 
   const handlePanoramas = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || [])
-      .filter((file) => file.type.startsWith('image/'))
-      .slice(0, Math.max(0, MAX_PANORAMAS - uploadedPanoramaUrls.length))
-    setPanoramas(selected)
+    const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
+    setPanoramas((current) =>
+      appendUniqueFiles(current, selected, Math.max(0, MAX_PANORAMAS - uploadedPanoramaUrls.length))
+    )
+    event.target.value = ''
     setUploadError('')
+  }
+
+  const removePhoto = (index: number) => {
+    if (index < uploadedPhotoUrls.length) {
+      setUploadedPhotoUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
+      return
+    }
+    const pendingIndex = index - uploadedPhotoUrls.length
+    setPhotos((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
+  }
+
+  const removeVideo = (index: number) => {
+    if (index < uploadedVideoUrls.length) {
+      setUploadedVideoUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
+      return
+    }
+    const pendingIndex = index - uploadedVideoUrls.length
+    setVideos((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
+  }
+
+  const removePanorama = (index: number) => {
+    if (index < uploadedPanoramaUrls.length) {
+      setUploadedPanoramaUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
+      return
+    }
+    const pendingIndex = index - uploadedPanoramaUrls.length
+    setPanoramas((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
   }
 
   const handleSubmitForm = async (formData: FormData) => {
@@ -221,9 +273,9 @@ const Page = () => {
     formData.set('selectedPhotoCount', String(nextPhotoUrls.length))
     formData.set('selectedVideoCount', String(nextVideoUrls.length))
     formData.set('selectedPanoramaCount', String(nextPanoramaUrls.length))
-    nextPhotoUrls.forEach((url) => formData.append('listingPhotoUrls[]', url))
-    nextVideoUrls.forEach((url) => formData.append('listingVideoUrls[]', url))
-    nextPanoramaUrls.forEach((url) => formData.append('listingPanoramaUrls[]', url))
+    replaceFormDataValues(formData, 'listingPhotoUrls[]', nextPhotoUrls)
+    replaceFormDataValues(formData, 'listingVideoUrls[]', nextVideoUrls)
+    replaceFormDataValues(formData, 'listingPanoramaUrls[]', nextPanoramaUrls)
     const savedDraft = saveListingStep(3, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     setIsUploading(false)
@@ -233,6 +285,10 @@ const Page = () => {
   if (!draft) {
     return <div className="h-64 animate-pulse rounded-[28px] bg-neutral-100 dark:bg-neutral-800" />
   }
+
+  const photoCount = uploadedPhotoUrls.length + photos.length
+  const videoCount = uploadedVideoUrls.length + videos.length
+  const panoramaCount = uploadedPanoramaUrls.length + panoramas.length
 
   return (
     <>
@@ -281,23 +337,40 @@ const Page = () => {
         />
 
         <SectionCard icon={<PhotoIcon className="size-5" />} title={isThai ? 'รูปภาพของทรัพย์' : 'Property photos'}>
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-10 text-center transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-orange-700">
+          <label
+            className={`flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-8 text-center transition dark:border-neutral-700 dark:bg-neutral-950 ${
+              photoCount >= MAX_PHOTOS
+                ? 'cursor-not-allowed opacity-65'
+                : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 dark:hover:border-orange-700'
+            }`}
+          >
             <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
               <PhotoIcon className="size-6" />
             </span>
             <span className="mt-4 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {isThai ? 'เลือกรูปจากอุปกรณ์' : 'Choose photos from your device'}
+              {photoCount >= MAX_PHOTOS
+                ? isThai
+                  ? 'เพิ่มรูปครบแล้ว'
+                  : 'Photo limit reached'
+                : photoCount
+                  ? isThai
+                    ? 'เพิ่มรูปภาพ'
+                    : 'Add more photos'
+                  : isThai
+                    ? 'เลือกรูปภาพ'
+                    : 'Choose photos'}
             </span>
             <span className="mt-1 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
               {isThai
-                ? 'แนะนำ 6–8 รูป · เพิ่มได้สูงสุด 12 รูป · รูปแรกเป็นภาพหน้าปก'
-                : '6–8 recommended · up to 12 photos · the first photo is the cover'}
+                ? `สูงสุด ${MAX_PHOTOS} รูป · ไม่เกิน 8 MB/รูป · รูปแรกเป็นภาพหน้าปก · ${photoCount}/${MAX_PHOTOS}`
+                : `Up to ${MAX_PHOTOS} photos · 8 MB each · first photo is the cover · ${photoCount}/${MAX_PHOTOS}`}
             </span>
             <input
               name="listingPhotos"
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
+              disabled={photoCount >= MAX_PHOTOS || isUploading}
               onChange={handlePhotos}
               className="sr-only"
             />
@@ -308,7 +381,7 @@ const Page = () => {
               {[...uploadedPhotoUrls.map(resolveListingMediaUrl), ...previewUrls].map((url, index) => (
                 <div
                   key={url}
-                  className="aspect-square overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
+                  className="relative aspect-square overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
                   style={{ backgroundImage: `url(${url})` }}
                   aria-label={isThai ? `รูปที่ ${index + 1}` : `Photo ${index + 1}`}
                 >
@@ -317,6 +390,15 @@ const Page = () => {
                       {isThai ? 'ภาพหน้าปก' : 'Cover photo'}
                     </span>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    disabled={isUploading}
+                    className="absolute top-1 right-1 flex size-10 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={isThai ? `ลบรูปที่ ${index + 1}` : `Remove photo ${index + 1}`}
+                  >
+                    <XMarkIcon className="size-5" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -346,17 +428,35 @@ const Page = () => {
               ? 'เพิ่มคลิปพาชม ห้องจริง หรือบรรยากาศรอบทรัพย์ได้สูงสุด 4 ไฟล์'
               : 'Add walkthroughs, room tours or surroundings — up to 4 files.'}
           </p>
-          <label className="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950">
+          <label
+            className={`flex items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition dark:border-neutral-700 dark:bg-neutral-950 ${
+              videoCount >= MAX_VIDEOS
+                ? 'cursor-not-allowed opacity-65'
+                : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50'
+            }`}
+          >
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
               <VideoCameraIcon className="size-6" />
             </span>
             <span className="min-w-0">
               <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                {isThai ? 'เลือกวิดีโอ' : 'Choose videos'}
+                {videoCount >= MAX_VIDEOS
+                  ? isThai
+                    ? 'เพิ่มวิดีโอครบแล้ว'
+                    : 'Video limit reached'
+                  : videoCount
+                    ? isThai
+                      ? 'เพิ่มวิดีโอ'
+                      : 'Add more videos'
+                    : isThai
+                      ? 'เลือกวิดีโอ'
+                      : 'Choose videos'}
               </span>
               <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                MP4, WebM, MOV · {isThai ? 'ไฟล์ละไม่เกิน 50 MB' : 'up to 50 MB each'} ·{' '}
-                {uploadedVideoUrls.length + videos.length}/{MAX_VIDEOS}
+                {isThai
+                  ? 'เลือก 1 ไฟล์หรือหลายไฟล์พร้อมกันก็ได้ · ไม่เกิน 50 MB/ไฟล์'
+                  : 'Choose one or multiple files · up to 50 MB each'}{' '}
+                · MP4, WebM, MOV · {videoCount}/{MAX_VIDEOS}
               </span>
             </span>
             <input
@@ -364,6 +464,7 @@ const Page = () => {
               type="file"
               accept="video/mp4,video/webm,video/quicktime,.mov"
               multiple
+              disabled={videoCount >= MAX_VIDEOS || isUploading}
               onChange={handleVideos}
               className="sr-only"
             />
@@ -372,14 +473,24 @@ const Page = () => {
           {uploadedVideoUrls.length || videoPreviewUrls.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {[...uploadedVideoUrls.map(resolveListingMediaUrl), ...videoPreviewUrls].map((url, index) => (
-                <video
-                  key={url}
-                  src={url}
-                  controls
-                  preload="metadata"
-                  className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
-                  aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
-                />
+                <div key={url} className="relative">
+                  <video
+                    src={url}
+                    controls
+                    preload="metadata"
+                    className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+                    aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeVideo(index)}
+                    disabled={isUploading}
+                    className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={isThai ? `ลบวิดีโอที่ ${index + 1}` : `Remove video ${index + 1}`}
+                  >
+                    <XMarkIcon className="size-5" />
+                  </button>
+                </div>
               ))}
             </div>
           ) : null}
@@ -406,17 +517,35 @@ const Page = () => {
             <ChevronDownIcon className="size-5 text-neutral-400 transition-transform group-open:rotate-180" />
           </summary>
           <div className="border-t border-neutral-100 px-5 pt-5 pb-6 sm:px-7 sm:pb-7 dark:border-neutral-800">
-            <label className="flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950">
+            <label
+              className={`flex items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition dark:border-neutral-700 dark:bg-neutral-950 ${
+                panoramaCount >= MAX_PANORAMAS
+                  ? 'cursor-not-allowed opacity-65'
+                  : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50'
+              }`}
+            >
               <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
                 <ViewfinderCircleIcon className="size-6" />
               </span>
               <span className="min-w-0">
                 <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {isThai ? 'เลือกภาพพาโนรามา 360°' : 'Choose 360° panoramas'}
+                  {panoramaCount >= MAX_PANORAMAS
+                    ? isThai
+                      ? 'เพิ่มภาพ 360° ครบแล้ว'
+                      : '360° photo limit reached'
+                    : panoramaCount
+                      ? isThai
+                        ? 'เพิ่มภาพ 360°'
+                        : 'Add more 360° photos'
+                      : isThai
+                        ? 'เลือกภาพ 360°'
+                        : 'Choose 360° photos'}
                 </span>
                 <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                  JPG, PNG, WebP · {isThai ? 'ไฟล์ละไม่เกิน 15 MB' : 'up to 15 MB each'} ·{' '}
-                  {uploadedPanoramaUrls.length + panoramas.length}/{MAX_PANORAMAS}
+                  {isThai
+                    ? 'เลือก 1 รูปหรือหลายรูปพร้อมกันก็ได้ · ไม่เกิน 15 MB/รูป'
+                    : 'Choose one or multiple photos · up to 15 MB each'}{' '}
+                  · JPG, PNG, WebP · {panoramaCount}/{MAX_PANORAMAS}
                 </span>
               </span>
               <input
@@ -424,6 +553,7 @@ const Page = () => {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 multiple
+                disabled={panoramaCount >= MAX_PANORAMAS || isUploading}
                 onChange={handlePanoramas}
                 className="sr-only"
               />
@@ -441,6 +571,15 @@ const Page = () => {
                     <span className="absolute right-2 bottom-2 rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] font-semibold text-white">
                       360°
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => removePanorama(index)}
+                      disabled={isUploading}
+                      className="absolute top-1 right-1 flex size-10 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={isThai ? `ลบภาพ 360° ที่ ${index + 1}` : `Remove 360° photo ${index + 1}`}
+                    >
+                      <XMarkIcon className="size-5" />
+                    </button>
                   </div>
                 ))}
               </div>
