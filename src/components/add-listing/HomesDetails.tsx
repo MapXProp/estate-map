@@ -19,10 +19,10 @@ const HomesDetails = ({ draft, propertyTypeCode, isThai }: HomesDetailsProps) =>
   const isHouse = houseTypes.includes(propertyTypeCode)
 
   return (
-    <section className="overflow-hidden rounded-[28px] border border-emerald-200 bg-emerald-50/45 shadow-sm dark:border-emerald-900/70 dark:bg-emerald-950/15">
-      <div className="border-b border-emerald-100 bg-white/80 p-5 sm:p-7 dark:border-emerald-900/60 dark:bg-neutral-900/75">
+    <section className="overflow-hidden rounded-[28px] border border-[#A8D3B0] bg-[#F7FBF5] shadow-sm dark:border-[#3E744A] dark:bg-[#173520]/60">
+      <div className="border-b border-[#CDE8D2] bg-white/80 p-5 sm:p-7 dark:border-[#285837] dark:bg-neutral-900/75">
         <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#409F55] text-white">
             <HomeModernIcon className="size-5" />
           </span>
           <div>
@@ -456,8 +456,8 @@ const LandDetails = ({ draft, isThai }: CommonProps) => (
 type CommonProps = { draft: ListingDraft; isThai: boolean }
 
 const DetailGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="space-y-4 border-b border-emerald-100 pb-7 last:border-b-0 last:pb-0 dark:border-emerald-900/50">
-    <h3 className="font-sarabun text-sm font-semibold text-emerald-950 dark:text-emerald-100">{title}</h3>
+  <div className="space-y-4 border-b border-[#CDE8D2] pb-7 last:border-b-0 last:pb-0 dark:border-[#285837]">
+    <h3 className="font-sarabun text-sm font-semibold text-[#275D36] dark:text-[#C9E6CE]">{title}</h3>
     {children}
   </div>
 )

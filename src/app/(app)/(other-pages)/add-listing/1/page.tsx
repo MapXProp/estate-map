@@ -105,10 +105,10 @@ const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
 const discoveryChannelVisuals = {
   homes: {
     Icon: House,
-    selected: 'border-emerald-600 bg-emerald-50 ring-1 ring-emerald-600 dark:bg-emerald-950/30',
-    icon: 'bg-emerald-600 text-white',
-    check: 'text-emerald-700 dark:text-emerald-300',
-    focus: 'focus-visible:outline-emerald-600',
+    selected: 'border-[#409F55] bg-[#F2FAF0] ring-1 ring-[#409F55] dark:border-[#70A47A] dark:bg-[#173520]',
+    icon: 'bg-[#409F55] text-white',
+    check: 'text-[#275D36] dark:text-[#B9DABF]',
+    focus: 'focus-visible:outline-[#409F55]',
   },
   rooms: {
     Icon: BedDouble,
@@ -886,7 +886,7 @@ const Page = () => {
                 }
                 maxLength={160}
                 required
-                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none sm:text-base dark:bg-neutral-950"
+                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none min-[744px]:text-[17px]! sm:text-base dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{title.length}/160</p>
             </FormItem>
@@ -906,7 +906,7 @@ const Page = () => {
                     : 'e.g. Ideo Sukhumvit 93, ABC Building, XYZ Market'
                 }
                 maxLength={160}
-                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none sm:text-base dark:bg-neutral-950"
+                className="h-16 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 text-base shadow-none min-[744px]:text-[17px]! sm:text-base dark:bg-neutral-950"
               />
             </FormItem>
 
@@ -921,7 +921,7 @@ const Page = () => {
                     : 'Describe the property highlights, transport access and important terms...'
                 }
                 maxLength={1000}
-                className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none min-[744px]:min-h-72 sm:text-base dark:bg-neutral-950"
+                className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none min-[744px]:min-h-72 min-[744px]:text-[17px]! sm:text-base dark:bg-neutral-950"
               />
               <p className="mt-2 text-right text-xs text-neutral-400">{description.length}/1000</p>
             </FormItem>
@@ -968,20 +968,20 @@ const WizardSection = ({
 }) => {
   const completedBorder =
     tone === 'homes'
-      ? 'border-emerald-300 dark:border-emerald-800'
+      ? 'border-[#76BE83] dark:border-[#3E744A]'
       : tone === 'rooms'
         ? 'border-sky-300 dark:border-sky-800'
         : 'border-orange-300 dark:border-orange-800'
   const completedHeader =
     tone === 'homes'
-      ? 'border-emerald-100 bg-emerald-50/75 dark:border-emerald-900 dark:bg-emerald-950/20'
+      ? 'border-[#CDE8D2] bg-[#F2FAF0] dark:border-[#285837] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-100 bg-sky-50/75 dark:border-sky-900 dark:bg-sky-950/20'
         : 'border-orange-100 bg-orange-50/75 dark:border-orange-900 dark:bg-orange-950/20'
-  const completedNumber = tone === 'homes' ? 'bg-emerald-600' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
+  const completedNumber = tone === 'homes' ? 'bg-[#409F55]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
   const completedStatus =
     tone === 'homes'
-      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200'
+      ? 'bg-[#DDF3E2] text-[#275D36] dark:bg-[#234B2F] dark:text-[#C9E6CE]'
       : tone === 'rooms'
         ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200'
         : 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
@@ -1113,15 +1113,15 @@ const ChoiceCard = ({
 }) => {
   const selectedStyle =
     tone === 'homes'
-      ? 'border-emerald-600 bg-emerald-50/80 shadow-[0_10px_24px_-20px_rgba(5,150,105,0.9)] dark:bg-emerald-950/25'
+      ? 'border-[#409F55] bg-[#F2FAF0] shadow-[0_10px_24px_-20px_rgba(64,159,85,0.55)] dark:border-[#70A47A] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-500 bg-sky-50/80 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.9)] dark:bg-sky-950/25'
         : 'border-orange-500 bg-orange-50/75 shadow-[0_10px_24px_-20px_rgba(249,115,22,0.95)] dark:bg-orange-950/25'
-  const iconStyle = tone === 'homes' ? 'bg-emerald-600' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
-  const checkStyle = tone === 'homes' ? 'text-emerald-700' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
+  const iconStyle = tone === 'homes' ? 'bg-[#409F55]' : tone === 'rooms' ? 'bg-sky-600' : 'bg-orange-500'
+  const checkStyle = tone === 'homes' ? 'text-[#275D36]' : tone === 'rooms' ? 'text-sky-700' : 'text-orange-600'
   const focusStyle =
     tone === 'homes'
-      ? 'focus-visible:outline-emerald-600'
+      ? 'focus-visible:outline-[#409F55]'
       : tone === 'rooms'
         ? 'focus-visible:outline-sky-500'
         : 'focus-visible:outline-orange-500'
@@ -1203,19 +1203,19 @@ const ToggleCard = ({
 }) => {
   const selectedStyle =
     tone === 'homes'
-      ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/25'
+      ? 'border-[#409F55] bg-[#F2FAF0] dark:border-[#70A47A] dark:bg-[#173520]'
       : tone === 'rooms'
         ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/25'
         : 'border-orange-500 bg-orange-50 dark:bg-orange-950/25'
   const indicatorStyle =
     tone === 'homes'
-      ? 'border-emerald-600 bg-emerald-600'
+      ? 'border-[#409F55] bg-[#409F55]'
       : tone === 'rooms'
         ? 'border-sky-600 bg-sky-600'
         : 'border-orange-500 bg-orange-500'
   const focusStyle =
     tone === 'homes'
-      ? 'focus-visible:outline-emerald-600'
+      ? 'focus-visible:outline-[#409F55]'
       : tone === 'rooms'
         ? 'focus-visible:outline-sky-500'
         : 'focus-visible:outline-orange-500'

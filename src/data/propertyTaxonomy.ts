@@ -178,7 +178,7 @@ export const propertyTypes: PropertyTypeDefinition[] = [
   {
     code: 'condo',
     groupCode: 'residential',
-    nameTh: 'คอนโดมิเนียม',
+    nameTh: 'คอนโด',
     nameEn: 'Condominium',
     description: 'ห้องชุดในอาคารที่มีกรรมสิทธิ์แยกเป็นยูนิต',
     aliases: ['condominium'],

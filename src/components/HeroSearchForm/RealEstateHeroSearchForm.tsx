@@ -64,7 +64,7 @@ const propertyTypesByTab = {
   ],
   homes: [
     { name: 'บ้าน', value: 'house', description: 'บ้านเดี่ยวและบ้านแฝด' },
-    { name: 'คอนโด', value: 'condo', description: 'คอนโดมิเนียมสำหรับซื้อหรือเช่า' },
+    { name: 'คอนโด', value: 'condo', description: 'คอนโดสำหรับซื้อหรือเช่า' },
     { name: 'ทาวน์โฮม', value: 'townhome', description: 'ทาวน์เฮาส์และทาวน์โฮม' },
     { name: 'ตึกแถว', value: 'rowhouse', description: 'ตึกแถวสำหรับอยู่อาศัย' },
     { name: 'ที่ดินสร้างบ้าน', value: 'residential_land', description: 'ที่ดินสำหรับสร้างที่อยู่อาศัย' },
@@ -173,7 +173,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
     if (offerType) searchParams.set('offer_type', offerType)
     if (minPrice) searchParams.set('price_min', minPrice)
     if (maxPrice) searchParams.set('price_max', maxPrice)
-    formData.getAll('property_type').forEach((propertyType) => searchParams.append('property_type', String(propertyType)))
+    formData
+      .getAll('property_type')
+      .forEach((propertyType) => searchParams.append('property_type', String(propertyType)))
     const searchString = searchParams.toString()
     router.push(searchString ? `/properties/map?${searchString}` : '/properties/map')
   }
@@ -252,7 +254,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
               'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
           )}
           placeholder={isThai ? 'ทำเลที่ต้องการ' : 'Preferred location'}
-          description={isThai ? 'จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ' : 'Province, district, area, road or project name'}
+          description={
+            isThai ? 'จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ' : 'Province, district, area, road or project name'
+          }
           ariaLabel={isThai ? 'ค้นหาทำเล' : 'Search for a location'}
           suggestionsLabel={isThai ? 'ทำเลแนะนำ' : 'Suggested locations'}
           fieldStyle={formStyle}
@@ -275,7 +279,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           description={isThai ? 'เลือกประเภทอสังหา' : 'Choose property type'}
           panelTitle={tabs.find((tab) => tab.value === tabType)?.[isThai ? 'label' : 'labelEn']}
           panelDescription={
-            isThai ? 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด' : 'Select multiple types, or leave blank to view all'
+            isThai
+              ? 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด'
+              : 'Select multiple types, or leave blank to view all'
           }
           tone="mapx"
           onSelectionChange={setSelectedPropertyTypes}
