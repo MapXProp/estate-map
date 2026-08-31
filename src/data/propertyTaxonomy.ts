@@ -17,10 +17,18 @@ export type PropertyTypeCode =
   | 'retail_space'
   | 'warehouse'
   | 'factory'
+  | 'hotel_resort'
   | 'land'
 
 export type UseCaseCode =
-  'residential' | 'office' | 'retail' | 'food_service' | 'storage' | 'industrial' | 'hospitality' | 'agriculture'
+  | 'residential'
+  | 'office'
+  | 'retail'
+  | 'food_service'
+  | 'storage'
+  | 'industrial'
+  | 'hospitality'
+  | 'agriculture'
 
 export type ListingScopeCode = 'single_unit' | 'whole_property' | 'multi_unit' | 'land_plot' | 'space_slot'
 export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer' | 'event_booking'
@@ -83,8 +91,17 @@ export const discoveryChannels: DiscoveryChannelDefinition[] = [
     route: '/business',
     nameTh: 'พื้นที่ทำธุรกิจ',
     nameEn: 'Business spaces',
-    description: 'ตึกแถว ร้านค้า ออฟฟิศ โกดัง โรงงาน และที่ดิน',
-    propertyTypeCodes: ['shophouse', 'home_office', 'office', 'retail_space', 'warehouse', 'factory', 'land'],
+    description: 'ตึกแถว ร้านค้า ออฟฟิศ โกดัง โรงงาน โรงแรม และที่ดิน',
+    propertyTypeCodes: [
+      'shophouse',
+      'home_office',
+      'office',
+      'retail_space',
+      'warehouse',
+      'factory',
+      'hotel_resort',
+      'land',
+    ],
     defaultPropertyTypeCode: 'retail_space',
   },
 ]
@@ -329,6 +346,19 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     allowedOffers: commonPropertyOffers,
   },
   {
+    code: 'hotel_resort',
+    groupCode: 'commercial',
+    nameTh: 'โรงแรม / รีสอร์ต / กิจการที่พัก',
+    nameEn: 'Hotel / resort property',
+    description: 'ขายหรือให้เช่าทั้งอาคารและกิจการที่พัก ไม่ใช่การปล่อยห้องรายเดือน',
+    aliases: ['hotel_property', 'resort_property', 'hostel_property', 'hospitality_property'],
+    allowedUseCases: ['hospitality'],
+    defaultUseCases: ['hospitality'],
+    allowedScopes: ['whole_property'],
+    defaultScope: 'whole_property',
+    allowedOffers: [...commonPropertyOffers, 'business_transfer'],
+  },
+  {
     code: 'land',
     groupCode: 'land',
     nameTh: 'ที่ดิน',
@@ -501,6 +531,7 @@ export const businessSpaceTypes = [
 export const primaryBusinessSpaceTypeCodes = [
   'standalone_shop',
   'market_stall',
+  'event_booth',
   'mall_kiosk',
   'mall_shop',
   'food_court_counter',
@@ -509,7 +540,6 @@ export const primaryBusinessSpaceTypeCodes = [
   'dormitory_shop',
   'street_food_space',
   'shophouse_ground_floor',
-  'event_booth',
 ] as const
 
 export type BusinessSpaceTypeCode = (typeof businessSpaceTypes)[number]['code']

@@ -230,6 +230,26 @@ const Page = () => {
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
           <ReviewItem
+            label={isThai ? 'บทบาท' : 'Role'}
+            value={contactRoleLabel(summary?.payload.contact_role_code, isThai)}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'ได้รับสิทธิลงประกาศจาก' : 'Authority source'}
+            value={contactAuthorityLabel(summary?.payload.contact_authority_code, isThai)}
+            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'บริษัท / สังกัด' : 'Company / organization'}
+            value={summary?.payload.contact_organization_name}
+            fallback={isThai ? 'ไม่มีสังกัดที่ระบุ' : 'No organization specified'}
+          />
+          <ReviewItem
+            label={isThai ? 'สถานะผู้ติดต่อ' : 'Contact status'}
+            value={isThai ? 'ข้อมูลที่ผู้ลงประกาศระบุเอง · ยังไม่ Verified' : 'Self-declared · Not verified'}
+            fallback={isThai ? 'ยังไม่ตรวจสอบ' : 'Not verified'}
+          />
+          <ReviewItem
             label={isThai ? 'โทรศัพท์' : 'Phone'}
             value={summary?.payload.contact_phone}
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
@@ -366,6 +386,31 @@ const formatMediaCount = (
 ) => {
   const count = media?.filter((item) => item.media_type === mediaType).length || 0
   return count ? `${count} ${isThai ? thaiUnit : englishUnit}` : ''
+}
+
+const contactRoleLabel = (value: string | undefined, isThai: boolean) => {
+  const labels: Record<string, [string, string]> = {
+    owner: ['เจ้าของทรัพย์', 'Property owner'],
+    owner_representative: ['ผู้รับมอบอำนาจจากเจ้าของ', 'Owner-authorized representative'],
+    independent_broker: ['นายหน้าอิสระ', 'Independent broker'],
+    agency_broker: ['นายหน้าสังกัดบริษัท', 'Agency broker'],
+    developer_investor_representative: ['ตัวแทนโครงการ / นักลงทุน', 'Developer or investor representative'],
+    property_manager: ['ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร', 'Property or building manager'],
+  }
+  return value ? labels[value]?.[isThai ? 0 : 1] || value : ''
+}
+
+const contactAuthorityLabel = (value: string | undefined, isThai: boolean) => {
+  const labels: Record<string, [string, string]> = {
+    self: ['ทรัพย์ของฉันเอง', 'Own property'],
+    property_owner: ['เจ้าของทรัพย์โดยตรง', 'Property owner directly'],
+    brokerage_company: ['บริษัทนายหน้าหรือทีม', 'Brokerage company or team'],
+    developer_project: ['โครงการ / ผู้พัฒนา', 'Project or developer'],
+    investor_asset_holder: ['นักลงทุน / ผู้ถือทรัพย์', 'Investor or asset holder'],
+    co_broker: ['นายหน้าร่วม (Co-broker)', 'Co-broker'],
+    property_management_company: ['บริษัทบริหารทรัพย์', 'Property management company'],
+  }
+  return value ? labels[value]?.[isThai ? 0 : 1] || value : ''
 }
 
 export default Page

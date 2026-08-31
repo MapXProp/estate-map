@@ -1,5 +1,6 @@
 'use client'
 
+import BusinessDetails from '@/components/add-listing/BusinessDetails'
 import HomesDetails from '@/components/add-listing/HomesDetails'
 import MonthlyStayDetails from '@/components/add-listing/MonthlyStayDetails'
 import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
@@ -131,11 +132,65 @@ const Page = () => {
   const showsRooms = propertyGroup === 'residential' || propertyGroup === 'mixed_use'
   const propertyTypeCode = propertyType?.code || ''
   const isLand = propertyTypeCode === 'land' || propertyGroup === 'land'
-  const needsLandArea =
-    isLand ||
-    ['detached_house', 'semi_detached_house', 'townhouse', 'shophouse', 'home_office'].includes(propertyTypeCode)
+  const needsLandArea = [
+    'detached_house',
+    'semi_detached_house',
+    'townhouse',
+    'shophouse',
+    'home_office',
+    'warehouse',
+    'factory',
+    'hotel_resort',
+  ].includes(propertyTypeCode)
   const listingScope = readText(draft?.listing_scope)
   const accommodationModel = readText(draft?.accommodation_model)
+  const isIndustrialBusiness = discoveryChannel === 'business' && ['warehouse', 'factory'].includes(propertyTypeCode)
+  const isHospitalityBusiness = discoveryChannel === 'business' && propertyTypeCode === 'hotel_resort'
+  const isMonthlyPortfolio = discoveryChannel === 'rooms' && listingScope === 'multi_unit'
+  const showsBedrooms = showsRooms && !isMonthlyPortfolio
+  const showsBathrooms = !isLand && !isHospitalityBusiness && !isMonthlyPortfolio
+  const showsFloorNumber = !isLand && ['single_unit', 'space_slot'].includes(listingScope)
+  const showsTotalFloors = !isLand
+  const showsFurnishing =
+    !isLand && (discoveryChannel !== 'business' || ['shophouse', 'home_office', 'office'].includes(propertyTypeCode))
+  const coreDetailsTitle =
+    isIndustrialBusiness || isHospitalityBusiness
+      ? isThai
+        ? 'พื้นที่อาคารและข้อมูลหลัก'
+        : 'Building area & key details'
+      : isThai
+        ? 'ขนาดและข้อมูลหลัก'
+        : 'Size & key details'
+  const usableAreaLabel =
+    isIndustrialBusiness || isHospitalityBusiness
+      ? isThai
+        ? 'พื้นที่อาคารรวม'
+        : 'Total building area'
+      : isThai
+        ? 'พื้นที่ใช้สอย'
+        : 'Usable area'
+  const bathroomLabel = isIndustrialBusiness
+    ? isThai
+      ? 'ห้องน้ำพนักงาน'
+      : 'Staff restrooms'
+    : discoveryChannel === 'business'
+      ? isThai
+        ? 'ห้องน้ำ / ห้องสุขา'
+        : 'Bathrooms / restrooms'
+      : isThai
+        ? 'ห้องน้ำ'
+        : 'Bathrooms'
+  const parkingLabel = isIndustrialBusiness
+    ? isThai
+      ? 'ที่จอดรถ / ลานจอด'
+      : 'Parking / vehicle yard'
+    : isThai
+      ? 'ที่จอดรถ'
+      : 'Parking spaces'
+  const visibleAmenities =
+    discoveryChannel === 'business' && propertyTypeCode !== 'hotel_resort'
+      ? amenities.filter((amenity) => !['swimming_pool', 'fitness', 'pet_friendly'].includes(amenity.code))
+      : amenities
 
   const useCurrentLocation = () => {
     setLocationError('')
@@ -174,8 +229,18 @@ const Page = () => {
       const squareWah = parseDecimal(formData.get('landAreaSqWah'))
       if (rai > 0 || ngan > 0 || squareWah > 0) {
         formData.set('landAreaSqm', formatDecimal(rai * 1600 + ngan * 400 + squareWah * 4))
+      } else {
+        formData.set('landAreaSqm', '')
       }
     }
+    if (!needsLandArea && !isLand) formData.set('landAreaSqm', '')
+    if (isLand) formData.set('usableAreaSqm', '')
+    if (!showsBedrooms) formData.set('Bedroom', '')
+    if (!showsBathrooms) formData.set('Bathroom', '')
+    if (isLand) formData.set('Parking', '')
+    if (!showsFloorNumber) formData.set('floorNo', '')
+    if (!showsTotalFloors) formData.set('totalFloors', '')
+    if (!showsFurnishing) formData.set('furnishingStatus', '')
     const savedDraft = saveListingStep(2, formData)
     await saveListingDraftToCloud(savedDraft).catch(() => undefined)
     router.push('/add-listing/3')
@@ -374,70 +439,88 @@ const Page = () => {
           </div>
         </SectionCard>
 
-        <SectionCard
-          title={isLand ? (isThai ? 'ขนาดที่ดิน' : 'Land size') : isThai ? 'ขนาดและข้อมูลหลัก' : 'Size & key details'}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            {needsLandArea ? (
-              <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
-                <UnitInput
-                  name="landAreaSqm"
-                  defaultValue={readText(draft.landAreaSqm)}
-                  suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
-                />
-              </FormItem>
-            ) : null}
+        {!isLand ? (
+          <SectionCard title={coreDetailsTitle}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              {needsLandArea ? (
+                <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
+                  <UnitInput
+                    name="landAreaSqm"
+                    defaultValue={readText(draft.landAreaSqm)}
+                    suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                    placeholder={isThai ? 'กรอกขนาดที่ดิน' : 'Enter land area'}
+                  />
+                </FormItem>
+              ) : null}
 
-            {!isLand ? (
-              <FormItem label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'}>
+              <FormItem label={usableAreaLabel}>
                 <UnitInput
                   name="usableAreaSqm"
                   defaultValue={readText(draft.usableAreaSqm)}
                   suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                  placeholder={isThai ? 'กรอกขนาดพื้นที่' : 'Enter area'}
                 />
               </FormItem>
-            ) : null}
 
-            {showsRooms ? (
-              <>
+              {showsBedrooms ? (
                 <FormItem label={isThai ? 'ห้องนอน' : 'Bedrooms'}>
-                  <Input name="Bedroom" defaultValue={readText(draft.Bedroom)} type="number" min="0" placeholder="0" />
+                  <Input
+                    name="Bedroom"
+                    defaultValue={readText(draft.Bedroom)}
+                    type="number"
+                    min="0"
+                    placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
+                  />
                 </FormItem>
-                <FormItem label={isThai ? 'ห้องน้ำ' : 'Bathrooms'}>
+              ) : null}
+
+              {showsBathrooms ? (
+                <FormItem label={bathroomLabel}>
                   <Input
                     name="Bathroom"
                     defaultValue={readText(draft.Bathroom)}
                     type="number"
                     min="0"
-                    placeholder="0"
+                    placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
                   />
                 </FormItem>
-              </>
-            ) : null}
+              ) : null}
 
-            {!isLand ? (
-              <>
-                <FormItem label={isThai ? 'ที่จอดรถ' : 'Parking spaces'}>
-                  <Input name="Parking" defaultValue={readText(draft.Parking)} type="number" min="0" placeholder="0" />
-                </FormItem>
+              <FormItem label={parkingLabel}>
+                <Input
+                  name="Parking"
+                  defaultValue={readText(draft.Parking)}
+                  type="number"
+                  min="0"
+                  placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
+                />
+              </FormItem>
+
+              {showsFloorNumber ? (
                 <FormItem label={isThai ? 'ชั้นที่' : 'Floor'}>
                   <Input
                     name="floorNo"
                     defaultValue={readText(draft.floorNo)}
                     type="number"
                     min="0"
-                    placeholder={isThai ? 'ไม่ระบุ' : 'Not specified'}
+                    placeholder={isThai ? 'เช่น 5' : 'e.g. 5'}
                   />
                 </FormItem>
+              ) : null}
+
+              {showsTotalFloors ? (
                 <FormItem label={isThai ? 'จำนวนชั้นทั้งหมด' : 'Total floors'}>
                   <Input
                     name="totalFloors"
                     defaultValue={readText(draft.totalFloors)}
                     type="number"
                     min="0"
-                    placeholder={isThai ? 'ไม่ระบุ' : 'Not specified'}
+                    placeholder={isThai ? 'เช่น 12' : 'e.g. 12'}
                   />
                 </FormItem>
+              ) : null}
+
+              {showsFurnishing ? (
                 <FormItem label={isThai ? 'เฟอร์นิเจอร์' : 'Furnishing'}>
                   <Select
                     name="furnishingStatus"
@@ -450,10 +533,10 @@ const Page = () => {
                     <option value="unfurnished">{isThai ? 'ไม่มีเฟอร์นิเจอร์' : 'Unfurnished'}</option>
                   </Select>
                 </FormItem>
-              </>
-            ) : null}
-          </div>
-        </SectionCard>
+              ) : null}
+            </div>
+          </SectionCard>
+        ) : null}
 
         {discoveryChannel === 'homes' && propertyType ? (
           <HomesDetails draft={draft} propertyTypeCode={propertyType.code} isThai={isThai} />
@@ -469,11 +552,15 @@ const Page = () => {
           />
         ) : null}
 
+        {discoveryChannel === 'business' && propertyType ? (
+          <BusinessDetails draft={draft} propertyTypeCode={propertyType.code} isThai={isThai} />
+        ) : null}
+
         {!isLand ? (
           <SectionCard title={isThai ? 'จุดเด่นและสิ่งอำนวยความสะดวก' : 'Features & amenities'}>
             <input type="hidden" name="amenities[]" value="" />
             <div className="grid gap-3 sm:grid-cols-2">
-              {amenities.map((amenity) => (
+              {visibleAmenities.map((amenity) => (
                 <label
                   key={amenity.code}
                   className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4 transition hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-900"
@@ -512,11 +599,13 @@ const UnitInput = ({
   name,
   defaultValue,
   suffix,
+  placeholder,
   required,
 }: {
   name: string
   defaultValue: string
   suffix: string
+  placeholder?: string
   required?: boolean
 }) => (
   <div className="relative">
@@ -525,7 +614,7 @@ const UnitInput = ({
       defaultValue={defaultValue}
       inputMode="decimal"
       pattern="[0-9,]*(\.[0-9]{1,2})?"
-      placeholder="0"
+      placeholder={placeholder || '0'}
       required={required}
       className="pe-20!"
     />

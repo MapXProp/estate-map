@@ -64,6 +64,7 @@ export type PropertySearchListing = {
   published_at?: string
   space_type_code: string
   space_type_codes?: string[]
+  allowed_business_types?: string[]
   primary_image_url: string
   event_name: string
   event_floor_label: string
@@ -171,6 +172,10 @@ export type PropertyListingDetail = {
   contact_email: string
   line_id: string
   instagram_handle: string
+  contact_role_code: string
+  contact_authority_code: string
+  contact_organization_name: string
+  contact_verification_status: 'unverified' | 'identity_verified' | 'authority_verified' | ''
   offer_type: string
   offer_amount?: number
   price_unit: string

@@ -1,4 +1,4 @@
-import { Building2, Factory, House, LandPlot, Store, Warehouse } from 'lucide-react'
+import { Building2, Factory, Hotel, House, LandPlot, Store, Warehouse } from 'lucide-react'
 
 export const propertyGroups = [
   {
@@ -41,6 +41,7 @@ export const propertyGroups = [
       ['retail_space', 'พื้นที่ค้าขาย', 'Retail space'],
       ['warehouse', 'โกดัง / คลังสินค้า', 'Warehouse'],
       ['factory', 'โรงงาน', 'Factory'],
+      ['hotel_resort', 'โรงแรม / รีสอร์ต / กิจการที่พัก', 'Hotel / resort property'],
     ],
   },
   {
@@ -55,11 +56,68 @@ export const propertyGroups = [
 ] as const
 
 export const propertyUseCases = [
-  { value: 'residential', label: 'อยู่อาศัย', labelEn: 'Living', description: 'บ้านหรือพื้นที่สำหรับการพักอาศัย', descriptionEn: 'Homes and residential spaces', icon: House },
-  { value: 'office', label: 'ทำสำนักงาน', labelEn: 'Office', description: 'ออฟฟิศและพื้นที่ทำงาน', descriptionEn: 'Offices and workspaces', icon: Building2 },
-  { value: 'retail', label: 'เปิดร้านค้า', labelEn: 'Retail', description: 'ร้าน คีออส หรือล็อกขายของ', descriptionEn: 'Shops, kiosks and retail units', icon: Store },
-  { value: 'food_service', label: 'ร้านอาหาร / คาเฟ่', labelEn: 'Food + café', description: 'พื้นที่ที่รองรับธุรกิจอาหาร', descriptionEn: 'Spaces suitable for food businesses', icon: Store },
-  { value: 'storage', label: 'เก็บสินค้า', labelEn: 'Storage', description: 'โกดังและคลังสินค้า', descriptionEn: 'Warehouses and storage spaces', icon: Warehouse },
-  { value: 'industrial', label: 'ผลิตสินค้า', labelEn: 'Manufacturing', description: 'โรงงานและงานอุตสาหกรรม', descriptionEn: 'Factories and industrial work', icon: Factory },
-  { value: 'agriculture', label: 'เกษตรกรรม', labelEn: 'Agriculture', description: 'ที่ดินสำหรับทำการเกษตร', descriptionEn: 'Land for agricultural use', icon: LandPlot },
+  {
+    value: 'residential',
+    label: 'อยู่อาศัย',
+    labelEn: 'Living',
+    description: 'บ้านหรือพื้นที่สำหรับการพักอาศัย',
+    descriptionEn: 'Homes and residential spaces',
+    icon: House,
+  },
+  {
+    value: 'office',
+    label: 'ทำสำนักงาน',
+    labelEn: 'Office',
+    description: 'ออฟฟิศและพื้นที่ทำงาน',
+    descriptionEn: 'Offices and workspaces',
+    icon: Building2,
+  },
+  {
+    value: 'retail',
+    label: 'เปิดร้านค้า',
+    labelEn: 'Retail',
+    description: 'ร้าน คีออส หรือล็อกขายของ',
+    descriptionEn: 'Shops, kiosks and retail units',
+    icon: Store,
+  },
+  {
+    value: 'food_service',
+    label: 'ร้านอาหาร / คาเฟ่',
+    labelEn: 'Food + café',
+    description: 'พื้นที่ที่รองรับธุรกิจอาหาร',
+    descriptionEn: 'Spaces suitable for food businesses',
+    icon: Store,
+  },
+  {
+    value: 'storage',
+    label: 'เก็บสินค้า',
+    labelEn: 'Storage',
+    description: 'โกดังและคลังสินค้า',
+    descriptionEn: 'Warehouses and storage spaces',
+    icon: Warehouse,
+  },
+  {
+    value: 'industrial',
+    label: 'ผลิตสินค้า',
+    labelEn: 'Manufacturing',
+    description: 'โรงงานและงานอุตสาหกรรม',
+    descriptionEn: 'Factories and industrial work',
+    icon: Factory,
+  },
+  {
+    value: 'agriculture',
+    label: 'เกษตรกรรม',
+    labelEn: 'Agriculture',
+    description: 'ที่ดินสำหรับทำการเกษตร',
+    descriptionEn: 'Land for agricultural use',
+    icon: LandPlot,
+  },
+  {
+    value: 'hospitality',
+    label: 'ธุรกิจที่พัก',
+    labelEn: 'Hospitality',
+    description: 'โรงแรม รีสอร์ต และกิจการที่พัก',
+    descriptionEn: 'Hotels, resorts and hospitality properties',
+    icon: Hotel,
+  },
 ] as const

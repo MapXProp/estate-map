@@ -54,6 +54,7 @@ export async function getPropertyMapFilterOptions() {
         { name: 'Co-working space', value: 'coworking' },
         { name: 'โกดัง', value: 'warehouse' },
         { name: 'โรงงาน', value: 'factory' },
+        { name: 'โรงแรม / รีสอร์ต', value: 'hotel_resort' },
         { name: 'พื้นที่งานอีเวนต์ / ออกบูธ', value: 'event_space' },
       ],
     },

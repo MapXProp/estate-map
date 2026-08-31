@@ -351,7 +351,8 @@ export const archivedPrototypeListingTranslations: Record<
 }
 
 const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
-  if (listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')) return 'commercial'
+  if (listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth'))
+    return 'commercial'
   if (
     ['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'].includes(
       listing.property_type_code
@@ -360,9 +361,17 @@ const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
     return 'rooms'
   if (['shophouse', 'home_office', 'mixed_use'].includes(listing.property_type_code)) return 'mixed_use'
   if (
-    ['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'].includes(
-      listing.property_type_code
-    )
+    [
+      'shop',
+      'retail',
+      'retail_space',
+      'office',
+      'warehouse',
+      'factory',
+      'hotel_resort',
+      'market_stall',
+      'mall_kiosk',
+    ].includes(listing.property_type_code)
   )
     return 'commercial'
   if (listing.property_type_code === 'land') return 'land'

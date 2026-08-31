@@ -1,6 +1,6 @@
 'use client'
 
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { usePreferences, type AppCurrency } from '@/components/preferences/PreferencesProvider'
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
 import { getApiBaseUrl } from '@/lib/auth'
 import {
@@ -14,10 +14,18 @@ import {
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import {
+  ArrowPathRoundedSquareIcon,
   BanknotesIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  CheckCircleIcon,
   ChevronDownIcon,
+  IdentificationIcon,
   PhoneIcon,
   PhotoIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
+  UserCircleIcon,
   VideoCameraIcon,
   ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline'
@@ -30,12 +38,29 @@ const MAX_PHOTOS = 12
 const MAX_VIDEOS = 4
 const MAX_PANORAMAS = 4
 
+type ContactRoleCode =
+  | ''
+  | 'owner'
+  | 'owner_representative'
+  | 'independent_broker'
+  | 'agency_broker'
+  | 'developer_investor_representative'
+  | 'property_manager'
+
+type ContactAuthorityCode =
+  | ''
+  | 'self'
+  | 'property_owner'
+  | 'brokerage_company'
+  | 'developer_project'
+  | 'investor_asset_holder'
+  | 'co_broker'
+  | 'property_management_company'
+
 const Page = () => {
   const router = useRouter()
-  const { locale } = usePreferences()
+  const { locale, currency: preferredCurrency } = usePreferences()
   const isThai = locale === 'th'
-  const currencyName = isThai ? 'บาท' : 'THB'
-  const currencySymbol = '฿'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
   const [offers, setOffers] = useState<OfferTypeCode[]>(['rent'])
   const [salePrice, setSalePrice] = useState('')
@@ -46,6 +71,12 @@ const Page = () => {
   const [serviceFeeMonthly, setServiceFeeMonthly] = useState('')
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState('')
   const [priceOnRequest, setPriceOnRequest] = useState(false)
+  const [priceNegotiable, setPriceNegotiable] = useState(false)
+  const [currency, setCurrency] = useState<AppCurrency>('THB')
+  const [contactRoleCode, setContactRoleCode] = useState<ContactRoleCode>('')
+  const [contactAuthorityCode, setContactAuthorityCode] = useState<ContactAuthorityCode>('')
+  const [contactOrganizationName, setContactOrganizationName] = useState('')
+  const [contactOrganizationRegistrationNo, setContactOrganizationRegistrationNo] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [videos, setVideos] = useState<File[]>([])
   const [panoramas, setPanoramas] = useState<File[]>([])
@@ -62,28 +93,33 @@ const Page = () => {
       const savedOffers = readValues(savedDraft['offerTypes[]']).filter(isOfferTypeCode)
       setDraft(savedDraft)
       setOffers(savedOffers.length ? savedOffers : offersFromLegacy(readText(savedDraft.listing_type)))
-      setSalePrice(readText(savedDraft.salePrice))
-      setRentPriceMonthly(readText(savedDraft.rentPriceMonthly))
-      setRentPriceDaily(readText(savedDraft.rentPriceDaily))
-      setKeyMoneyAmount(readText(savedDraft.keyMoneyAmount))
-      setEventBookingPrice(readText(savedDraft.eventBookingPrice))
-      setServiceFeeMonthly(readText(savedDraft.serviceFeeMonthly))
+      setSalePrice(formatPriceInput(readText(savedDraft.salePrice)))
+      setRentPriceMonthly(formatPriceInput(readText(savedDraft.rentPriceMonthly)))
+      setRentPriceDaily(formatPriceInput(readText(savedDraft.rentPriceDaily)))
+      setKeyMoneyAmount(formatPriceInput(readText(savedDraft.keyMoneyAmount)))
+      setEventBookingPrice(formatPriceInput(readText(savedDraft.eventBookingPrice)))
+      setServiceFeeMonthly(formatPriceInput(readText(savedDraft.serviceFeeMonthly)))
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
-      setPriceOnRequest(readText(savedDraft.priceOnRequest) === 'yes')
+      const savedPriceOnRequest = readText(savedDraft.priceOnRequest) === 'yes'
+      const savedCurrency = readText(savedDraft.currency)
+      setPriceOnRequest(savedPriceOnRequest)
+      setPriceNegotiable(!savedPriceOnRequest && readText(savedDraft.priceNegotiable) === 'yes')
+      setCurrency(savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : preferredCurrency)
+      setContactRoleCode(asContactRoleCode(readText(savedDraft.contactRoleCode)))
+      setContactAuthorityCode(asContactAuthorityCode(readText(savedDraft.contactAuthorityCode)))
+      setContactOrganizationName(readText(savedDraft.contactOrganizationName))
+      setContactOrganizationRegistrationNo(readText(savedDraft.contactOrganizationRegistrationNo))
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
       setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
       setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [router])
+  }, [preferredCurrency, router])
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
-  const panoramaPreviewUrls = useMemo(
-    () => panoramas.map((panorama) => URL.createObjectURL(panorama)),
-    [panoramas]
-  )
+  const panoramaPreviewUrls = useMemo(() => panoramas.map((panorama) => URL.createObjectURL(panorama)), [panoramas])
 
   useEffect(() => {
     return () => previewUrls.forEach((url) => URL.revokeObjectURL(url))
@@ -165,12 +201,23 @@ const Page = () => {
       return
     }
 
-    if (!hasSale) formData.set('salePrice', '')
-    if (!hasRent && !hasTransfer) formData.set('rentPriceMonthly', '')
-    if (!isMonthlyHotel) formData.set('rentPriceDaily', '')
-    if (!hasTransfer) formData.set('keyMoneyAmount', '')
-    if (!hasEventBooking) formData.set('eventBookingPrice', '')
+    if (priceOnRequest || !hasSale) formData.set('salePrice', '')
+    if (priceOnRequest || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
+    if (priceOnRequest || !isMonthlyHotel) formData.set('rentPriceDaily', '')
+    if (priceOnRequest || !hasTransfer) formData.set('keyMoneyAmount', '')
+    if (priceOnRequest || !hasEventBooking) formData.set('eventBookingPrice', '')
+    if (priceOnRequest || (!hasRent && !hasTransfer)) formData.set('serviceFeeMonthly', '')
+    if (!hasRent && !hasTransfer) formData.set('minimumLeaseMonths', '')
     formData.set('priceOnRequest', priceOnRequest ? 'yes' : '')
+    formData.set('priceNegotiable', !priceOnRequest && priceNegotiable ? 'yes' : '')
+    formData.set('currency', currency)
+    formData.set('contactRoleCode', contactRoleCode)
+    formData.set('contactAuthorityCode', contactRoleCode === 'owner' ? 'self' : contactAuthorityCode)
+    formData.set('contactOrganizationName', contactOrganizationName.trim())
+    formData.set(
+      'contactOrganizationRegistrationNo',
+      contactOrganizationName.trim() ? contactOrganizationRegistrationNo.trim() : ''
+    )
     formData.set('selectedPhotoCount', String(nextPhotoUrls.length))
     formData.set('selectedVideoCount', String(nextVideoUrls.length))
     formData.set('selectedPanoramaCount', String(nextPanoramaUrls.length))
@@ -200,6 +247,39 @@ const Page = () => {
       </div>
 
       <Form id="add-listing-form" action={handleSubmitForm} className="space-y-6">
+        <PricingPanel
+          isThai={isThai}
+          offers={offers}
+          currency={currency}
+          onCurrencyChange={setCurrency}
+          priceOnRequest={priceOnRequest}
+          onPriceOnRequestChange={(value) => {
+            setPriceOnRequest(value)
+            if (value) setPriceNegotiable(false)
+          }}
+          priceNegotiable={priceNegotiable}
+          onPriceNegotiableChange={setPriceNegotiable}
+          hasSale={hasSale}
+          hasRent={hasRent}
+          hasTransfer={hasTransfer}
+          hasEventBooking={hasEventBooking}
+          isMonthlyHotel={isMonthlyHotel}
+          salePrice={salePrice}
+          onSalePriceChange={setSalePrice}
+          rentPriceMonthly={rentPriceMonthly}
+          onRentPriceMonthlyChange={setRentPriceMonthly}
+          rentPriceDaily={rentPriceDaily}
+          onRentPriceDailyChange={setRentPriceDaily}
+          keyMoneyAmount={keyMoneyAmount}
+          onKeyMoneyAmountChange={setKeyMoneyAmount}
+          eventBookingPrice={eventBookingPrice}
+          onEventBookingPriceChange={setEventBookingPrice}
+          serviceFeeMonthly={serviceFeeMonthly}
+          onServiceFeeMonthlyChange={setServiceFeeMonthly}
+          minimumLeaseMonths={minimumLeaseMonths}
+          onMinimumLeaseMonthsChange={setMinimumLeaseMonths}
+        />
+
         <SectionCard icon={<PhotoIcon className="size-5" />} title={isThai ? 'รูปภาพของทรัพย์' : 'Property photos'}>
           <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-10 text-center transition hover:border-orange-400 hover:bg-orange-50/50 dark:border-neutral-700 dark:bg-neutral-950 dark:hover:border-orange-700">
             <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
@@ -318,7 +398,9 @@ const Page = () => {
                 {isThai ? 'ภาพ 360° (ส่วนเสริม)' : '360° photos (optional)'}
               </span>
               <span className="mt-0.5 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai ? 'มีภาพพาโนรามาค่อยเปิดเพิ่ม · สูงสุด 4 รูป' : 'Open only when you have panoramas · up to 4 photos'}
+                {isThai
+                  ? 'มีภาพพาโนรามาค่อยเปิดเพิ่ม · สูงสุด 4 รูป'
+                  : 'Open only when you have panoramas · up to 4 photos'}
               </span>
             </span>
             <ChevronDownIcon className="size-5 text-neutral-400 transition-transform group-open:rotate-180" />
@@ -366,165 +448,150 @@ const Page = () => {
           </div>
         </details>
 
-        <section className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
-          <p className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {isThai ? 'รูปแบบประกาศที่เลือกไว้' : 'Selected listing options'}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {offers.map((offer) => (
-              <span
-                key={offer}
-                className="rounded-full bg-white px-3 py-1.5 font-sarabun text-sm text-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:ring-neutral-700"
-              >
-                {isThai ? getOfferType(offer)?.nameTh || offer : getOfferType(offer)?.nameEn || offer}
+        <SectionCard icon={<PhoneIcon className="size-5" />} title={isThai ? 'ช่องทางติดต่อ' : 'Contact details'}>
+          <div className="rounded-3xl border border-neutral-200 bg-neutral-50/80 p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-950/60">
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+                <IdentificationIcon className="size-5" />
               </span>
-            ))}
-          </div>
-        </section>
+              <div>
+                <h3 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">
+                  {isThai ? 'คุณติดต่อในฐานะใคร' : 'Who are you representing?'}
+                </h3>
+                <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isThai
+                    ? 'ช่วยให้ผู้สนใจรู้ว่ากำลังคุยกับเจ้าของ นายหน้า หรือตัวแทนจากองค์กรใด'
+                    : 'Let customers know whether they are speaking with an owner, broker, or organization representative.'}
+                </p>
+              </div>
+            </div>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-white p-4 transition hover:border-emerald-300 dark:border-neutral-800 dark:bg-neutral-900">
-          <input
-            type="checkbox"
-            checked={priceOnRequest}
-            onChange={(event) => setPriceOnRequest(event.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-neutral-300 text-emerald-700 focus:ring-emerald-600"
-          />
-          <span className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {isThai ? 'ยังไม่ระบุราคา ให้ผู้สนใจสอบถาม' : 'Price on request'}
-          </span>
-        </label>
-
-        <input type="hidden" name="currency" value="THB" />
-
-        {hasSale ? (
-          <PriceSection title={isThai ? 'ราคาขายรวม' : 'Sale price'}>
-            <PriceInput
-              name="salePrice"
-              value={salePrice}
-              onChange={setSalePrice}
-              suffix={currencyName}
-              symbol={currencySymbol}
-            />
-          </PriceSection>
-        ) : null}
-
-        {hasRent ? (
-          <PriceSection
-            title={
-              offers.includes('sublease')
-                ? isThai
-                  ? 'ค่าเช่าช่วงต่อเดือน'
-                  : 'Monthly sublease'
-                : isThai
-                  ? 'ค่าเช่าต่อเดือน'
-                  : 'Monthly rent'
-            }
-          >
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormItem label={isThai ? 'ค่าเช่ารายเดือน' : 'Monthly rent'}>
-                <PriceInput
-                  name="rentPriceMonthly"
-                  value={rentPriceMonthly}
-                  onChange={setRentPriceMonthly}
-                  suffix={isThai ? 'บาท/เดือน' : `${currencyName}/month`}
-                  symbol={currencySymbol}
-                />
-              </FormItem>
-              {isMonthlyHotel ? (
-                <FormItem label={isThai ? 'ราคารายวัน (ไม่บังคับ)' : 'Daily rate (optional)'}>
-                  <PriceInput
-                    name="rentPriceDaily"
-                    value={rentPriceDaily}
-                    onChange={setRentPriceDaily}
-                    suffix={isThai ? 'บาท/คืน' : `${currencyName}/night`}
-                    symbol={currencySymbol}
-                  />
-                </FormItem>
-              ) : null}
-              <FormItem label={isThai ? 'ระยะสัญญาขั้นต่ำ' : 'Minimum lease'}>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <FormItem label={isThai ? 'บทบาทของผู้ติดต่อ' : 'Contact role'}>
                 <Select
-                  name="minimumLeaseMonths"
-                  value={minimumLeaseMonths}
-                  onChange={(event) => setMinimumLeaseMonths(event.target.value)}
+                  name="contactRoleCode"
+                  value={contactRoleCode}
+                  onChange={(event) => {
+                    const nextRole = asContactRoleCode(event.target.value)
+                    setContactRoleCode(nextRole)
+                    setContactAuthorityCode(defaultAuthorityForRole(nextRole))
+                  }}
+                  required
                   className="[&_select]:h-12 [&_select]:rounded-2xl"
                 >
-                  <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-                  <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
-                  <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
-                  <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
-                  <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
-                  <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
-                  <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
+                  <option value="">{isThai ? 'เลือกบทบาท' : 'Select a role'}</option>
+                  <option value="owner">{isThai ? 'เจ้าของทรัพย์' : 'Property owner'}</option>
+                  <option value="owner_representative">
+                    {isThai ? 'ผู้รับมอบอำนาจจากเจ้าของ' : 'Owner-authorized representative'}
+                  </option>
+                  <option value="independent_broker">{isThai ? 'นายหน้าอิสระ' : 'Independent broker'}</option>
+                  <option value="agency_broker">{isThai ? 'นายหน้าสังกัดบริษัท' : 'Agency broker'}</option>
+                  <option value="developer_investor_representative">
+                    {isThai ? 'ตัวแทนโครงการ / นักลงทุน' : 'Developer or investor representative'}
+                  </option>
+                  <option value="property_manager">
+                    {isThai ? 'ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร' : 'Property or building manager'}
+                  </option>
                 </Select>
               </FormItem>
-              <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ไม่บังคับ)' : 'Monthly service fee (optional)'}>
-                <PriceInput
-                  name="serviceFeeMonthly"
-                  value={serviceFeeMonthly}
-                  onChange={setServiceFeeMonthly}
-                  suffix={isThai ? 'บาท/เดือน' : `${currencyName}/month`}
-                  symbol={currencySymbol}
-                />
-              </FormItem>
-            </div>
-          </PriceSection>
-        ) : null}
 
-        {hasTransfer ? (
-          <PriceSection title={isThai ? 'ราคาเซ้งหรือค่าโอนสิทธิ' : 'Transfer or key money'}>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormItem label={isThai ? 'ราคาเซ้ง' : 'Transfer price'}>
-                <PriceInput
-                  name="keyMoneyAmount"
-                  value={keyMoneyAmount}
-                  onChange={setKeyMoneyAmount}
-                  suffix={currencyName}
-                  symbol={currencySymbol}
-                />
-              </FormItem>
-              {!hasRent ? (
-                <FormItem label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อหลังรับโอน' : 'Ongoing monthly rent'}>
-                  <PriceInput
-                    name="rentPriceMonthly"
-                    value={rentPriceMonthly}
-                    onChange={setRentPriceMonthly}
-                    suffix={isThai ? 'บาท/เดือน' : `${currencyName}/month`}
-                    symbol={currencySymbol}
-                  />
+              {contactRoleCode === 'owner' ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-900/70 dark:bg-emerald-950/25">
+                  <span className="flex items-center gap-2 font-sarabun text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+                    <UserCircleIcon className="size-5" />
+                    {isThai ? 'ทรัพย์ของฉันเอง' : 'My own property'}
+                  </span>
+                  <p className="mt-1 font-sarabun text-xs leading-5 text-emerald-800/80 dark:text-emerald-300/80">
+                    {isThai
+                      ? 'ระบบจะบันทึกว่าเป็นข้อมูลที่เจ้าของระบุเอง'
+                      : 'Recorded as a self-declared owner listing.'}
+                  </p>
+                </div>
+              ) : contactRoleCode ? (
+                <FormItem label={isThai ? 'ได้รับสิทธิลงประกาศจาก' : 'Authority to list comes from'}>
+                  <Select
+                    name="contactAuthorityCode"
+                    value={contactAuthorityCode}
+                    onChange={(event) => setContactAuthorityCode(asContactAuthorityCode(event.target.value))}
+                    required
+                    className="[&_select]:h-12 [&_select]:rounded-2xl"
+                  >
+                    <option value="">{isThai ? 'เลือกแหล่งที่มา' : 'Select authority source'}</option>
+                    <option value="property_owner">{isThai ? 'เจ้าของทรัพย์โดยตรง' : 'Property owner directly'}</option>
+                    <option value="brokerage_company">
+                      {isThai ? 'บริษัทนายหน้าหรือทีม' : 'Brokerage company or team'}
+                    </option>
+                    <option value="developer_project">{isThai ? 'โครงการ / ผู้พัฒนา' : 'Project or developer'}</option>
+                    <option value="investor_asset_holder">
+                      {isThai ? 'นักลงทุน / ผู้ถือทรัพย์' : 'Investor or asset holder'}
+                    </option>
+                    <option value="co_broker">{isThai ? 'นายหน้าร่วม (Co-broker)' : 'Co-broker'}</option>
+                    <option value="property_management_company">
+                      {isThai ? 'บริษัทบริหารทรัพย์' : 'Property management company'}
+                    </option>
+                  </Select>
                 </FormItem>
               ) : null}
+
+              <FormItem
+                label={
+                  organizationRequired(contactRoleCode)
+                    ? isThai
+                      ? 'บริษัท / สังกัด'
+                      : 'Company / organization'
+                    : isThai
+                      ? 'บริษัท / สังกัด (ถ้ามี)'
+                      : 'Company / organization (optional)'
+                }
+              >
+                <Input
+                  name="contactOrganizationName"
+                  value={contactOrganizationName}
+                  onChange={(event) => setContactOrganizationName(event.target.value)}
+                  autoComplete="organization"
+                  placeholder={isThai ? 'เช่น บริษัท เอ บี ซี พร็อพเพอร์ตี้ จำกัด' : 'e.g. ABC Property Co., Ltd.'}
+                  required={organizationRequired(contactRoleCode)}
+                  maxLength={160}
+                />
+              </FormItem>
+
+              <FormItem
+                label={
+                  isThai
+                    ? 'เลขทะเบียนนิติบุคคล (ไม่บังคับ · ไม่แสดงสาธารณะ)'
+                    : 'Company registration no. (optional · private)'
+                }
+              >
+                <Input
+                  name="contactOrganizationRegistrationNo"
+                  value={contactOrganizationRegistrationNo}
+                  onChange={(event) => setContactOrganizationRegistrationNo(event.target.value)}
+                  inputMode="numeric"
+                  placeholder={isThai ? 'ใช้ประกอบการตรวจสอบบริษัท' : 'Used only for company verification'}
+                  maxLength={64}
+                />
+              </FormItem>
             </div>
-          </PriceSection>
-        ) : null}
 
-        {hasEventBooking ? (
-          <PriceSection title={isThai ? 'ราคาพื้นที่ต่อรอบงาน' : 'Price per event period'}>
-            <PriceInput
-              name="eventBookingPrice"
-              value={eventBookingPrice}
-              onChange={setEventBookingPrice}
-              suffix={isThai ? 'บาท/รอบ' : `${currencyName}/period`}
-              symbol={currencySymbol}
-            />
-          </PriceSection>
-        ) : null}
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/70 dark:bg-blue-950/25">
+              <ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <div className="font-sarabun">
+                <p className="text-sm font-semibold text-blue-950 dark:text-blue-100">
+                  {isThai ? 'สถานะเริ่มต้น: ยังไม่ตรวจสอบ' : 'Initial status: Not verified'}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-blue-900/75 dark:text-blue-200/75">
+                  {verificationGuidance(contactRoleCode, isThai)}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-blue-900/75 dark:text-blue-200/75">
+                  {isThai
+                    ? 'การเลือกบทบาทเองจะไม่ทำให้ขึ้นเครื่องหมาย Verified จนกว่าจะตรวจทั้งตัวตนและสิทธิที่เกี่ยวข้องกับทรัพย์'
+                    : 'Selecting a role does not grant a Verified badge. Identity and authority for the property must both be checked.'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <input type="hidden" name="priceNegotiable" value="" />
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-          <input
-            name="priceNegotiable"
-            value="yes"
-            type="checkbox"
-            defaultChecked={readText(draft.priceNegotiable) === 'yes'}
-            className="mt-1 h-4 w-4 rounded border-neutral-300 text-orange-600 focus:ring-orange-500"
-          />
-          <span className="font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            {isThai ? 'ราคาต่อรองได้' : 'Price is negotiable'}
-          </span>
-        </label>
-
-        <SectionCard icon={<PhoneIcon className="size-5" />} title={isThai ? 'ช่องทางติดต่อ' : 'Contact details'}>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-6 sm:grid-cols-2 dark:border-neutral-800">
             <FormItem label={isThai ? 'ชื่อผู้ติดต่อ' : 'Contact name'}>
               <Input
                 name="contactName"
@@ -599,10 +666,463 @@ const SectionCard = ({
   </section>
 )
 
-const PriceSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
-    <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
-    <div className="mt-4">{children}</div>
+type PricingPanelProps = {
+  isThai: boolean
+  offers: OfferTypeCode[]
+  currency: AppCurrency
+  onCurrencyChange: (value: AppCurrency) => void
+  priceOnRequest: boolean
+  onPriceOnRequestChange: (value: boolean) => void
+  priceNegotiable: boolean
+  onPriceNegotiableChange: (value: boolean) => void
+  hasSale: boolean
+  hasRent: boolean
+  hasTransfer: boolean
+  hasEventBooking: boolean
+  isMonthlyHotel: boolean
+  salePrice: string
+  onSalePriceChange: (value: string) => void
+  rentPriceMonthly: string
+  onRentPriceMonthlyChange: (value: string) => void
+  rentPriceDaily: string
+  onRentPriceDailyChange: (value: string) => void
+  keyMoneyAmount: string
+  onKeyMoneyAmountChange: (value: string) => void
+  eventBookingPrice: string
+  onEventBookingPriceChange: (value: string) => void
+  serviceFeeMonthly: string
+  onServiceFeeMonthlyChange: (value: string) => void
+  minimumLeaseMonths: string
+  onMinimumLeaseMonthsChange: (value: string) => void
+}
+
+const PricingPanel = ({
+  isThai,
+  offers,
+  currency,
+  onCurrencyChange,
+  priceOnRequest,
+  onPriceOnRequestChange,
+  priceNegotiable,
+  onPriceNegotiableChange,
+  hasSale,
+  hasRent,
+  hasTransfer,
+  hasEventBooking,
+  isMonthlyHotel,
+  salePrice,
+  onSalePriceChange,
+  rentPriceMonthly,
+  onRentPriceMonthlyChange,
+  rentPriceDaily,
+  onRentPriceDailyChange,
+  keyMoneyAmount,
+  onKeyMoneyAmountChange,
+  eventBookingPrice,
+  onEventBookingPriceChange,
+  serviceFeeMonthly,
+  onServiceFeeMonthlyChange,
+  minimumLeaseMonths,
+  onMinimumLeaseMonthsChange,
+}: PricingPanelProps) => {
+  const symbol = currency === 'USD' ? '$' : '฿'
+  const currencyUnit = currency === 'USD' ? 'USD' : isThai ? 'บาท' : 'THB'
+  const monthlyUnit = `${currencyUnit}/${isThai ? 'เดือน' : 'month'}`
+
+  return (
+    <section className="overflow-hidden rounded-[30px] border border-orange-200 bg-white shadow-[0_18px_50px_-32px_rgba(234,88,12,0.45)] dark:border-orange-900/60 dark:bg-neutral-900">
+      <div className="border-b border-orange-100 bg-gradient-to-r from-orange-50 via-white to-white p-5 sm:p-7 dark:border-orange-950 dark:from-orange-950/35 dark:via-neutral-900 dark:to-neutral-900">
+        <div className="flex items-start gap-4">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm">
+            <BanknotesIcon className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
+              {isThai ? 'ราคาและเงื่อนไข' : 'Price & terms'}
+            </h2>
+            <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+              {isThai
+                ? 'ระบุราคาให้ตรงกับรูปแบบประกาศ ผู้สนใจจะตัดสินใจและติดต่อได้ง่ายขึ้น'
+                : 'Add prices for each listing option so customers can decide and contact you more easily.'}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {offers.map((offer) => (
+                <span
+                  key={offer}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-white px-3 py-1 font-sarabun text-xs font-medium text-orange-800 dark:border-orange-900 dark:bg-neutral-900 dark:text-orange-300"
+                >
+                  <CheckCircleIcon className="size-3.5" />
+                  {isThai ? getOfferType(offer)?.nameTh || offer : getOfferType(offer)?.nameEn || offer}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6 p-5 sm:p-7">
+        <div>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
+              </h3>
+              <p className="mt-1 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+                {isThai
+                  ? 'ใช้กับราคาทุกช่องในประกาศนี้ โดยไม่แปลงตัวเลขอัตโนมัติ'
+                  : 'Applies to every price below; amounts are not converted automatically.'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
+            {[
+              { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
+              { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
+            ].map((option) => {
+              const isSelected = currency === option.code
+              return (
+                <button
+                  key={option.code}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onCurrencyChange(option.code)}
+                  className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                    isSelected
+                      ? 'border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500 dark:bg-orange-950/35 dark:text-orange-100'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
+                  }`}
+                >
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
+                      isSelected ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'
+                    }`}
+                  >
+                    {option.symbol}
+                  </span>
+                  <span className="min-w-0 font-sarabun">
+                    <span className="block text-sm font-semibold">{option.code}</span>
+                    <span className="block truncate text-xs opacity-70">{option.label}</span>
+                  </span>
+                  {isSelected ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="border-t border-neutral-100 pt-6 dark:border-neutral-800">
+          <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            {isThai ? 'ต้องการแสดงราคาแบบไหน' : 'How would you like to show the price?'}
+          </h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              aria-pressed={!priceOnRequest}
+              onClick={() => onPriceOnRequestChange(false)}
+              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                !priceOnRequest
+                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+              }`}
+            >
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${!priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+              >
+                <BanknotesIcon className="size-5" />
+              </span>
+              <span className="min-w-0 font-sarabun">
+                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                  {isThai ? 'ระบุราคา' : 'Enter a price'}
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isThai ? 'กรอกตัวเลขให้ผู้สนใจเห็นได้ทันที' : 'Show the amount to customers immediately.'}
+                </span>
+              </span>
+              {!priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+            </button>
+            <button
+              type="button"
+              aria-pressed={priceOnRequest}
+              onClick={() => onPriceOnRequestChange(true)}
+              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                priceOnRequest
+                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+              }`}
+            >
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+              >
+                <ChatBubbleLeftRightIcon className="size-5" />
+              </span>
+              <span className="min-w-0 font-sarabun">
+                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                  {isThai ? 'ไม่ระบุราคา' : 'Price on request'}
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isThai ? 'แสดงให้ผู้สนใจสอบถามราคาโดยตรง' : 'Ask customers to contact you for the price.'}
+                </span>
+              </span>
+              {priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+            </button>
+          </div>
+        </div>
+
+        {priceOnRequest ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/70 dark:bg-orange-950/25">
+            <ChatBubbleLeftRightIcon className="mt-0.5 size-5 shrink-0 text-orange-600" />
+            <p className="font-sarabun text-sm leading-6 text-orange-950 dark:text-orange-100">
+              {isThai
+                ? 'หน้าประกาศจะแสดง “สอบถามราคา” และระบบจะไม่นำตัวเลขราคาเดิมไปบันทึก'
+                : 'The listing will show “Price on request”, and previously entered amounts will not be saved.'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+            {hasSale ? (
+              <PricingGroup
+                icon={<BanknotesIcon className="size-5" />}
+                title={isThai ? 'ราคาขาย' : 'Sale price'}
+                description={isThai ? 'ราคาขายรวมของทรัพย์' : 'Total asking price for the property'}
+              >
+                <FormItem label={isThai ? 'ราคาขายรวม' : 'Total sale price'}>
+                  <PriceInput
+                    name="salePrice"
+                    value={salePrice}
+                    onChange={onSalePriceChange}
+                    suffix={currencyUnit}
+                    symbol={symbol}
+                    placeholder={currency === 'THB' ? '3,500,000' : '100,000'}
+                    required
+                  />
+                </FormItem>
+              </PricingGroup>
+            ) : null}
+
+            {hasRent ? (
+              <PricingGroup
+                icon={<CalendarDaysIcon className="size-5" />}
+                title={
+                  offers.includes('sublease')
+                    ? isThai
+                      ? 'ค่าเช่าช่วง'
+                      : 'Sublease price'
+                    : isThai
+                      ? 'ค่าเช่า'
+                      : 'Rental price'
+                }
+                description={isThai ? 'ค่าเช่า ระยะสัญญา และค่าใช้จ่ายประจำ' : 'Rent, lease term, and recurring fees'}
+              >
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormItem label={isThai ? 'ค่าเช่ารายเดือน' : 'Monthly rent'}>
+                    <PriceInput
+                      name="rentPriceMonthly"
+                      value={rentPriceMonthly}
+                      onChange={onRentPriceMonthlyChange}
+                      suffix={monthlyUnit}
+                      symbol={symbol}
+                      placeholder={currency === 'THB' ? '15,000' : '450'}
+                      required
+                    />
+                  </FormItem>
+                  {isMonthlyHotel ? (
+                    <FormItem label={isThai ? 'ราคารายวัน (ไม่บังคับ)' : 'Daily rate (optional)'}>
+                      <PriceInput
+                        name="rentPriceDaily"
+                        value={rentPriceDaily}
+                        onChange={onRentPriceDailyChange}
+                        suffix={`${currencyUnit}/${isThai ? 'คืน' : 'night'}`}
+                        symbol={symbol}
+                        placeholder={currency === 'THB' ? '1,200' : '35'}
+                      />
+                    </FormItem>
+                  ) : null}
+                  <FormItem label={isThai ? 'ระยะสัญญาขั้นต่ำ' : 'Minimum lease'}>
+                    <Select
+                      name="minimumLeaseMonths"
+                      value={minimumLeaseMonths}
+                      onChange={(event) => onMinimumLeaseMonthsChange(event.target.value)}
+                      className="[&_select]:h-12 [&_select]:rounded-2xl"
+                    >
+                      <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
+                      <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
+                      <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
+                      <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
+                      <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
+                      <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
+                      <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
+                    </Select>
+                  </FormItem>
+                  <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ไม่บังคับ)' : 'Monthly service fee (optional)'}>
+                    <PriceInput
+                      name="serviceFeeMonthly"
+                      value={serviceFeeMonthly}
+                      onChange={onServiceFeeMonthlyChange}
+                      suffix={monthlyUnit}
+                      symbol={symbol}
+                      placeholder={currency === 'THB' ? '1,500' : '45'}
+                    />
+                  </FormItem>
+                </div>
+              </PricingGroup>
+            ) : null}
+
+            {hasTransfer ? (
+              <PricingGroup
+                icon={<ArrowPathRoundedSquareIcon className="size-5" />}
+                title={isThai ? 'ค่าเซ้งหรือค่าโอนสิทธิ' : 'Transfer or key money'}
+                description={
+                  isThai
+                    ? 'ระบุเงินก้อนและค่าเช่าที่ผู้รับช่วงต้องจ่ายต่อ'
+                    : 'Upfront transfer price and any ongoing rent'
+                }
+              >
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormItem label={isThai ? 'ราคาเซ้ง / ค่าโอนสิทธิ' : 'Transfer price'}>
+                    <PriceInput
+                      name="keyMoneyAmount"
+                      value={keyMoneyAmount}
+                      onChange={onKeyMoneyAmountChange}
+                      suffix={currencyUnit}
+                      symbol={symbol}
+                      placeholder={currency === 'THB' ? '500,000' : '15,000'}
+                      required
+                    />
+                  </FormItem>
+                  {!hasRent ? (
+                    <>
+                      <FormItem
+                        label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อเดือน (ไม่บังคับ)' : 'Ongoing monthly rent (optional)'}
+                      >
+                        <PriceInput
+                          name="rentPriceMonthly"
+                          value={rentPriceMonthly}
+                          onChange={onRentPriceMonthlyChange}
+                          suffix={monthlyUnit}
+                          symbol={symbol}
+                          placeholder={currency === 'THB' ? '20,000' : '600'}
+                        />
+                      </FormItem>
+                      <FormItem label={isThai ? 'ระยะสัญญาที่เหลือ / ขั้นต่ำ' : 'Remaining / minimum lease'}>
+                        <Select
+                          name="minimumLeaseMonths"
+                          value={minimumLeaseMonths}
+                          onChange={(event) => onMinimumLeaseMonthsChange(event.target.value)}
+                          className="[&_select]:h-12 [&_select]:rounded-2xl"
+                        >
+                          <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
+                          <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
+                          <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
+                          <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
+                          <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
+                          <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
+                          <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
+                        </Select>
+                      </FormItem>
+                      <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ไม่บังคับ)' : 'Monthly service fee (optional)'}>
+                        <PriceInput
+                          name="serviceFeeMonthly"
+                          value={serviceFeeMonthly}
+                          onChange={onServiceFeeMonthlyChange}
+                          suffix={monthlyUnit}
+                          symbol={symbol}
+                          placeholder={currency === 'THB' ? '1,500' : '45'}
+                        />
+                      </FormItem>
+                    </>
+                  ) : null}
+                </div>
+              </PricingGroup>
+            ) : null}
+
+            {hasEventBooking ? (
+              <PricingGroup
+                icon={<CalendarDaysIcon className="size-5" />}
+                title={isThai ? 'ราคาพื้นที่ชั่วคราว' : 'Temporary space price'}
+                description={
+                  isThai ? 'ราคาต่อหนึ่งรอบงานหรือช่วงเวลาที่ตกลงกัน' : 'Price per event or agreed booking period'
+                }
+              >
+                <FormItem label={isThai ? 'ราคาต่อรอบงาน' : 'Price per event period'}>
+                  <PriceInput
+                    name="eventBookingPrice"
+                    value={eventBookingPrice}
+                    onChange={onEventBookingPriceChange}
+                    suffix={`${currencyUnit}/${isThai ? 'รอบ' : 'period'}`}
+                    symbol={symbol}
+                    placeholder={currency === 'THB' ? '5,000' : '150'}
+                    required
+                  />
+                </FormItem>
+              </PricingGroup>
+            ) : null}
+          </div>
+        )}
+
+        <label
+          className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
+            priceOnRequest
+              ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-55 dark:border-neutral-800 dark:bg-neutral-950'
+              : priceNegotiable
+                ? 'border-orange-400 bg-orange-50/70 dark:border-orange-900 dark:bg-orange-950/25'
+                : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+          }`}
+        >
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceNegotiable && !priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+          >
+            <ScaleIcon className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1 font-sarabun">
+            <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+              {isThai ? 'ต่อรองราคาได้' : 'Price is negotiable'}
+            </span>
+            <span className="mt-0.5 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+              {priceOnRequest
+                ? isThai
+                  ? 'ไม่จำเป็นเมื่อเลือกไม่ระบุราคา'
+                  : 'Not needed when price is on request.'
+                : isThai
+                  ? 'เปิดไว้เมื่อคุณยืดหยุ่นเรื่องราคา'
+                  : 'Turn this on when you are flexible on price.'}
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            checked={!priceOnRequest && priceNegotiable}
+            disabled={priceOnRequest}
+            onChange={(event) => onPriceNegotiableChange(event.target.checked)}
+            className="peer sr-only"
+          />
+          <span className="relative h-7 w-12 shrink-0 rounded-full bg-neutral-300 transition peer-checked:bg-orange-600 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-disabled:opacity-60 after:absolute after:start-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 dark:bg-neutral-700" />
+        </label>
+      </div>
+    </section>
+  )
+}
+
+const PricingGroup = ({
+  icon,
+  title,
+  description,
+  children,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+  children: React.ReactNode
+}) => (
+  <section className="rounded-3xl border border-neutral-200 bg-neutral-50/70 p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-950/60">
+    <div className="mb-5 flex items-start gap-3">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+        {icon}
+      </span>
+      <div>
+        <h3 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">{title}</h3>
+        <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">{description}</p>
+      </div>
+    </div>
+    {children}
   </section>
 )
 
@@ -611,6 +1131,7 @@ const PriceInput = ({
   value,
   suffix,
   symbol,
+  placeholder,
   required,
   onChange,
 }: {
@@ -618,6 +1139,7 @@ const PriceInput = ({
   value: string
   suffix: string
   symbol: string
+  placeholder?: string
   required?: boolean
   onChange: (value: string) => void
 }) => (
@@ -628,10 +1150,10 @@ const PriceInput = ({
     <Input
       name={name}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => onChange(formatPriceInput(event.target.value))}
       inputMode="decimal"
-      pattern="[0-9,]*(\.[0-9]{1,2})?"
-      placeholder="0"
+      pattern="[0-9,]*(\.[0-9]{0,2})?"
+      placeholder={placeholder || '0'}
       required={required}
       className="h-12 ps-9! pe-28!"
     />
@@ -640,6 +1162,99 @@ const PriceInput = ({
     </div>
   </div>
 )
+
+const formatPriceInput = (value: string) => {
+  if (!value.trim()) return ''
+
+  const normalized = value.replace(/[^0-9.]/g, '')
+  const hasDecimal = normalized.includes('.')
+  const [wholePart = '', ...fractionParts] = normalized.split('.')
+  const normalizedWhole = wholePart.replace(/^0+(?=\d)/, '')
+  const groupedWhole = (normalizedWhole || '0').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const fraction = fractionParts.join('').slice(0, 2)
+
+  return hasDecimal ? `${groupedWhole}.${fraction}` : groupedWhole
+}
+
+const CONTACT_ROLE_CODES: ContactRoleCode[] = [
+  '',
+  'owner',
+  'owner_representative',
+  'independent_broker',
+  'agency_broker',
+  'developer_investor_representative',
+  'property_manager',
+]
+
+const CONTACT_AUTHORITY_CODES: ContactAuthorityCode[] = [
+  '',
+  'self',
+  'property_owner',
+  'brokerage_company',
+  'developer_project',
+  'investor_asset_holder',
+  'co_broker',
+  'property_management_company',
+]
+
+const asContactRoleCode = (value: string): ContactRoleCode =>
+  CONTACT_ROLE_CODES.includes(value as ContactRoleCode) ? (value as ContactRoleCode) : ''
+
+const asContactAuthorityCode = (value: string): ContactAuthorityCode =>
+  CONTACT_AUTHORITY_CODES.includes(value as ContactAuthorityCode) ? (value as ContactAuthorityCode) : ''
+
+const defaultAuthorityForRole = (role: ContactRoleCode): ContactAuthorityCode => {
+  switch (role) {
+    case 'owner':
+      return 'self'
+    case 'owner_representative':
+      return 'property_owner'
+    case 'agency_broker':
+      return 'brokerage_company'
+    case 'developer_investor_representative':
+      return 'developer_project'
+    case 'property_manager':
+      return 'property_management_company'
+    default:
+      return ''
+  }
+}
+
+const organizationRequired = (role: ContactRoleCode) =>
+  role === 'agency_broker' || role === 'developer_investor_representative'
+
+const verificationGuidance = (role: ContactRoleCode, isThai: boolean) => {
+  switch (role) {
+    case 'owner':
+      return isThai
+        ? 'การยืนยันระดับสูงสุดควรตรวจตัวตนและหลักฐานการถือครองทรัพย์'
+        : 'Full verification should check identity and proof of property ownership.'
+    case 'owner_representative':
+      return isThai
+        ? 'ควรตรวจตัวตน หนังสือมอบอำนาจ และหลักฐานของเจ้าของทรัพย์'
+        : 'Identity, owner authorization, and ownership evidence should be checked.'
+    case 'independent_broker':
+      return isThai
+        ? 'ควรตรวจตัวตน พร้อมหนังสือยินยอมหรือข้อตกลงนายหน้าจากแหล่งสิทธิที่ระบุ'
+        : 'Identity and the owner or source authorization to market the property should be checked.'
+    case 'agency_broker':
+      return isThai
+        ? 'ควรตรวจตัวตน การสังกัดบริษัท และสิทธิของบริษัทในการทำตลาดทรัพย์นี้'
+        : 'Identity, agency membership, and the agency’s authority for this property should be checked.'
+    case 'developer_investor_representative':
+      return isThai
+        ? 'ควรตรวจตัวตน การสังกัดองค์กร และสิทธิของโครงการหรือนักลงทุนที่มอบหมายให้ลงประกาศ'
+        : 'Identity, organization membership, and the developer or investor mandate should be checked.'
+    case 'property_manager':
+      return isThai
+        ? 'ควรตรวจตัวตนและสัญญาหรือหนังสือแต่งตั้งให้บริหารทรัพย์'
+        : 'Identity and the property management appointment or agreement should be checked.'
+    default:
+      return isThai
+        ? 'เลือกบทบาทก่อน ระบบจะแนะนำหลักฐานที่เหมาะกับความสัมพันธ์ของคุณกับทรัพย์'
+        : 'Select a role to see which evidence matches your relationship to the property.'
+  }
+}
 
 const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])

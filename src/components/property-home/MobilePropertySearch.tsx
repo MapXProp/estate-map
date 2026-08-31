@@ -1,8 +1,8 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Banknote,
@@ -26,8 +26,8 @@ import {
 import { usePathname, useSearchParams } from 'next/navigation'
 import Slider from 'rc-slider'
 import { useEffect, useMemo, useState, type SVGProps } from 'react'
-import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import MobileProjectSearchDialog from './MobileProjectSearchDialog'
+import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
@@ -68,11 +68,13 @@ type BudgetConfig = {
 }
 
 const saleHomePriceScale = [
-  0, 500_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000,
-  15_000_000, 20_000_000, 30_000_000, 50_000_000, 75_000_000, 100_000_000,
+  0, 500_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000, 15_000_000, 20_000_000,
+  30_000_000, 50_000_000, 75_000_000, 100_000_000,
 ]
 const saleLargePriceScale = [...saleHomePriceScale, 150_000_000, 200_000_000]
-const rentRoomPriceScale = [0, 2_000, 3_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000]
+const rentRoomPriceScale = [
+  0, 2_000, 3_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000,
+]
 const rentHomePriceScale = [0, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000, 500_000]
 const rentBusinessPriceScale = [0, 5_000, 10_000, 20_000, 30_000, 50_000, 100_000, 200_000, 500_000, 1_000_000]
 
@@ -282,6 +284,15 @@ const propertyTypes = [
     term: 'โรงงาน',
     termEn: 'factory',
     icon: Factory,
+    groups: ['business'],
+  },
+  {
+    value: 'hotel_resort',
+    label: 'โรงแรม / รีสอร์ต',
+    labelEn: 'Hotel / resort property',
+    term: 'โรงแรม รีสอร์ต',
+    termEn: 'hotel resort property',
+    icon: Hotel,
     groups: ['business'],
   },
   {
@@ -535,7 +546,7 @@ const MobilePropertySearch = ({
           ? `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(budgetRange[1], isThai)}`
           : isThai
             ? 'ไม่จำกัดงบ'
-             : 'Any budget'
+            : 'Any budget'
 
   const openMapFilters = () => {
     window.dispatchEvent(new Event('mapx:open-property-filters'))
@@ -602,7 +613,7 @@ const MobilePropertySearch = ({
               onClick={() => setProjectSearchOpen(true)}
             >
               <Building2 className="size-4.5" strokeWidth={1.8} />
-              <span className="absolute right-1 bottom-1 grid size-3.5 place-items-center rounded-full bg-[#176b50] text-white ring-1.5 ring-white dark:ring-neutral-900">
+              <span className="ring-1.5 absolute right-1 bottom-1 grid size-3.5 place-items-center rounded-full bg-[#176b50] text-white ring-white dark:ring-neutral-900">
                 <Search className="size-2.5" strokeWidth={2.5} />
               </span>
             </button>
@@ -735,7 +746,9 @@ const MobilePropertySearch = ({
                       }`}
                     >
                       {active && (
-                        <span className={`absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full ${tone.check}`}>
+                        <span
+                          className={`absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full ${tone.check}`}
+                        >
                           <Check className="size-2.5" strokeWidth={3} />
                         </span>
                       )}

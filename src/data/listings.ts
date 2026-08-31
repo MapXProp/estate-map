@@ -1083,11 +1083,22 @@ const propertyTypeLabels: Record<string, string> = {
   office: 'ออฟฟิศ',
   warehouse: 'โกดัง',
   factory: 'โรงงาน',
+  hotel_resort: 'โรงแรม / รีสอร์ต',
 }
 
 const roomPropertyTypes = new Set(['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'])
 const mixedUsePropertyTypes = new Set(['shophouse', 'home_office', 'mixed_use'])
-const commercialPropertyTypes = new Set(['shop', 'retail', 'office', 'warehouse', 'factory', 'market_stall', 'mall_kiosk'])
+const commercialPropertyTypes = new Set([
+  'shop',
+  'retail',
+  'retail_space',
+  'office',
+  'warehouse',
+  'factory',
+  'hotel_resort',
+  'market_stall',
+  'mall_kiosk',
+])
 
 const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup => {
   if (
@@ -1110,7 +1121,9 @@ const toRealEstateListing = (listing: PropertySearchListing) => {
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
   const facts = [
-    listing.land_area_sqm && group === 'land' ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.` : '',
+    listing.land_area_sqm && group === 'land'
+      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
+      : '',
     listing.usable_area_sqm ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.` : '',
     listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : '',
     listing.event_round_count ? `${listing.event_round_count} รอบ` : '',

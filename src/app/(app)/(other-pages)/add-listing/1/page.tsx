@@ -73,6 +73,7 @@ const propertyTypeIcons = {
   retail_space: Store,
   warehouse: Warehouse,
   factory: Factory,
+  hotel_resort: Hotel,
   land: LandPlot,
 } satisfies Record<PropertyTypeCode, LucideIcon>
 
@@ -98,7 +99,7 @@ const primaryBusinessSpaceTypes = primaryBusinessSpaceTypeCodes.flatMap((code) =
 const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
   homes: 'Houses, condos, townhomes, shophouses and land',
   rooms: 'Rooms in shared properties, apartments, dorms, condos and long-term stays',
-  business: 'Shophouses, retail spaces, offices, warehouses, factories and land',
+  business: 'Shophouses, retail spaces, offices, warehouses, factories, hotels and land',
 }
 
 const discoveryChannelVisuals = {
@@ -1288,7 +1289,7 @@ const resolveDiscoveryChannel = (
   }
 
   if (
-    ['office', 'retail_space', 'warehouse', 'factory'].includes(propertyTypeCode) ||
+    ['office', 'retail_space', 'warehouse', 'factory', 'hotel_resort'].includes(propertyTypeCode) ||
     ((propertyTypeCode === 'shophouse' || propertyTypeCode === 'home_office' || propertyTypeCode === 'land') &&
       usageType === 'business')
   ) {
