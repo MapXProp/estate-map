@@ -48,10 +48,10 @@ const Page = () => {
       setSuccessId(data.public_listing_id || data.slug || 'created')
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : isThai
-            ? 'ยังไม่สามารถส่งประกาศได้ กรุณาลองอีกครั้ง'
+        isThai
+          ? 'ยังไม่สามารถส่งประกาศได้ กรุณาลองอีกครั้ง'
+          : err instanceof Error
+            ? err.message
             : 'Unable to submit your listing. Please try again.'
       )
     } finally {

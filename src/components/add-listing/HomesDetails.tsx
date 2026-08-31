@@ -197,11 +197,11 @@ const CondoDetails = ({ draft, isThai }: CommonProps) => (
       <Field label={isThai ? 'รูปแบบยูนิต' : 'Unit type'}>
         <SelectField name="condoUnitType" defaultValue={readText(draft.condoUnitType)}>
           <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-          <option value="studio">Studio</option>
+          <option value="studio">{isThai ? 'สตูดิโอ' : 'Studio'}</option>
           <option value="standard">{isThai ? 'ห้องชุดทั่วไป' : 'Standard unit'}</option>
-          <option value="duplex">Duplex</option>
-          <option value="loft">Loft</option>
-          <option value="penthouse">Penthouse</option>
+          <option value="duplex">{isThai ? 'ดูเพล็กซ์' : 'Duplex'}</option>
+          <option value="loft">{isThai ? 'ลอฟต์' : 'Loft'}</option>
+          <option value="penthouse">{isThai ? 'เพนต์เฮาส์' : 'Penthouse'}</option>
         </SelectField>
       </Field>
       <Field label={isThai ? 'อาคาร / ทาวเวอร์' : 'Building / tower'}>
@@ -232,7 +232,7 @@ const CondoDetails = ({ draft, isThai }: CommonProps) => (
           <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
           <option value="thai">{isThai ? 'โควตาคนไทย' : 'Thai quota'}</option>
           <option value="foreign">{isThai ? 'โควตาต่างชาติ' : 'Foreign quota'}</option>
-          <option value="leasehold">Leasehold</option>
+          <option value="leasehold">{isThai ? 'สิทธิการเช่า (Leasehold)' : 'Leasehold'}</option>
         </SelectField>
       </Field>
       <MoneyField name="commonFeeMonthly" label={isThai ? 'ค่าส่วนกลางต่อเดือน' : 'Monthly common fee'} draft={draft} />
@@ -347,9 +347,9 @@ const LandDetails = ({ draft, isThai }: CommonProps) => (
           <SelectField name="titleDeedType" defaultValue={readText(draft.titleDeedType)}>
             <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
             <option value="chanote">{isThai ? 'โฉนดที่ดิน (น.ส.4)' : 'Chanote (Nor Sor 4)'}</option>
-            <option value="nor_sor_3_gor">น.ส.3 ก.</option>
-            <option value="nor_sor_3">น.ส.3</option>
-            <option value="sor_kor_1">ส.ค.1</option>
+            <option value="nor_sor_3_gor">{isThai ? 'น.ส.3 ก.' : 'Nor Sor 3 Gor'}</option>
+            <option value="nor_sor_3">{isThai ? 'น.ส.3' : 'Nor Sor 3'}</option>
+            <option value="sor_kor_1">{isThai ? 'ส.ค.1' : 'Sor Kor 1'}</option>
             <option value="other">{isThai ? 'อื่น ๆ' : 'Other'}</option>
           </SelectField>
         </Field>

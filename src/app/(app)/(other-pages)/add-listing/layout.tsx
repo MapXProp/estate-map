@@ -66,7 +66,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const isThai = locale === 'th'
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#174c3d] via-[#123f32] to-[#0d3228] px-5 py-5 text-white shadow-[0_28px_72px_-42px_rgba(12,47,37,0.62)] ring-1 ring-black/5 sm:px-7 sm:py-6">
+    <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-[#174c3d] via-[#123f32] to-[#0d3228] px-4 py-4 text-white shadow-[0_28px_72px_-42px_rgba(12,47,37,0.62)] ring-1 ring-black/5 min-[744px]:rounded-[30px] min-[744px]:px-7 min-[744px]:py-6">
       <div aria-hidden="true" className="absolute -top-24 -right-14 size-64 rounded-full border border-white/10" />
       <div aria-hidden="true" className="absolute -right-6 -bottom-28 size-56 rounded-full bg-orange-200/[0.06]" />
 
@@ -80,7 +80,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
               {isThai ? 'บันทึกร่างอัตโนมัติ' : 'Draft saved automatically'}
             </span>
           </div>
-          <p className="mt-2 truncate font-sarabun text-lg font-semibold text-white sm:text-xl">
+          <p className="mt-1.5 truncate font-sarabun text-[17px] font-semibold text-white min-[744px]:mt-2 min-[744px]:text-xl">
             {isThai ? `ขั้นที่ ${index} จาก ${steps.length}` : `Step ${index} of ${steps.length}`} ·{' '}
             {isThai ? steps[index - 1].labelTh : steps[index - 1].labelEn}
           </p>
@@ -90,14 +90,17 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         </span>
       </div>
 
-      <div className="relative mt-5 h-1.5 overflow-hidden rounded-full bg-black/15 ring-1 ring-white/10">
+      <div className="relative mt-3.5 h-1.5 overflow-hidden rounded-full bg-black/15 ring-1 ring-white/10 min-[744px]:mt-5">
         <div
           className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-500"
           style={{ width: `${(index / steps.length) * 100}%` }}
         />
       </div>
 
-      <ol className="relative mt-5 grid grid-cols-4 gap-2" aria-label={isThai ? 'ขั้นตอนลงประกาศ' : 'Listing steps'}>
+      <ol
+        className="relative mt-3 grid grid-cols-4 gap-2 min-[744px]:mt-5"
+        aria-label={isThai ? 'ขั้นตอนลงประกาศ' : 'Listing steps'}
+      >
         {steps.map((step) => {
           const isComplete = step.number < index
           const isCurrent = step.number === index
@@ -141,6 +144,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
                 <div
                   aria-current={isCurrent ? 'step' : undefined}
                   aria-disabled={!isCurrent}
+                  aria-label={label}
                   className="flex min-h-11 w-full items-center gap-2 px-1.5"
                 >
                   {content}
@@ -151,7 +155,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         })}
       </ol>
 
-      <div className="relative mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 xl:hidden">
+      <div className="relative mt-5 hidden grid-cols-3 gap-2 border-t border-white/10 pt-4 min-[744px]:grid xl:hidden">
         <TrustItem icon={<ClockIcon className="size-4" />} label={isThai ? 'ประมาณ 5–8 นาที' : 'About 5–8 minutes'} />
         <TrustItem
           icon={<ShieldCheckIcon className="size-4" />}

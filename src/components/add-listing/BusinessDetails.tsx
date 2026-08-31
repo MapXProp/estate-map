@@ -257,20 +257,20 @@ const OfficeDetails = ({ draft, isThai }: CommonProps) => (
         <Field label={isThai ? 'เกรดอาคารสำนักงาน' : 'Office grade'}>
           <SelectField name="officeGrade" defaultValue={readText(draft.officeGrade)}>
             <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-            <option value="a">Grade A</option>
-            <option value="b">Grade B</option>
-            <option value="c">Grade C</option>
+            <option value="a">{isThai ? 'เกรด A' : 'Grade A'}</option>
+            <option value="b">{isThai ? 'เกรด B' : 'Grade B'}</option>
+            <option value="c">{isThai ? 'เกรด C' : 'Grade C'}</option>
             <option value="non_graded">{isThai ? 'อาคารทั่วไป / ไม่จัดเกรด' : 'Non-graded building'}</option>
           </SelectField>
         </Field>
         <Field label={isThai ? 'รูปแบบสำนักงาน' : 'Office layout'}>
           <SelectField name="officeLayout" defaultValue={readText(draft.officeLayout)}>
             <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-            <option value="open_plan">Open plan</option>
+            <option value="open_plan">{isThai ? 'สำนักงานแบบเปิด' : 'Open plan'}</option>
             <option value="partitioned">{isThai ? 'แบ่งห้องแล้ว' : 'Partitioned'}</option>
-            <option value="serviced_office">Serviced office</option>
-            <option value="coworking">Co-working</option>
-            <option value="bare_shell">Bare shell</option>
+            <option value="serviced_office">{isThai ? 'สำนักงานพร้อมบริการ' : 'Serviced office'}</option>
+            <option value="coworking">{isThai ? 'โคเวิร์กกิง' : 'Co-working'}</option>
+            <option value="bare_shell">{isThai ? 'พื้นที่เปล่ารอการตกแต่ง' : 'Bare shell'}</option>
           </SelectField>
         </Field>
         <NumberField
@@ -414,7 +414,7 @@ const WarehouseDetails = ({ draft, isThai }: CommonProps) => (
           <option value="distribution">{isThai ? 'ศูนย์กระจายสินค้า' : 'Distribution center'}</option>
           <option value="cold_storage">{isThai ? 'ห้องเย็น / Cold storage' : 'Cold storage'}</option>
           <option value="temperature_controlled">{isThai ? 'ควบคุมอุณหภูมิ' : 'Temperature controlled'}</option>
-          <option value="self_storage">Self storage</option>
+          <option value="self_storage">{isThai ? 'ห้องเก็บของให้เช่า' : 'Self storage'}</option>
         </SelectField>
       </Field>
       <NumberField
@@ -427,7 +427,7 @@ const WarehouseDetails = ({ draft, isThai }: CommonProps) => (
         name="floorLoadKgSqm"
         label={isThai ? 'น้ำหนักพื้นที่รับได้' : 'Floor load'}
         draft={draft}
-        suffix="kg/ตร.ม."
+        suffix={isThai ? 'กก./ตร.ม.' : 'kg/sq.m.'}
       />
       <NumberField
         name="officeAreaSqm"
@@ -515,7 +515,7 @@ const FactoryDetails = ({ draft, isThai }: CommonProps) => (
         name="floorLoadKgSqm"
         label={isThai ? 'น้ำหนักพื้นที่รับได้' : 'Floor load'}
         draft={draft}
-        suffix="kg/ตร.ม."
+        suffix={isThai ? 'กก./ตร.ม.' : 'kg/sq.m.'}
       />
       <NumberField
         name="powerCapacityKva"
@@ -573,9 +573,9 @@ const HotelDetails = ({ draft, isThai }: CommonProps) => (
             <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
             <option value="hotel">{isThai ? 'โรงแรม' : 'Hotel'}</option>
             <option value="resort">{isThai ? 'รีสอร์ต' : 'Resort'}</option>
-            <option value="hostel">Hostel</option>
-            <option value="boutique_hotel">Boutique hotel</option>
-            <option value="serviced_residence">Serviced residence</option>
+            <option value="hostel">{isThai ? 'โฮสเทล' : 'Hostel'}</option>
+            <option value="boutique_hotel">{isThai ? 'บูทีคโฮเทล' : 'Boutique hotel'}</option>
+            <option value="serviced_residence">{isThai ? 'เซอร์วิสเรสซิเดนซ์' : 'Serviced residence'}</option>
           </SelectField>
         </Field>
         <NumberField name="starRating" label={isThai ? 'ระดับดาว' : 'Star rating'} draft={draft} min="0" max="5" />
@@ -664,8 +664,8 @@ const BusinessLandDetails = ({ draft, isThai }: CommonProps) => (
           <SelectField name="titleDeedType" defaultValue={readText(draft.titleDeedType)}>
             <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
             <option value="chanote">{isThai ? 'โฉนดที่ดิน (น.ส.4)' : 'Chanote (Nor Sor 4)'}</option>
-            <option value="nor_sor_3_gor">น.ส.3 ก.</option>
-            <option value="nor_sor_3">น.ส.3</option>
+            <option value="nor_sor_3_gor">{isThai ? 'น.ส.3 ก.' : 'Nor Sor 3 Gor'}</option>
+            <option value="nor_sor_3">{isThai ? 'น.ส.3' : 'Nor Sor 3'}</option>
             <option value="other">{isThai ? 'อื่น ๆ' : 'Other'}</option>
           </SelectField>
         </Field>

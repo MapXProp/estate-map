@@ -191,10 +191,10 @@ const Page = () => {
       }
     } catch (error) {
       setUploadError(
-        isThai && error instanceof Error
-          ? error.message
-          : isThai
-            ? 'อัปโหลดสื่อไม่สำเร็จ กรุณาลองอีกครั้ง'
+        isThai
+          ? 'อัปโหลดสื่อไม่สำเร็จ กรุณาลองอีกครั้ง'
+          : error instanceof Error
+            ? error.message
             : 'Unable to upload media. Please try again.'
       )
       setIsUploading(false)
