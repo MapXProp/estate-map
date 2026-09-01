@@ -13,6 +13,12 @@ export type ListingMediaProgressState = {
   currentFileName: string
 }
 
+export type ListingPendingMedia = {
+  photos: File[]
+  videos: File[]
+  panoramas: File[]
+}
+
 export const initialListingMediaProgress: ListingMediaProgressState = {
   phase: 'idle',
   pendingCount: 0,
@@ -22,16 +28,28 @@ export const initialListingMediaProgress: ListingMediaProgressState = {
   currentFileName: '',
 }
 
+export const initialListingPendingMedia: ListingPendingMedia = {
+  photos: [],
+  videos: [],
+  panoramas: [],
+}
+
 type ListingFlowProgressValue = {
   mediaProgress: ListingMediaProgressState
   setMediaProgress: Dispatch<SetStateAction<ListingMediaProgressState>>
+  pendingMedia: ListingPendingMedia
+  setPendingMedia: Dispatch<SetStateAction<ListingPendingMedia>>
 }
 
 const ListingFlowProgressContext = createContext<ListingFlowProgressValue | null>(null)
 
 export const ListingFlowProgressProvider = ({ children }: { children: React.ReactNode }) => {
   const [mediaProgress, setMediaProgress] = useState(initialListingMediaProgress)
-  const value = useMemo(() => ({ mediaProgress, setMediaProgress }), [mediaProgress])
+  const [pendingMedia, setPendingMedia] = useState(initialListingPendingMedia)
+  const value = useMemo(
+    () => ({ mediaProgress, setMediaProgress, pendingMedia, setPendingMedia }),
+    [mediaProgress, pendingMedia]
+  )
 
   return <ListingFlowProgressContext.Provider value={value}>{children}</ListingFlowProgressContext.Provider>
 }

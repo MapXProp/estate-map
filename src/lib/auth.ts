@@ -68,6 +68,39 @@ export const getApiBaseUrl = () => {
 
 export const getAuthApiUrl = (path: string) => `${getApiBaseUrl()}/apix/${path.replace(/^\//, '')}`
 
+let authRefreshPromise: Promise<boolean> | null = null
+
+const refreshAuthSession = () => {
+  if (authRefreshPromise) return authRefreshPromise
+
+  authRefreshPromise = fetch(getAuthApiUrl('refresh'), {
+    method: 'POST',
+    cache: 'no-store',
+    credentials: 'include',
+  })
+    .then((response) => response.ok)
+    .catch(() => false)
+    .finally(() => {
+      authRefreshPromise = null
+    })
+
+  return authRefreshPromise
+}
+
+// Protected listing actions may happen after a user has spent a long time
+// completing the form. Retry once after refreshing the cookie session so an
+// expired short-lived access token does not discard uploads or form progress.
+export const fetchWithAuthRetry = async (input: RequestInfo | URL, init?: RequestInit) => {
+  let response = await fetch(input, init)
+  if (response.status !== 401) return response
+
+  const refreshed = await refreshAuthSession()
+  if (!refreshed) return response
+
+  response = await fetch(input, init)
+  return response
+}
+
 export const getStoredToken = () => {
   return null
 }
@@ -154,11 +187,13 @@ const runStoredAuthVerification = async () => {
   })
 
   if (response.status === 401) {
-    response = await fetch(getAuthApiUrl('refresh'), {
-      method: 'POST',
-      cache: 'no-store',
-      credentials: 'include',
-    })
+    const refreshed = await refreshAuthSession()
+    if (refreshed) {
+      response = await fetch(getAuthApiUrl('me'), {
+        cache: 'no-store',
+        credentials: 'include',
+      })
+    }
   }
 
   if (!response.ok) {

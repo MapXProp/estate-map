@@ -1,7 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { Building2, CreditCard, FileClock, Heart, ShieldCheck, UserRound } from 'lucide-react'
+import { Building2, CreditCard, Heart, ShieldCheck, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
@@ -18,12 +18,6 @@ const navigation = [
     titleEn: 'My properties',
     href: '/account-listings',
     icon: Building2,
-  },
-  {
-    titleTh: 'ร่างประกาศ',
-    titleEn: 'Listing draft',
-    href: '/account-drafts',
-    icon: FileClock,
   },
   {
     titleTh: 'ที่บันทึกไว้',
@@ -59,7 +53,7 @@ export const PageNavigation = () => {
     <div className="container">
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className="hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid xl:grid-cols-6 dark:bg-neutral-800/80 dark:ring-neutral-700"
+        className="hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid xl:grid-cols-5 dark:bg-neutral-800/80 dark:ring-neutral-700"
       >
         {navigation.map((item) => {
           const isActive = pathname === item.href

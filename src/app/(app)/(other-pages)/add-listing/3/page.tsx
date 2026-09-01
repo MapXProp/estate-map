@@ -6,15 +6,15 @@ import {
 } from '@/components/add-listing/ListingFlowProgressContext'
 import { usePreferences, type AppCurrency } from '@/components/preferences/PreferencesProvider'
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
-import { getApiBaseUrl } from '@/lib/auth'
+import { getApiBaseUrl, getStoredUser } from '@/lib/auth'
+import { loadListingContactProfile } from '@/lib/listingContactProfile'
 import {
   getListingDraft,
-  saveListingDraftToCloud,
+  getListingDraftSummary,
   saveListingStep,
-  uploadListingMedia,
+  LISTING_SUBMISSION_RESULT_KEY,
   type ListingDraft,
   type ListingDraftValue,
-  type ListingMediaType,
 } from '@/lib/listingDraft'
 import { validateListingForm } from '@/lib/listingFormValidation'
 import Input from '@/shared/Input'
@@ -27,10 +27,11 @@ import {
   CheckCircleIcon,
   ChevronDownIcon,
   IdentificationIcon,
+  HomeModernIcon,
+  MapPinIcon,
   PhoneIcon,
   PhotoIcon,
   ScaleIcon,
-  ShieldCheckIcon,
   UserCircleIcon,
   VideoCameraIcon,
   ViewfinderCircleIcon,
@@ -90,7 +91,7 @@ type ContactAuthorityCode =
 const Page = () => {
   const router = useRouter()
   const { locale, currency: preferredCurrency } = usePreferences()
-  const { mediaProgress, setMediaProgress } = useListingFlowProgress()
+  const { pendingMedia, setPendingMedia, setMediaProgress } = useListingFlowProgress()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
   const [offers, setOffers] = useState<OfferTypeCode[]>(['rent'])
@@ -108,15 +109,21 @@ const Page = () => {
   const [contactAuthorityCode, setContactAuthorityCode] = useState<ContactAuthorityCode>('')
   const [contactOrganizationName, setContactOrganizationName] = useState('')
   const [contactOrganizationRegistrationNo, setContactOrganizationRegistrationNo] = useState('')
-  const [photos, setPhotos] = useState<File[]>([])
-  const [videos, setVideos] = useState<File[]>([])
-  const [panoramas, setPanoramas] = useState<File[]>([])
+  const [contactName, setContactName] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactPhoneSecondary, setContactPhoneSecondary] = useState('')
+  const [lineId, setLineId] = useState('')
+  const [instagramHandle, setInstagramHandle] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [photos, setPhotos] = useState<File[]>(() => pendingMedia.photos)
+  const [videos, setVideos] = useState<File[]>(() => pendingMedia.videos)
+  const [panoramas, setPanoramas] = useState<File[]>(() => pendingMedia.panoramas)
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState('')
   const uploadLockRef = useRef(false)
+  const initialPreferredCurrencyRef = useRef(preferredCurrency)
 
   useEffect(() => {
     router.prefetch('/add-listing/4')
@@ -136,18 +143,42 @@ const Page = () => {
       const savedCurrency = readText(savedDraft.currency)
       setPriceOnRequest(savedPriceOnRequest)
       setPriceNegotiable(!savedPriceOnRequest && readText(savedDraft.priceNegotiable) === 'yes')
-      setCurrency(savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : preferredCurrency)
+      setCurrency(savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : initialPreferredCurrencyRef.current)
       setContactRoleCode(asContactRoleCode(readText(savedDraft.contactRoleCode)))
       setContactAuthorityCode(asContactAuthorityCode(readText(savedDraft.contactAuthorityCode)))
       setContactOrganizationName(readText(savedDraft.contactOrganizationName))
       setContactOrganizationRegistrationNo(readText(savedDraft.contactOrganizationRegistrationNo))
+      const storedUser = getStoredUser()
+      const accountName = [storedUser?.name, storedUser?.surname].filter(Boolean).join(' ').trim()
+      setContactName(readText(savedDraft.contactName) || accountName)
+      setContactPhone(readText(savedDraft.contactPhone))
+      setContactPhoneSecondary(readText(savedDraft.contactPhoneSecondary))
+      setLineId(readText(savedDraft.lineId))
+      setInstagramHandle(readText(savedDraft.instagramHandle))
+      setContactEmail(readText(savedDraft.contactEmail) || storedUser?.email || '')
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
       setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
       setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
+
+      void loadListingContactProfile()
+        .then((profile) => {
+          if (!profile) return
+          setContactRoleCode((current) => current || asContactRoleCode(profile.role_code))
+          setContactAuthorityCode((current) => current || asContactAuthorityCode(profile.authority_source_code))
+          setContactOrganizationName((current) => current || profile.organization_name)
+          setContactOrganizationRegistrationNo((current) => current || profile.organization_registration_no)
+          setContactName((current) => current || profile.contact_name || accountName)
+          setContactPhone((current) => current || profile.contact_phone)
+          setContactPhoneSecondary((current) => current || profile.contact_phone_secondary)
+          setLineId((current) => current || profile.line_id)
+          setInstagramHandle((current) => current || profile.instagram_handle)
+          setContactEmail((current) => current || profile.contact_email || storedUser?.email || '')
+        })
+        .catch(() => undefined)
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [preferredCurrency, router])
+  }, [router])
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
@@ -166,12 +197,9 @@ const Page = () => {
   }, [panoramaPreviewUrls])
 
   useEffect(() => {
-    if (isUploading) return
-
     const frame = requestAnimationFrame(() => {
       setMediaProgress({
         ...initialListingMediaProgress,
-        phase: uploadError ? 'error' : 'idle',
         pendingCount: photos.length + videos.length + panoramas.length,
         uploadedCount: uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length,
       })
@@ -179,28 +207,38 @@ const Page = () => {
 
     return () => cancelAnimationFrame(frame)
   }, [
-    isUploading,
     panoramas.length,
     photos.length,
     setMediaProgress,
-    uploadError,
     uploadedPanoramaUrls.length,
     uploadedPhotoUrls.length,
     uploadedVideoUrls.length,
     videos.length,
   ])
 
+  useEffect(() => {
+    setPendingMedia({ photos, videos, panoramas })
+  }, [panoramas, photos, setPendingMedia, videos])
+
   const hasSale = offers.includes('sale')
   const hasRent = offers.includes('rent') || offers.includes('sublease')
   const hasTransfer = offers.includes('business_transfer')
   const hasEventBooking = offers.includes('event_booking')
   const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
+  const listingSummary = useMemo(() => (draft ? getListingDraftSummary(locale) : null), [draft, locale])
+  const firstStepSummary = listingSummary
+    ? [listingSummary.discoveryChannel, listingSummary.propertyType, listingSummary.businessSpaceType]
+        .filter(Boolean)
+        .join(' · ')
+    : ''
+  const secondStepSummary = draft
+    ? buildSecondStepSummary(draft, listingSummary?.location || '', isThai)
+    : ''
 
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
     setPhotos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_PHOTOS - uploadedPhotoUrls.length)))
     event.target.value = ''
-    setUploadError('')
   }
 
   const handleVideos = (event: ChangeEvent<HTMLInputElement>) => {
@@ -209,7 +247,6 @@ const Page = () => {
     )
     setVideos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_VIDEOS - uploadedVideoUrls.length)))
     event.target.value = ''
-    setUploadError('')
   }
 
   const handlePanoramas = (event: ChangeEvent<HTMLInputElement>) => {
@@ -218,7 +255,6 @@ const Page = () => {
       appendUniqueFiles(current, selected, Math.max(0, MAX_PANORAMAS - uploadedPanoramaUrls.length))
     )
     event.target.value = ''
-    setUploadError('')
   }
 
   const removePhoto = (index: number) => {
@@ -253,129 +289,14 @@ const Page = () => {
     if (!validateListingForm({ isThai })) return
 
     uploadLockRef.current = true
-    setUploadError('')
     setIsUploading(true)
-    let nextPhotoUrls = uploadedPhotoUrls
-    let nextVideoUrls = uploadedVideoUrls
-    let nextPanoramaUrls = uploadedPanoramaUrls
     const pendingMediaTotal = photos.length + videos.length + panoramas.length
-    let completedMediaCount = 0
-    let uploadedMediaCount = uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length
-
-    setMediaProgress({
-      phase: pendingMediaTotal ? 'uploading' : 'saving',
-      pendingCount: pendingMediaTotal,
-      uploadedCount: uploadedMediaCount,
-      completedCount: 0,
-      totalCount: pendingMediaTotal,
-      currentFileName: '',
-    })
-
-    const uploadQueue = async ({
-      files,
-      mediaType,
-      existingUrls,
-      limit,
-      onUrlsChange,
-      onFilesChange,
-    }: {
-      files: File[]
-      mediaType: ListingMediaType
-      existingUrls: string[]
-      limit: number
-      onUrlsChange: (urls: string[]) => void
-      onFilesChange: (files: File[]) => void
-    }) => {
-      let urls = existingUrls
-
-      for (const [index, file] of files.entries()) {
-        onFilesChange(files.slice(index))
-        setMediaProgress({
-          phase: 'uploading',
-          pendingCount: pendingMediaTotal,
-          uploadedCount: uploadedMediaCount,
-          completedCount: completedMediaCount,
-          totalCount: pendingMediaTotal,
-          currentFileName: file.name,
-        })
-
-        const uploaded = await uploadListingMedia([file], mediaType)
-        urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
-        completedMediaCount += 1
-        uploadedMediaCount += uploaded.length
-        onUrlsChange(urls)
-        onFilesChange(files.slice(index + 1))
-        setMediaProgress({
-          phase: 'uploading',
-          pendingCount: pendingMediaTotal,
-          uploadedCount: uploadedMediaCount,
-          completedCount: completedMediaCount,
-          totalCount: pendingMediaTotal,
-          currentFileName: file.name,
-        })
-      }
-
-      return urls
-    }
-
-    try {
-      if (photos.length) {
-        nextPhotoUrls = await uploadQueue({
-          files: photos,
-          mediaType: 'image',
-          existingUrls: uploadedPhotoUrls,
-          limit: MAX_PHOTOS,
-          onUrlsChange: (urls) => {
-            nextPhotoUrls = urls
-            setUploadedPhotoUrls(urls)
-          },
-          onFilesChange: setPhotos,
-        })
-      }
-      if (videos.length) {
-        nextVideoUrls = await uploadQueue({
-          files: videos,
-          mediaType: 'video',
-          existingUrls: uploadedVideoUrls,
-          limit: MAX_VIDEOS,
-          onUrlsChange: (urls) => {
-            nextVideoUrls = urls
-            setUploadedVideoUrls(urls)
-          },
-          onFilesChange: setVideos,
-        })
-      }
-      if (panoramas.length) {
-        nextPanoramaUrls = await uploadQueue({
-          files: panoramas,
-          mediaType: '360',
-          existingUrls: uploadedPanoramaUrls,
-          limit: MAX_PANORAMAS,
-          onUrlsChange: (urls) => {
-            nextPanoramaUrls = urls
-            setUploadedPanoramaUrls(urls)
-          },
-          onFilesChange: setPanoramas,
-        })
-      }
-    } catch (error) {
-      setUploadError(
-        isThai
-          ? 'อัปโหลดสื่อไม่สำเร็จ กรุณาลองอีกครั้ง'
-          : error instanceof Error
-            ? error.message
-            : 'Unable to upload media. Please try again.'
-      )
-      uploadLockRef.current = false
-      setIsUploading(false)
-      return
-    }
 
     setMediaProgress({
       phase: 'saving',
-      pendingCount: 0,
-      uploadedCount: uploadedMediaCount,
-      completedCount: completedMediaCount,
+      pendingCount: pendingMediaTotal,
+      uploadedCount: uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length,
+      completedCount: 0,
       totalCount: pendingMediaTotal,
       currentFileName: '',
     })
@@ -397,14 +318,22 @@ const Page = () => {
       'contactOrganizationRegistrationNo',
       contactOrganizationName.trim() ? contactOrganizationRegistrationNo.trim() : ''
     )
-    formData.set('selectedPhotoCount', String(nextPhotoUrls.length))
-    formData.set('selectedVideoCount', String(nextVideoUrls.length))
-    formData.set('selectedPanoramaCount', String(nextPanoramaUrls.length))
-    replaceFormDataValues(formData, 'listingPhotoUrls[]', nextPhotoUrls)
-    replaceFormDataValues(formData, 'listingVideoUrls[]', nextVideoUrls)
-    replaceFormDataValues(formData, 'listingPanoramaUrls[]', nextPanoramaUrls)
-    const savedDraft = saveListingStep(3, formData)
-    await saveListingDraftToCloud(savedDraft).catch(() => undefined)
+    formData.set('contactName', contactName.trim())
+    formData.set('contactPhone', contactPhone.trim())
+    formData.set('contactPhoneSecondary', contactPhoneSecondary.trim())
+    formData.set('lineId', lineId.trim())
+    formData.set('instagramHandle', instagramHandle.trim())
+    formData.set('contactEmail', contactEmail.trim())
+    formData.set('selectedPhotoCount', String(uploadedPhotoUrls.length + photos.length))
+    formData.set('selectedVideoCount', String(uploadedVideoUrls.length + videos.length))
+    formData.set('selectedPanoramaCount', String(uploadedPanoramaUrls.length + panoramas.length))
+    replaceFormDataValues(formData, 'listingPhotoUrls[]', uploadedPhotoUrls)
+    replaceFormDataValues(formData, 'listingVideoUrls[]', uploadedVideoUrls)
+    replaceFormDataValues(formData, 'listingPanoramaUrls[]', uploadedPanoramaUrls)
+    formData.set('submissionKey', readText(draft?.submissionKey) || createSubmissionKey())
+    saveListingStep(3, formData)
+    setPendingMedia({ photos, videos, panoramas })
+    sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
     router.push('/add-listing/4')
   }
 
@@ -424,9 +353,25 @@ const Page = () => {
           {isThai ? 'สื่อ ราคา และการติดต่อ' : 'Media, price & contact'}
         </div>
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          {isThai ? 'เตรียมประกาศให้พร้อมตรวจสอบ' : 'Prepare your listing for review'}
+          {isThai ? 'เพิ่มข้อมูลสุดท้ายก่อนลงประกาศ' : 'Add the final details before publishing'}
         </h1>
       </div>
+
+      <section
+        aria-label={isThai ? 'สรุปข้อมูลจากขั้นที่ 1 และ 2' : 'Summary from steps 1 and 2'}
+        className="overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <SummaryRow
+          icon={<HomeModernIcon className="size-5" />}
+          text={firstStepSummary || (isThai ? 'ยังไม่ได้เลือกประเภททรัพย์' : 'Property type not selected')}
+        />
+        <div className="border-t border-neutral-200 dark:border-neutral-800">
+          <SummaryRow
+            icon={<MapPinIcon className="size-5" />}
+            text={secondStepSummary || (isThai ? 'ยังไม่ได้ระบุรายละเอียดและทำเล' : 'Details and location not added')}
+          />
+        </div>
+      </section>
 
       <Form id="add-listing-form" action={handleSubmitForm} noValidate aria-busy={isUploading} className="space-y-6">
         <PricingPanel
@@ -461,15 +406,6 @@ const Page = () => {
           minimumLeaseMonths={minimumLeaseMonths}
           onMinimumLeaseMonthsChange={setMinimumLeaseMonths}
         />
-
-        {uploadError ? (
-          <p
-            role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-          >
-            {uploadError}
-          </p>
-        ) : null}
 
         <SectionCard icon={<PhotoIcon className="size-5" />} title={isThai ? 'รูปภาพของทรัพย์' : 'Property photos'}>
           <label
@@ -542,13 +478,8 @@ const Page = () => {
 
         <SectionCard
           icon={<VideoCameraIcon className="size-5" />}
-          title={isThai ? 'วิดีโอของทรัพย์ (ไม่บังคับ)' : 'Property videos (optional)'}
+          title={isThai ? 'วิดีโอของทรัพย์ (ถ้ามี)' : 'Property videos (if any)'}
         >
-          <p className="mb-4 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-            {isThai
-              ? 'เพิ่มคลิปพาชม ห้องจริง หรือบรรยากาศรอบทรัพย์ได้สูงสุด 4 ไฟล์'
-              : 'Add walkthroughs, room tours or surroundings — up to 4 files.'}
-          </p>
           <label
             className={`flex items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition dark:border-neutral-700 dark:bg-neutral-950 ${
               videoCount >= MAX_VIDEOS
@@ -710,7 +641,7 @@ const Page = () => {
 
         <SectionCard icon={<PhoneIcon className="size-5" />} title={isThai ? 'ช่องทางติดต่อ' : 'Contact details'}>
           <div className="rounded-3xl border border-neutral-200 bg-neutral-50/80 p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-950/60">
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
                 <IdentificationIcon className="size-5" />
               </span>
@@ -718,11 +649,6 @@ const Page = () => {
                 <h3 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">
                   {isThai ? 'คุณติดต่อในฐานะใคร' : 'Who are you representing?'}
                 </h3>
-                <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                  {isThai
-                    ? 'ช่วยให้ผู้สนใจรู้ว่ากำลังคุยกับเจ้าของ นายหน้า หรือตัวแทนจากองค์กรใด'
-                    : 'Let customers know whether they are speaking with an owner, broker, or organization representative.'}
-                </p>
               </div>
             </div>
 
@@ -818,8 +744,8 @@ const Page = () => {
               <FormItem
                 label={
                   isThai
-                    ? 'เลขทะเบียนนิติบุคคล (ไม่บังคับ · ไม่แสดงสาธารณะ)'
-                    : 'Company registration no. (optional · private)'
+                    ? 'เลขทะเบียนนิติบุคคล (ถ้ามี · ไม่แสดงสาธารณะ)'
+                    : 'Company registration no. (if any · private)'
                 }
               >
                 <Input
@@ -833,29 +759,15 @@ const Page = () => {
               </FormItem>
             </div>
 
-            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/70 dark:bg-blue-950/25">
-              <ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-blue-600 dark:text-blue-400" />
-              <div className="font-sarabun">
-                <p className="text-sm font-semibold text-blue-950 dark:text-blue-100">
-                  {isThai ? 'สถานะเริ่มต้น: ยังไม่ตรวจสอบ' : 'Initial status: Not verified'}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-blue-900/75 dark:text-blue-200/75">
-                  {verificationGuidance(contactRoleCode, isThai)}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-blue-900/75 dark:text-blue-200/75">
-                  {isThai
-                    ? 'การเลือกบทบาทเองจะไม่ทำให้ขึ้นเครื่องหมาย Verified จนกว่าจะตรวจทั้งตัวตนและสิทธิที่เกี่ยวข้องกับทรัพย์'
-                    : 'Selecting a role does not grant a Verified badge. Identity and authority for the property must both be checked.'}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-6 sm:grid-cols-2 dark:border-neutral-800">
             <FormItem label={isThai ? 'ชื่อผู้ติดต่อ' : 'Contact name'}>
               <Input
                 name="contactName"
-                defaultValue={readText(draft.contactName)}
+                value={contactName}
+                onChange={(event) => setContactName(event.target.value)}
+                autoComplete="name"
                 placeholder={isThai ? 'ชื่อเจ้าของหรือผู้ดูแล' : 'Owner or property manager'}
                 required
               />
@@ -863,37 +775,43 @@ const Page = () => {
             <FormItem label={isThai ? 'เบอร์โทรศัพท์' : 'Phone number'}>
               <Input
                 name="contactPhone"
-                defaultValue={readText(draft.contactPhone)}
+                value={contactPhone}
+                onChange={(event) => setContactPhone(event.target.value)}
                 inputMode="tel"
+                autoComplete="tel"
                 placeholder="08x-xxx-xxxx"
                 required
               />
             </FormItem>
-            <FormItem label={isThai ? 'เบอร์โทรสำรอง (ไม่บังคับ)' : 'Backup phone (optional)'}>
+            <FormItem label={isThai ? 'เบอร์โทรสำรอง (ถ้ามี)' : 'Backup phone (if any)'}>
               <Input
                 name="contactPhoneSecondary"
-                defaultValue={readText(draft.contactPhoneSecondary)}
+                value={contactPhoneSecondary}
+                onChange={(event) => setContactPhoneSecondary(event.target.value)}
                 inputMode="tel"
                 placeholder="08x-xxx-xxxx"
               />
             </FormItem>
-            <FormItem label={isThai ? 'LINE ID (ไม่บังคับ)' : 'LINE ID (optional)'}>
-              <Input name="lineId" defaultValue={readText(draft.lineId)} placeholder="Line ID" />
+            <FormItem label={isThai ? 'LINE ID (ถ้ามี)' : 'LINE ID (if any)'}>
+              <Input name="lineId" value={lineId} onChange={(event) => setLineId(event.target.value)} placeholder="Line ID" />
             </FormItem>
-            <FormItem label={isThai ? 'Instagram (ไม่บังคับ)' : 'Instagram (optional)'}>
+            <FormItem label={isThai ? 'Instagram (ถ้ามี)' : 'Instagram (if any)'}>
               <Input
                 name="instagramHandle"
-                defaultValue={readText(draft.instagramHandle)}
+                value={instagramHandle}
+                onChange={(event) => setInstagramHandle(event.target.value)}
                 autoCapitalize="none"
                 autoCorrect="off"
                 placeholder="@username"
               />
             </FormItem>
-            <FormItem label={isThai ? 'อีเมล (ไม่บังคับ)' : 'Email (optional)'}>
+            <FormItem label={isThai ? 'อีเมล (ถ้ามี)' : 'Email (if any)'}>
               <Input
                 name="contactEmail"
-                defaultValue={readText(draft.contactEmail)}
+                value={contactEmail}
+                onChange={(event) => setContactEmail(event.target.value)}
                 type="email"
+                autoComplete="email"
                 placeholder="name@example.com"
               />
             </FormItem>
@@ -914,7 +832,7 @@ const SectionCard = ({
   children: React.ReactNode
 }) => (
   <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
-    <div className="flex items-start gap-3">
+    <div className="flex items-center gap-3">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-950/40">
         {icon}
       </span>
@@ -924,6 +842,15 @@ const SectionCard = ({
     </div>
     <div className="mt-6">{children}</div>
   </section>
+)
+
+const SummaryRow = ({ icon, text }: { icon: React.ReactNode; text: string }) => (
+  <div className="flex min-h-16 items-center gap-3 px-4 py-3 sm:px-5">
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-emerald-300 dark:ring-neutral-700">
+      {icon}
+    </span>
+    <p className="min-w-0 font-sarabun text-sm font-semibold leading-6 text-neutral-900 dark:text-neutral-100">{text}</p>
+  </div>
 )
 
 type PricingPanelProps = {
@@ -991,7 +918,7 @@ const PricingPanel = ({
 
   return (
     <section className="overflow-hidden rounded-[30px] border border-orange-200 bg-white shadow-[0_18px_50px_-32px_rgba(234,88,12,0.45)] dark:border-orange-900/60 dark:bg-neutral-900">
-      <div className="border-b border-orange-100 bg-gradient-to-r from-orange-50 via-white to-white p-5 sm:p-7 dark:border-orange-950 dark:from-orange-950/35 dark:via-neutral-900 dark:to-neutral-900">
+      <div className="border-b border-orange-100 bg-gradient-to-r from-orange-50 via-white to-white px-5 py-4 sm:px-7 sm:py-5 dark:border-orange-950 dark:from-orange-950/35 dark:via-neutral-900 dark:to-neutral-900">
         <div className="flex items-start gap-4">
           <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-sm">
             <BanknotesIcon className="size-6" />
@@ -1000,12 +927,7 @@ const PricingPanel = ({
             <h2 className="font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
               {isThai ? 'ราคาและเงื่อนไข' : 'Price & terms'}
             </h2>
-            <p className="mt-1 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-              {isThai
-                ? 'ระบุราคาให้ตรงกับรูปแบบประกาศ ผู้สนใจจะตัดสินใจและติดต่อได้ง่ายขึ้น'
-                : 'Add prices for each listing option so customers can decide and contact you more easily.'}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               {offers.map((offer) => (
                 <span
                   key={offer}
@@ -1027,11 +949,6 @@ const PricingPanel = ({
               <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                 {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
               </h3>
-              <p className="mt-1 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai
-                  ? 'ใช้กับราคาทุกช่องในประกาศนี้ โดยไม่แปลงตัวเลขอัตโนมัติ'
-                  : 'Applies to every price below; amounts are not converted automatically.'}
-              </p>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
@@ -1143,7 +1060,6 @@ const PricingPanel = ({
               <PricingGroup
                 icon={<BanknotesIcon className="size-5" />}
                 title={isThai ? 'ราคาขาย' : 'Sale price'}
-                description={isThai ? 'ราคาขายรวมของทรัพย์' : 'Total asking price for the property'}
               >
                 <FormItem label={isThai ? 'ราคาขายรวม' : 'Total sale price'}>
                   <PriceInput
@@ -1171,7 +1087,6 @@ const PricingPanel = ({
                       ? 'ค่าเช่า'
                       : 'Rental price'
                 }
-                description={isThai ? 'ค่าเช่า ระยะสัญญา และค่าใช้จ่ายประจำ' : 'Rent, lease term, and recurring fees'}
               >
                 <div className="grid gap-5 sm:grid-cols-2">
                   <FormItem label={isThai ? 'ค่าเช่ารายเดือน' : 'Monthly rent'}>
@@ -1186,7 +1101,7 @@ const PricingPanel = ({
                     />
                   </FormItem>
                   {isMonthlyHotel ? (
-                    <FormItem label={isThai ? 'ราคารายวัน (ไม่บังคับ)' : 'Daily rate (optional)'}>
+                    <FormItem label={isThai ? 'ราคารายวัน (ถ้ามี)' : 'Daily rate (if any)'}>
                       <PriceInput
                         name="rentPriceDaily"
                         value={rentPriceDaily}
@@ -1213,7 +1128,7 @@ const PricingPanel = ({
                       <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
                     </Select>
                   </FormItem>
-                  <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ไม่บังคับ)' : 'Monthly service fee (optional)'}>
+                  <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ถ้ามี)' : 'Monthly service fee (if any)'}>
                     <PriceInput
                       name="serviceFeeMonthly"
                       value={serviceFeeMonthly}
@@ -1252,7 +1167,7 @@ const PricingPanel = ({
                   {!hasRent ? (
                     <>
                       <FormItem
-                        label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อเดือน (ไม่บังคับ)' : 'Ongoing monthly rent (optional)'}
+                        label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อเดือน (ถ้ามี)' : 'Ongoing monthly rent (if any)'}
                       >
                         <PriceInput
                           name="rentPriceMonthly"
@@ -1279,7 +1194,7 @@ const PricingPanel = ({
                           <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
                         </Select>
                       </FormItem>
-                      <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ไม่บังคับ)' : 'Monthly service fee (optional)'}>
+                      <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ถ้ามี)' : 'Monthly service fee (if any)'}>
                         <PriceInput
                           name="serviceFeeMonthly"
                           value={serviceFeeMonthly}
@@ -1369,17 +1284,19 @@ const PricingGroup = ({
 }: {
   icon: React.ReactNode
   title: string
-  description: string
+  description?: string
   children: React.ReactNode
 }) => (
   <section className="rounded-3xl border border-neutral-200 bg-neutral-50/70 p-4 sm:p-5 dark:border-neutral-800 dark:bg-neutral-950/60">
-    <div className="mb-5 flex items-start gap-3">
+    <div className={`mb-5 flex gap-3 ${description ? 'items-start' : 'items-center'}`}>
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
         {icon}
       </span>
       <div>
         <h3 className="font-sarabun text-base font-semibold text-neutral-950 dark:text-white">{title}</h3>
-        <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">{description}</p>
+        {description ? (
+          <p className="mt-0.5 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">{description}</p>
+        ) : null}
       </div>
     </div>
     {children}
@@ -1483,37 +1400,35 @@ const defaultAuthorityForRole = (role: ContactRoleCode): ContactAuthorityCode =>
 const organizationRequired = (role: ContactRoleCode) =>
   role === 'agency_broker' || role === 'developer_investor_representative'
 
-const verificationGuidance = (role: ContactRoleCode, isThai: boolean) => {
-  switch (role) {
-    case 'owner':
-      return isThai
-        ? 'การยืนยันระดับสูงสุดควรตรวจตัวตนและหลักฐานการถือครองทรัพย์'
-        : 'Full verification should check identity and proof of property ownership.'
-    case 'owner_representative':
-      return isThai
-        ? 'ควรตรวจตัวตน หนังสือมอบอำนาจ และหลักฐานของเจ้าของทรัพย์'
-        : 'Identity, owner authorization, and ownership evidence should be checked.'
-    case 'independent_broker':
-      return isThai
-        ? 'ควรตรวจตัวตน พร้อมหนังสือยินยอมหรือข้อตกลงนายหน้าจากแหล่งสิทธิที่ระบุ'
-        : 'Identity and the owner or source authorization to market the property should be checked.'
-    case 'agency_broker':
-      return isThai
-        ? 'ควรตรวจตัวตน การสังกัดบริษัท และสิทธิของบริษัทในการทำตลาดทรัพย์นี้'
-        : 'Identity, agency membership, and the agency’s authority for this property should be checked.'
-    case 'developer_investor_representative':
-      return isThai
-        ? 'ควรตรวจตัวตน การสังกัดองค์กร และสิทธิของโครงการหรือนักลงทุนที่มอบหมายให้ลงประกาศ'
-        : 'Identity, organization membership, and the developer or investor mandate should be checked.'
-    case 'property_manager':
-      return isThai
-        ? 'ควรตรวจตัวตนและสัญญาหรือหนังสือแต่งตั้งให้บริหารทรัพย์'
-        : 'Identity and the property management appointment or agreement should be checked.'
-    default:
-      return isThai
-        ? 'เลือกบทบาทก่อน ระบบจะแนะนำหลักฐานที่เหมาะกับความสัมพันธ์ของคุณกับทรัพย์'
-        : 'Select a role to see which evidence matches your relationship to the property.'
-  }
+const buildSecondStepSummary = (draft: ListingDraft, location: string, isThai: boolean) => {
+  const landArea = readText(draft.landAreaSqm)
+  const usableArea = readText(draft.usableAreaSqm || draft.acreage)
+  const bedrooms = readText(draft.Bedroom)
+  const bathrooms = readText(draft.Bathroom)
+  const parking = readText(draft.Parking)
+  const floor = readText(draft.floorNo)
+  const facts = [
+    readText(draft.placeName),
+    location,
+    landArea
+      ? `${isThai ? 'ที่ดิน' : 'Land'} ${formatSummaryNumber(landArea, isThai)} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
+      : usableArea
+        ? `${isThai ? 'พื้นที่ใช้สอย' : 'Usable area'} ${formatSummaryNumber(usableArea, isThai)} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
+        : '',
+    bedrooms ? `${formatSummaryNumber(bedrooms, isThai)} ${isThai ? 'ห้องนอน' : 'bedrooms'}` : '',
+    bathrooms ? `${formatSummaryNumber(bathrooms, isThai)} ${isThai ? 'ห้องน้ำ' : 'bathrooms'}` : '',
+    parking ? `${formatSummaryNumber(parking, isThai)} ${isThai ? 'ที่จอดรถ' : 'parking spaces'}` : '',
+    floor ? `${isThai ? 'ชั้น' : 'Floor'} ${formatSummaryNumber(floor, isThai)}` : '',
+  ]
+
+  return facts.filter((value, index, all) => Boolean(value) && all.indexOf(value) === index).join(' · ')
+}
+
+const formatSummaryNumber = (value: string, isThai: boolean) => {
+  const parsed = Number(value.replaceAll(',', ''))
+  return Number.isFinite(parsed)
+    ? parsed.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 })
+    : value
 }
 
 const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
@@ -1525,5 +1440,9 @@ const offersFromLegacy = (value: string): OfferTypeCode[] => {
   if (value === 'sale_and_rent') return ['sale', 'rent']
   return isOfferTypeCode(value) ? [value] : ['rent']
 }
+const createSubmissionKey = () =>
+  typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
 
 export default Page

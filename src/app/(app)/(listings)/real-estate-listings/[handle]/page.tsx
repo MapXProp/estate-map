@@ -46,6 +46,7 @@ import SectionListingReviews from '../../components/SectionListingReviews'
 import SectionMap from '../../components/SectionMap'
 import EventBoothListingView from './EventBoothListingView'
 import LandListingView from './LandListingView'
+import PropertyListingView from './PropertyListingView'
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
@@ -81,6 +82,9 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   }
   if (databaseListing?.property_type_code === 'land') {
     return <LandListingView listing={databaseListing} />
+  }
+  if (databaseListing) {
+    return <PropertyListingView listing={databaseListing} />
   }
 
   const listing = await getRealEstateListingByHandle(handle)

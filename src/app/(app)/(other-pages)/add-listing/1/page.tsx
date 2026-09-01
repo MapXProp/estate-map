@@ -32,10 +32,12 @@ import {
   resetListingDetailsForCategoryChange,
   saveListingDraftToCloud,
   saveListingStep,
+  type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
-import { clearListingFormErrors, showListingFieldError } from '@/lib/listingFormValidation'
+import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
 import Input from '@/shared/Input'
+import Select from '@/shared/Select'
 import Textarea from '@/shared/Textarea'
 import {
   BuildingStorefrontIcon,
@@ -227,6 +229,65 @@ const Page = () => {
           : 'Book by event period'
         : selectedOfferLabels.join(', ')
   const hasCompleteListingOption = Boolean(hasCompletePropertySelection && propertyType && listingOptionLabel)
+  const showsRooms = selectedGroup === 'residential' || selectedGroup === 'mixed_use'
+  const isLand = selectedPropertyType === 'land' || selectedGroup === 'land'
+  const needsLandArea = [
+    'detached_house',
+    'semi_detached_house',
+    'townhouse',
+    'shophouse',
+    'home_office',
+    'warehouse',
+    'factory',
+    'hotel_resort',
+  ].includes(selectedPropertyType)
+  const isIndustrialBusiness =
+    selectedChannel === 'business' && ['warehouse', 'factory'].includes(selectedPropertyType)
+  const isHospitalityBusiness = selectedChannel === 'business' && selectedPropertyType === 'hotel_resort'
+  const isMonthlyPortfolio = selectedChannel === 'rooms' && selectedScope === 'multi_unit'
+  const showsBedrooms = showsRooms && !isMonthlyPortfolio
+  const showsBathrooms = !isLand && !isHospitalityBusiness && !isMonthlyPortfolio
+  const showsFloorNumber = !isLand && ['single_unit', 'space_slot'].includes(selectedScope)
+  const showsTotalFloors = !isLand
+  const showsFurnishing =
+    !isLand &&
+    (selectedChannel !== 'business' || ['shophouse', 'home_office', 'office'].includes(selectedPropertyType))
+  const coreDetailsTitle =
+    isIndustrialBusiness || isHospitalityBusiness
+      ? isThai
+        ? 'พื้นที่อาคารและข้อมูลหลัก'
+        : 'Building area & key details'
+      : isThai
+        ? 'ขนาดและข้อมูลหลัก'
+        : 'Size & key details'
+  const usableAreaLabel =
+    isIndustrialBusiness || isHospitalityBusiness
+      ? isThai
+        ? 'พื้นที่อาคารรวม'
+        : 'Total building area'
+      : isThai
+        ? 'พื้นที่ใช้สอย'
+        : 'Usable area'
+  const bathroomLabel = isIndustrialBusiness
+    ? isThai
+      ? 'ห้องน้ำพนักงาน'
+      : 'Staff restrooms'
+    : selectedChannel === 'business'
+      ? isThai
+        ? 'ห้องน้ำ / ห้องสุขา'
+        : 'Bathrooms / restrooms'
+      : isThai
+        ? 'ห้องน้ำ'
+        : 'Bathrooms'
+  const parkingLabel = isIndustrialBusiness
+    ? isThai
+      ? 'ที่จอดรถ / ลานจอด'
+      : 'Parking / vehicle yard'
+    : isThai
+      ? 'ที่จอดรถ'
+      : 'Parking spaces'
+  const coreDetailsDraft: ListingDraft = draftReady ? getListingDraft() : {}
+  const coreDetailsKey = `${selectedChannel}:${selectedPropertyType}`
 
   const clearWizardError = () => {
     setError('')
@@ -352,6 +413,7 @@ const Page = () => {
     const channel = getDiscoveryChannel(channelCode)
     if (!channel || channelCode === selectedChannel) return
 
+    resetListingDetailsForCategoryChange(channelCode, '')
     setSelectedChannel(channelCode)
     setSelectedPropertyType('')
     setSelectedScope('')
@@ -366,6 +428,7 @@ const Page = () => {
     const nextPropertyType = getPropertyType(propertyTypeCode)
     if (!nextPropertyType || propertyTypeCode === selectedPropertyType) return
 
+    resetListingDetailsForCategoryChange(selectedChannel, propertyTypeCode)
     setSelectedPropertyType(propertyTypeCode)
     setSelectedScope(nextPropertyType.defaultScope)
     setSelectedUseCases(nextPropertyType.defaultUseCases)
@@ -393,6 +456,9 @@ const Page = () => {
     )
     const nextHasEventBooth = nextSpaceTypes.includes('event_booth')
 
+    if (selectedPropertyType !== retailSpace.code) {
+      resetListingDetailsForCategoryChange(selectedChannel, retailSpace.code)
+    }
     setSelectedPropertyType(retailSpace.code)
     setSelectedScope(retailSpace.defaultScope)
     setSelectedUseCases((current) => {
@@ -453,6 +519,15 @@ const Page = () => {
       showWizardError(4, isThai ? 'กรุณากรอกหัวข้อประกาศ' : 'Enter a listing title.', 'listingTitle')
       return
     }
+    if (!description.trim()) {
+      showWizardError(
+        4,
+        isThai ? 'กรุณากรอกรายละเอียดประกาศ' : 'Enter a listing description.',
+        'listingDescription'
+      )
+      return
+    }
+    if (!validateListingForm({ isThai })) return
 
     formData.set('property_group_code', selectedGroup)
     formData.set('discovery_channel_code', selectedChannel)
@@ -852,7 +927,7 @@ const Page = () => {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-sarabun sm:px-7">
             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               {isThai ? 'ตัวเลือกเพิ่มเติม' : 'More options'}{' '}
-              <span className="font-normal text-neutral-400">{isThai ? '(ไม่บังคับ)' : '(optional)'}</span>
+              <span className="font-normal text-neutral-400">{isThai ? '(ถ้ามี)' : '(if any)'}</span>
             </span>
             <span className="rounded-full bg-white px-3 py-1.5 text-xs text-neutral-500 shadow-sm ring-1 ring-neutral-200 group-open:text-orange-600 dark:bg-neutral-800 dark:ring-neutral-700">
               {isThai ? 'เปิด' : 'Open'}
@@ -899,20 +974,28 @@ const Page = () => {
         <WizardSection
           number="4"
           title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}
-          complete={Boolean(title.trim())}
-          statusText={title.trim() ? (isThai ? `กรอกแล้ว: ${title.trim()}` : `Added: ${title.trim()}`) : ''}
-          pendingText={isThai ? 'ยังไม่ได้กรอกหัวข้อประกาศ' : 'Listing title has not been added yet'}
+          complete={Boolean(title.trim()) && Boolean(description.trim())}
+          statusText={
+            title.trim() && description.trim()
+              ? isThai
+                ? 'กรอกข้อมูลประกาศครบแล้ว'
+                : 'Listing information completed'
+              : ''
+          }
+          pendingText={
+            isThai ? 'กรอกหัวข้อและรายละเอียดประกาศให้ครบ' : 'Complete the listing title and description'
+          }
           tone={selectedChannel || undefined}
           invalid={errorSection === 4}
           errorText={errorSection === 4 ? error : ''}
           description={
             isThai
-              ? 'เขียนข้อมูลสั้น กระชับ และเจาะจง รายละเอียดอื่นเพิ่มได้ในขั้นถัดไป'
-              : 'Keep it clear and specific. You can add more details in the next step.'
+              ? 'ระบุจุดเด่น การเดินทาง สภาพทรัพย์ และเงื่อนไขสำคัญ'
+              : 'Describe highlights, access, condition and important terms.'
           }
         >
           <div className="grid gap-6 [&_[data-slot=label]]:font-sarabun [&_[data-slot=label]]:text-base">
-            <FormItem label={isThai ? 'หัวข้อประกาศ' : 'Listing title'}>
+            <FormItem label={isThai ? 'หัวข้อประกาศ *' : 'Listing title *'}>
               <Input
                 name="listingTitle"
                 value={title}
@@ -934,7 +1017,7 @@ const Page = () => {
 
             <FormItem
               label={
-                isThai ? 'ชื่อโครงการ อาคาร หรือสถานที่ (ไม่บังคับ)' : 'Project, building or place name (optional)'
+                isThai ? 'ชื่อโครงการ อาคาร หรือสถานที่ (ถ้ามี)' : 'Project, building or place name (if any)'
               }
             >
               <Input
@@ -951,16 +1034,20 @@ const Page = () => {
               />
             </FormItem>
 
-            <FormItem label={isThai ? 'คำอธิบายสั้น (ไม่บังคับ)' : 'Short description (optional)'}>
+            <FormItem label={isThai ? 'รายละเอียดประกาศ *' : 'Listing description *'}>
               <Textarea
                 name="listingDescription"
                 value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                onChange={(event) => {
+                  setDescription(event.target.value)
+                  if (errorSection === 4) clearWizardError()
+                }}
                 placeholder={
                   isThai
                     ? 'อธิบายจุดเด่นของทรัพย์ การเดินทาง และเงื่อนไขสำคัญ...'
                     : 'Describe the property highlights, transport access and important terms...'
                 }
+                required
                 maxLength={1000}
                 className="min-h-64 rounded-[18px] border-neutral-200 bg-neutral-50 px-5 py-4 text-base leading-7 shadow-none min-[744px]:min-h-72 min-[744px]:text-[17px]! sm:text-base dark:bg-neutral-950"
               />
@@ -968,6 +1055,111 @@ const Page = () => {
             </FormItem>
           </div>
         </WizardSection>
+
+        {hasCompletePropertySelection && !isLand ? (
+          <section
+            key={coreDetailsKey}
+            className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900"
+          >
+            <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+              {coreDetailsTitle}
+            </h2>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              {needsLandArea ? (
+                <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
+                  <UnitInput
+                    name="landAreaSqm"
+                    defaultValue={readDraftText(coreDetailsDraft.landAreaSqm)}
+                    suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                    placeholder={isThai ? 'กรอกขนาดที่ดิน' : 'Enter land area'}
+                  />
+                </FormItem>
+              ) : null}
+
+              <FormItem label={usableAreaLabel}>
+                <UnitInput
+                  name="usableAreaSqm"
+                  defaultValue={readDraftText(coreDetailsDraft.usableAreaSqm)}
+                  suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
+                  placeholder={isThai ? 'กรอกขนาดพื้นที่' : 'Enter area'}
+                />
+              </FormItem>
+
+              {showsBedrooms ? (
+                <FormItem label={isThai ? 'ห้องนอน' : 'Bedrooms'}>
+                  <Input
+                    name="Bedroom"
+                    defaultValue={readDraftText(coreDetailsDraft.Bedroom)}
+                    type="number"
+                    min="0"
+                    placeholder={isThai ? '0 สำหรับห้องสตูดิโอ' : '0 for a studio'}
+                  />
+                </FormItem>
+              ) : null}
+
+              {showsBathrooms ? (
+                <FormItem label={bathroomLabel}>
+                  <Input
+                    name="Bathroom"
+                    defaultValue={readDraftText(coreDetailsDraft.Bathroom)}
+                    type="number"
+                    min="0"
+                    placeholder={isThai ? '0 หากไม่มี' : '0 if none'}
+                  />
+                </FormItem>
+              ) : null}
+
+              <FormItem label={parkingLabel}>
+                <Input
+                  name="Parking"
+                  defaultValue={readDraftText(coreDetailsDraft.Parking)}
+                  type="number"
+                  min="0"
+                  placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
+                />
+              </FormItem>
+
+              {showsFloorNumber ? (
+                <FormItem label={isThai ? 'ชั้นที่' : 'Floor'}>
+                  <Input
+                    name="floorNo"
+                    defaultValue={readDraftText(coreDetailsDraft.floorNo)}
+                    type="number"
+                    min="0"
+                    placeholder={isThai ? '0 สำหรับชั้นล่าง' : '0 for ground floor'}
+                  />
+                </FormItem>
+              ) : null}
+
+              {showsTotalFloors ? (
+                <FormItem label={isThai ? 'จำนวนชั้นทั้งหมด' : 'Total floors'}>
+                  <Input
+                    name="totalFloors"
+                    defaultValue={readDraftText(coreDetailsDraft.totalFloors)}
+                    type="number"
+                    min="1"
+                    placeholder={isThai ? 'เช่น 12' : 'e.g. 12'}
+                  />
+                </FormItem>
+              ) : null}
+
+              {showsFurnishing ? (
+                <FormItem label={isThai ? 'เฟอร์นิเจอร์' : 'Furnishing'}>
+                  <Select
+                    name="furnishingStatus"
+                    defaultValue={readDraftText(coreDetailsDraft.furnishingStatus)}
+                    className="[&_select]:h-11 [&_select]:rounded-2xl"
+                  >
+                    <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
+                    <option value="fully_furnished">{isThai ? 'ครบ พร้อมอยู่' : 'Fully furnished'}</option>
+                    <option value="partly_furnished">{isThai ? 'มีบางส่วน' : 'Partly furnished'}</option>
+                    <option value="unfurnished">{isThai ? 'ไม่มีเฟอร์นิเจอร์' : 'Unfurnished'}</option>
+                  </Select>
+                </FormItem>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </Form>
 
       <ListingAuthCheckpoint
@@ -1295,6 +1487,32 @@ const ToggleCard = ({
     </button>
   )
 }
+
+const UnitInput = ({
+  name,
+  defaultValue,
+  suffix,
+  placeholder,
+}: {
+  name: string
+  defaultValue: string
+  suffix: string
+  placeholder?: string
+}) => (
+  <div className="relative">
+    <Input
+      name={name}
+      defaultValue={defaultValue}
+      inputMode="decimal"
+      pattern="(?=.*[1-9])[0-9,]*(\.[0-9]{1,2})?"
+      placeholder={placeholder || '0'}
+      className="pe-20!"
+    />
+    <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4 text-xs text-neutral-500">
+      {suffix}
+    </span>
+  </div>
+)
 
 const readDraftText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readDraftValues = (value: ListingDraftValue | undefined) =>

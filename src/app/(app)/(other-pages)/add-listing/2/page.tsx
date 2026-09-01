@@ -9,7 +9,6 @@ import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/da
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import { clearListingFormErrors, validateListingForm } from '@/lib/listingFormValidation'
 import Input from '@/shared/Input'
-import Select from '@/shared/Select'
 import {
   BuildingOffice2Icon,
   CheckIcon,
@@ -153,7 +152,6 @@ const Page = () => {
   ].includes(propertyTypeCode)
   const listingScope = readText(draft?.listing_scope)
   const accommodationModel = readText(draft?.accommodation_model)
-  const isIndustrialBusiness = discoveryChannel === 'business' && ['warehouse', 'factory'].includes(propertyTypeCode)
   const isHospitalityBusiness = discoveryChannel === 'business' && propertyTypeCode === 'hotel_resort'
   const isMonthlyPortfolio = discoveryChannel === 'rooms' && listingScope === 'multi_unit'
   const showsBedrooms = showsRooms && !isMonthlyPortfolio
@@ -162,40 +160,6 @@ const Page = () => {
   const showsTotalFloors = !isLand
   const showsFurnishing =
     !isLand && (discoveryChannel !== 'business' || ['shophouse', 'home_office', 'office'].includes(propertyTypeCode))
-  const coreDetailsTitle =
-    isIndustrialBusiness || isHospitalityBusiness
-      ? isThai
-        ? 'พื้นที่อาคารและข้อมูลหลัก'
-        : 'Building area & key details'
-      : isThai
-        ? 'ขนาดและข้อมูลหลัก'
-        : 'Size & key details'
-  const usableAreaLabel =
-    isIndustrialBusiness || isHospitalityBusiness
-      ? isThai
-        ? 'พื้นที่อาคารรวม'
-        : 'Total building area'
-      : isThai
-        ? 'พื้นที่ใช้สอย'
-        : 'Usable area'
-  const bathroomLabel = isIndustrialBusiness
-    ? isThai
-      ? 'ห้องน้ำพนักงาน'
-      : 'Staff restrooms'
-    : discoveryChannel === 'business'
-      ? isThai
-        ? 'ห้องน้ำ / ห้องสุขา'
-        : 'Bathrooms / restrooms'
-      : isThai
-        ? 'ห้องน้ำ'
-        : 'Bathrooms'
-  const parkingLabel = isIndustrialBusiness
-    ? isThai
-      ? 'ที่จอดรถ / ลานจอด'
-      : 'Parking / vehicle yard'
-    : isThai
-      ? 'ที่จอดรถ'
-      : 'Parking spaces'
   const visibleAmenities =
     discoveryChannel === 'business' && propertyTypeCode !== 'hotel_resort'
       ? amenities.filter((amenity) => !['swimming_pool', 'fitness', 'pet_friendly'].includes(amenity.code))
@@ -457,7 +421,7 @@ const Page = () => {
                       placeholder="10110"
                     />
                   </FormItem>
-                  <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ไม่บังคับ)' : 'Room / unit number (optional)'}>
+                  <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ถ้ามี)' : 'Room / unit number (if any)'}>
                     <Input
                       name="room-number"
                       defaultValue={readText(draft['room-number'])}
@@ -473,105 +437,6 @@ const Page = () => {
             <input type="hidden" name="lngMapPosition" value={hasConfirmedMarker ? marker.lng : ''} />
           </div>
         </SectionCard>
-
-        {!isLand ? (
-          <SectionCard title={coreDetailsTitle}>
-            <div className="grid gap-5 sm:grid-cols-2">
-              {needsLandArea ? (
-                <FormItem label={isThai ? 'ขนาดที่ดิน' : 'Land area'}>
-                  <UnitInput
-                    name="landAreaSqm"
-                    defaultValue={readText(draft.landAreaSqm)}
-                    suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
-                    placeholder={isThai ? 'กรอกขนาดที่ดิน' : 'Enter land area'}
-                  />
-                </FormItem>
-              ) : null}
-
-              <FormItem label={usableAreaLabel}>
-                <UnitInput
-                  name="usableAreaSqm"
-                  defaultValue={readText(draft.usableAreaSqm)}
-                  suffix={isThai ? 'ตร.ม.' : 'sq.m.'}
-                  placeholder={isThai ? 'กรอกขนาดพื้นที่' : 'Enter area'}
-                />
-              </FormItem>
-
-              {showsBedrooms ? (
-                <FormItem label={isThai ? 'ห้องนอน' : 'Bedrooms'}>
-                  <Input
-                    name="Bedroom"
-                    defaultValue={readText(draft.Bedroom)}
-                    type="number"
-                    min="0"
-                    placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
-                  />
-                </FormItem>
-              ) : null}
-
-              {showsBathrooms ? (
-                <FormItem label={bathroomLabel}>
-                  <Input
-                    name="Bathroom"
-                    defaultValue={readText(draft.Bathroom)}
-                    type="number"
-                    min="0"
-                    placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
-                  />
-                </FormItem>
-              ) : null}
-
-              <FormItem label={parkingLabel}>
-                <Input
-                  name="Parking"
-                  defaultValue={readText(draft.Parking)}
-                  type="number"
-                  min="0"
-                  placeholder={isThai ? 'กรอกจำนวน' : 'Enter number'}
-                />
-              </FormItem>
-
-              {showsFloorNumber ? (
-                <FormItem label={isThai ? 'ชั้นที่' : 'Floor'}>
-                  <Input
-                    name="floorNo"
-                    defaultValue={readText(draft.floorNo)}
-                    type="number"
-                    min="0"
-                    placeholder={isThai ? 'เช่น 5' : 'e.g. 5'}
-                  />
-                </FormItem>
-              ) : null}
-
-              {showsTotalFloors ? (
-                <FormItem label={isThai ? 'จำนวนชั้นทั้งหมด' : 'Total floors'}>
-                  <Input
-                    name="totalFloors"
-                    defaultValue={readText(draft.totalFloors)}
-                    type="number"
-                    min="0"
-                    placeholder={isThai ? 'เช่น 12' : 'e.g. 12'}
-                  />
-                </FormItem>
-              ) : null}
-
-              {showsFurnishing ? (
-                <FormItem label={isThai ? 'เฟอร์นิเจอร์' : 'Furnishing'}>
-                  <Select
-                    name="furnishingStatus"
-                    defaultValue={readText(draft.furnishingStatus)}
-                    className="[&_select]:h-11 [&_select]:rounded-2xl"
-                  >
-                    <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-                    <option value="fully_furnished">{isThai ? 'ครบ พร้อมอยู่' : 'Fully furnished'}</option>
-                    <option value="partly_furnished">{isThai ? 'มีบางส่วน' : 'Partly furnished'}</option>
-                    <option value="unfurnished">{isThai ? 'ไม่มีเฟอร์นิเจอร์' : 'Unfurnished'}</option>
-                  </Select>
-                </FormItem>
-              ) : null}
-            </div>
-          </SectionCard>
-        ) : null}
 
         {discoveryChannel === 'homes' && propertyType ? (
           <HomesDetails draft={draft} propertyTypeCode={propertyType.code} isThai={isThai} />
@@ -661,35 +526,6 @@ const SectionCard = ({
     ) : null}
     <div className="mt-5">{children}</div>
   </section>
-)
-
-const UnitInput = ({
-  name,
-  defaultValue,
-  suffix,
-  placeholder,
-  required,
-}: {
-  name: string
-  defaultValue: string
-  suffix: string
-  placeholder?: string
-  required?: boolean
-}) => (
-  <div className="relative">
-    <Input
-      name={name}
-      defaultValue={defaultValue}
-      inputMode="decimal"
-      pattern="[0-9,]*(\.[0-9]{1,2})?"
-      placeholder={placeholder || '0'}
-      required={required}
-      className="pe-20!"
-    />
-    <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-4 text-xs text-neutral-500">
-      {suffix}
-    </span>
-  </div>
 )
 
 const readText = (value: ListingDraft[string] | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')

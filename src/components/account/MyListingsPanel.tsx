@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
+import { loadMyListingForEdit } from '@/lib/listingDraft'
 import { getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import {
@@ -10,20 +11,25 @@ import {
   ClockIcon,
   DocumentPlusIcon,
   MapPinIcon,
+  PencilSquareIcon,
   PhotoIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 type ListingFilter = 'all' | 'pending' | 'active'
 
 const MyListingsPanel = () => {
+  const router = useRouter()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [listings, setListings] = useState<MyListing[]>([])
   const [filter, setFilter] = useState<ListingFilter>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editingListingId, setEditingListingId] = useState('')
 
   const loadListings = useCallback(async () => {
     setLoading(true)
@@ -46,6 +52,27 @@ const MyListingsPanel = () => {
   useEffect(() => {
     void loadListings()
   }, [loadListings])
+
+  const handleEdit = async (listing: MyListing) => {
+    if (!listing.public_listing_id || editingListingId) return
+
+    setEditError('')
+    setEditingListingId(listing.public_listing_id)
+    try {
+      await loadMyListingForEdit(listing.public_listing_id)
+      router.push('/add-listing/1')
+    } catch (err) {
+      setEditError(
+        err instanceof Error && err.message
+          ? err.message
+          : isThai
+            ? 'ไม่สามารถเปิดประกาศนี้เพื่อแก้ไขได้ กรุณาลองอีกครั้ง'
+            : 'Unable to open this listing for editing. Please try again.'
+      )
+    } finally {
+      setEditingListingId('')
+    }
+  }
 
   const visibleListings = useMemo(
     () => listings.filter((listing) => filter === 'all' || listingGroup(listing) === filter),
@@ -105,6 +132,15 @@ const MyListingsPanel = () => {
         </div>
       ) : null}
 
+      {editError ? (
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+          <p>{editError}</p>
+          <button type="button" className="shrink-0 font-semibold underline" onClick={() => setEditError('')}>
+            {isThai ? 'ปิด' : 'Close'}
+          </button>
+        </div>
+      ) : null}
+
       {loading ? <ListingSkeleton /> : null}
       {!loading && !error && visibleListings.length === 0 ? (
         <EmptyState isThai={isThai} hasListings={listings.length > 0} />
@@ -112,7 +148,14 @@ const MyListingsPanel = () => {
       {!loading && !error && visibleListings.length > 0 ? (
         <div className="mt-7 grid gap-4">
           {visibleListings.map((listing) => (
-            <ListingRow key={listing.public_listing_id || listing.id} listing={listing} isThai={isThai} />
+            <ListingRow
+              key={listing.public_listing_id || listing.id}
+              listing={listing}
+              isThai={isThai}
+              editing={editingListingId === listing.public_listing_id}
+              editDisabled={Boolean(editingListingId)}
+              onEdit={() => void handleEdit(listing)}
+            />
           ))}
         </div>
       ) : null}
@@ -120,7 +163,19 @@ const MyListingsPanel = () => {
   )
 }
 
-const ListingRow = ({ listing, isThai }: { listing: MyListing; isThai: boolean }) => {
+const ListingRow = ({
+  listing,
+  isThai,
+  editing,
+  editDisabled,
+  onEdit,
+}: {
+  listing: MyListing
+  isThai: boolean
+  editing: boolean
+  editDisabled: boolean
+  onEdit: () => void
+}) => {
   const status = statusFor(listing, isThai)
   const propertyType = getPropertyType(listing.property_type_code)
   const propertyLabel = isThai
@@ -164,19 +219,31 @@ const ListingRow = ({ listing, isThai }: { listing: MyListing; isThai: boolean }
           <p className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">
             {formatPrice(listing, isThai)}
           </p>
-          {listingIsLive ? (
-            <Link
-              href={`/real-estate-listings/${listing.slug}`}
-              className="inline-flex h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-neutral-700 dark:text-neutral-200"
-            >
-              {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
-            </Link>
-          ) : (
+          {!listingIsLive ? (
             <span className="inline-flex items-center gap-1.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
               <MapPinIcon className="size-4" />
               {isThai ? 'ยังไม่แสดงในผลการค้นหาจนกว่าจะอนุมัติ' : 'Hidden from public search until approved'}
             </span>
-          )}
+          ) : null}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onEdit}
+              disabled={editDisabled || !listing.public_listing_id}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#176b50]/30 bg-white px-4 font-sarabun text-sm font-semibold text-[#176b50] transition hover:border-[#176b50] hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60 dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+            >
+              {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
+              {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
+            </button>
+            {listingIsLive ? (
+              <Link
+                href={`/real-estate-listings/${listing.slug}`}
+                className="inline-flex h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-neutral-700 dark:text-neutral-200"
+              >
+                {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
     </article>

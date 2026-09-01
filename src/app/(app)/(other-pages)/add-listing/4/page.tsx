@@ -1,549 +1,567 @@
 'use client'
 
+import {
+  initialListingMediaProgress,
+  initialListingPendingMedia,
+  useListingFlowProgress,
+  type ListingPendingMedia,
+} from '@/components/add-listing/ListingFlowProgressContext'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { getApiBaseUrl } from '@/lib/auth'
+import { saveListingContactProfile } from '@/lib/listingContactProfile'
 import {
   clearCloudListingDraft,
   clearListingDraft,
-  getListingDraftSummary,
+  getListingDraft,
+  LISTING_DRAFT_KEY,
+  LISTING_SUBMISSION_RESULT_KEY,
+  ListingMediaUploadError,
   publishListingDraft,
-  type ListingMediaInput,
+  saveListingDraftToCloud,
+  saveListingStep,
+  uploadListingMedia,
+  type ListingDraft,
+  type ListingDraftValue,
+  type ListingMediaType,
 } from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import {
   ArrowLeftIcon,
+  ArrowPathIcon,
   CheckCircleIcon,
-  HomeModernIcon,
-  MapPinIcon,
+  CloudArrowUpIcon,
+  DocumentCheckIcon,
+  ExclamationTriangleIcon,
+  EyeIcon,
   PencilSquareIcon,
-  PhoneIcon,
-  PhotoIcon,
-  SparklesIcon,
-  VideoCameraIcon,
-  ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline'
-import Form from 'next/form'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+const MAX_PHOTOS = 10
+const MAX_VIDEOS = 4
+const MAX_PANORAMAS = 4
+
+type SubmissionStage = 'preparing' | 'uploading' | 'saving' | 'success' | 'error'
+type FailureStage = 'files' | 'upload' | 'save'
+
+type SubmissionResult = {
+  publicListingId: string
+  slug: string
+  draft: ListingDraft
+}
+
+type SubmissionFailure = {
+  stage: FailureStage
+  message: string
+  detail?: string
+}
 
 const Page = () => {
   const router = useRouter()
   const { locale } = usePreferences()
+  const { pendingMedia, setPendingMedia, mediaProgress, setMediaProgress } = useListingFlowProgress()
   const isThai = locale === 'th'
-  const [summary, setSummary] = useState<ReturnType<typeof getListingDraftSummary> | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-  const [successId, setSuccessId] = useState('')
-  const mediaItems = summary?.payload.media_items || []
-  const photoUrls = uniqueMediaUrls(
-    mediaItems.filter((item) => item.media_type === 'image'),
-    summary?.payload.media_urls
+  const [stage, setStage] = useState<SubmissionStage>('preparing')
+  const [failure, setFailure] = useState<SubmissionFailure | null>(null)
+  const [result, setResult] = useState<SubmissionResult | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const processLockRef = useRef(false)
+  const autoStartedRef = useRef(false)
+
+  const persistMedia = useCallback(
+    (photoUrls: string[], videoUrls: string[], panoramaUrls: string[], syncCloud = false) => {
+      const formData = new FormData()
+      replaceFormDataValues(formData, 'listingPhotoUrls[]', photoUrls)
+      replaceFormDataValues(formData, 'listingVideoUrls[]', videoUrls)
+      replaceFormDataValues(formData, 'listingPanoramaUrls[]', panoramaUrls)
+      const savedDraft = saveListingStep(3, formData, { resumeStep: 4 })
+      return syncCloud ? saveListingDraftToCloud(savedDraft).catch(() => null) : Promise.resolve(null)
+    },
+    []
   )
-  const videoUrls = uniqueMediaUrls(mediaItems.filter((item) => item.media_type === 'video'))
-  const panoramaUrls = uniqueMediaUrls(mediaItems.filter((item) => item.media_type === '360'))
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setSummary(getListingDraftSummary(locale)))
-    return () => cancelAnimationFrame(frame)
-  }, [locale])
+  const processSubmission = useCallback(async () => {
+    if (processLockRef.current) return
+    processLockRef.current = true
+    setFailure(null)
 
-  const handleSubmitForm = async () => {
-    setError('')
-    setIsSubmitting(true)
+    const startingDraft = getListingDraft()
+    if (!Object.keys(startingDraft).length) {
+      setFailure({
+        stage: 'save',
+        message: isThai ? 'ไม่พบข้อมูลประกาศที่กำลังส่ง' : 'The listing data could not be found.',
+      })
+      setStage('error')
+      processLockRef.current = false
+      return
+    }
+
+    let photoUrls = readValues(startingDraft['listingPhotoUrls[]'])
+    let videoUrls = readValues(startingDraft['listingVideoUrls[]'])
+    let panoramaUrls = readValues(startingDraft['listingPanoramaUrls[]'])
+    const missingFileCount =
+      Math.max(0, readCount(startingDraft.selectedPhotoCount) - photoUrls.length - pendingMedia.photos.length) +
+      Math.max(0, readCount(startingDraft.selectedVideoCount) - videoUrls.length - pendingMedia.videos.length) +
+      Math.max(0, readCount(startingDraft.selectedPanoramaCount) - panoramaUrls.length - pendingMedia.panoramas.length)
+
+    if (missingFileCount > 0) {
+      setFailure({
+        stage: 'files',
+        message: isThai
+          ? 'ไฟล์ที่เลือกไว้ไม่อยู่ในหน้านี้แล้ว กรุณากลับไปเลือกเฉพาะไฟล์ที่ยังขาดอีกครั้ง'
+          : 'Some selected files are no longer available. Return and select only the missing files again.',
+      })
+      setStage('error')
+      setMediaProgress({ ...initialListingMediaProgress, phase: 'error' })
+      processLockRef.current = false
+      return
+    }
+
+    const totalCount = pendingMedia.photos.length + pendingMedia.videos.length + pendingMedia.panoramas.length
+    let completedCount = 0
+    let uploadedCount = photoUrls.length + videoUrls.length + panoramaUrls.length
+    setStage(totalCount ? 'uploading' : 'saving')
+    setMediaProgress({
+      phase: totalCount ? 'uploading' : 'saving',
+      pendingCount: totalCount,
+      uploadedCount,
+      completedCount,
+      totalCount,
+      currentFileName: '',
+    })
+
+    const uploadQueue = async (
+      files: File[],
+      mediaType: ListingMediaType,
+      existingUrls: string[],
+      limit: number,
+      pendingKey: keyof ListingPendingMedia
+    ) => {
+      let urls = existingUrls
+      for (const [index, file] of files.entries()) {
+        const remaining = files.slice(index)
+        setPendingMedia((current) => ({ ...current, [pendingKey]: remaining }))
+        setMediaProgress({
+          phase: 'uploading',
+          pendingCount: totalCount - completedCount,
+          uploadedCount,
+          completedCount,
+          totalCount,
+          currentFileName: file.name,
+        })
+
+        const uploaded = await uploadListingMedia([file], mediaType)
+        urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
+        completedCount += 1
+        uploadedCount += uploaded.length
+        setPendingMedia((current) => ({ ...current, [pendingKey]: files.slice(index + 1) }))
+
+        if (mediaType === 'image') photoUrls = urls
+        if (mediaType === 'video') videoUrls = urls
+        if (mediaType === '360') panoramaUrls = urls
+        await persistMedia(photoUrls, videoUrls, panoramaUrls)
+
+        setMediaProgress({
+          phase: 'uploading',
+          pendingCount: totalCount - completedCount,
+          uploadedCount,
+          completedCount,
+          totalCount,
+          currentFileName: file.name,
+        })
+      }
+      return urls
+    }
 
     try {
-      const data = await publishListingDraft()
+      photoUrls = await uploadQueue(pendingMedia.photos, 'image', photoUrls, MAX_PHOTOS, 'photos')
+      videoUrls = await uploadQueue(pendingMedia.videos, 'video', videoUrls, MAX_VIDEOS, 'videos')
+      panoramaUrls = await uploadQueue(pendingMedia.panoramas, '360', panoramaUrls, MAX_PANORAMAS, 'panoramas')
+    } catch (error) {
+      await persistMedia(photoUrls, videoUrls, panoramaUrls, true)
+      setFailure({
+        stage: 'upload',
+        message: getMediaUploadErrorMessage(error, isThai),
+        detail: error instanceof Error ? error.message : undefined,
+      })
+      setStage('error')
+      setMediaProgress((current) => ({ ...current, phase: 'error', currentFileName: '' }))
+      processLockRef.current = false
+      return
+    }
+
+    setPendingMedia(initialListingPendingMedia)
+    setStage('saving')
+    setMediaProgress({
+      phase: 'saving',
+      pendingCount: 0,
+      uploadedCount,
+      completedCount,
+      totalCount,
+      currentFileName: '',
+    })
+
+    try {
+      const completedDraft = getListingDraft()
+      await saveListingContactProfile(contactProfileFromDraft(completedDraft)).catch(() => undefined)
+      await saveListingDraftToCloud(completedDraft).catch(() => undefined)
+      const response = await publishListingDraft()
+      const slug = response.slug || ''
+      if (!slug) throw new Error('Listing was saved without a page address')
+
+      const publicListingId = response.public_listing_id || ''
+      if (!publicListingId) throw new Error('Listing was saved without a listing ID')
+
+      const submissionResult: SubmissionResult = {
+        publicListingId,
+        slug,
+        draft: getListingDraft(),
+      }
+      sessionStorage.setItem(LISTING_SUBMISSION_RESULT_KEY, JSON.stringify(submissionResult))
       await clearCloudListingDraft().catch(() => undefined)
       clearListingDraft()
-      setSuccessId(data.public_listing_id || data.slug || 'created')
-    } catch (err) {
-      setError(
-        isThai
-          ? 'ยังไม่สามารถส่งประกาศได้ กรุณาลองอีกครั้ง'
-          : err instanceof Error
-            ? err.message
-            : 'Unable to submit your listing. Please try again.'
-      )
+      setMediaProgress(initialListingMediaProgress)
+      setResult(submissionResult)
+      setStage('success')
+    } catch (error) {
+      setFailure({
+        stage: 'save',
+        message: getListingSaveErrorMessage(error, isThai),
+        detail: error instanceof Error ? error.message : undefined,
+      })
+      setStage('error')
+      setMediaProgress((current) => ({ ...current, phase: 'error', currentFileName: '' }))
     } finally {
-      setIsSubmitting(false)
+      processLockRef.current = false
     }
+  }, [isThai, pendingMedia, persistMedia, setMediaProgress, setPendingMedia])
+
+  useEffect(() => {
+    const storedResult = readSubmissionResult()
+    if (storedResult) {
+      autoStartedRef.current = true
+      setResult(storedResult)
+      setStage('success')
+    }
+    setSessionChecked(true)
+  }, [])
+
+  useEffect(() => {
+    if (!sessionChecked || result || autoStartedRef.current) return
+    autoStartedRef.current = true
+    void processSubmission()
+  }, [processSubmission, result, sessionChecked])
+
+  const progressPercent = useMemo(() => {
+    if (stage === 'success') return 100
+    if (stage === 'saving') return 88
+    if (stage === 'uploading' && mediaProgress.totalCount > 0) {
+      return Math.max(8, Math.round((mediaProgress.completedCount / mediaProgress.totalCount) * 78))
+    }
+    return stage === 'error' ? 0 : 6
+  }, [mediaProgress.completedCount, mediaProgress.totalCount, stage])
+
+  const handleEdit = async () => {
+    if (!result) return
+    const now = new Date()
+    const restoredDraft: ListingDraft = {
+      ...result.draft,
+      editingPublicListingId: result.publicListingId,
+      lastStep: '3',
+      resumeStep: '1',
+      updatedAt: now.toISOString(),
+      draftExpiresAt: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+    }
+    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(restoredDraft))
+    sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
+    await saveListingDraftToCloud(restoredDraft).catch(() => undefined)
+    router.push('/add-listing/1')
   }
 
-  if (successId) {
+  if (stage === 'success' && result) {
+    const viewHref = `/real-estate-listings/${encodeURIComponent(result.slug)}`
+
     return (
-      <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-6 py-9 text-center dark:border-emerald-900/60 dark:bg-emerald-950/30">
-        <CheckCircleIcon className="mx-auto h-14 w-14 text-emerald-600" />
-        <h2 className="mt-4 font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          {isThai ? 'ส่งประกาศเรียบร้อยแล้ว' : 'Listing submitted'}
-        </h2>
+      <StatusCard tone="success">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-[#e9f8ed] text-[#37a14f] ring-8 ring-[#f4fcf6] dark:bg-[#173520] dark:ring-[#10271a]">
+          <CheckCircleIcon className="size-10" />
+        </span>
+        <p className="mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-[#27823d] uppercase">
+          {isThai ? 'บันทึกสำเร็จ' : 'Saved successfully'}
+        </p>
+        <h1 className="mt-2 font-sarabun text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-white">
+          {isThai ? 'ลงประกาศเรียบร้อยแล้ว' : 'Your listing is now live'}
+        </h1>
         <p className="mx-auto mt-3 max-w-xl font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
           {isThai
-            ? `ระบบบันทึกประกาศและส่งเข้าคิวตรวจสอบแล้ว · รหัสประกาศ ${successId}`
-            : `Your listing has been saved and sent for review · Listing ID ${successId}`}
+            ? `ข้อมูลและไฟล์ทั้งหมดถูกบันทึกแล้ว · รหัสประกาศ ${result.publicListingId}`
+            : `All information and media have been saved · Listing ID ${result.publicListingId}`}
         </p>
-        <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <ButtonSecondary href="/account-listings">{isThai ? 'ดูประกาศของฉัน' : 'View my listings'}</ButtonSecondary>
-          <ButtonPrimary type="button" onClick={() => router.push('/add-listing/1?new=1')}>
-            {isThai ? 'ลงประกาศใหม่' : 'Create another listing'}
-          </ButtonPrimary>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <>
-      <div className="space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/30 dark:text-violet-300">
-          <SparklesIcon className="h-4 w-4" />
-          {isThai ? 'พร้อมส่งประกาศ' : 'Ready to submit'}
-        </div>
-        <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          {isThai ? 'ตรวจอีกครั้งก่อนส่งประกาศ' : 'Review before submitting'}
-        </h1>
-      </div>
-
-      <Form id="add-listing-form" action={handleSubmitForm} className="space-y-5">
-        <ReviewCard
-          icon={<HomeModernIcon className="size-5" />}
-          title={isThai ? 'ข้อมูลประกาศ' : 'Listing information'}
-          editHref="/add-listing/1"
-          editLabel={isThai ? 'แก้ไข' : 'Edit'}
-        >
-          <div className="sm:col-span-2">
-            <p className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-              {summary?.payload.title || (isThai ? 'ยังไม่ได้ระบุหัวข้อประกาศ' : 'Listing title not specified')}
-            </p>
-            <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-              {[
-                summary?.discoveryChannel,
-                summary?.propertyType,
-                summary?.businessSpaceType,
-                summary?.listingScope,
-                summary?.listingType,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          </div>
-          <ReviewItem
-            label={isThai ? 'เหมาะสำหรับ' : 'Suitable for'}
-            value={summary?.usageType}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ชื่อโครงการ / สถานที่' : 'Project / place name'}
-            value={summary?.payload.custom_project_name}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-        </ReviewCard>
-
-        <ReviewCard
-          icon={<MapPinIcon className="size-5" />}
-          title={isThai ? 'ทำเลและรายละเอียด' : 'Location & details'}
-          editHref="/add-listing/2"
-          editLabel={isThai ? 'แก้ไข' : 'Edit'}
-        >
-          <ReviewItem
-            label={isThai ? 'ตำแหน่ง' : 'Location'}
-            value={summary?.location}
-            className="sm:col-span-2"
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ขนาดที่ดิน' : 'Land area'}
-            value={
-              summary?.payload.land_area_sqm ? `${summary.payload.land_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}` : ''
-            }
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'}
-            value={
-              summary?.payload.usable_area_sqm ? `${summary.payload.usable_area_sqm} ${isThai ? 'ตร.ม.' : 'sq.m.'}` : ''
-            }
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ห้องนอน' : 'Bedrooms'}
-            value={summary?.payload.bedroom_count}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ห้องน้ำ' : 'Bathrooms'}
-            value={summary?.payload.bathroom_count}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ที่จอดรถ' : 'Parking spaces'}
-            value={summary?.payload.parking_count}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'สภาพทรัพย์' : 'Condition'}
-            value={formatDetailCode(summary?.payload.property_condition, isThai)}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'สถานะปัจจุบัน' : 'Occupancy'}
-            value={formatDetailCode(summary?.payload.occupancy_status, isThai)}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'เอกสารสิทธิ์ / รูปแบบสิทธิ์' : 'Title / tenure'}
-            value={formatDetailCode(
-              summary?.payload.category_details?.title_deed_type || summary?.payload.category_details?.tenure_type,
-              isThai
-            )}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-        </ReviewCard>
-
-        <ReviewCard
-          icon={<PhotoIcon className="size-5" />}
-          title={isThai ? 'รูปภาพ วิดีโอ และภาพ 360°' : 'Photos, videos & 360° media'}
-          editHref="/add-listing/3"
-          editLabel={isThai ? 'จัดการสื่อ' : 'Manage media'}
-        >
-          <ReviewMediaPreview isThai={isThai} photoUrls={photoUrls} videoUrls={videoUrls} panoramaUrls={panoramaUrls} />
-        </ReviewCard>
-
-        <ReviewCard
-          icon={<PhoneIcon className="size-5" />}
-          title={isThai ? 'ราคาและการติดต่อ' : 'Price & contact'}
-          editHref="/add-listing/3"
-          editLabel={isThai ? 'แก้ไข' : 'Edit'}
-        >
-          <ReviewItem
-            label={isThai ? 'ราคา' : 'Price'}
-            value={summary?.price}
-            className="sm:col-span-2"
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ชื่อผู้ติดต่อ' : 'Contact name'}
-            value={summary?.payload.contact_name}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'บทบาท' : 'Role'}
-            value={contactRoleLabel(summary?.payload.contact_role_code, isThai)}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'ได้รับสิทธิลงประกาศจาก' : 'Authority source'}
-            value={contactAuthorityLabel(summary?.payload.contact_authority_code, isThai)}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'บริษัท / สังกัด' : 'Company / organization'}
-            value={summary?.payload.contact_organization_name}
-            fallback={isThai ? 'ไม่มีสังกัดที่ระบุ' : 'No organization specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'สถานะผู้ติดต่อ' : 'Contact status'}
-            value={isThai ? 'ข้อมูลที่ผู้ลงประกาศระบุเอง · ยังไม่ Verified' : 'Self-declared · Not verified'}
-            fallback={isThai ? 'ยังไม่ตรวจสอบ' : 'Not verified'}
-          />
-          <ReviewItem
-            label={isThai ? 'โทรศัพท์' : 'Phone'}
-            value={summary?.payload.contact_phone}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'เบอร์สำรอง' : 'Backup phone'}
-            value={summary?.payload.contact_phone_secondary}
-            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'Not added'}
-          />
-          <ReviewItem
-            label="LINE ID"
-            value={summary?.payload.line_id}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label="Instagram"
-            value={summary?.payload.instagram_handle}
-            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'Not added'}
-          />
-          <ReviewItem
-            label={isThai ? 'อีเมล' : 'Email'}
-            value={summary?.payload.contact_email}
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-        </ReviewCard>
-
-        {error ? (
-          <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/30">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <ButtonSecondary type="button" href="/add-listing/3">
-            <ArrowLeftIcon className="h-5 w-5" />
-            {isThai ? 'ย้อนกลับ' : 'Back'}
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <ButtonSecondary type="button" onClick={() => void handleEdit()} className="h-12 justify-center">
+            <PencilSquareIcon className="size-5" />
+            {isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
           </ButtonSecondary>
-          <ButtonPrimary type="submit" disabled={isSubmitting}>
-            {isSubmitting
-              ? isThai
-                ? 'กำลังส่งประกาศ...'
-                : 'Submitting listing...'
-              : isThai
-                ? 'ส่งประกาศเพื่อตรวจสอบ'
-                : 'Submit for review'}
+          <ButtonPrimary href={viewHref} className="h-12 justify-center">
+            <EyeIcon className="size-5" />
+            {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
           </ButtonPrimary>
         </div>
-      </Form>
-    </>
-  )
-}
+      </StatusCard>
+    )
+  }
 
-const ReviewMediaPreview = ({
-  isThai,
-  photoUrls,
-  videoUrls,
-  panoramaUrls,
-}: {
-  isThai: boolean
-  photoUrls: string[]
-  videoUrls: string[]
-  panoramaUrls: string[]
-}) => {
-  const totalMedia = photoUrls.length + videoUrls.length + panoramaUrls.length
-
-  if (!totalMedia) {
+  if (stage === 'error' && failure) {
+    const needsFiles = failure.stage === 'files'
     return (
-      <div className="sm:col-span-2">
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-5 py-8 text-center dark:border-neutral-700 dark:bg-neutral-950/60">
-          <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
-            <PhotoIcon className="size-6" />
-          </span>
-          <p className="mt-3 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {isThai ? 'ยังไม่ได้เพิ่มรูปภาพหรือวิดีโอ' : 'No photos or videos added'}
-          </p>
-          <p className="mt-1 max-w-md font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-            {isThai
-              ? 'สื่อไม่บังคับ คุณสามารถกด “จัดการสื่อ” เพื่อย้อนกลับไปเพิ่มก่อนส่งประกาศ'
-              : 'Media is optional. Use “Manage media” to add it before submitting your listing.'}
-          </p>
+      <StatusCard tone="error">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-red-50 text-red-600 ring-8 ring-red-50/50 dark:bg-red-950/60 dark:ring-red-950/30">
+          <ExclamationTriangleIcon className="size-9" />
+        </span>
+        <p className="mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-red-600 uppercase">
+          {isThai ? 'ยังลงประกาศไม่สำเร็จ' : 'Listing not completed'}
+        </p>
+        <h1 className="mt-2 font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
+          {needsFiles
+            ? isThai
+              ? 'กรุณาเลือกไฟล์ที่ขาดอีกครั้ง'
+              : 'Select the missing files again'
+            : isThai
+              ? 'ข้อมูลของคุณยังอยู่ ลองต่อได้ทันที'
+              : 'Your information is safe—try again'}
+        </h1>
+        <p className="mx-auto mt-3 max-w-xl font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+          {failure.message}
+        </p>
+        <p className="mx-auto mt-2 max-w-xl font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+          {isThai
+            ? 'ไฟล์ที่อัปโหลดสำเร็จและข้อมูลที่กรอกไว้จะไม่ต้องเริ่มใหม่'
+            : 'Uploaded files and completed information do not need to be entered again.'}
+        </p>
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <ButtonSecondary type="button" onClick={() => router.push('/add-listing/3')} className="h-12 justify-center">
+            <ArrowLeftIcon className="size-5" />
+            {isThai ? 'กลับไปแก้ไข' : 'Back to edit'}
+          </ButtonSecondary>
+          {!needsFiles ? (
+            <ButtonPrimary type="button" onClick={() => void processSubmission()} className="h-12 justify-center">
+              <ArrowPathIcon className="size-5" />
+              {isThai ? 'ลองอีกครั้ง' : 'Try again'}
+            </ButtonPrimary>
+          ) : (
+            <ButtonPrimary type="button" onClick={() => router.push('/add-listing/3')} className="h-12 justify-center">
+              {isThai ? 'ไปเลือกไฟล์' : 'Select files'}
+            </ButtonPrimary>
+          )}
         </div>
-      </div>
+        {failure.detail ? (
+          <details className="mt-5 text-left font-sarabun text-xs text-neutral-400">
+            <summary className="cursor-pointer">{isThai ? 'รายละเอียดสำหรับตรวจสอบ' : 'Technical details'}</summary>
+            <p className="mt-2 break-words rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-800">{failure.detail}</p>
+          </details>
+        ) : null}
+      </StatusCard>
     )
   }
 
   return (
-    <div className="space-y-7 sm:col-span-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50 px-4 py-3 font-sarabun dark:bg-emerald-950/25">
-        <span className="flex items-center gap-2 text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-          <CheckCircleIcon className="size-5" />
-          {isThai ? `อัปโหลดครบ ${totalMedia} ไฟล์` : `${totalMedia} files uploaded`}
-        </span>
-        <span className="text-xs text-emerald-800/75 dark:text-emerald-200/75">
-          {isThai ? 'ตรวจสื่อด้านล่างก่อนส่งประกาศ' : 'Check the media below before submitting'}
-        </span>
+    <StatusCard tone="processing">
+      <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-orange-50 text-orange-600 ring-8 ring-orange-50/60 dark:bg-orange-950/50 dark:ring-orange-950/25">
+        <CloudArrowUpIcon className="size-9 animate-pulse" />
+      </span>
+      <p className="mt-5 font-sarabun text-xs font-semibold tracking-[0.12em] text-orange-600 uppercase">
+        {isThai ? 'กำลังลงประกาศ' : 'Publishing listing'}
+      </p>
+      <h1 className="mt-2 font-sarabun text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-white">
+        {stage === 'saving'
+          ? isThai
+            ? 'กำลังบันทึกข้อมูลประกาศ'
+            : 'Saving your listing'
+          : isThai
+            ? 'กำลังอัปโหลดไฟล์'
+            : 'Uploading your media'}
+      </h1>
+      <p className="mx-auto mt-3 max-w-xl font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+        {isThai ? 'กรุณารอสักครู่และอย่าปิดหน้านี้' : 'Please wait and keep this page open.'}
+      </p>
+
+      <div className="mt-7 h-2 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-300 transition-[width] duration-500"
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
+      <p className="mt-2 truncate font-sarabun text-xs text-neutral-400">
+        {stage === 'uploading' && mediaProgress.totalCount
+          ? isThai
+            ? `อัปโหลดแล้ว ${mediaProgress.completedCount} จาก ${mediaProgress.totalCount} ไฟล์${mediaProgress.currentFileName ? ` · ${mediaProgress.currentFileName}` : ''}`
+            : `Uploaded ${mediaProgress.completedCount} of ${mediaProgress.totalCount}${mediaProgress.currentFileName ? ` · ${mediaProgress.currentFileName}` : ''}`
+          : isThai
+            ? 'กำลังตรวจความครบถ้วนและบันทึกลงฐานข้อมูล'
+            : 'Checking and saving the listing to the database'}
+      </p>
 
-      {photoUrls.length ? (
-        <section>
-          <ReviewMediaHeading
-            icon={<PhotoIcon className="size-4" />}
-            title={isThai ? 'รูปภาพ' : 'Photos'}
-            count={photoUrls.length}
-          />
-          <div
-            className="relative mt-3 aspect-[16/10] overflow-hidden rounded-3xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 sm:aspect-[16/8] dark:bg-neutral-800 dark:ring-neutral-700"
-            style={{ backgroundImage: `url(${resolveListingMediaUrl(photoUrls[0])})` }}
-            role="img"
-            aria-label={isThai ? 'ภาพหน้าปกประกาศ' : 'Listing cover photo'}
-          >
-            <span className="absolute top-3 left-3 rounded-full bg-neutral-950/75 px-3 py-1.5 font-sarabun text-xs font-semibold text-white backdrop-blur-sm">
-              {isThai ? 'ภาพหน้าปก' : 'Cover photo'}
-            </span>
-          </div>
-          {photoUrls.length > 1 ? (
-            <div className="mt-3 grid grid-cols-2 gap-3 min-[560px]:grid-cols-3 lg:grid-cols-4">
-              {photoUrls.slice(1).map((url, index) => (
-                <div
-                  key={url}
-                  className="aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
-                  style={{ backgroundImage: `url(${resolveListingMediaUrl(url)})` }}
-                  role="img"
-                  aria-label={isThai ? `รูปภาพที่ ${index + 2}` : `Photo ${index + 2}`}
-                />
-              ))}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      {videoUrls.length ? (
-        <section>
-          <ReviewMediaHeading
-            icon={<VideoCameraIcon className="size-4" />}
-            title={isThai ? 'วิดีโอ' : 'Videos'}
-            count={videoUrls.length}
-          />
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {videoUrls.map((url, index) => (
-              <video
-                key={url}
-                src={resolveListingMediaUrl(url)}
-                controls
-                playsInline
-                preload="metadata"
-                className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
-                aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {panoramaUrls.length ? (
-        <section>
-          <ReviewMediaHeading
-            icon={<ViewfinderCircleIcon className="size-4" />}
-            title={isThai ? 'ภาพ 360°' : '360° photos'}
-            count={panoramaUrls.length}
-          />
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {panoramaUrls.map((url, index) => (
-              <div
-                key={url}
-                className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
-                style={{ backgroundImage: `url(${resolveListingMediaUrl(url)})` }}
-                role="img"
-                aria-label={isThai ? `ภาพ 360° ที่ ${index + 1}` : `360° photo ${index + 1}`}
-              >
-                <span className="absolute right-2 bottom-2 rounded-full bg-neutral-950/75 px-2.5 py-1 font-sarabun text-[11px] font-semibold text-white backdrop-blur-sm">
-                  360°
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-    </div>
+      <div className="mt-7 grid gap-3 text-left sm:grid-cols-2">
+        <ProcessStep
+          icon={<CloudArrowUpIcon className="size-5" />}
+          title={isThai ? 'อัปโหลดรูปและวิดีโอ' : 'Upload photos and videos'}
+          complete={stage === 'saving'}
+          active={stage === 'uploading' || stage === 'preparing'}
+        />
+        <ProcessStep
+          icon={<DocumentCheckIcon className="size-5" />}
+          title={isThai ? 'บันทึกข้อมูลประกาศ' : 'Save listing information'}
+          complete={false}
+          active={stage === 'saving'}
+        />
+      </div>
+    </StatusCard>
   )
 }
 
-const ReviewMediaHeading = ({ icon, title, count }: { icon: React.ReactNode; title: string; count: number }) => (
-  <div className="flex items-center gap-2 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-    <span className="flex size-7 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40">
-      {icon}
-    </span>
-    <span>{title}</span>
-    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-      {count}
-    </span>
-  </div>
-)
-
-const ReviewCard = ({
-  icon,
-  title,
-  editHref,
-  editLabel,
+const StatusCard = ({
+  tone,
   children,
 }: {
-  icon: React.ReactNode
-  title: string
-  editHref: string
-  editLabel: string
+  tone: 'processing' | 'success' | 'error'
   children: React.ReactNode
 }) => (
-  <section className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-100 px-5 py-4 sm:px-7 dark:border-neutral-800">
-      <div className="flex items-center gap-3">
-        <span className="flex size-9 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-950/40">
-          {icon}
-        </span>
-        <h2 className="font-sarabun font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
-      </div>
-      <Link
-        href={editHref}
-        className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 font-sarabun text-xs font-medium text-orange-600 transition hover:bg-orange-50 dark:hover:bg-orange-950/30"
-      >
-        <PencilSquareIcon className="size-4" />
-        {editLabel}
-      </Link>
-    </div>
-    <div className="grid gap-5 px-5 py-6 sm:grid-cols-2 sm:px-7">{children}</div>
+  <section
+    aria-live="polite"
+    className={`mx-auto w-full max-w-2xl rounded-[30px] border px-5 py-9 text-center shadow-[0_28px_80px_-52px_rgba(15,23,42,0.38)] sm:px-9 sm:py-11 dark:bg-neutral-900 ${
+      tone === 'success'
+        ? 'border-[#bfe9c8] bg-[#fbfffc] dark:border-[#205e30]'
+        : tone === 'error'
+          ? 'border-red-200 bg-white dark:border-red-900/70'
+          : 'border-orange-100 bg-white dark:border-orange-900/50'
+    }`}
+  >
+    {children}
   </section>
 )
 
-const ReviewItem = ({
-  label,
-  value,
-  className,
-  fallback,
+const ProcessStep = ({
+  icon,
+  title,
+  active,
+  complete,
 }: {
-  label: string
-  value?: string
-  className?: string
-  fallback: string
+  icon: React.ReactNode
+  title: string
+  active: boolean
+  complete: boolean
 }) => (
-  <div className={className}>
-    <p className="font-sarabun text-xs font-medium tracking-wide text-neutral-400 uppercase">{label}</p>
-    <p className="mt-1 font-sarabun text-sm font-medium text-neutral-900 dark:text-neutral-100">{value || fallback}</p>
+  <div
+    className={`flex items-center gap-3 rounded-2xl border px-4 py-3 font-sarabun text-sm ${
+      complete
+        ? 'border-[#c9f0d1] bg-[#f1fcf3] text-[#27823d] dark:border-[#205e30] dark:bg-[#173520] dark:text-[#c9f0d1]'
+        : active
+          ? 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200'
+          : 'border-neutral-200 bg-neutral-50 text-neutral-400 dark:border-neutral-800 dark:bg-neutral-950'
+    }`}
+  >
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-black/5 dark:bg-neutral-900">
+      {complete ? <CheckCircleIcon className="size-5" /> : icon}
+    </span>
+    <span className="font-medium">{title}</span>
   </div>
 )
 
-const formatDetailCode = (value: string | boolean | string[] | undefined, isThai: boolean) => {
-  if (Array.isArray(value)) return value.join(', ')
-  if (typeof value === 'boolean') return value ? (isThai ? 'ใช่' : 'Yes') : isThai ? 'ไม่ใช่' : 'No'
-  if (!value) return ''
-
-  const labels: Record<string, [string, string]> = {
-    new: ['ใหม่ / สร้างเสร็จใหม่', 'Newly completed'],
-    like_new: ['สภาพเหมือนใหม่', 'Like new'],
-    good: ['สภาพดี พร้อมใช้งาน', 'Good, ready to use'],
-    needs_renovation: ['ควรปรับปรุง', 'Needs renovation'],
-    under_construction: ['อยู่ระหว่างก่อสร้าง', 'Under construction'],
-    vacant: ['ว่าง พร้อมเข้าอยู่', 'Vacant'],
-    owner_occupied: ['เจ้าของพักอยู่', 'Owner occupied'],
-    tenant_occupied: ['มีผู้เช่าอยู่', 'Tenant occupied'],
-    freehold: ['กรรมสิทธิ์ (Freehold)', 'Freehold'],
-    leasehold: ['สิทธิการเช่า (Leasehold)', 'Leasehold'],
-    right_of_possession: ['สิทธิครอบครอง', 'Right of possession'],
-    chanote: ['โฉนดที่ดิน (น.ส.4)', 'Chanote (Nor Sor 4)'],
-    nor_sor_3_gor: ['น.ส.3 ก.', 'Nor Sor 3 Gor'],
-    nor_sor_3: ['น.ส.3', 'Nor Sor 3'],
-    sor_kor_1: ['ส.ค.1', 'Sor Kor 1'],
+const replaceFormDataValues = (formData: FormData, key: string, values: string[]) => {
+  formData.delete(key)
+  if (!values.length) {
+    formData.set(key, '')
+    return
   }
-  return labels[value]?.[isThai ? 0 : 1] || value.replaceAll('_', ' ')
+  values.forEach((value) => formData.append(key, value))
 }
 
-const uniqueMediaUrls = (media: ListingMediaInput[], fallback: string[] = []) =>
-  [...new Set([...media.map((item) => item.url), ...fallback])].filter(Boolean)
-
-const resolveListingMediaUrl = (value: string) => (value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value)
-
-const contactRoleLabel = (value: string | undefined, isThai: boolean) => {
-  const labels: Record<string, [string, string]> = {
-    owner: ['เจ้าของทรัพย์', 'Property owner'],
-    owner_representative: ['ผู้รับมอบอำนาจจากเจ้าของ', 'Owner-authorized representative'],
-    independent_broker: ['นายหน้าอิสระ', 'Independent broker'],
-    agency_broker: ['นายหน้าสังกัดบริษัท', 'Agency broker'],
-    developer_investor_representative: ['ตัวแทนโครงการ / นักลงทุน', 'Developer or investor representative'],
-    property_manager: ['ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร', 'Property or building manager'],
+const getMediaUploadErrorMessage = (error: unknown, isThai: boolean) => {
+  if (!(error instanceof ListingMediaUploadError)) {
+    return isThai
+      ? 'อัปโหลดไฟล์ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง'
+      : 'Media upload failed. Check your connection and try again.'
   }
-  return value ? labels[value]?.[isThai ? 0 : 1] || value : ''
+
+  const fileLabel = error.fileName ? ` “${error.fileName}”` : ''
+  if (isThai) {
+    switch (error.code) {
+      case 'authentication_required':
+        return 'เซสชันเข้าสู่ระบบหมดอายุ กรุณาเข้าสู่ระบบอีกครั้งแล้วกดลองใหม่'
+      case 'file_too_large':
+        return `ไฟล์${fileLabel} มีขนาดเกินกำหนด กรุณากลับไปเปลี่ยนไฟล์นี้`
+      case 'unsupported_format':
+        return `ไฟล์${fileLabel} เป็นรูปแบบที่ไม่รองรับ กรุณากลับไปเปลี่ยนไฟล์นี้`
+      case 'storage_unavailable':
+        return 'พื้นที่จัดเก็บไฟล์ขัดข้องชั่วคราว กรุณารอสักครู่แล้วลองอีกครั้ง'
+      case 'network_error':
+        return `การเชื่อมต่อขาดระหว่างอัปโหลดไฟล์${fileLabel} กรุณาตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง`
+      default:
+        return `อัปโหลดไฟล์${fileLabel} ไม่สำเร็จ กรุณาลองอีกครั้ง`
+    }
+  }
+
+  switch (error.code) {
+    case 'authentication_required':
+      return 'Your session expired. Sign in again, then retry.'
+    case 'file_too_large':
+      return `File${fileLabel} is too large. Go back and replace it.`
+    case 'unsupported_format':
+      return `File${fileLabel} is not supported. Go back and replace it.`
+    case 'storage_unavailable':
+      return 'Media storage is temporarily unavailable. Wait a moment and try again.'
+    case 'network_error':
+      return `The connection was interrupted while uploading${fileLabel}. Check your connection and retry.`
+    default:
+      return `Unable to upload${fileLabel}. Please try again.`
+  }
 }
 
-const contactAuthorityLabel = (value: string | undefined, isThai: boolean) => {
-  const labels: Record<string, [string, string]> = {
-    self: ['ทรัพย์ของฉันเอง', 'Own property'],
-    property_owner: ['เจ้าของทรัพย์โดยตรง', 'Property owner directly'],
-    brokerage_company: ['บริษัทนายหน้าหรือทีม', 'Brokerage company or team'],
-    developer_project: ['โครงการ / ผู้พัฒนา', 'Project or developer'],
-    investor_asset_holder: ['นักลงทุน / ผู้ถือทรัพย์', 'Investor or asset holder'],
-    co_broker: ['นายหน้าร่วม (Co-broker)', 'Co-broker'],
-    property_management_company: ['บริษัทบริหารทรัพย์', 'Property management company'],
+const getListingSaveErrorMessage = (error: unknown, isThai: boolean) => {
+  const detail = error instanceof Error ? error.message.toLowerCase() : ''
+  const validationError = ['required', 'invalid', 'must be', 'not exceed'].some((fragment) => detail.includes(fragment))
+  if (validationError) {
+    return isThai
+      ? 'ข้อมูลบางส่วนยังไม่ถูกต้อง กรุณากลับไปแก้ไขช่องที่ระบบแจ้ง แล้วส่งอีกครั้ง'
+      : 'Some information is invalid. Go back, correct the highlighted fields, and submit again.'
   }
-  return value ? labels[value]?.[isThai ? 0 : 1] || value : ''
+  return isThai
+    ? 'ยังเชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วกดลองอีกครั้ง'
+    : 'The listing could not be saved. Check your connection and try again.'
 }
+
+const contactProfileFromDraft = (draft: ListingDraft) => {
+  const organizationName = readText(draft.contactOrganizationName).trim()
+  const roleCode = readText(draft.contactRoleCode)
+  return {
+    contact_name: readText(draft.contactName).trim(),
+    contact_phone: readText(draft.contactPhone).trim(),
+    contact_phone_secondary: readText(draft.contactPhoneSecondary).trim(),
+    contact_email: readText(draft.contactEmail).trim(),
+    line_id: readText(draft.lineId).trim(),
+    instagram_handle: readText(draft.instagramHandle).trim(),
+    role_code: roleCode,
+    authority_source_code: roleCode === 'owner' ? 'self' : readText(draft.contactAuthorityCode),
+    organization_name: organizationName,
+    organization_registration_no: organizationName
+      ? readText(draft.contactOrganizationRegistrationNo).trim()
+      : '',
+  }
+}
+
+const readSubmissionResult = (): SubmissionResult | null => {
+  try {
+    const raw = sessionStorage.getItem(LISTING_SUBMISSION_RESULT_KEY)
+    return raw ? (JSON.parse(raw) as SubmissionResult) : null
+  } catch {
+    sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
+    return null
+  }
+}
+
+const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
+const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
+const readCount = (value: ListingDraftValue | undefined) => Number(readText(value)) || 0
 
 export default Page

@@ -27,6 +27,11 @@ const getValidationMessage = (control: ListingControl, field: HTMLElement | null
   if (control.validity.patternMismatch) {
     return isThai ? `รูปแบบข้อมูลของ ${quotedLabel} ยังไม่ถูกต้อง` : `${quotedLabel} is not in the expected format.`
   }
+  if (control.validity.tooShort) {
+    const minimum = control.getAttribute('minlength')
+    if (isThai) return `กรุณากรอก ${quotedLabel} อย่างน้อย ${minimum || ''} ตัวอักษร`.replace('  ', ' ')
+    return `Please enter at least ${minimum || ''} characters for ${quotedLabel}.`.replace('  ', ' ')
+  }
   if (control.validity.rangeUnderflow || control.validity.rangeOverflow || control.validity.stepMismatch) {
     return isThai ? `กรุณาตรวจสอบค่าของ ${quotedLabel}` : `Please check the value for ${quotedLabel}.`
   }

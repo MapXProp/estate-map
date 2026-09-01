@@ -8,18 +8,18 @@ import {
 } from '@/components/add-listing/ListingFlowProgressContext'
 import RequireAuth from '@/components/auth/RequireAuth'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { saveListingFormSnapshot } from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { ArrowRightIcon, CheckIcon, ClockIcon, ShieldCheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import React from 'react'
 
 const steps = [
   { number: 1, labelTh: 'ประเภททรัพย์', labelEn: 'Property type' },
   { number: 2, labelTh: 'รายละเอียด', labelEn: 'Details' },
   { number: 3, labelTh: 'สื่อ ราคา และติดต่อ', labelEn: 'Media, price & contact' },
-  { number: 4, labelTh: 'ตรวจและส่ง', labelEn: 'Review & submit' },
+  { number: 4, labelTh: 'อัปโหลดและบันทึก', labelEn: 'Upload & publish' },
 ]
 
 const getStepIndex = (pathname: string) => {
@@ -70,8 +70,22 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
 const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
+  const router = useRouter()
   const { locale } = usePreferences()
+  const { mediaProgress } = useListingFlowProgress()
   const isThai = locale === 'th'
+  const isProcessing =
+    index === steps.length && (mediaProgress.phase === 'uploading' || mediaProgress.phase === 'saving')
+
+  const navigateToStep = (stepNumber: number) => {
+    if (stepNumber === index || stepNumber === steps.length || isProcessing) return
+
+    const form = document.getElementById('add-listing-form')
+    if (form instanceof HTMLFormElement && index < steps.length) {
+      saveListingFormSnapshot(index, form)
+    }
+    router.push(`/add-listing/${stepNumber}`)
+  }
 
   return (
     <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-br from-[#174c3d] via-[#123f32] to-[#0d3228] px-4 py-4 text-white shadow-[0_28px_72px_-42px_rgba(12,47,37,0.62)] ring-1 ring-black/5 min-[744px]:rounded-[30px] min-[744px]:px-7 min-[744px]:py-6">
@@ -110,25 +124,25 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         aria-label={isThai ? 'ขั้นตอนลงประกาศ' : 'Listing steps'}
       >
         {steps.map((step) => {
-          const isComplete = step.number < index
           const isCurrent = step.number === index
+          const isNavigable = step.number < steps.length && !isProcessing
           const label = isThai ? step.labelTh : step.labelEn
           const content = (
             <>
               <span
                 className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                  isComplete
-                    ? 'bg-white text-[#123f32] group-hover:bg-orange-100 group-hover:text-orange-700'
-                    : isCurrent
-                      ? 'bg-orange-500 text-white ring-4 ring-orange-300/20'
-                      : 'bg-white/10 text-white/55'
+                  isCurrent
+                    ? 'bg-orange-500 text-white ring-4 ring-orange-300/20'
+                    : isNavigable
+                      ? 'bg-white/15 text-white/85 group-hover:bg-white group-hover:text-[#123f32]'
+                      : 'bg-white/10 text-white/45'
                 }`}
               >
-                {isComplete ? <CheckIcon className="size-4" /> : step.number}
+                {step.number}
               </span>
               <span
                 className={`hidden truncate font-sarabun text-xs sm:block ${
-                  isCurrent ? 'font-medium text-white' : isComplete ? 'text-white/80' : 'text-white/45'
+                  isCurrent ? 'font-medium text-white' : isNavigable ? 'text-white/75' : 'text-white/40'
                 }`}
               >
                 {label}
@@ -138,20 +152,21 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
 
           return (
             <li key={step.number} className="min-w-0">
-              {isComplete ? (
-                <Link
-                  href={`/add-listing/${step.number}`}
+              {isNavigable && !isCurrent ? (
+                <button
+                  type="button"
+                  onClick={() => navigateToStep(step.number)}
                   aria-label={
-                    isThai ? `ย้อนกลับไปขั้นที่ ${step.number}: ${label}` : `Go back to step ${step.number}: ${label}`
+                    isThai ? `ไปขั้นที่ ${step.number}: ${label}` : `Go to step ${step.number}: ${label}`
                   }
                   className="group flex min-h-11 w-full items-center gap-2 rounded-xl px-1.5 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
                 >
                   {content}
-                </Link>
+                </button>
               ) : (
                 <div
                   aria-current={isCurrent ? 'step' : undefined}
-                  aria-disabled={!isCurrent}
+                  aria-disabled={!isCurrent || isProcessing}
                   aria-label={label}
                   className="flex min-h-11 w-full items-center gap-2 px-1.5"
                 >
@@ -167,7 +182,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
         <TrustItem icon={<ClockIcon className="size-4" />} label={isThai ? 'ประมาณ 5–8 นาที' : 'About 5–8 minutes'} />
         <TrustItem
           icon={<ShieldCheckIcon className="size-4" />}
-          label={isThai ? 'ตรวจสอบก่อนเผยแพร่' : 'Reviewed before publishing'}
+          label={isThai ? 'บันทึกและเผยแพร่ทันที' : 'Saved and published immediately'}
         />
         <TrustItem icon={<SparklesIcon className="size-4" />} label={isThai ? 'แก้ไขภายหลังได้' : 'Edit anytime'} />
       </div>
@@ -186,8 +201,8 @@ const SellerGuide = () => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const benefits = isThai
-    ? ['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'ทีมงานตรวจสอบก่อนเผยแพร่']
-    : ['List for free', 'Add category-specific details later', 'Reviewed before publishing']
+    ? ['ลงประกาศได้ฟรี', 'เพิ่มข้อมูลเฉพาะหมวดภายหลัง', 'เผยแพร่ทันทีเมื่อบันทึกสำเร็จ']
+    : ['List for free', 'Add category-specific details later', 'Published as soon as saving succeeds']
 
   return (
     <aside className="hidden xl:sticky xl:top-28 xl:block">
@@ -279,22 +294,16 @@ const Pagination = ({ pathname }: { pathname: string }) => {
                 : `Uploading ${mediaProgress.completedCount}/${mediaProgress.totalCount}`
               : mediaProgress.phase === 'saving'
                 ? isThai
-                  ? 'กำลังเปิดหน้าตรวจสอบ...'
-                  : 'Opening review...'
+                  ? 'กำลังเปิดหน้าบันทึก...'
+                  : 'Opening publish screen...'
                 : mediaProgress.pendingCount
                   ? isThai
-                    ? `อัปโหลด ${mediaProgress.pendingCount} ไฟล์และตรวจสอบ`
-                    : `Upload ${mediaProgress.pendingCount} files & review`
+                    ? `ลงประกาศพร้อม ${mediaProgress.pendingCount} ไฟล์`
+                    : `Publish with ${mediaProgress.pendingCount} files`
                   : isThai
-                    ? 'บันทึกและตรวจสอบประกาศ'
-                    : 'Save & review listing'}
+                    ? 'ลงประกาศ'
+                    : 'Publish listing'}
           </>
-        ) : index === steps.length - 1 ? (
-          isThai ? (
-            'ตรวจสอบประกาศ'
-          ) : (
-            'Review listing'
-          )
         ) : isThai ? (
           'ไปขั้นถัดไป'
         ) : (

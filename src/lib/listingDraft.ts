@@ -6,14 +6,35 @@ import {
   getPropertyType,
   getUseCase,
 } from '@/data/propertyTaxonomy'
-import { getAuthApiUrl, getStoredUser } from './auth'
+import { fetchWithAuthRetry, getAuthApiUrl, getStoredUser } from './auth'
 
 export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
+export const LISTING_SUBMISSION_RESULT_KEY = 'mapxprop_listing_submission_result'
 export const LISTING_DRAFT_TTL_MS = 48 * 60 * 60 * 1000
 
 export type ListingDraftValue = string | string[]
 export type ListingDraft = Record<string, ListingDraftValue>
 export type ListingMediaType = 'image' | 'video' | '360'
+
+export type ListingMediaUploadErrorCode =
+  | 'authentication_required'
+  | 'file_too_large'
+  | 'unsupported_format'
+  | 'storage_unavailable'
+  | 'network_error'
+  | 'upload_failed'
+
+export class ListingMediaUploadError extends Error {
+  code: ListingMediaUploadErrorCode
+  fileName: string
+
+  constructor(code: ListingMediaUploadErrorCode, fileName: string, message: string) {
+    super(message)
+    this.name = 'ListingMediaUploadError'
+    this.code = code
+    this.fileName = fileName
+  }
+}
 
 export type ListingMediaInput = {
   url: string
@@ -39,6 +60,8 @@ type SaveListingDraftResponse = {
 let listingDraftSaveQueue: Promise<SaveListingDraftResponse | null> = Promise.resolve(null)
 
 export type CreateListingPayload = {
+  submission_key?: string
+  editing_public_listing_id?: string
   discovery_channel_code?: string
   property_group_code?: string
   property_type_code: string
@@ -399,7 +422,7 @@ export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft())
     const preparedDraft: ListingDraft = ownerPublicUserId
       ? { ...snapshot, draftOwnerPublicUserId: ownerPublicUserId }
       : snapshot
-    const response = await fetch(getAuthApiUrl('listing-draft'), {
+    const response = await fetchWithAuthRetry(getAuthApiUrl('listing-draft'), {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -427,8 +450,46 @@ export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft())
   return listingDraftSaveQueue
 }
 
+type ListingEditDraftResponse = {
+  draft?: ListingDraft
+  error?: string
+}
+
+export const loadMyListingForEdit = async (publicListingId: string) => {
+  if (typeof window === 'undefined' || !publicListingId.trim()) {
+    throw new Error('Invalid listing ID')
+  }
+
+  const response = await fetchWithAuthRetry(
+    getAuthApiUrl(`me/listings/${encodeURIComponent(publicListingId.trim())}/edit`),
+    {
+      cache: 'no-store',
+      credentials: 'include',
+    }
+  )
+  const result = (await response.json().catch(() => ({}))) as ListingEditDraftResponse
+  if (!response.ok || !result.draft) {
+    throw new Error(result.error || 'Cannot load this listing for editing')
+  }
+
+  const now = new Date()
+  const draft: ListingDraft = {
+    ...result.draft,
+    editingPublicListingId: publicListingId.trim(),
+    lastStep: '3',
+    resumeStep: '1',
+    updatedAt: now.toISOString(),
+    draftExpiresAt: new Date(now.getTime() + LISTING_DRAFT_TTL_MS).toISOString(),
+  }
+
+  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(draft))
+  sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
+  await saveListingDraftToCloud(draft).catch(() => null)
+  return draft
+}
+
 export const loadListingDraftFromCloud = async () => {
-  const response = await fetch(getAuthApiUrl('listing-draft'), {
+  const response = await fetchWithAuthRetry(getAuthApiUrl('listing-draft'), {
     cache: 'no-store',
     credentials: 'include',
   })
@@ -488,7 +549,7 @@ export const syncListingDraftAfterAuth = async () => {
 
 export const clearCloudListingDraft = async () => {
   await listingDraftSaveQueue.catch(() => null)
-  const response = await fetch(getAuthApiUrl('listing-draft'), {
+  const response = await fetchWithAuthRetry(getAuthApiUrl('listing-draft'), {
     method: 'DELETE',
     credentials: 'include',
   })
@@ -501,7 +562,7 @@ export const clearCloudListingDraft = async () => {
 export const publishListingDraft = async () => {
   const payload = buildCreateListingPayload(getListingDraft())
 
-  const response = await fetch(getAuthApiUrl('listings'), {
+  const response = await fetchWithAuthRetry(getAuthApiUrl('listings'), {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -521,19 +582,47 @@ export const publishListingDraft = async () => {
 export const uploadListingMedia = async (files: File[], mediaType: ListingMediaType) => {
   const urls: string[] = []
   const limit = mediaType === 'image' ? 10 : 4
+  const maxBytes = mediaType === 'video' ? 50 * 1024 * 1024 : mediaType === '360' ? 15 * 1024 * 1024 : 8 * 1024 * 1024
+  const allowedTypes =
+    mediaType === 'video'
+      ? new Set(['video/mp4', 'video/webm', 'video/quicktime'])
+      : new Set(['image/jpeg', 'image/png', 'image/webp'])
 
   for (const file of files.slice(0, limit)) {
+    if (file.size <= 0 || file.size > maxBytes) {
+      throw new ListingMediaUploadError('file_too_large', file.name, 'Media file is too large')
+    }
+    if (file.type && !allowedTypes.has(file.type.toLowerCase())) {
+      throw new ListingMediaUploadError('unsupported_format', file.name, 'Unsupported media file format')
+    }
+
     const formData = new FormData()
     formData.set('file', file)
     formData.set('media_type', mediaType)
-    const response = await fetch(getAuthApiUrl('listing-media'), {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    })
+    let response: Response
+    try {
+      response = await fetchWithAuthRetry(getAuthApiUrl('listing-media'), {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+    } catch {
+      throw new ListingMediaUploadError('network_error', file.name, 'Cannot connect to media storage')
+    }
     const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string }
     if (!response.ok || !data.url) {
-      throw new Error(data.error || `Unable to upload ${file.name}`)
+      const serverError = (data.error || '').toLowerCase()
+      const code: ListingMediaUploadErrorCode =
+        response.status === 401
+          ? 'authentication_required'
+          : response.status === 413 || serverError.includes('too large')
+            ? 'file_too_large'
+            : serverError.includes('unsupported') || serverError.includes('format')
+              ? 'unsupported_format'
+              : response.status >= 500 || serverError.includes('storage') || serverError.includes('save media')
+                ? 'storage_unavailable'
+                : 'upload_failed'
+      throw new ListingMediaUploadError(code, file.name, data.error || `Unable to upload ${file.name}`)
     }
     urls.push(data.url)
   }
@@ -567,6 +656,8 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const petPolicyCode = normalizeCode(text(draft.Pets))
 
   return {
+    submission_key: text(draft.submissionKey),
+    editing_public_listing_id: text(draft.editingPublicListingId),
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
     property_group_code: normalizeCode(text(draft.property_group_code)),
     property_type_code: normalizeCode(text(draft.property_type_code) || text(draft.propertyType) || 'condo'),
