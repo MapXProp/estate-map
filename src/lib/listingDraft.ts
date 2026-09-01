@@ -6,9 +6,10 @@ import {
   getPropertyType,
   getUseCase,
 } from '@/data/propertyTaxonomy'
-import { getAuthApiUrl } from './auth'
+import { getAuthApiUrl, getStoredUser } from './auth'
 
 export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
+export const LISTING_DRAFT_TTL_MS = 48 * 60 * 60 * 1000
 
 export type ListingDraftValue = string | string[]
 export type ListingDraft = Record<string, ListingDraftValue>
@@ -24,8 +25,18 @@ type CloudListingDraftResponse = {
     data?: ListingDraft
     current_step?: number
     updated_at?: string
+    expires_at?: string
   } | null
+  expired?: boolean
 }
+
+type SaveListingDraftResponse = {
+  success?: boolean
+  updated_at?: string
+  expires_at?: string
+}
+
+let listingDraftSaveQueue: Promise<SaveListingDraftResponse | null> = Promise.resolve(null)
 
 export type CreateListingPayload = {
   discovery_channel_code?: string
@@ -115,11 +126,29 @@ export const getListingDraft = (): ListingDraft => {
   }
 
   try {
-    return JSON.parse(raw) as ListingDraft
+    const draft = JSON.parse(raw) as ListingDraft
+    if (isListingDraftExpired(draft)) {
+      localStorage.removeItem(LISTING_DRAFT_KEY)
+      return {}
+    }
+    return draft
   } catch {
     localStorage.removeItem(LISTING_DRAFT_KEY)
     return {}
   }
+}
+
+export const isListingDraftExpired = (draft: ListingDraft, now = Date.now()) => {
+  const explicitExpiry = Date.parse(text(draft.draftExpiresAt))
+  if (Number.isFinite(explicitExpiry)) return explicitExpiry <= now
+
+  const updatedAt = Date.parse(text(draft.updatedAt))
+  return !Number.isFinite(updatedAt) || updatedAt + LISTING_DRAFT_TTL_MS <= now
+}
+
+export const getListingDraftResumeStep = (draft: ListingDraft) => {
+  const value = Number(text(draft.resumeStep) || text(draft.lastStep) || '1')
+  return Math.min(Math.max(Number.isFinite(value) ? value : 1, 1), 4)
 }
 
 export const clearListingDraft = () => {
@@ -307,13 +336,29 @@ export const resetListingDetailsForCategoryChange = (nextChannel: string, nextPr
   localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(next))
 }
 
-export const saveListingStep = (step: number, formData: FormData): ListingDraft => {
+export const saveListingStep = (
+  step: number,
+  formData: FormData,
+  options: { clearKeys?: Iterable<string>; resumeStep?: number } = {}
+): ListingDraft => {
   if (typeof window === 'undefined') {
     return {}
   }
 
   const current = getListingDraft()
-  const next: ListingDraft = { ...current, lastStep: String(step), updatedAt: new Date().toISOString() }
+  const updatedAt = new Date()
+  const resumeStep = Math.min(Math.max(options.resumeStep ?? step + 1, 1), 4)
+  const next: ListingDraft = {
+    ...current,
+    lastStep: String(step),
+    resumeStep: String(resumeStep),
+    updatedAt: updatedAt.toISOString(),
+    draftExpiresAt: new Date(updatedAt.getTime() + LISTING_DRAFT_TTL_MS).toISOString(),
+  }
+
+  for (const key of options.clearKeys || []) {
+    delete next[key]
+  }
 
   for (const key of Array.from(formData.keys())) {
     const values = formData
@@ -334,26 +379,52 @@ export const saveListingStep = (step: number, formData: FormData): ListingDraft 
   return next
 }
 
-export const saveListingDraftToCloud = async (draft: ListingDraft = getListingDraft()) => {
+export const saveListingFormSnapshot = (step: number, form: HTMLFormElement) => {
+  const clearKeys = new Set<string>()
+  for (const element of Array.from(form.elements)) {
+    const name = (element as HTMLInputElement).name
+    if (name) clearKeys.add(name)
+  }
+  return saveListingStep(step, new FormData(form), { clearKeys, resumeStep: step })
+}
+
+export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft()) => {
   if (Object.keys(draft).length === 0) {
-    return null
+    return Promise.resolve(null)
   }
 
-  const response = await fetch(getAuthApiUrl('listing-draft'), {
-    method: 'PUT',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      data: draft,
-      current_step: Number(text(draft.lastStep) || '1'),
-    }),
-  })
+  const snapshot = { ...draft }
+  const ownerPublicUserId = getStoredUser()?.public_user_id || ''
+  const save = async () => {
+    const preparedDraft: ListingDraft = ownerPublicUserId
+      ? { ...snapshot, draftOwnerPublicUserId: ownerPublicUserId }
+      : snapshot
+    const response = await fetch(getAuthApiUrl('listing-draft'), {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        data: preparedDraft,
+        current_step: getListingDraftResumeStep(preparedDraft),
+      }),
+    })
 
-  if (!response.ok) {
-    throw new Error('Cannot save listing draft right now')
+    if (!response.ok) {
+      throw new Error('Cannot save listing draft right now')
+    }
+
+    const result = (await response.json().catch(() => ({}))) as SaveListingDraftResponse
+    const persistedDraft: ListingDraft = {
+      ...preparedDraft,
+      updatedAt: result.updated_at || text(preparedDraft.updatedAt),
+      draftExpiresAt: result.expires_at || text(preparedDraft.draftExpiresAt),
+    }
+    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(persistedDraft))
+    return result
   }
 
-  return (await response.json().catch(() => ({}))) as CloudListingDraftResponse
+  listingDraftSaveQueue = listingDraftSaveQueue.catch(() => null).then(save)
+  return listingDraftSaveQueue
 }
 
 export const loadListingDraftFromCloud = async () => {
@@ -375,22 +446,48 @@ export const syncListingDraftAfterAuth = async () => {
     return {}
   }
 
-  const localDraft = getListingDraft()
-  if (Object.keys(localDraft).length > 0) {
-    await saveListingDraftToCloud(localDraft)
-    return localDraft
-  }
-
   const cloudDraft = await loadListingDraftFromCloud()
-  if (!cloudDraft?.data || Object.keys(cloudDraft.data).length === 0) {
-    return {}
+  const ownerPublicUserId = getStoredUser()?.public_user_id || ''
+  let localDraft = getListingDraft()
+  const localOwner = text(localDraft.draftOwnerPublicUserId)
+  if (localOwner && ownerPublicUserId && localOwner !== ownerPublicUserId) {
+    clearListingDraft()
+    localDraft = {}
   }
 
-  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(cloudDraft.data))
-  return cloudDraft.data
+  const normalizedCloudDraft: ListingDraft = cloudDraft?.data
+    ? {
+        ...cloudDraft.data,
+        resumeStep: String(cloudDraft.current_step || getListingDraftResumeStep(cloudDraft.data)),
+        updatedAt: cloudDraft.updated_at || text(cloudDraft.data.updatedAt),
+        draftExpiresAt: cloudDraft.expires_at || text(cloudDraft.data.draftExpiresAt),
+        ...(ownerPublicUserId ? { draftOwnerPublicUserId: ownerPublicUserId } : {}),
+      }
+    : {}
+
+  if (Object.keys(localDraft).length === 0 && Object.keys(normalizedCloudDraft).length === 0) return {}
+  if (Object.keys(localDraft).length === 0) {
+    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(normalizedCloudDraft))
+    return normalizedCloudDraft
+  }
+  if (Object.keys(normalizedCloudDraft).length === 0) {
+    await saveListingDraftToCloud(localDraft)
+    return getListingDraft()
+  }
+
+  const localUpdatedAt = Date.parse(text(localDraft.updatedAt)) || 0
+  const cloudUpdatedAt = Date.parse(text(normalizedCloudDraft.updatedAt)) || 0
+  if (cloudUpdatedAt > localUpdatedAt) {
+    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(normalizedCloudDraft))
+    return normalizedCloudDraft
+  }
+
+  await saveListingDraftToCloud(localDraft)
+  return getListingDraft()
 }
 
 export const clearCloudListingDraft = async () => {
+  await listingDraftSaveQueue.catch(() => null)
   const response = await fetch(getAuthApiUrl('listing-draft'), {
     method: 'DELETE',
     credentials: 'include',

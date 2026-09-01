@@ -8,8 +8,10 @@ const ListingDraftCloudSync = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let cancelled = false
+    const startNew = new URLSearchParams(window.location.search).get('new') === '1'
 
-    syncListingDraftAfterAuth()
+    const sync = startNew ? Promise.resolve({}) : syncListingDraftAfterAuth()
+    sync
       .catch(() => undefined)
       .finally(() => {
         if (!cancelled) setReady(true)

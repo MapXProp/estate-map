@@ -3,7 +3,6 @@
 import {
   initialListingMediaProgress,
   useListingFlowProgress,
-  type ListingMediaProgressState,
 } from '@/components/add-listing/ListingFlowProgressContext'
 import { usePreferences, type AppCurrency } from '@/components/preferences/PreferencesProvider'
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
@@ -27,9 +26,6 @@ import {
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
   ChevronDownIcon,
-  CloudArrowUpIcon,
-  DocumentCheckIcon,
-  EyeIcon,
   IdentificationIcon,
   PhoneIcon,
   PhotoIcon,
@@ -466,7 +462,14 @@ const Page = () => {
           onMinimumLeaseMonthsChange={setMinimumLeaseMonths}
         />
 
-        <MediaUploadProgressCard isThai={isThai} progress={mediaProgress} error={uploadError} />
+        {uploadError ? (
+          <p
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
+          >
+            {uploadError}
+          </p>
+        ) : null}
 
         <SectionCard icon={<PhotoIcon className="size-5" />} title={isThai ? 'รูปภาพของทรัพย์' : 'Property photos'}>
           <label
@@ -589,7 +592,7 @@ const Page = () => {
           </label>
 
           {uploadedVideoUrls.length || videoPreviewUrls.length ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-2 gap-3 min-[744px]:grid-cols-4">
               {[...uploadedVideoUrls.map(resolveListingMediaUrl), ...videoPreviewUrls].map((url, index) => (
                 <div key={url} className="relative">
                   <video
@@ -603,10 +606,10 @@ const Page = () => {
                     type="button"
                     onClick={() => removeVideo(index)}
                     disabled={isUploading}
-                    className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="absolute top-1 right-1 flex size-9 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={isThai ? `ลบวิดีโอที่ ${index + 1}` : `Remove video ${index + 1}`}
                   >
-                    <XMarkIcon className="size-5" />
+                    <XMarkIcon className="size-4" />
                   </button>
                 </div>
               ))}
@@ -678,7 +681,7 @@ const Page = () => {
             </label>
 
             {uploadedPanoramaUrls.length || panoramaPreviewUrls.length ? (
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-3 min-[744px]:grid-cols-4">
                 {[...uploadedPanoramaUrls.map(resolveListingMediaUrl), ...panoramaPreviewUrls].map((url, index) => (
                   <div
                     key={url}
@@ -900,185 +903,6 @@ const Page = () => {
     </>
   )
 }
-
-const MediaUploadProgressCard = ({
-  isThai,
-  progress,
-  error,
-}: {
-  isThai: boolean
-  progress: ListingMediaProgressState
-  error: string
-}) => {
-  const isUploading = progress.phase === 'uploading'
-  const isSaving = progress.phase === 'saving'
-  const isError = progress.phase === 'error'
-  const hasQueuedMedia = progress.pendingCount > 0
-  const hasUploadedMedia = progress.uploadedCount > 0
-  const progressPercent = progress.totalCount
-    ? Math.round((progress.completedCount / progress.totalCount) * 100)
-    : isSaving
-      ? 100
-      : 0
-
-  const status = isUploading
-    ? {
-        title: isThai
-          ? `กำลังอัปโหลด ${progress.completedCount} จาก ${progress.totalCount} ไฟล์`
-          : `Uploading ${progress.completedCount} of ${progress.totalCount} files`,
-        description: progress.currentFileName,
-        badge: `${progressPercent}%`,
-        tone: 'border-orange-200 bg-orange-50/70 text-orange-950 dark:border-orange-900/70 dark:bg-orange-950/25 dark:text-orange-100',
-      }
-    : isSaving
-      ? {
-          title: isThai ? 'อัปโหลดครบแล้ว กำลังเปิดหน้าตรวจสอบ' : 'Upload complete. Opening review',
-          description: isThai
-            ? 'กำลังบันทึกร่างล่าสุด กรุณาอย่าปิดหน้านี้'
-            : 'Saving the latest draft. Please keep this page open.',
-          badge: '100%',
-          tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 dark:border-emerald-900/70 dark:bg-emerald-950/25 dark:text-emerald-100',
-        }
-      : isError
-        ? {
-            title: isThai ? 'มีบางไฟล์ยังอัปโหลดไม่สำเร็จ' : 'Some files could not be uploaded',
-            description: error,
-            badge: isThai ? 'ลองอีกครั้ง' : 'Try again',
-            tone: 'border-red-200 bg-red-50/70 text-red-950 dark:border-red-900/70 dark:bg-red-950/25 dark:text-red-100',
-          }
-        : hasQueuedMedia
-          ? {
-              title: isThai
-                ? `พร้อมอัปโหลด ${progress.pendingCount} ไฟล์`
-                : `${progress.pendingCount} files ready to upload`,
-              description: isThai
-                ? 'ไฟล์ยังอยู่บนอุปกรณ์ของคุณ ระบบจะอัปโหลดก่อนเปิดหน้าตรวจสอบ'
-                : 'These files are still on your device. They will upload before the review page opens.',
-              badge: isThai ? 'รออัปโหลด' : 'Waiting',
-              tone: 'border-amber-200 bg-amber-50/70 text-amber-950 dark:border-amber-900/70 dark:bg-amber-950/25 dark:text-amber-100',
-            }
-          : hasUploadedMedia
-            ? {
-                title: isThai
-                  ? `อัปโหลดแล้ว ${progress.uploadedCount} ไฟล์ พร้อมตรวจสอบ`
-                  : `${progress.uploadedCount} files uploaded and ready`,
-                description: isThai
-                  ? 'สื่อถูกบันทึกในร่างแล้ว คุณยังเพิ่มหรือลบไฟล์ก่อนตรวจสอบได้'
-                  : 'Media is saved in your draft. You can still add or remove files before review.',
-                badge: isThai ? 'พร้อมแล้ว' : 'Ready',
-                tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-950 dark:border-emerald-900/70 dark:bg-emerald-950/25 dark:text-emerald-100',
-              }
-            : {
-                title: isThai ? 'ยังไม่ได้เลือกสื่อ' : 'No media selected yet',
-                description: isThai
-                  ? 'รูปภาพ วิดีโอ และภาพ 360° ไม่บังคับ แต่ช่วยให้ประกาศน่าสนใจขึ้น'
-                  : 'Photos, videos, and 360° images are optional, but make a listing more useful.',
-                badge: isThai ? 'ไม่บังคับ' : 'Optional',
-                tone: 'border-neutral-200 bg-neutral-50 text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950/70 dark:text-neutral-100',
-              }
-
-  return (
-    <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-950/40">
-          <CloudArrowUpIcon className="size-5" />
-        </span>
-        <div>
-          <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-            {isThai ? 'ลำดับการอัปโหลดและตรวจสอบ' : 'Upload and review flow'}
-          </h2>
-          <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-            {isThai
-              ? 'สื่อจะอัปโหลดในขั้นนี้ก่อน ส่วนประกาศจะยังไม่ถูกส่งเข้าคิวจนกว่าคุณจะกดส่งในหน้าตรวจสอบ'
-              : 'Media uploads in this step. Your listing is not submitted for review until you confirm on the next page.'}
-          </p>
-        </div>
-      </div>
-
-      <ol className="mt-5 grid gap-2 min-[560px]:grid-cols-3">
-        <MediaFlowStep
-          icon={<PhotoIcon className="size-4" />}
-          number="1"
-          title={isThai ? 'เลือกสื่อ' : 'Choose media'}
-          description={isThai ? 'เลือกทีละไฟล์หรือหลายไฟล์' : 'One or multiple files'}
-        />
-        <MediaFlowStep
-          icon={<CloudArrowUpIcon className="size-4" />}
-          number="2"
-          title={isThai ? 'อัปโหลดก่อนตรวจ' : 'Upload before review'}
-          description={isThai ? 'กดปุ่มด้านล่างเพื่อเริ่ม' : 'Use the button below'}
-        />
-        <MediaFlowStep
-          icon={<DocumentCheckIcon className="size-4" />}
-          number="3"
-          title={isThai ? 'ตรวจแล้วค่อยส่ง' : 'Review, then submit'}
-          description={isThai ? 'เช็กสื่อก่อนส่งประกาศ' : 'Check media before publishing'}
-        />
-      </ol>
-
-      <div className={`mt-4 rounded-2xl border p-4 transition-colors ${status.tone}`} aria-live="polite">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-current/10 dark:bg-black/15">
-            {isUploading ? (
-              <span className="size-4 animate-spin rounded-full border-2 border-current/25 border-t-current" />
-            ) : isSaving || hasUploadedMedia ? (
-              <CheckCircleIcon className="size-5" />
-            ) : (
-              <EyeIcon className="size-5" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1 font-sarabun">
-            <span className="block text-sm font-semibold">{status.title}</span>
-            <span className="mt-0.5 block truncate text-xs leading-5 opacity-75">{status.description}</span>
-          </span>
-          <span className="shrink-0 rounded-full bg-white/75 px-2.5 py-1 font-sarabun text-[11px] font-semibold shadow-sm ring-1 ring-current/10 dark:bg-black/15">
-            {status.badge}
-          </span>
-        </div>
-
-        {isUploading || isSaving ? (
-          <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10"
-            role="progressbar"
-            aria-label={isThai ? 'ความคืบหน้าการอัปโหลดสื่อ' : 'Media upload progress'}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progressPercent}
-          >
-            <div
-              className="h-full rounded-full bg-current transition-[width] duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-    </section>
-  )
-}
-
-const MediaFlowStep = ({
-  icon,
-  number,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  number: string
-  title: string
-  description: string
-}) => (
-  <li className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 dark:border-neutral-800 dark:bg-neutral-950/60">
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
-      {icon}
-    </span>
-    <span className="min-w-0 font-sarabun">
-      <span className="block text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-        {number}. {title}
-      </span>
-      <span className="mt-0.5 block text-[11px] leading-4 text-neutral-500 dark:text-neutral-400">{description}</span>
-    </span>
-  </li>
-)
 
 const SectionCard = ({
   icon,

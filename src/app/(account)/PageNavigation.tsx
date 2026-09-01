@@ -1,7 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { Building2, CreditCard, Heart, ShieldCheck, UserRound } from 'lucide-react'
+import { Building2, CreditCard, FileClock, Heart, ShieldCheck, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
@@ -18,6 +18,12 @@ const navigation = [
     titleEn: 'My properties',
     href: '/account-listings',
     icon: Building2,
+  },
+  {
+    titleTh: 'ร่างประกาศ',
+    titleEn: 'Listing draft',
+    href: '/account-drafts',
+    icon: FileClock,
   },
   {
     titleTh: 'ที่บันทึกไว้',
@@ -53,7 +59,7 @@ export const PageNavigation = () => {
     <div className="container">
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className="hidden grid-cols-5 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid dark:bg-neutral-800/80 dark:ring-neutral-700"
+        className="hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid xl:grid-cols-6 dark:bg-neutral-800/80 dark:ring-neutral-700"
       >
         {navigation.map((item) => {
           const isActive = pathname === item.href
@@ -63,7 +69,7 @@ export const PageNavigation = () => {
               key={`desktop-${item.href}`}
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`group flex min-h-16 min-w-0 items-center gap-3 rounded-[18px] px-3 py-2.5 transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-[#176b50]/25 ${
+              className={`group flex min-h-16 min-w-0 items-center gap-3 rounded-[18px] px-3 py-2.5 transition-all duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-hidden ${
                 isActive
                   ? 'bg-white text-[#124e3c] shadow-[0_5px_18px_rgba(15,61,47,0.09)] ring-1 ring-[#176b50]/10 dark:bg-neutral-900 dark:text-emerald-300 dark:ring-emerald-700/30'
                   : 'text-neutral-600 hover:bg-white/70 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-neutral-900/60 dark:hover:text-white'
@@ -86,7 +92,7 @@ export const PageNavigation = () => {
 
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className="hidden-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 py-1 min-[744px]:hidden"
+        className="-mx-4 hidden-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 py-1 min-[744px]:hidden"
       >
         {navigation.map((item) => {
           const isActive = pathname === item.href
@@ -97,7 +103,7 @@ export const PageNavigation = () => {
               ref={isActive ? activeMobileItemRef : undefined}
               href={item.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`flex min-h-11 shrink-0 snap-center items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-[#176b50]/25 ${
+              className={`flex min-h-11 shrink-0 snap-center items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-hidden ${
                 isActive
                   ? 'border-[#124e3c] bg-[#124e3c] text-white shadow-[0_5px_16px_rgba(18,78,60,0.22)] dark:border-emerald-700 dark:bg-emerald-700'
                   : 'border-neutral-200 bg-white text-neutral-600 active:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'

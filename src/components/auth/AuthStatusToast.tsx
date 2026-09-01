@@ -59,5 +59,5 @@ export default function AuthStatusToast() {
 
   if (!notice) return null
 
-  return <SuccessToast key={notice.id} message={messages[locale][notice.action]} duration={4200} />
+  return <SuccessToast key={notice.id} message={messages[locale][notice.action]} duration={2400} />
 }

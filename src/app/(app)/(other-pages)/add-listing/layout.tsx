@@ -1,5 +1,6 @@
 'use client'
 
+import ListingDraftAutosave from '@/components/add-listing/ListingDraftAutosave'
 import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSync'
 import {
   ListingFlowProgressProvider,
@@ -49,6 +50,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-[#e1dcd3] min-[744px]:bg-white min-[744px]:p-8 min-[744px]:shadow-[0_30px_80px_-55px_rgba(45,37,27,0.38)] lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900">
                 {children}
               </div>
+              <ListingDraftAutosave step={index} />
               <Pagination pathname={pathname} />
             </main>
           </div>
@@ -58,7 +60,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   )
 
   return index === 1 ? (
-    content
+    <ListingDraftCloudSync>{content}</ListingDraftCloudSync>
   ) : (
     <RequireAuth>
       <ListingDraftCloudSync>{content}</ListingDraftCloudSync>
@@ -83,7 +85,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
               {isThai ? 'ลงประกาศฟรี' : 'List for free'}
             </p>
             <span className="rounded-full bg-white/[0.08] px-2.5 py-1 font-sarabun text-[11px] text-white/80 ring-1 ring-white/10">
-              {isThai ? 'บันทึกร่างอัตโนมัติ' : 'Draft saved automatically'}
+              {isThai ? 'บันทึกอัตโนมัติ · เก็บ 48 ชม.' : 'Autosaved · kept 48h'}
             </span>
           </div>
           <p className="mt-1.5 truncate font-sarabun text-[17px] font-semibold text-white min-[744px]:mt-2 min-[744px]:text-xl">

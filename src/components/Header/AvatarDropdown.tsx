@@ -88,24 +88,6 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
               </div>
             </div>
 
-            <Link
-              href="/add-listing/1?new=1"
-              className="mt-4 flex min-h-14 items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-3.5 py-2.5 transition hover:border-orange-200 hover:bg-orange-100/70 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/35 dark:border-orange-900/50 dark:bg-orange-950/25 dark:hover:bg-orange-950/40"
-            >
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-orange-500 text-white shadow-sm shadow-orange-500/20">
-                <HugeiconsIcon icon={Task01Icon} size={21} strokeWidth={1.7} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-orange-950 dark:text-orange-100">
-                  {locale === 'th' ? 'ลงประกาศฟรี' : 'List for free'}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-orange-700/75 dark:text-orange-300/75">
-                  {locale === 'th' ? 'เริ่มสร้างรายการใหม่' : 'Create a new listing'}
-                </span>
-              </span>
-              <ChevronRightIcon className="size-4 shrink-0 text-orange-400" />
-            </Link>
-
             {!isAuthenticated && !isLoading && (
               <section className="mt-4 border-t border-neutral-200 pt-3 dark:border-neutral-700">
                 <div className="space-y-0.5">
@@ -143,7 +125,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                 <div className="space-y-0.5">
                   <Link
                     href={'/account'}
-                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-emerald-600/25 dark:hover:bg-neutral-700"
+                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-neutral-500/25 dark:hover:bg-neutral-700"
                   >
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
                       <HugeiconsIcon icon={UserIcon} size={21} strokeWidth={1.5} />
@@ -155,9 +137,9 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
 
                   <Link
                     href={'/account-listings'}
-                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-emerald-600/25 dark:hover:bg-neutral-700"
+                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-neutral-500/25 dark:hover:bg-neutral-700"
                   >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[#176b50] dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
                       <HugeiconsIcon icon={Task01Icon} size={21} strokeWidth={1.5} />
                     </span>
                     <span className="ms-3 text-sm font-medium">{locale === 'th' ? 'ทรัพย์ของฉัน' : 'My listings'}</span>
@@ -165,9 +147,9 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
 
                   <Link
                     href={'/account-savelists'}
-                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-rose-500/25 dark:hover:bg-neutral-700"
+                    className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-neutral-500/25 dark:hover:bg-neutral-700"
                   >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-500 dark:bg-rose-950/35 dark:text-rose-300">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
                       <HugeiconsIcon icon={FavouriteIcon} size={21} strokeWidth={1.5} />
                     </span>
                     <span className="ms-3 text-sm font-medium">{locale === 'th' ? 'ที่บันทึกไว้' : 'Saved'}</span>
@@ -175,6 +157,24 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                 </div>
               </section>
             )}
+
+            <Link
+              href="/add-listing/1?new=1"
+              className="mt-3 flex min-h-14 items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50 px-3.5 py-2.5 transition hover:border-orange-200 hover:bg-orange-100/70 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-orange-500/35 dark:border-orange-900/50 dark:bg-orange-950/25 dark:hover:bg-orange-950/40"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-orange-500 text-white shadow-sm shadow-orange-500/20">
+                <HugeiconsIcon icon={Task01Icon} size={21} strokeWidth={1.7} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-orange-950 dark:text-orange-100">
+                  {locale === 'th' ? 'ลงประกาศฟรี' : 'List for free'}
+                </span>
+                <span className="mt-0.5 block text-[11px] text-orange-700/75 dark:text-orange-300/75">
+                  {locale === 'th' ? 'เริ่มสร้างรายการใหม่' : 'Create a new listing'}
+                </span>
+              </span>
+              <ChevronRightIcon className="size-4 shrink-0 text-orange-400" />
+            </Link>
 
             <section className="mt-3 border-t border-neutral-200 pt-3 dark:border-neutral-700">
               <div className="space-y-0.5">

@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmnibox'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
 import { usePathname } from 'next/navigation'
 import AvatarDropdown from './AvatarDropdown'
@@ -9,7 +10,6 @@ import CurrLangDropdown from './CurrLangDropdown'
 import NotifyDropdown from './NotifyDropdown'
 import PropertyListingCta from './PropertyListingCta'
 import PropertySiteSwitcher from './PropertySiteSwitcher'
-import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 
 const PropertyHeaderContent = () => {
   const { locale, propertyZone } = usePreferences()
@@ -33,7 +33,7 @@ const PropertyHeaderContent = () => {
       <div className="container">
         <div className="flex h-20 items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex min-w-0 flex-1 items-center gap-3 min-[900px]:gap-4">
-            <Logo className="w-20 min-[1100px]:w-24" />
+            <Logo href={`/${siteMode}`} className="w-20 min-[1100px]:w-24" />
             <div className="hidden h-7 border-l border-neutral-200 min-[900px]:block dark:border-neutral-700" />
             <div className="max-w-xl min-w-[190px] flex-1 min-[900px]:min-w-[250px]">
               <PropertySearchOmnibox
