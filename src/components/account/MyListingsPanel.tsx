@@ -236,12 +236,22 @@ const ListingRow = ({
               {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
             </button>
             {listingIsLive ? (
-              <Link
-                href={`/real-estate-listings/${listing.slug}`}
-                className="inline-flex h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-neutral-700 dark:text-neutral-200"
-              >
-                {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
-              </Link>
+              <>
+                <Link
+                  href={`/real-estate-listings/${listing.slug}`}
+                  className="inline-flex h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 min-[744px]:hidden dark:border-neutral-700 dark:text-neutral-200"
+                >
+                  {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
+                </Link>
+                <Link
+                  href={`/real-estate-listings/${listing.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 min-[744px]:inline-flex dark:border-neutral-700 dark:text-neutral-200"
+                >
+                  {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
+                </Link>
+              </>
             ) : null}
           </div>
         </div>
