@@ -7,9 +7,16 @@ import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
+import { clearListingFormErrors, validateListingForm } from '@/lib/listingFormValidation'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
-import { BuildingOffice2Icon, CheckIcon, HomeModernIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import {
+  BuildingOffice2Icon,
+  CheckIcon,
+  ExclamationCircleIcon,
+  HomeModernIcon,
+  MapPinIcon,
+} from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -47,6 +54,7 @@ const Page = () => {
   const [marker, setMarker] = useState(THAILAND_CENTER)
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
   const [locationError, setLocationError] = useState('')
+  const [locationValidationError, setLocationValidationError] = useState(false)
   const [isResolvingAddress, setIsResolvingAddress] = useState(false)
   const [street, setStreet] = useState('')
   const [subdistrict, setSubdistrict] = useState('')
@@ -102,6 +110,7 @@ const Page = () => {
         setDistrict(address.district || '')
         setProvince(address.province || '')
         setPostalCode(address.postcode ? String(address.postcode) : '')
+        if (address.province) window.requestAnimationFrame(() => clearListingFormErrors())
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           setLocationError(
@@ -194,8 +203,10 @@ const Page = () => {
 
   const useCurrentLocation = () => {
     setLocationError('')
+    setLocationValidationError(false)
     if (!navigator.geolocation) {
       setLocationError(isThai ? 'อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง' : 'Location is not supported on this device.')
+      setLocationValidationError(true)
       return
     }
 
@@ -204,25 +215,43 @@ const Page = () => {
         setMarker({ lng: coords.longitude, lat: coords.latitude })
         setHasConfirmedMarker(true)
       },
-      () =>
+      () => {
+        setLocationValidationError(true)
         setLocationError(
           isThai
             ? 'ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต Location หรือลากหมุดเอง'
             : 'Unable to get your location. Allow location access or drag the pin manually.'
-        ),
+        )
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }
 
   const handleSubmitForm = async (formData: FormData) => {
+    clearListingFormErrors()
     if (!hasConfirmedMarker) {
       setLocationError(
         isThai
           ? 'กรุณาค้นหาสถานที่หรือแตะแผนที่เพื่อยืนยันตำแหน่งอสังหา'
           : 'Search for the place or tap the map to confirm the property location.'
       )
+      setLocationValidationError(true)
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById('listing-location-section')
+        target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        window.setTimeout(
+          () =>
+            target
+              ?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')
+              ?.focus({ preventScroll: true }),
+          280
+        )
+      })
       return
     }
+    setLocationValidationError(false)
+    setLocationError('')
+    if (!validateListingForm({ isThai })) return
     if (isLand) {
       const rai = parseDecimal(formData.get('landAreaRai'))
       const ngan = parseDecimal(formData.get('landAreaNgan'))
@@ -262,7 +291,7 @@ const Page = () => {
         </h1>
       </div>
 
-      <Form id="add-listing-form" action={handleSubmitForm} className="space-y-6">
+      <Form id="add-listing-form" action={handleSubmitForm} noValidate className="space-y-6">
         <section className="rounded-3xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-900">
           <div className="flex items-center gap-3">
             <span
@@ -294,7 +323,12 @@ const Page = () => {
           </div>
         </section>
 
-        <SectionCard title={isThai ? 'ปักหมุดที่ตั้งอสังหา' : 'Pin the property location'}>
+        <SectionCard
+          id="listing-location-section"
+          title={isThai ? 'ปักหมุดที่ตั้งอสังหา' : 'Pin the property location'}
+          invalid={locationValidationError}
+          errorText={locationValidationError ? locationError : ''}
+        >
           <div className="space-y-5">
             <div className="flex flex-col gap-3 rounded-2xl bg-[#f1f7f4] p-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:bg-emerald-950/25">
               <div>
@@ -331,6 +365,7 @@ const Page = () => {
                     setMarker(location)
                     setHasConfirmedMarker(true)
                     setLocationError('')
+                    setLocationValidationError(false)
                   }}
                 />
               </div>
@@ -364,7 +399,7 @@ const Page = () => {
               ) : null}
             </div>
 
-            {locationError ? (
+            {locationError && !locationValidationError ? (
               <p
                 role="alert"
                 className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700"
@@ -588,9 +623,42 @@ const Page = () => {
   )
 }
 
-const SectionCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm sm:p-7 dark:border-neutral-800 dark:bg-neutral-900">
-    <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
+const SectionCard = ({
+  id,
+  title,
+  invalid = false,
+  errorText,
+  children,
+}: {
+  id?: string
+  title: string
+  invalid?: boolean
+  errorText?: string
+  children: React.ReactNode
+}) => (
+  <section
+    id={id}
+    data-listing-section-invalid={invalid || undefined}
+    className={`scroll-mt-32 rounded-[28px] border bg-white p-5 shadow-sm transition sm:p-7 dark:bg-neutral-900 ${
+      invalid
+        ? 'border-red-400 shadow-[0_20px_60px_-40px_rgba(220,38,38,0.5)] dark:border-red-700'
+        : 'border-neutral-200 dark:border-neutral-800'
+    }`}
+  >
+    <h2
+      className={`font-sarabun text-lg font-semibold ${invalid ? 'text-red-700 dark:text-red-300' : 'text-neutral-900 dark:text-neutral-50'}`}
+    >
+      {title}
+    </h2>
+    {invalid && errorText ? (
+      <p
+        role="alert"
+        className="mt-2 flex items-start gap-2 font-sarabun text-sm font-medium text-red-600 dark:text-red-400"
+      >
+        <ExclamationCircleIcon className="mt-0.5 size-5 shrink-0" />
+        <span>{errorText}</span>
+      </p>
+    ) : null}
     <div className="mt-5">{children}</div>
   </section>
 )

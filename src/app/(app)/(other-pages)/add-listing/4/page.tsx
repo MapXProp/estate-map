@@ -1,11 +1,13 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { getApiBaseUrl } from '@/lib/auth'
 import {
   clearCloudListingDraft,
   clearListingDraft,
   getListingDraftSummary,
   publishListingDraft,
+  type ListingMediaInput,
 } from '@/lib/listingDraft'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
@@ -16,7 +18,10 @@ import {
   MapPinIcon,
   PencilSquareIcon,
   PhoneIcon,
+  PhotoIcon,
   SparklesIcon,
+  VideoCameraIcon,
+  ViewfinderCircleIcon,
 } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import Link from 'next/link'
@@ -31,6 +36,13 @@ const Page = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [successId, setSuccessId] = useState('')
+  const mediaItems = summary?.payload.media_items || []
+  const photoUrls = uniqueMediaUrls(
+    mediaItems.filter((item) => item.media_type === 'image'),
+    summary?.payload.media_urls
+  )
+  const videoUrls = uniqueMediaUrls(mediaItems.filter((item) => item.media_type === 'video'))
+  const panoramaUrls = uniqueMediaUrls(mediaItems.filter((item) => item.media_type === '360'))
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setSummary(getListingDraftSummary(locale)))
@@ -89,7 +101,7 @@ const Page = () => {
           {isThai ? 'พร้อมส่งประกาศ' : 'Ready to submit'}
         </div>
         <h1 className="font-sarabun text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
-          {isThai ? 'ตรวจอีกครั้งก่อนเผยแพร่' : 'Review before publishing'}
+          {isThai ? 'ตรวจอีกครั้งก่อนส่งประกาศ' : 'Review before submitting'}
         </h1>
       </div>
 
@@ -187,29 +199,15 @@ const Page = () => {
             )}
             fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
           />
-          <ReviewItem
-            label={isThai ? 'รูปภาพ' : 'Photos'}
-            value={
-              summary?.payload.media_urls?.length
-                ? isThai
-                  ? `${summary.payload.media_urls.length} รูป`
-                  : `${summary.payload.media_urls.length} photos`
-                : isThai
-                  ? 'ยังไม่ได้เพิ่ม (เพิ่มภายหลังได้)'
-                  : 'None added yet (you can add them later)'
-            }
-            fallback={isThai ? 'ยังไม่ระบุ' : 'Not specified'}
-          />
-          <ReviewItem
-            label={isThai ? 'วิดีโอ' : 'Videos'}
-            value={formatMediaCount(summary?.payload.media_items, 'video', isThai, 'วิดีโอ', 'videos')}
-            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'None added'}
-          />
-          <ReviewItem
-            label={isThai ? 'ภาพ 360°' : '360° photos'}
-            value={formatMediaCount(summary?.payload.media_items, '360', isThai, 'ภาพ', 'photos')}
-            fallback={isThai ? 'ไม่ได้เพิ่ม' : 'None added'}
-          />
+        </ReviewCard>
+
+        <ReviewCard
+          icon={<PhotoIcon className="size-5" />}
+          title={isThai ? 'รูปภาพ วิดีโอ และภาพ 360°' : 'Photos, videos & 360° media'}
+          editHref="/add-listing/3"
+          editLabel={isThai ? 'จัดการสื่อ' : 'Manage media'}
+        >
+          <ReviewMediaPreview isThai={isThai} photoUrls={photoUrls} videoUrls={videoUrls} panoramaUrls={panoramaUrls} />
         </ReviewCard>
 
         <ReviewCard
@@ -302,6 +300,147 @@ const Page = () => {
   )
 }
 
+const ReviewMediaPreview = ({
+  isThai,
+  photoUrls,
+  videoUrls,
+  panoramaUrls,
+}: {
+  isThai: boolean
+  photoUrls: string[]
+  videoUrls: string[]
+  panoramaUrls: string[]
+}) => {
+  const totalMedia = photoUrls.length + videoUrls.length + panoramaUrls.length
+
+  if (!totalMedia) {
+    return (
+      <div className="sm:col-span-2">
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-5 py-8 text-center dark:border-neutral-700 dark:bg-neutral-950/60">
+          <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-neutral-500 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+            <PhotoIcon className="size-6" />
+          </span>
+          <p className="mt-3 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            {isThai ? 'ยังไม่ได้เพิ่มรูปภาพหรือวิดีโอ' : 'No photos or videos added'}
+          </p>
+          <p className="mt-1 max-w-md font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+            {isThai
+              ? 'สื่อไม่บังคับ คุณสามารถกด “จัดการสื่อ” เพื่อย้อนกลับไปเพิ่มก่อนส่งประกาศ'
+              : 'Media is optional. Use “Manage media” to add it before submitting your listing.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-7 sm:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50 px-4 py-3 font-sarabun dark:bg-emerald-950/25">
+        <span className="flex items-center gap-2 text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+          <CheckCircleIcon className="size-5" />
+          {isThai ? `อัปโหลดครบ ${totalMedia} ไฟล์` : `${totalMedia} files uploaded`}
+        </span>
+        <span className="text-xs text-emerald-800/75 dark:text-emerald-200/75">
+          {isThai ? 'ตรวจสื่อด้านล่างก่อนส่งประกาศ' : 'Check the media below before submitting'}
+        </span>
+      </div>
+
+      {photoUrls.length ? (
+        <section>
+          <ReviewMediaHeading
+            icon={<PhotoIcon className="size-4" />}
+            title={isThai ? 'รูปภาพ' : 'Photos'}
+            count={photoUrls.length}
+          />
+          <div
+            className="relative mt-3 aspect-[16/10] overflow-hidden rounded-3xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 sm:aspect-[16/8] dark:bg-neutral-800 dark:ring-neutral-700"
+            style={{ backgroundImage: `url(${resolveListingMediaUrl(photoUrls[0])})` }}
+            role="img"
+            aria-label={isThai ? 'ภาพหน้าปกประกาศ' : 'Listing cover photo'}
+          >
+            <span className="absolute top-3 left-3 rounded-full bg-neutral-950/75 px-3 py-1.5 font-sarabun text-xs font-semibold text-white backdrop-blur-sm">
+              {isThai ? 'ภาพหน้าปก' : 'Cover photo'}
+            </span>
+          </div>
+          {photoUrls.length > 1 ? (
+            <div className="mt-3 grid grid-cols-2 gap-3 min-[560px]:grid-cols-3 lg:grid-cols-4">
+              {photoUrls.slice(1).map((url, index) => (
+                <div
+                  key={url}
+                  className="aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
+                  style={{ backgroundImage: `url(${resolveListingMediaUrl(url)})` }}
+                  role="img"
+                  aria-label={isThai ? `รูปภาพที่ ${index + 2}` : `Photo ${index + 2}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {videoUrls.length ? (
+        <section>
+          <ReviewMediaHeading
+            icon={<VideoCameraIcon className="size-4" />}
+            title={isThai ? 'วิดีโอ' : 'Videos'}
+            count={videoUrls.length}
+          />
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {videoUrls.map((url, index) => (
+              <video
+                key={url}
+                src={resolveListingMediaUrl(url)}
+                controls
+                playsInline
+                preload="metadata"
+                className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+                aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {panoramaUrls.length ? (
+        <section>
+          <ReviewMediaHeading
+            icon={<ViewfinderCircleIcon className="size-4" />}
+            title={isThai ? 'ภาพ 360°' : '360° photos'}
+            count={panoramaUrls.length}
+          />
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {panoramaUrls.map((url, index) => (
+              <div
+                key={url}
+                className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100 bg-cover bg-center ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
+                style={{ backgroundImage: `url(${resolveListingMediaUrl(url)})` }}
+                role="img"
+                aria-label={isThai ? `ภาพ 360° ที่ ${index + 1}` : `360° photo ${index + 1}`}
+              >
+                <span className="absolute right-2 bottom-2 rounded-full bg-neutral-950/75 px-2.5 py-1 font-sarabun text-[11px] font-semibold text-white backdrop-blur-sm">
+                  360°
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
+const ReviewMediaHeading = ({ icon, title, count }: { icon: React.ReactNode; title: string; count: number }) => (
+  <div className="flex items-center gap-2 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+    <span className="flex size-7 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40">
+      {icon}
+    </span>
+    <span>{title}</span>
+    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+      {count}
+    </span>
+  </div>
+)
+
 const ReviewCard = ({
   icon,
   title,
@@ -377,16 +516,10 @@ const formatDetailCode = (value: string | boolean | string[] | undefined, isThai
   return labels[value]?.[isThai ? 0 : 1] || value.replaceAll('_', ' ')
 }
 
-const formatMediaCount = (
-  media: Array<{ media_type: string }> | undefined,
-  mediaType: string,
-  isThai: boolean,
-  thaiUnit: string,
-  englishUnit: string
-) => {
-  const count = media?.filter((item) => item.media_type === mediaType).length || 0
-  return count ? `${count} ${isThai ? thaiUnit : englishUnit}` : ''
-}
+const uniqueMediaUrls = (media: ListingMediaInput[], fallback: string[] = []) =>
+  [...new Set([...media.map((item) => item.url), ...fallback])].filter(Boolean)
+
+const resolveListingMediaUrl = (value: string) => (value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value)
 
 const contactRoleLabel = (value: string | undefined, isThai: boolean) => {
   const labels: Record<string, [string, string]> = {

@@ -5,6 +5,35 @@
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/aspect-ratio';
 
+#add-listing-form [data-listing-field] {
+  scroll-margin-top: 8rem;
+}
+
+#add-listing-form [data-listing-field][data-listing-invalid='true'] [data-slot='label'] {
+  color: #dc2626;
+}
+
+#add-listing-form [data-listing-field][data-listing-invalid='true'] input:not([type='checkbox']):not([type='radio']),
+#add-listing-form [data-listing-field][data-listing-invalid='true'] select,
+#add-listing-form [data-listing-field][data-listing-invalid='true'] textarea {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgb(254 226 226 / 0.9) !important;
+}
+
+.dark #add-listing-form [data-listing-field][data-listing-invalid='true'] [data-slot='label'] {
+  color: #fca5a5;
+}
+
+.dark
+  #add-listing-form
+  [data-listing-field][data-listing-invalid='true']
+  input:not([type='checkbox']):not([type='radio']),
+.dark #add-listing-form [data-listing-field][data-listing-invalid='true'] select,
+.dark #add-listing-form [data-listing-field][data-listing-invalid='true'] textarea {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgb(127 29 29 / 0.45) !important;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
   /* Typography system: Inter for Latin/numbers, Sarabun for Thai, Noto Sans Thai as fallback. */

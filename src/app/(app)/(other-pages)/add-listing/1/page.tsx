@@ -34,9 +34,15 @@ import {
   saveListingStep,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
+import { clearListingFormErrors, showListingFieldError } from '@/lib/listingFormValidation'
 import Input from '@/shared/Input'
 import Textarea from '@/shared/Textarea'
-import { BuildingStorefrontIcon, CheckCircleIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
+import {
+  BuildingStorefrontIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  PencilSquareIcon,
+} from '@heroicons/react/24/outline'
 import {
   BedDouble,
   Building,
@@ -144,6 +150,7 @@ const Page = () => {
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
+  const [errorSection, setErrorSection] = useState<number | null>(null)
   const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
   const [draftReady, setDraftReady] = useState(false)
   const { isAuthenticated, refresh } = useAuth()
@@ -221,6 +228,25 @@ const Page = () => {
         : selectedOfferLabels.join(', ')
   const hasCompleteListingOption = Boolean(hasCompletePropertySelection && propertyType && listingOptionLabel)
 
+  const clearWizardError = () => {
+    setError('')
+    setErrorSection(null)
+    clearListingFormErrors()
+  }
+
+  const showWizardError = (section: number, message: string, fieldName?: string) => {
+    setError(message)
+    setErrorSection(section)
+    window.requestAnimationFrame(() => {
+      if (fieldName && showListingFieldError({ fieldName, message, isThai })) return
+
+      const target = document.getElementById(`listing-wizard-section-${section}`)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const focusTarget = target?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')
+      window.setTimeout(() => focusTarget?.focus({ preventScroll: true }), 280)
+    })
+  }
+
   useEffect(() => {
     router.prefetch('/add-listing/2')
 
@@ -243,6 +269,9 @@ const Page = () => {
         setTitle('')
         setPlaceName('')
         setDescription('')
+        setError('')
+        setErrorSection(null)
+        clearListingFormErrors()
         setDraftReady(true)
         return
       }
@@ -330,7 +359,7 @@ const Page = () => {
     setSelectedOffers([])
     setBusinessSpaceTypes([])
     setAccommodationModel('')
-    setError('')
+    clearWizardError()
   }
 
   const selectPropertyType = (propertyTypeCode: PropertyTypeCode) => {
@@ -343,7 +372,7 @@ const Page = () => {
     setSelectedOffers(selectedChannel === 'rooms' ? ['rent'] : [])
     setBusinessSpaceTypes([])
     setAccommodationModel('')
-    setError('')
+    clearWizardError()
   }
 
   const toggleBusinessSpaceType = (spaceTypeCode: BusinessSpaceTypeCode) => {
@@ -352,7 +381,7 @@ const Page = () => {
 
     const alreadySelected = businessSpaceTypes.includes(spaceTypeCode)
     if (!alreadySelected && businessSpaceTypes.length >= 2) {
-      setError(isThai ? 'เลือกได้สูงสุด 2 ลักษณะพื้นที่' : 'Choose up to 2 space types.')
+      showWizardError(2, isThai ? 'เลือกได้สูงสุด 2 ลักษณะพื้นที่' : 'Choose up to 2 space types.')
       return
     }
 
@@ -381,46 +410,47 @@ const Page = () => {
       return compatible
     })
     setBusinessSpaceTypes(nextSpaceTypes)
-    setError('')
+    clearWizardError()
   }
 
   const toggleUseCase = (code: UseCaseCode) => {
     setSelectedUseCases((current) =>
       current.includes(code) ? current.filter((item) => item !== code) : [...current, code]
     )
-    setError('')
+    clearWizardError()
   }
 
   const toggleOffer = (code: OfferTypeCode) => {
     setSelectedOffers((current) =>
       current.includes(code) ? current.filter((item) => item !== code) : [...current, code]
     )
-    setError('')
+    clearWizardError()
   }
 
   const handleSubmitForm = async (formData: FormData) => {
+    clearListingFormErrors()
     if (!selectedChannel) {
-      setError(isThai ? 'กรุณาเลือกหมวดหลักในข้อ 1' : 'Choose a main category in section 1.')
+      showWizardError(1, isThai ? 'กรุณาเลือกหมวดหลักในข้อ 1' : 'Choose a main category in section 1.')
       return
     }
     if (!propertyType || !selectedPropertyType) {
-      setError(isThai ? 'กรุณาเลือกประเภททรัพย์ในข้อ 2' : 'Choose a property type in section 2.')
+      showWizardError(2, isThai ? 'กรุณาเลือกประเภททรัพย์ในข้อ 2' : 'Choose a property type in section 2.')
       return
     }
     if (selectedPropertyType === 'apartment' && !accommodationModel) {
-      setError(isThai ? 'กรุณาเลือกรูปแบบอพาร์ตเมนต์ในข้อ 2' : 'Choose the apartment model in section 2.')
+      showWizardError(2, isThai ? 'กรุณาเลือกรูปแบบอพาร์ตเมนต์ในข้อ 2' : 'Choose the apartment model in section 2.')
       return
     }
     if (propertyType.supportsBusinessSpaceType && !businessSpaceTypes.length) {
-      setError(isThai ? 'กรุณาเลือกรูปแบบพื้นที่ค้าขาย' : 'Choose a business space type.')
+      showWizardError(2, isThai ? 'กรุณาเลือกรูปแบบพื้นที่ค้าขาย' : 'Choose a business space type.')
       return
     }
     if (!selectedOffers.length) {
-      setError(isThai ? 'กรุณาเลือกอย่างน้อยหนึ่งรูปแบบการประกาศ' : 'Choose at least one listing option.')
+      showWizardError(3, isThai ? 'กรุณาเลือกอย่างน้อยหนึ่งรูปแบบการประกาศ' : 'Choose at least one listing option.')
       return
     }
     if (!title.trim()) {
-      setError(isThai ? 'กรุณากรอกหัวข้อประกาศ' : 'Enter a listing title.')
+      showWizardError(4, isThai ? 'กรุณากรอกหัวข้อประกาศ' : 'Enter a listing title.', 'listingTitle')
       return
     }
 
@@ -465,7 +495,7 @@ const Page = () => {
 
       <div className="h-px w-16 bg-gradient-to-r from-orange-400 via-orange-200 to-transparent" />
 
-      <Form id="add-listing-form" action={handleSubmitForm} className="space-y-7">
+      <Form id="add-listing-form" action={handleSubmitForm} noValidate className="space-y-7">
         <input type="hidden" name="property_group_code" value={selectedGroup} />
         <input type="hidden" name="discovery_channel_code" value={selectedChannel} />
         <input type="hidden" name="property_type_code" value={selectedPropertyType} />
@@ -501,6 +531,8 @@ const Page = () => {
           }
           pendingText={isThai ? 'ยังไม่ได้เลือกหมวดหลัก' : 'No main category selected yet'}
           tone={selectedChannel || undefined}
+          invalid={errorSection === 1}
+          errorText={errorSection === 1 ? error : ''}
         >
           <div className="grid gap-3 min-[744px]:grid-cols-3">
             {discoveryChannels.map((channel) => (
@@ -537,6 +569,8 @@ const Page = () => {
                 : 'Choose a main category in section 1 first'
           }
           tone={selectedChannel || undefined}
+          invalid={errorSection === 2}
+          errorText={errorSection === 2 ? error : ''}
           description={
             selectedChannel === 'business'
               ? isThai
@@ -690,7 +724,7 @@ const Page = () => {
                           type="button"
                           onClick={() => {
                             setAccommodationModel(option.code)
-                            setError('')
+                            clearWizardError()
                           }}
                           className={`flex min-h-20 items-start gap-3 rounded-xl border px-3 py-3 text-left transition ${
                             selected
@@ -739,6 +773,8 @@ const Page = () => {
                 : 'Choose a property type in section 2 first'
           }
           tone={selectedChannel || undefined}
+          invalid={errorSection === 3}
+          errorText={errorSection === 3 ? error : ''}
           title={
             selectedChannel === 'rooms' || hasEventBooth
               ? isThai
@@ -867,6 +903,8 @@ const Page = () => {
           statusText={title.trim() ? (isThai ? `กรอกแล้ว: ${title.trim()}` : `Added: ${title.trim()}`) : ''}
           pendingText={isThai ? 'ยังไม่ได้กรอกหัวข้อประกาศ' : 'Listing title has not been added yet'}
           tone={selectedChannel || undefined}
+          invalid={errorSection === 4}
+          errorText={errorSection === 4 ? error : ''}
           description={
             isThai
               ? 'เขียนข้อมูลสั้น กระชับ และเจาะจง รายละเอียดอื่นเพิ่มได้ในขั้นถัดไป'
@@ -878,7 +916,10 @@ const Page = () => {
               <Input
                 name="listingTitle"
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => {
+                  setTitle(event.target.value)
+                  if (errorSection === 4) clearWizardError()
+                }}
                 placeholder={
                   isThai
                     ? 'เช่น ให้เช่าอาคารพาณิชย์ 3 ชั้น ใกล้ BTS อ่อนนุช เปิดร้านอาหารได้'
@@ -927,15 +968,6 @@ const Page = () => {
             </FormItem>
           </div>
         </WizardSection>
-
-        {error ? (
-          <div
-            role="alert"
-            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300"
-          >
-            {error}
-          </div>
-        ) : null}
       </Form>
 
       <ListingAuthCheckpoint
@@ -955,6 +987,8 @@ const WizardSection = ({
   statusText,
   pendingText,
   tone,
+  invalid = false,
+  errorText,
   children,
 }: {
   number: string
@@ -964,6 +998,8 @@ const WizardSection = ({
   statusText: string
   pendingText: string
   tone?: DiscoveryChannelCode
+  invalid?: boolean
+  errorText?: string
   children: React.ReactNode
 }) => {
   const completedBorder =
@@ -988,18 +1024,28 @@ const WizardSection = ({
 
   return (
     <section
+      id={`listing-wizard-section-${number}`}
+      data-listing-section-invalid={invalid || undefined}
       className={`overflow-hidden rounded-[28px] border bg-white shadow-[0_24px_80px_-48px_rgba(15,23,42,0.32)] transition-colors dark:bg-neutral-900 ${
-        complete ? completedBorder : 'border-neutral-200/80 dark:border-neutral-800'
+        invalid
+          ? 'border-red-400 shadow-[0_24px_70px_-42px_rgba(220,38,38,0.42)] dark:border-red-700'
+          : complete
+            ? completedBorder
+            : 'border-neutral-200/80 dark:border-neutral-800'
       }`}
     >
       <div
         className={`flex items-start gap-3 border-b px-4 py-4 transition-colors min-[744px]:gap-4 min-[744px]:px-7 min-[744px]:py-5 ${
-          complete ? completedHeader : 'border-neutral-100 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900'
+          invalid
+            ? 'border-red-100 bg-red-50 dark:border-red-900/70 dark:bg-red-950/25'
+            : complete
+              ? completedHeader
+              : 'border-neutral-100 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900'
         }`}
       >
         <span
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white transition-colors ${
-            complete ? completedNumber : 'bg-neutral-900 dark:bg-white dark:text-neutral-900'
+            invalid ? 'bg-red-600' : complete ? completedNumber : 'bg-neutral-900 dark:bg-white dark:text-neutral-900'
           }`}
         >
           {number}
@@ -1014,17 +1060,23 @@ const WizardSection = ({
           <span
             aria-live="polite"
             className={`mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 font-sarabun text-xs font-medium ${
-              complete
-                ? completedStatus
-                : 'bg-neutral-200/70 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
+              invalid
+                ? 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300'
+                : complete
+                  ? completedStatus
+                  : 'bg-neutral-200/70 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
             }`}
           >
-            {complete ? (
+            {invalid ? (
+              <ExclamationCircleIcon className="size-4 shrink-0" />
+            ) : complete ? (
               <CheckCircleIcon className="size-4 shrink-0" />
             ) : (
               <span className="size-1.5 shrink-0 rounded-full bg-current opacity-50" />
             )}
-            <span className="truncate">{complete ? statusText : pendingText}</span>
+            <span className={invalid ? '' : 'truncate'}>
+              {invalid ? errorText : complete ? statusText : pendingText}
+            </span>
           </span>
         </span>
       </div>

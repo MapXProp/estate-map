@@ -1,6 +1,10 @@
 'use client'
 
 import ListingDraftCloudSync from '@/components/add-listing/ListingDraftCloudSync'
+import {
+  ListingFlowProgressProvider,
+  useListingFlowProgress,
+} from '@/components/add-listing/ListingFlowProgressContext'
 import RequireAuth from '@/components/auth/RequireAuth'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ButtonPrimary from '@/shared/ButtonPrimary'
@@ -13,8 +17,8 @@ import React from 'react'
 const steps = [
   { number: 1, labelTh: 'ประเภททรัพย์', labelEn: 'Property type' },
   { number: 2, labelTh: 'รายละเอียด', labelEn: 'Details' },
-  { number: 3, labelTh: 'รูปภาพและราคา', labelEn: 'Photos & price' },
-  { number: 4, labelTh: 'ตรวจสอบ', labelEn: 'Review' },
+  { number: 3, labelTh: 'สื่อ ราคา และติดต่อ', labelEn: 'Media, price & contact' },
+  { number: 4, labelTh: 'ตรวจและส่ง', labelEn: 'Review & submit' },
 ]
 
 const getStepIndex = (pathname: string) => {
@@ -34,21 +38,23 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   }, [pathname])
 
   const content = (
-    <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
-      <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
-        <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
-          <SellerGuide />
+    <ListingFlowProgressProvider>
+      <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
+        <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
+          <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
+            <SellerGuide />
 
-          <main className="min-w-0">
-            <ProgressHeader pathname={pathname} />
-            <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-[#e1dcd3] min-[744px]:bg-white min-[744px]:p-8 min-[744px]:shadow-[0_30px_80px_-55px_rgba(45,37,27,0.38)] lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900">
-              {children}
-            </div>
-            <Pagination pathname={pathname} />
-          </main>
+            <main className="min-w-0">
+              <ProgressHeader pathname={pathname} />
+              <div className="mt-3 flex w-full flex-col gap-y-4 leading-relaxed min-[744px]:mt-5 min-[744px]:gap-y-8 min-[744px]:rounded-[30px] min-[744px]:border min-[744px]:border-[#e1dcd3] min-[744px]:bg-white min-[744px]:p-8 min-[744px]:shadow-[0_30px_80px_-55px_rgba(45,37,27,0.38)] lg:p-10 dark:min-[744px]:border-neutral-800 dark:min-[744px]:bg-neutral-900">
+                {children}
+              </div>
+              <Pagination pathname={pathname} />
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </ListingFlowProgressProvider>
   )
 
   return index === 1 ? (
@@ -224,7 +230,9 @@ const SellerGuide = () => {
 const Pagination = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
   const { locale } = usePreferences()
+  const { mediaProgress } = useListingFlowProgress()
   const isThai = locale === 'th'
+  const isMediaBusy = index === 3 && (mediaProgress.phase === 'uploading' || mediaProgress.phase === 'saving')
 
   if (index === steps.length) {
     return null
@@ -241,23 +249,56 @@ const Pagination = ({ pathname }: { pathname: string }) => {
       }`}
     >
       {index > 1 ? (
-        <ButtonSecondary type="button" href={backHref} className="h-12 px-5 min-[744px]:h-auto">
-          {isThai ? 'ย้อนกลับ' : 'Back'}
-        </ButtonSecondary>
+        isMediaBusy ? (
+          <ButtonSecondary type="button" disabled className="h-12 px-5 min-[744px]:h-auto">
+            {isThai ? 'ย้อนกลับ' : 'Back'}
+          </ButtonSecondary>
+        ) : (
+          <ButtonSecondary type="button" href={backHref} className="h-12 px-5 min-[744px]:h-auto">
+            {isThai ? 'ย้อนกลับ' : 'Back'}
+          </ButtonSecondary>
+        )
       ) : null}
       <ButtonPrimary
         type="submit"
         form="add-listing-form"
+        disabled={isMediaBusy}
+        aria-busy={isMediaBusy}
         className="h-12 w-full text-base font-semibold shadow-[0_12px_28px_-14px_rgba(18,63,50,0.75)] min-[744px]:h-auto min-[744px]:w-auto min-[744px]:min-w-52"
       >
-        {index === steps.length - 1
-          ? isThai
-            ? 'ตรวจสอบประกาศ'
-            : 'Review listing'
-          : isThai
-            ? 'ไปขั้นถัดไป'
-            : 'Continue'}
-        <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" />
+        {index === 3 ? (
+          <>
+            {isMediaBusy ? (
+              <span className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white dark:border-neutral-400 dark:border-t-neutral-950" />
+            ) : null}
+            {mediaProgress.phase === 'uploading'
+              ? isThai
+                ? `กำลังอัปโหลด ${mediaProgress.completedCount}/${mediaProgress.totalCount}`
+                : `Uploading ${mediaProgress.completedCount}/${mediaProgress.totalCount}`
+              : mediaProgress.phase === 'saving'
+                ? isThai
+                  ? 'กำลังเปิดหน้าตรวจสอบ...'
+                  : 'Opening review...'
+                : mediaProgress.pendingCount
+                  ? isThai
+                    ? `อัปโหลด ${mediaProgress.pendingCount} ไฟล์และตรวจสอบ`
+                    : `Upload ${mediaProgress.pendingCount} files & review`
+                  : isThai
+                    ? 'บันทึกและตรวจสอบประกาศ'
+                    : 'Save & review listing'}
+          </>
+        ) : index === steps.length - 1 ? (
+          isThai ? (
+            'ตรวจสอบประกาศ'
+          ) : (
+            'Review listing'
+          )
+        ) : isThai ? (
+          'ไปขั้นถัดไป'
+        ) : (
+          'Continue'
+        )}
+        {!isMediaBusy ? <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" /> : null}
       </ButtonPrimary>
     </div>
   )
