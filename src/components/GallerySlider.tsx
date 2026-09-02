@@ -1,7 +1,7 @@
 'use client'
 
-import { ButtonCircle } from '@/shared/Button'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { ButtonCircle } from '@/shared/Button'
 import { variants } from '@/utils/animationVariants'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
@@ -29,6 +29,11 @@ interface GallerySliderProps {
   autoPlay?: boolean
   autoPlayInterval?: number
   autoPlayDelay?: number
+  hoverAutoPlay?: boolean
+  hoverAutoPlayInterval?: number
+  hoverAutoPlayDelay?: number
+  hoverAutoPlayLimit?: number
+  instantImageChange?: boolean
   openInNewTab?: boolean
   emptyFallback?: ReactNode
 }
@@ -44,6 +49,11 @@ export default function GallerySlider({
   autoPlay = false,
   autoPlayInterval = 2500,
   autoPlayDelay = 0,
+  hoverAutoPlay = false,
+  hoverAutoPlayInterval = 1800,
+  hoverAutoPlayDelay = 900,
+  hoverAutoPlayLimit = 4,
+  instantImageChange = false,
   openInNewTab = false,
   emptyFallback,
 }: GallerySliderProps) {
@@ -61,6 +71,7 @@ export default function GallerySlider({
   const [isManuallyPaused, setIsManuallyPaused] = useState(false)
   const [failedImage, setFailedImage] = useState('')
   const images = galleryImgs
+  const hoverPreviewImageCount = Math.min(images.length, Math.max(1, hoverAutoPlayLimit))
 
   const pauseAfterInteraction = useCallback(() => {
     setIsManuallyPaused(true)
@@ -173,6 +184,46 @@ export default function GallerySlider({
     showNextImage,
   ])
 
+  useEffect(() => {
+    if (
+      !hoverAutoPlay ||
+      !isHovered ||
+      hoverPreviewImageCount < 2 ||
+      !isVisible ||
+      !isPageVisible ||
+      prefersReducedMotion ||
+      isManuallyPaused
+    ) {
+      return
+    }
+
+    const showNextHoverImage = () => {
+      setDirection(0)
+      setIndex((currentIndex) => (currentIndex + 1) % hoverPreviewImageCount)
+    }
+
+    let intervalId: ReturnType<typeof setInterval> | undefined
+    const startTimer = setTimeout(() => {
+      showNextHoverImage()
+      intervalId = setInterval(showNextHoverImage, hoverAutoPlayInterval)
+    }, hoverAutoPlayDelay)
+
+    return () => {
+      clearTimeout(startTimer)
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [
+    hoverAutoPlay,
+    hoverAutoPlayDelay,
+    hoverAutoPlayInterval,
+    hoverPreviewImageCount,
+    isHovered,
+    isManuallyPaused,
+    isPageVisible,
+    isVisible,
+    prefersReducedMotion,
+  ])
+
   useEffect(
     () => () => {
       if (manualPauseTimerRef.current) clearTimeout(manualPauseTimerRef.current)
@@ -183,6 +234,22 @@ export default function GallerySlider({
   let currentImage = images[index]
   const currentImageKey = typeof currentImage === 'string' ? currentImage : currentImage?.src || ''
   const hasCurrentImage = Boolean(currentImageKey && failedImage !== currentImageKey)
+  const currentImageContent = hasCurrentImage ? (
+    <Image
+      src={currentImage}
+      fill
+      alt="listing card gallery"
+      className={clsx(`rounded-xl object-cover`, imageClass)}
+      onLoad={() => setLoaded(true)}
+      onError={() => {
+        setLoaded(false)
+        setFailedImage(currentImageKey)
+      }}
+      sizes="(max-width: 1025px) 100vw, 25vw"
+    />
+  ) : (
+    emptyFallback
+  )
 
   return (
     <MotionConfig
@@ -198,7 +265,13 @@ export default function GallerySlider({
         }}
         className={clsx(`group/cardGallerySlider group relative`, className)}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseLeave={() => {
+          setIsHovered(false)
+          if (hoverAutoPlay) {
+            setDirection(0)
+            setIndex(0)
+          }
+        }}
         onFocusCapture={() => setIsFocused(true)}
         onBlurCapture={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false)
@@ -214,34 +287,25 @@ export default function GallerySlider({
             rel={openInNewTab ? 'noopener noreferrer' : undefined}
             className={clsx(`relative flex items-center justify-center`, ratioClass)}
           >
-            <AnimatePresence initial={false} custom={direction}>
-              <motion.div
-                key={index}
-                custom={direction}
-                variants={variants(340, 1)}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                className="absolute inset-0"
-              >
-                {hasCurrentImage ? (
-                  <Image
-                    src={currentImage}
-                    fill
-                    alt="listing card gallery"
-                    className={clsx(`rounded-xl object-cover`, imageClass)}
-                    onLoad={() => setLoaded(true)}
-                    onError={() => {
-                      setLoaded(false)
-                      setFailedImage(currentImageKey)
-                    }}
-                    sizes="(max-width: 1025px) 100vw, 25vw"
-                  />
-                ) : (
-                  emptyFallback
-                )}
-              </motion.div>
-            </AnimatePresence>
+            {instantImageChange ? (
+              <div key={currentImageKey || index} className="absolute inset-0">
+                {currentImageContent}
+              </div>
+            ) : (
+              <AnimatePresence initial={false} custom={direction}>
+                <motion.div
+                  key={index}
+                  custom={direction}
+                  variants={variants(340, 1)}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="absolute inset-0"
+                >
+                  {currentImageContent}
+                </motion.div>
+              </AnimatePresence>
+            )}
           </Link>
         </div>
 

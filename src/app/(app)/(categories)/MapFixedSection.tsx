@@ -54,6 +54,7 @@ const MapFixedSection = ({
   onSearchArea,
   initialMapCenter,
   initialMapZoom,
+  resultCount,
 }: Props) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const [mobileSheetState, setMobileSheetState] = useState<MobileMapSheetState>('collapsed')
@@ -166,7 +167,7 @@ const MapFixedSection = ({
 
   const sheetStyle = {
     '--mobile-map-sheet-height': `${mobileSheetHeight}px`,
-    '--mobile-map-preload-height': `${Math.max(252, getMobileSheetHeights().open - 48)}px`,
+    '--mobile-map-preload-height': 'max(252px, calc(100dvh - 48px))',
   } as CSSProperties
   const mobileMapControlsVisible = mobileSheetState === 'open'
   const shouldRenderMap = !splitAtLg || listingType !== 'RealEstates' || hasRequestedMap
@@ -199,11 +200,9 @@ const MapFixedSection = ({
     <div
       className={
         splitAtLg
-          ? `fixed inset-x-0 bottom-0 h-[var(--mobile-map-sheet-height)] lg:static lg:z-0 lg:h-auto lg:flex-[38_1_0%] xl:flex-[32_1_0%] ${
+          ? `fixed inset-x-0 bottom-0 h-[var(--mobile-map-sheet-height)] lg:static lg:z-0 lg:h-auto lg:flex-[42_1_0%] xl:flex-[40_1_0%] ${
               mobileSheetState === 'open' ? 'z-50' : 'z-20'
-            } ${
-              isDraggingSheet ? '' : 'transition-[height] duration-300 ease-out'
-            }`
+            } ${isDraggingSheet ? '' : 'transition-[height] duration-300 ease-out'}`
           : 'fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0'
       }
       style={splitAtLg ? sheetStyle : undefined}
@@ -211,7 +210,7 @@ const MapFixedSection = ({
       <div
         className={
           splitAtLg
-            ? `relative size-full overflow-hidden bg-white lg:sticky lg:top-0 lg:h-[calc(100dvh-5rem)] lg:rounded-none lg:border-0 lg:shadow-none ${
+            ? `relative size-full overflow-hidden bg-white lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)] lg:rounded-none lg:border-0 lg:shadow-none ${
                 mobileSheetState === 'open'
                   ? 'rounded-none border-0 shadow-none'
                   : 'rounded-t-[24px] border border-x-0 border-b-0 border-[#dbe7e2] shadow-[0_-10px_30px_rgba(18,63,50,0.14)]'
@@ -222,7 +221,7 @@ const MapFixedSection = ({
         {splitAtLg && listingType === 'RealEstates' && (
           <button
             type="button"
-            className="absolute inset-x-0 top-0 z-30 flex h-11 touch-none select-none flex-col items-center justify-center border-b border-[#dfe9e5] bg-white/95 px-4 backdrop-blur lg:hidden"
+            className="absolute inset-x-0 top-0 z-30 flex h-11 touch-none flex-col items-center justify-center border-b border-[#dfe9e5] bg-white/95 px-4 backdrop-blur select-none lg:hidden"
             aria-label={mobileSheetState === 'collapsed' ? 'เปิดแผนที่' : 'ปิดแผนที่'}
             aria-expanded={mobileSheetState === 'open'}
             onPointerDown={handleSheetPointerDown}
@@ -236,6 +235,11 @@ const MapFixedSection = ({
               <span className="flex items-center gap-2">
                 <MapIcon className="size-4.5" aria-hidden="true" />
                 แผนที่
+                {typeof resultCount === 'number' && (
+                  <span className="rounded-full bg-[#edf6f1] px-2 py-0.5 text-[11px] font-semibold text-[#176b50]">
+                    {resultCount.toLocaleString('th-TH')} รายการ
+                  </span>
+                )}
               </span>
               <span className="flex items-center gap-1 text-xs font-normal text-neutral-500">
                 {mobileSheetState === 'collapsed' ? 'ลากขึ้นเพื่อดูเต็มจอ' : 'ลากลงเพื่อย่อแผนที่'}

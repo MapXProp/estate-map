@@ -1,7 +1,6 @@
 import SectionGridHasMap from '@/app/(app)/(categories)/(real-estate)/real-estate-categories-map/[[...handle]]/SectionGridHasMap'
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
-import { getPropertyMapFilterOptions } from '@/data/propertyMapFilters'
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -34,18 +33,16 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
   const { location, query } = await getMapSearch(searchParams)
   const category = await getRealEstateCategoryByHandle('all')
   const listings = await getRealEstateListings()
-  const filterOptions = await getPropertyMapFilterOptions()
 
   if (!category?.id) {
     return redirect('/real-estate-categories/all')
   }
 
   return (
-    <div className="container lg:max-w-none lg:pe-0 lg:ps-5 xl:ps-8 2xl:ps-10">
+    <div className="container lg:max-w-none lg:ps-5 lg:pe-0 xl:ps-8 2xl:ps-10">
       <SectionGridHasMap
         listings={listings}
         category={category}
-        filterOptions={filterOptions}
         query={query}
         initialMapCenter={location ? { lat: location.latitude, lon: location.longitude } : undefined}
         initialMapZoom={location?.zoom}

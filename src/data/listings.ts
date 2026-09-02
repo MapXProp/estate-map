@@ -20,6 +20,7 @@ import airlineLogo3 from '@/images/flights/logo3.png'
 import airlineLogo4 from '@/images/flights/logo4.png'
 import { getAuthApiUrl } from '@/lib/auth'
 import type { PropertySearchListing } from '@/lib/propertySearch'
+import { getPropertyType, normalizeLegacyPropertyType } from './propertyTaxonomy'
 
 //  STAY LISTING  //
 export async function getStayListings() {
@@ -1086,6 +1087,12 @@ const propertyTypeLabels: Record<string, string> = {
   hotel_resort: 'โรงแรม / รีสอร์ต',
 }
 
+const getPropertyTypeLabel = (code: string) => {
+  if (propertyTypeLabels[code]) return propertyTypeLabels[code]
+  const normalizedCode = normalizeLegacyPropertyType(code)
+  return getPropertyType(normalizedCode)?.nameTh || code || 'อสังหาริมทรัพย์'
+}
+
 const roomPropertyTypes = new Set(['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'])
 const mixedUsePropertyTypes = new Set(['shophouse', 'home_office', 'mixed_use'])
 const commercialPropertyTypes = new Set([
@@ -1116,10 +1123,29 @@ const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup
 const formatListingPrice = (amount?: number, suffix = '') =>
   amount && amount > 0 ? `฿${new Intl.NumberFormat('th-TH').format(amount)}${suffix}` : 'สอบถามราคา'
 
+const getListingOfferTypes = (listing: PropertySearchListing) => {
+  const offers = new Set<string>()
+  const rawListingType = listing.listing_type?.toLowerCase() || ''
+
+  if (rawListingType.includes('sale')) offers.add('sale')
+  if (rawListingType.includes('rent')) offers.add('rent')
+  if (rawListingType.includes('sublease')) offers.add('sublease')
+  if (rawListingType.includes('business_transfer')) offers.add('business_transfer')
+  if (rawListingType.includes('event')) offers.add('event_booking')
+  if (listing.sale_price) offers.add('sale')
+  if (listing.rent_price_monthly) offers.add('rent')
+
+  return [...offers]
+}
+
 export const toRealEstateListing = (listing: PropertySearchListing) => {
   const group = getListingGroup(listing)
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
+  const galleryImgs = [...new Set([listing.primary_image_url, ...(listing.image_urls || [])].filter(Boolean))].slice(
+    0,
+    4
+  )
   const facts = [
     listing.land_area_sqm && group === 'land'
       ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
@@ -1135,9 +1161,9 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     handle: listing.slug || listing.public_listing_id,
     description: listing.description || '',
     date: listing.published_at || '',
-    listingCategory: propertyTypeLabels[listing.property_type_code] || listing.property_type_code || 'อสังหาริมทรัพย์',
-    featuredImage: listing.primary_image_url || '',
-    galleryImgs: listing.primary_image_url ? [listing.primary_image_url] : [],
+    listingCategory: isEvent ? 'พื้นที่ออกบูธ' : getPropertyTypeLabel(listing.property_type_code),
+    featuredImage: galleryImgs[0] || '',
+    galleryImgs,
     like: false,
     address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
     reviewStart: 0,
@@ -1158,6 +1184,13 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     metadataSummary: facts.join(' · '),
     isVerified: listing.is_verified,
     isOwnerDirect: listing.source_type === 'owner',
+    propertyTypeCode: listing.property_type_code,
+    offerTypes: getListingOfferTypes(listing),
+    salePrice: listing.sale_price || 0,
+    rentPriceMonthly: listing.rent_price_monthly || 0,
+    usableAreaSqm: listing.usable_area_sqm || 0,
+    landAreaSqm: listing.land_area_sqm || 0,
+    petAllowed: listing.pet_allowed,
     group,
     offer: isEvent ? 'เปิดจอง' : isRental ? 'เช่า' : 'ขาย',
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
@@ -1222,6 +1255,13 @@ export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings
   offer?: string
   badge?: string
   priceLabel?: string
+  propertyTypeCode?: string
+  offerTypes?: string[]
+  salePrice?: number
+  rentPriceMonthly?: number
+  usableAreaSqm?: number
+  landAreaSqm?: number
+  petAllowed?: boolean
 }
 
 // FLIGHT LISTING //

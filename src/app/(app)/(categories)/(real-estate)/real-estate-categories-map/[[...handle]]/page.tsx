@@ -1,6 +1,5 @@
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
-import { getPropertyMapFilterOptions } from '@/data/propertyMapFilters'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import SectionGridHasMap from './SectionGridHasMap'
@@ -30,15 +29,14 @@ const Page = async ({
   const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim() || ''
   const category = await getRealEstateCategoryByHandle(handle?.[0])
   const listings = await getRealEstateListings()
-  const filterOptions = await getPropertyMapFilterOptions()
 
   if (!category?.id) {
     return redirect('/real-estate-categories/all')
   }
 
   return (
-    <div className="container lg:max-w-none lg:pe-0 lg:ps-5 xl:ps-8 2xl:ps-10">
-      <SectionGridHasMap listings={listings} category={category} filterOptions={filterOptions} query={query} />
+    <div className="container lg:max-w-none lg:ps-5 lg:pe-0 xl:ps-8 2xl:ps-10">
+      <SectionGridHasMap listings={listings} category={category} query={query} />
     </div>
   )
 }

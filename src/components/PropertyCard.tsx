@@ -23,8 +23,7 @@ const getTabletNavigationServerSnapshot = () => false
 interface Props {
   className?: string
   data: TRealEstateListing
-  autoPlayGallery?: boolean
-  autoPlayDelay?: number
+  hoverPreviewGallery?: boolean
   compactMobile?: boolean
   openInNewTab?: boolean
   openInNewTabOnMobile?: boolean
@@ -34,8 +33,7 @@ interface Props {
 const PropertyCard: FC<Props> = ({
   className = '',
   data,
-  autoPlayGallery = false,
-  autoPlayDelay = 0,
+  hoverPreviewGallery = false,
   compactMobile = false,
   openInNewTab = true,
   openInNewTabOnMobile = false,
@@ -61,6 +59,8 @@ const PropertyCard: FC<Props> = ({
     metadataSummary,
     isVerified,
     isOwnerDirect,
+    group,
+    offer,
   } = data
 
   const listingHref = `/real-estate-listings/${listingHandle}`
@@ -71,6 +71,30 @@ const PropertyCard: FC<Props> = ({
   )
   const shouldOpenInNewTab = openInNewTab && (isTabletOrLarger || openInNewTabOnMobile)
   const detailHref = shouldOpenInNewTab ? listingHref : `${listingHref}?view=full`
+  const categoryTone =
+    group === 'commercial'
+      ? 'bg-[#fff3e8] text-[#9a4e16] dark:bg-orange-950/45 dark:text-orange-200'
+      : group === 'land'
+        ? 'bg-[#eef6e8] text-[#3f6b28] dark:bg-lime-950/45 dark:text-lime-200'
+        : group === 'rooms'
+          ? 'bg-[#f1effb] text-[#5f4e91] dark:bg-violet-950/45 dark:text-violet-200'
+          : group === 'mixed_use'
+            ? 'bg-[#eef3f8] text-[#385f7a] dark:bg-sky-950/45 dark:text-sky-200'
+            : 'bg-[#edf6f1] text-[#176b50] dark:bg-emerald-950/45 dark:text-emerald-200'
+
+  const propertyFacts = metadataSummary
+    ? metadataSummary
+    : group === 'land'
+      ? acreage
+        ? `${Math.round(acreage / 4).toLocaleString('th-TH')} ตร.ว.`
+        : ''
+      : [
+          bedrooms ? `${bedrooms} ห้องนอน` : '',
+          bathrooms ? `${bathrooms} ห้องน้ำ` : '',
+          acreage ? `${Number(acreage).toLocaleString('th-TH')} ตร.ม.` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ')
 
   const rememberReturnLocation = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target
@@ -91,9 +115,11 @@ const PropertyCard: FC<Props> = ({
           ratioClass="aspect-w-4 aspect-h-3"
           galleryImgs={galleryImgs}
           href={detailHref}
-          autoPlay={autoPlayGallery}
-          autoPlayInterval={2500}
-          autoPlayDelay={autoPlayDelay}
+          hoverAutoPlay={hoverPreviewGallery}
+          hoverAutoPlayDelay={1200}
+          hoverAutoPlayInterval={2000}
+          hoverAutoPlayLimit={4}
+          instantImageChange
           openInNewTab={shouldOpenInNewTab}
           emptyFallback={<ListingImageFallback />}
         />
@@ -122,11 +148,26 @@ const PropertyCard: FC<Props> = ({
 
   const renderContent = () => {
     return (
-      <div className={clsx('flex flex-col', compactMobile ? 'mt-1 gap-y-1 p-1.5 sm:p-2 lg:mt-2 lg:gap-y-2 lg:p-3' : 'mt-2 gap-y-2 p-3')}>
+      <div
+        className={clsx(
+          'flex flex-col',
+          compactMobile ? 'mt-1 gap-y-1 p-1.5 sm:p-2 lg:mt-2 lg:gap-y-2 lg:p-3' : 'mt-2 gap-y-2 p-3'
+        )}
+      >
         <div className="flex flex-col gap-y-2">
+          <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold">
+            <span className={`max-w-[70%] truncate rounded-full px-2 py-1 ${categoryTone}`}>{listingCategory}</span>
+            {offer && (
+              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-1 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                {offer}
+              </span>
+            )}
+          </div>
           {(isVerified || isOwnerDirect) && (
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
-              {isOwnerDirect && <span className="rounded-full bg-[#edf5f1] px-2 py-1 text-[#176b50]">เจ้าของขายเอง</span>}
+              {isOwnerDirect && (
+                <span className="rounded-full bg-[#edf5f1] px-2 py-1 text-[#176b50]">เจ้าของขายเอง</span>
+              )}
               {isVerified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#edf5f1] px-2 py-1 text-[#176b50]">
                   <CheckCircle2 className="size-3" /> ผู้ติดต่อเชื่อถือได้
@@ -136,21 +177,11 @@ const PropertyCard: FC<Props> = ({
           )}
           <div
             className={clsx(
-              'flex flex-wrap gap-1 text-sm text-neutral-500 dark:text-neutral-400',
-              compactMobile && listingKind !== 'event_booth' && 'max-lg:hidden'
+              'flex min-h-4 items-center text-neutral-500 dark:text-neutral-400',
+              compactMobile ? 'text-xs lg:text-sm' : 'text-sm'
             )}
           >
-            {metadataSummary ? (
-              <span className="line-clamp-1">{metadataSummary}</span>
-            ) : (
-              <>
-                <span>{bedrooms} beds</span>
-                <span>·</span>
-                <span>{bathrooms} baths</span>
-                <span>·</span>
-                <span>{acreage} Sq. Fit</span>
-              </>
-            )}
+            <span className="line-clamp-1">{propertyFacts || 'ดูรายละเอียดพื้นที่'}</span>
           </div>
 
           <div className="flex items-center gap-x-2">
@@ -173,10 +204,15 @@ const PropertyCard: FC<Props> = ({
             {address}
           </div>
         </div>
-        <div className={clsx('w-14 border-b border-neutral-100 dark:border-neutral-800', compactMobile && 'max-lg:hidden')}></div>
+        <div
+          className={clsx('w-14 border-b border-neutral-100 dark:border-neutral-800', compactMobile && 'max-lg:hidden')}
+        ></div>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}> {price}</span>
+            <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}>
+              {' '}
+              {price}
+            </span>
           </div>
           {!!reviewStart && (
             <span className={compactMobile ? 'max-lg:hidden' : ''}>

@@ -66,6 +66,7 @@ export type PropertySearchListing = {
   space_type_codes?: string[]
   allowed_business_types?: string[]
   primary_image_url: string
+  image_urls?: string[]
   event_name: string
   event_floor_label: string
   event_round_count: number
