@@ -9,7 +9,7 @@ import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
 import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BellIcon, CheckIcon, ChevronRightIcon, ClipboardDocumentCheckIcon, GlobeAltIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon } from '@hugeicons/core-free-icons'
+import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon, WinkIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -53,7 +53,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
           <span
             className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
           >
-            <HugeiconsIcon icon={UserIcon} size={18} strokeWidth={1.7} />
+            <HugeiconsIcon icon={WinkIcon} size={19} strokeWidth={1.5} />
           </span>
         </PopoverButton>
 
@@ -68,7 +68,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
           <div className="relative bg-white px-5 py-5 dark:bg-neutral-800">
             <div className="flex items-center gap-3 px-1">
               <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
-                <HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.7} />
+                <HugeiconsIcon icon={WinkIcon} size={22} strokeWidth={1.5} />
               </span>
 
               <div className="min-w-0 grow">
