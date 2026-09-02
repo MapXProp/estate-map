@@ -5,7 +5,6 @@ import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, House, Store } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -21,7 +20,7 @@ const mobileSites = [
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
     activeTone: 'border-transparent bg-[#f2f8f5] dark:border-transparent dark:bg-emerald-950/35',
     checkTone: 'bg-[#176b50] text-white dark:bg-emerald-200 dark:text-emerald-950',
-    dotTone: 'bg-[#176b50]',
+    markTone: 'text-[#8ED0B7]',
   },
   {
     id: 'rooms',
@@ -34,7 +33,7 @@ const mobileSites = [
     iconTone: 'bg-[#EFF8FD] text-[#2D8FC7] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
     activeTone: 'border-transparent bg-[#E0F2FC] dark:border-transparent dark:bg-[#102b3a]',
     checkTone: 'bg-[#2D8FC7] text-white dark:bg-[#8fd4f4] dark:text-[#102b3a]',
-    dotTone: 'bg-[#2D8FC7]',
+    markTone: 'text-[#8FD4F4]',
   },
   {
     id: 'business',
@@ -47,7 +46,7 @@ const mobileSites = [
     iconTone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
     activeTone: 'border-transparent bg-[#FFE7DC] dark:border-transparent dark:bg-[#351B14]',
     checkTone: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
-    dotTone: 'bg-[#E65A2F]',
+    markTone: 'text-[#FFC2AD]',
   },
 ] as const
 
@@ -63,21 +62,20 @@ const MobilePropertyBrandMark = () => {
         aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
         className="relative grid size-9 shrink-0 place-items-center rounded-[13px] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.20)] data-open:ring-4 data-open:ring-[#176b50]/10"
       >
-        <span className="grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a]/90 bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.18)]">
-          <Image
-            src="/mapxprop-mobile-mark.png"
-            alt=""
-            width={34}
-            height={34}
-            sizes="34px"
-            className="size-[34px] translate-x-[0.5px] -translate-y-[0.5px] object-contain"
-            priority
-          />
+        <span className="relative grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a]/90 bg-[linear-gradient(145deg,#164b3d_0%,#0e3a30_100%)] shadow-[0_5px_14px_rgba(18,63,50,0.18)]">
+          <span
+            aria-hidden="true"
+            className="translate-y-[0.5px] font-serif text-[20px] leading-none font-bold text-white"
+          >
+            M
+          </span>
+          <span
+            aria-hidden="true"
+            className={`absolute end-[5px] top-[5px] font-serif text-[7px] leading-none font-bold ${activeSite.markTone}`}
+          >
+            x
+          </span>
         </span>
-        <span
-          aria-hidden="true"
-          className={`absolute end-1 top-1 size-[7px] rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
-        />
       </PopoverButton>
 
       <PopoverPanel
