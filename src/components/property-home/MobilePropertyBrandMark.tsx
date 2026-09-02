@@ -63,18 +63,20 @@ const MobilePropertyBrandMark = () => {
         aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
         className="relative grid size-10 shrink-0 place-items-center rounded-[14px] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.20)] data-open:ring-4 data-open:ring-[#176b50]/10"
       >
-        <Image
-          src="/mapxprop-mobile-mark.png"
-          alt=""
-          width={40}
-          height={40}
-          sizes="40px"
-          className="size-10 object-contain drop-shadow-[0_4px_10px_rgba(18,63,50,0.16)]"
-          priority
-        />
+        <span className="grid size-10 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a]/90 bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.18)]">
+          <Image
+            src="/mapxprop-mobile-mark.png"
+            alt=""
+            width={48}
+            height={48}
+            sizes="48px"
+            className="size-12 max-w-none object-contain"
+            priority
+          />
+        </span>
         <span
           aria-hidden="true"
-          className={`absolute -end-0.5 -bottom-0.5 size-2.5 rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
+          className={`absolute end-0.5 bottom-0.5 size-2.5 rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
         />
       </PopoverButton>
 
