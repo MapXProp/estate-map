@@ -1,5 +1,6 @@
 'use client'
 
+import BtnLikeIcon from '@/components/BtnLikeIcon'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { getPropertyType } from '@/data/propertyTaxonomy'
@@ -93,6 +94,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
           <HeaderGallery
             images={images}
             media={media}
+            listingIdentifier={listing.slug || listing.public_listing_id}
             gridType={images.length >= 3 ? 'grid2' : 'grid1'}
             propertyDetails={{
               title: listing.title,
@@ -125,9 +127,17 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               ) : null}
             </div>
 
-            <h1 className="mt-4 max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {listing.title}
-            </h1>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <h1 className="max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+                {listing.title}
+              </h1>
+              <BtnLikeIcon
+                listingIdentifier={listing.slug || listing.public_listing_id}
+                className="mt-0.5 shrink-0"
+                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
+                sizeClass="size-11"
+              />
+            </div>
             {fullAddress ? (
               <div className="mt-4 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 sm:text-base dark:text-neutral-300">
                 <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />

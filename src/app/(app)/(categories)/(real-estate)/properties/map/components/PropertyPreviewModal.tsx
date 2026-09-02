@@ -56,6 +56,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                   <Share2 className="size-5" />
                 </button>
                 <BtnLikeIcon
+                  listingIdentifier={listing.handle}
                   isLiked={listing.like}
                   className="relative! end-auto! top-auto!"
                   colorClass="bg-transparent text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"

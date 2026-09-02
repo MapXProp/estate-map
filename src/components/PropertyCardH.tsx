@@ -131,6 +131,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
         {renderContent()}
       </div>
       <BtnLikeIcon
+        listingIdentifier={listingHandle}
         colorClass="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200/70 text-neutral-600 dark:text-neutral-400"
         isLiked={like}
         className="absolute end-5 top-5 sm:end-3 sm:top-3"

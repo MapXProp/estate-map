@@ -1,3 +1,4 @@
+import BtnLikeIcon from '@/components/BtnLikeIcon'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { CalendarDays, CircleHelp, ExternalLink, MapPin, MessageCircle, Phone, ShieldCheck, Store, Users } from 'lucide-react'
@@ -49,9 +50,17 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               <span className="rounded-full bg-[#eef7f3] px-3 py-1 text-sm font-medium text-[#176b50]">เปิดรับจอง</span>
             </div>
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
-            <h1 className="mt-2 text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl">
-              {listing.title}
-            </h1>
+            <div className="mt-2 flex items-start justify-between gap-4">
+              <h1 className="text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl">
+                {listing.title}
+              </h1>
+              <BtnLikeIcon
+                listingIdentifier={listing.slug || listing.public_listing_id}
+                className="shrink-0"
+                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                sizeClass="size-11"
+              />
+            </div>
             <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
               <span>{fullAddress}</span>

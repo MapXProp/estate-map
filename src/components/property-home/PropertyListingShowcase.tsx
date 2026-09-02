@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
@@ -12,6 +13,7 @@ type ListingGroup = 'residential' | 'rooms' | 'mixed_use' | 'commercial' | 'land
 
 export type PrototypeListing = {
   id: number
+  identifier?: string
   group: ListingGroup
   type: string
   offer: string
@@ -409,6 +411,7 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
 
   return {
     id: listing.id,
+    identifier: listing.slug || listing.public_listing_id,
     group,
     type: isEvent
       ? 'พื้นที่ออกบูธ'
@@ -441,9 +444,9 @@ const PropertyListingShowcase = ({
   compact?: boolean
 }) => {
   const { locale } = usePreferences()
+  const savedListings = useSavedListings()
   const isThai = locale === 'th'
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
-  const [likedIds, setLikedIds] = useState<number[]>([])
   const [databaseListings, setDatabaseListings] = useState<PrototypeListing[]>([])
 
   useEffect(() => {
@@ -488,10 +491,6 @@ const PropertyListingShowcase = ({
       : availableListings.filter((listing) => listing.group === activeFilter)
   }, [activeFilter, availableListings])
 
-  const toggleLike = (id: number) => {
-    setLikedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
-  }
-
   return (
     <section
       className={
@@ -534,7 +533,7 @@ const PropertyListingShowcase = ({
         ) : (
           <div className="mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
             {visibleListings.map((listing, index) => {
-              const liked = likedIds.includes(listing.id)
+              const liked = savedListings.isSaved(listing.identifier)
               const displayListing = listing
               return (
                 <article
@@ -575,7 +574,8 @@ const PropertyListingShowcase = ({
                               ? 'บันทึกเป็นรายการโปรด'
                               : 'Save to favorites'
                         }
-                        onClick={() => toggleLike(listing.id)}
+                        disabled={savedListings.isBusy(listing.identifier)}
+                        onClick={() => listing.identifier && void savedListings.toggleSaved(listing.identifier)}
                         className="flex size-10 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition hover:scale-105"
                       >
                         <Heart className={`size-5 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} strokeWidth={1.8} />

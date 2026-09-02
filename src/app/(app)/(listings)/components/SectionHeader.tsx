@@ -18,12 +18,16 @@ interface Props {
     avatarUrl: string
   }
   children?: React.ReactNode
+  listingIdentifier?: string
 }
 
-const SectionHeader = ({ address, host, listingCategory, reviewCount, reviewStart, title, children }: Props) => {
+const SectionHeader = ({ address, host, listingCategory, reviewCount, reviewStart, title, children, listingIdentifier }: Props) => {
   return (
     <div className="relative listingSection__wrap">
-      <LikeSaveBtns className="absolute end-0 -top-2 sm:end-3 sm:top-3 md:end-5 md:top-5" />
+      <LikeSaveBtns
+        listingIdentifier={listingIdentifier}
+        className="absolute end-0 -top-2 sm:end-3 sm:top-3 md:end-5 md:top-5"
+      />
       <div className="flex flex-col items-start gap-y-6">
         <Badge>{listingCategory}</Badge>
         <h1 className="text-2xl font-semibold sm:text-3xl">{title}</h1>

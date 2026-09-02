@@ -1,3 +1,4 @@
+import BtnLikeIcon from '@/components/BtnLikeIcon'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import {
@@ -96,7 +97,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     <div className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 py-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
         {media.length ? (
-          <HeaderGallery images={images} media={media} gridType="grid2" />
+          <HeaderGallery
+            images={images}
+            media={media}
+            listingIdentifier={listing.slug || listing.public_listing_id}
+            gridType="grid2"
+          />
         ) : (
           <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
         )}
@@ -134,9 +140,17 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               )}
             </div>
 
-            <h1 className="mt-4 max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
-              {listing.title}
-            </h1>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <h1 className="max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
+                {listing.title}
+              </h1>
+              <BtnLikeIcon
+                listingIdentifier={listing.slug || listing.public_listing_id}
+                className="mt-0.5 shrink-0"
+                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                sizeClass="size-11"
+              />
+            </div>
             <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
               <span>{fullAddress}</span>

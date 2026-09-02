@@ -113,7 +113,7 @@ const PropertyCard: FC<Props> = ({
               <Eye className="size-4" aria-hidden="true" />
             </Link>
           )}
-          <BtnLikeIcon isLiked={like} className="shrink-0" />
+          <BtnLikeIcon isLiked={like} listingIdentifier={listingHandle} className="shrink-0" />
         </div>
         {saleOff && <SaleOffBadge className="absolute start-3 top-3" />}
       </div>

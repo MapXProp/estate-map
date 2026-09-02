@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/shared/Button'
+import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import ButtonClose from '@/shared/ButtonClose'
 import T from '@/utils/getT'
 import { CloseButton, Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
@@ -497,6 +498,7 @@ const MobilePhotoGallery = ({
   onOpenImage,
   onOpenMedia,
   initiallySaved,
+  listingIdentifier,
 }: {
   images: string[]
   media: PropertyMediaItem[]
@@ -505,8 +507,11 @@ const MobilePhotoGallery = ({
   onOpenImage: (index: number) => void
   onOpenMedia: (item: PropertyMediaItem) => void
   initiallySaved: boolean
+  listingIdentifier?: string
 }) => {
-  const [isSaved, setIsSaved] = useState(initiallySaved)
+  const savedListings = useSavedListings()
+  const [localSaved, setLocalSaved] = useState(initiallySaved)
+  const isSaved = listingIdentifier ? savedListings.isSaved(listingIdentifier) : localSaved
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [isDismissing, setIsDismissing] = useState(false)
@@ -690,7 +695,10 @@ const MobilePhotoGallery = ({
               </button>
               <button
                 type="button"
-                onClick={() => setIsSaved((saved) => !saved)}
+                disabled={listingIdentifier ? savedListings.isBusy(listingIdentifier) : false}
+                onClick={() =>
+                  listingIdentifier ? void savedListings.toggleSaved(listingIdentifier) : setLocalSaved((saved) => !saved)
+                }
                 aria-pressed={isSaved}
                 aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
                 className={clsx(
@@ -748,6 +756,7 @@ const DesktopPhotoGallery = ({
   onOpenImage,
   onOpenMedia,
   initiallySaved,
+  listingIdentifier,
   propertyDetails,
 }: {
   images: string[]
@@ -757,9 +766,12 @@ const DesktopPhotoGallery = ({
   onOpenImage: (index: number) => void
   onOpenMedia: (item: PropertyMediaItem) => void
   initiallySaved: boolean
+  listingIdentifier?: string
   propertyDetails?: PropertyGalleryDetails
 }) => {
-  const [isSaved, setIsSaved] = useState(initiallySaved)
+  const savedListings = useSavedListings()
+  const [localSaved, setLocalSaved] = useState(initiallySaved)
+  const isSaved = listingIdentifier ? savedListings.isSaved(listingIdentifier) : localSaved
   const [isQuickCloseVisible, setIsQuickCloseVisible] = useState(false)
   const mediaScrollRef = useRef<HTMLDivElement>(null)
   const quickCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -909,7 +921,12 @@ const DesktopPhotoGallery = ({
                     </span>
                     <button
                       type="button"
-                      onClick={() => setIsSaved((saved) => !saved)}
+                      disabled={listingIdentifier ? savedListings.isBusy(listingIdentifier) : false}
+                      onClick={() =>
+                        listingIdentifier
+                          ? void savedListings.toggleSaved(listingIdentifier)
+                          : setLocalSaved((saved) => !saved)
+                      }
                       aria-pressed={isSaved}
                       aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
                       className={clsx(
@@ -1095,6 +1112,7 @@ interface Props {
   media?: PropertyMediaItem[]
   gridType?: 'grid1' | 'grid2' | 'grid3' | 'grid4'
   initiallySaved?: boolean
+  listingIdentifier?: string
   propertyDetails?: PropertyGalleryDetails
 }
 
@@ -1109,7 +1127,14 @@ interface PropertyGalleryDetails {
   phone?: string
 }
 
-const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = false, propertyDetails }: Props) => {
+const HeaderGallery = ({
+  images,
+  media,
+  gridType = 'grid1',
+  initiallySaved = false,
+  listingIdentifier,
+  propertyDetails,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
   const [isDesktopGalleryOpen, setIsDesktopGalleryOpen] = useState(false)
@@ -1164,6 +1189,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
           else if (item.type === 'video') setActiveVideo(item)
         }}
         initiallySaved={initiallySaved}
+        listingIdentifier={listingIdentifier}
       />
 
       {gridType === 'grid2' && (
@@ -1178,6 +1204,7 @@ const HeaderGallery = ({ images, media, gridType = 'grid1', initiallySaved = fal
             else if (item.type === 'video') setActiveVideo(item)
           }}
           initiallySaved={initiallySaved}
+          listingIdentifier={listingIdentifier}
           propertyDetails={propertyDetails}
         />
       )}

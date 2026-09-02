@@ -126,6 +126,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
         reviewCount={reviewCount}
         reviewStart={reviewStart}
         title={title}
+        listingIdentifier={handle}
       >
         <div className="flex items-center gap-x-3">
           <UsersIcon className="mb-0.5 size-6" />
@@ -310,6 +311,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
         gridType="grid2"
         images={galleryImgs}
         initiallySaved={like}
+        listingIdentifier={handle}
         propertyDetails={{
           title,
           category: listingCategory,

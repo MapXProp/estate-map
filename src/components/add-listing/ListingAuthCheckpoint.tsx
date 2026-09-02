@@ -14,7 +14,7 @@ export default function ListingAuthCheckpoint({ open, onClose, onAuthenticated }
       open={open}
       onClose={onClose}
       onAuthenticated={onAuthenticated}
-      initialMode="signup"
+      initialMode="login"
       purpose="listing"
       redirectPath="/add-listing/2"
     />

@@ -1116,7 +1116,7 @@ const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup
 const formatListingPrice = (amount?: number, suffix = '') =>
   amount && amount > 0 ? `฿${new Intl.NumberFormat('th-TH').format(amount)}${suffix}` : 'สอบถามราคา'
 
-const toRealEstateListing = (listing: PropertySearchListing) => {
+export const toRealEstateListing = (listing: PropertySearchListing) => {
   const group = getListingGroup(listing)
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
