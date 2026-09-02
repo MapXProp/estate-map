@@ -3,16 +3,19 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import { loadMyListingForEdit } from '@/lib/listingDraft'
-import { getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
+import { clearListingDraft, getListingDraft, loadMyListingForEdit } from '@/lib/listingDraft'
+import { deleteMyListing, getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
 import ButtonPrimary from '@/shared/ButtonPrimary'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   ArrowPathIcon,
   CheckCircleIcon,
   ClockIcon,
   DocumentPlusIcon,
+  ExclamationTriangleIcon,
   MapPinIcon,
   PencilSquareIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -30,6 +33,9 @@ const MyListingsPanel = () => {
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
   const [editingListingId, setEditingListingId] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<MyListing | null>(null)
+  const [deletingListingId, setDeletingListingId] = useState('')
+  const [deleteError, setDeleteError] = useState('')
 
   const loadListings = useCallback(async () => {
     setLoading(true)
@@ -71,6 +77,38 @@ const MyListingsPanel = () => {
       )
     } finally {
       setEditingListingId('')
+    }
+  }
+
+  const closeDeleteConfirmation = () => {
+    if (!deletingListingId) {
+      setDeleteTarget(null)
+    }
+  }
+
+  const handleDelete = async () => {
+    const publicListingId = deleteTarget?.public_listing_id
+    if (!publicListingId || deletingListingId) return
+
+    setDeleteError('')
+    setDeletingListingId(publicListingId)
+    try {
+      await deleteMyListing(publicListingId)
+      if (String(getListingDraft().editingPublicListingId || '').trim() === publicListingId) {
+        clearListingDraft()
+      }
+      setListings((current) => current.filter((listing) => listing.public_listing_id !== publicListingId))
+      setDeleteTarget(null)
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error && err.message
+          ? err.message
+          : isThai
+            ? 'ไม่สามารถลบประกาศนี้ได้ กรุณาลองอีกครั้ง'
+            : 'Unable to delete this listing. Please try again.'
+      )
+    } finally {
+      setDeletingListingId('')
     }
   }
 
@@ -141,6 +179,15 @@ const MyListingsPanel = () => {
         </div>
       ) : null}
 
+      {deleteError ? (
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+          <p>{deleteError}</p>
+          <button type="button" className="shrink-0 font-semibold underline" onClick={() => setDeleteError('')}>
+            {isThai ? 'ปิด' : 'Close'}
+          </button>
+        </div>
+      ) : null}
+
       {loading ? <ListingSkeleton /> : null}
       {!loading && !error && visibleListings.length === 0 ? (
         <EmptyState isThai={isThai} hasListings={listings.length > 0} />
@@ -155,10 +202,23 @@ const MyListingsPanel = () => {
               editing={editingListingId === listing.public_listing_id}
               editDisabled={Boolean(editingListingId)}
               onEdit={() => void handleEdit(listing)}
+              actionDisabled={Boolean(editingListingId || deletingListingId)}
+              onDelete={() => {
+                setDeleteError('')
+                setDeleteTarget(listing)
+              }}
             />
           ))}
         </div>
       ) : null}
+
+      <DeleteListingDialog
+        listing={deleteTarget}
+        isThai={isThai}
+        deleting={Boolean(deleteTarget && deletingListingId === deleteTarget.public_listing_id)}
+        onClose={closeDeleteConfirmation}
+        onConfirm={() => void handleDelete()}
+      />
     </div>
   )
 }
@@ -169,12 +229,16 @@ const ListingRow = ({
   editing,
   editDisabled,
   onEdit,
+  actionDisabled,
+  onDelete,
 }: {
   listing: MyListing
   isThai: boolean
   editing: boolean
   editDisabled: boolean
   onEdit: () => void
+  actionDisabled: boolean
+  onDelete: () => void
 }) => {
   const status = statusFor(listing, isThai)
   const propertyType = getPropertyType(listing.property_type_code)
@@ -229,6 +293,15 @@ const ListingRow = ({
               {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
               {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
             </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={actionDisabled || !listing.public_listing_id}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 font-sarabun text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30"
+            >
+              <TrashIcon className="size-4" />
+              {isThai ? 'ลบประกาศ' : 'Delete'}
+            </button>
             {listingIsLive ? (
               <>
                 <Link
@@ -253,6 +326,71 @@ const ListingRow = ({
     </article>
   )
 }
+
+const DeleteListingDialog = ({
+  listing,
+  isThai,
+  deleting,
+  onClose,
+  onConfirm,
+}: {
+  listing: MyListing | null
+  isThai: boolean
+  deleting: boolean
+  onClose: () => void
+  onConfirm: () => void
+}) => (
+  <Dialog open={Boolean(listing)} onClose={onClose} className="relative z-[100]">
+    <DialogBackdrop className="fixed inset-0 bg-neutral-950/45 backdrop-blur-[1px]" />
+    <div className="fixed inset-0 overflow-y-auto p-4">
+      <div className="flex min-h-full items-center justify-center">
+        <DialogPanel className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-neutral-900 sm:p-7">
+          <div className="flex size-11 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+            <ExclamationTriangleIcon className="size-6" />
+          </div>
+          <DialogTitle className="mt-5 font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
+            {isThai ? 'ยืนยันการลบประกาศ' : 'Delete this listing?'}
+          </DialogTitle>
+          <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+            {isThai
+              ? `ประกาศ “${listing?.title || ''}” จะถูกซ่อนจากหน้าสาธารณะและหน้าประกาศของคุณทันที`
+              : `“${listing?.title || ''}” will immediately be hidden from public pages and your listings.`}
+          </p>
+          <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-3 font-sarabun text-xs leading-5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+            {isThai
+              ? 'ข้อมูลและสื่อจะยังถูกเก็บไว้แบบ Soft delete ไม่ได้ถูกลบออกจากฐานข้อมูลถาวร'
+              : 'The listing and its media will be soft-deleted, not permanently erased from the database.'}
+          </p>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={deleting}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-neutral-200 px-5 font-sarabun text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            >
+              {isThai ? 'ยกเลิก' : 'Cancel'}
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={deleting}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-red-600 px-5 font-sarabun text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {deleting ? <ArrowPathIcon className="size-4 animate-spin" /> : <TrashIcon className="size-4" />}
+              {deleting
+                ? isThai
+                  ? 'กำลังลบ…'
+                  : 'Deleting…'
+                : isThai
+                  ? 'ยืนยันลบประกาศ'
+                  : 'Delete listing'}
+            </button>
+          </div>
+        </DialogPanel>
+      </div>
+    </div>
+  </Dialog>
+)
 
 const ListingCardImage = ({ url }: { url: string }) => {
   const resolvedURL = getListingMediaUrl(url)

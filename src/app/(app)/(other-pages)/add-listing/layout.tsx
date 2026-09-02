@@ -72,10 +72,11 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
   const router = useRouter()
   const { locale } = usePreferences()
-  const { mediaProgress } = useListingFlowProgress()
+  const { mediaProgress, submittingStep } = useListingFlowProgress()
   const isThai = locale === 'th'
   const isProcessing =
-    index === steps.length && (mediaProgress.phase === 'uploading' || mediaProgress.phase === 'saving')
+    submittingStep === index ||
+    (index === steps.length && (mediaProgress.phase === 'uploading' || mediaProgress.phase === 'saving'))
 
   const navigateToStep = (stepNumber: number) => {
     if (stepNumber === index || stepNumber === steps.length || isProcessing) return
@@ -98,9 +99,6 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
             <p className="font-sarabun text-xs font-semibold tracking-[0.14em] text-orange-300 uppercase">
               {isThai ? 'ลงประกาศฟรี' : 'List for free'}
             </p>
-            <span className="rounded-full bg-white/[0.08] px-2.5 py-1 font-sarabun text-[11px] text-white/80 ring-1 ring-white/10">
-              {isThai ? 'บันทึกอัตโนมัติ · เก็บ 48 ชม.' : 'Autosaved · kept 48h'}
-            </span>
           </div>
           <p className="mt-1.5 truncate font-sarabun text-[17px] font-semibold text-white min-[744px]:mt-2 min-[744px]:text-xl">
             {isThai ? `ขั้นที่ ${index} จาก ${steps.length}` : `Step ${index} of ${steps.length}`} ·{' '}
@@ -247,9 +245,10 @@ const SellerGuide = () => {
 const Pagination = ({ pathname }: { pathname: string }) => {
   const index = getStepIndex(pathname)
   const { locale } = usePreferences()
-  const { mediaProgress } = useListingFlowProgress()
+  const { mediaProgress, submittingStep } = useListingFlowProgress()
   const isThai = locale === 'th'
   const isMediaBusy = index === 3 && (mediaProgress.phase === 'uploading' || mediaProgress.phase === 'saving')
+  const isStepBusy = submittingStep === index || isMediaBusy
 
   if (index === steps.length) {
     return null
@@ -266,7 +265,7 @@ const Pagination = ({ pathname }: { pathname: string }) => {
       }`}
     >
       {index > 1 ? (
-        isMediaBusy ? (
+        isStepBusy ? (
           <ButtonSecondary type="button" disabled className="h-12 px-5 min-[744px]:h-auto">
             {isThai ? 'ย้อนกลับ' : 'Back'}
           </ButtonSecondary>
@@ -279,13 +278,13 @@ const Pagination = ({ pathname }: { pathname: string }) => {
       <ButtonPrimary
         type="submit"
         form="add-listing-form"
-        disabled={isMediaBusy}
-        aria-busy={isMediaBusy}
+        disabled={isStepBusy}
+        aria-busy={isStepBusy}
         className="h-12 w-full text-base font-semibold shadow-[0_12px_28px_-14px_rgba(18,63,50,0.75)] min-[744px]:h-auto min-[744px]:w-auto min-[744px]:min-w-52"
       >
         {index === 3 ? (
           <>
-            {isMediaBusy ? (
+            {isStepBusy ? (
               <span className="size-4 animate-spin rounded-full border-2 border-white/35 border-t-white dark:border-neutral-400 dark:border-t-neutral-950" />
             ) : null}
             {mediaProgress.phase === 'uploading'
@@ -304,12 +303,14 @@ const Pagination = ({ pathname }: { pathname: string }) => {
                     ? 'ลงประกาศ'
                     : 'Publish listing'}
           </>
+        ) : isStepBusy ? (
+          isThai ? 'กำลังบันทึก...' : 'Saving...'
         ) : isThai ? (
           'ไปขั้นถัดไป'
         ) : (
           'Continue'
         )}
-        {!isMediaBusy ? <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" /> : null}
+        {!isStepBusy ? <ArrowRightIcon className="h-5 w-5 rtl:rotate-180" /> : null}
       </ButtonPrimary>
     </div>
   )

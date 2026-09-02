@@ -1,8 +1,11 @@
+export type PlatformRoleCode = 'super_admin' | 'admin' | 'moderator' | 'support' | 'member'
+
 export type AuthUser = {
   public_user_id: string
   name?: string
   surname?: string
   email: string
+  role_code: PlatformRoleCode
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'guest'
@@ -138,6 +141,7 @@ export const setStoredAuth = (data: LoginLikeResponse) => {
         name: data.name || '',
         surname: data.surname || '',
         email: data.email || '',
+        role_code: data.role_code || 'member',
       })
     )
   }

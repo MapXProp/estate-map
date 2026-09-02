@@ -12,9 +12,9 @@ import {
   clearCloudListingDraft,
   clearListingDraft,
   getListingDraft,
-  LISTING_DRAFT_KEY,
   LISTING_SUBMISSION_RESULT_KEY,
   ListingMediaUploadError,
+  loadMyListingForEdit,
   publishListingDraft,
   saveListingDraftToCloud,
   saveListingStep,
@@ -65,6 +65,8 @@ const Page = () => {
   const [stage, setStage] = useState<SubmissionStage>('preparing')
   const [failure, setFailure] = useState<SubmissionFailure | null>(null)
   const [result, setResult] = useState<SubmissionResult | null>(null)
+  const [isOpeningEdit, setIsOpeningEdit] = useState(false)
+  const [editError, setEditError] = useState('')
   const [sessionChecked, setSessionChecked] = useState(false)
   const processLockRef = useRef(false)
   const autoStartedRef = useRef(false)
@@ -263,20 +265,23 @@ const Page = () => {
   }, [mediaProgress.completedCount, mediaProgress.totalCount, stage])
 
   const handleEdit = async () => {
-    if (!result) return
-    const now = new Date()
-    const restoredDraft: ListingDraft = {
-      ...result.draft,
-      editingPublicListingId: result.publicListingId,
-      lastStep: '3',
-      resumeStep: '1',
-      updatedAt: now.toISOString(),
-      draftExpiresAt: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+    if (!result || isOpeningEdit) return
+    setIsOpeningEdit(true)
+    setEditError('')
+    try {
+      // Reload the committed listing so media comes from listing_media instead
+      // of the pre-publish browser snapshot.
+      await loadMyListingForEdit(result.publicListingId)
+      router.push('/add-listing/1')
+    } catch {
+      setEditError(
+        isThai
+          ? 'ยังโหลดข้อมูลสำหรับแก้ไขไม่สำเร็จ กรุณาลองอีกครั้ง'
+          : 'The listing could not be loaded for editing. Please try again.'
+      )
+    } finally {
+      setIsOpeningEdit(false)
     }
-    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(restoredDraft))
-    sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
-    await saveListingDraftToCloud(restoredDraft).catch(() => undefined)
-    router.push('/add-listing/1')
   }
 
   if (stage === 'success' && result) {
@@ -295,12 +300,17 @@ const Page = () => {
         </h1>
         <p className="mx-auto mt-3 max-w-xl font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
           {isThai
-            ? `ข้อมูลและไฟล์ทั้งหมดถูกบันทึกแล้ว · รหัสประกาศ ${result.publicListingId}`
-            : `All information and media have been saved · Listing ID ${result.publicListingId}`}
+            ? `ข้อมูลและไฟล์ทั้งหมดถูกบันทึกและเผยแพร่แล้ว · รหัสประกาศ ${result.publicListingId}`
+            : `All information and media have been saved and published · Listing ID ${result.publicListingId}`}
         </p>
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <ButtonSecondary type="button" onClick={() => void handleEdit()} className="h-12 justify-center">
-            <PencilSquareIcon className="size-5" />
+          <ButtonSecondary
+            type="button"
+            onClick={() => void handleEdit()}
+            disabled={isOpeningEdit}
+            className="h-12 justify-center"
+          >
+            {isOpeningEdit ? <ArrowPathIcon className="size-5 animate-spin" /> : <PencilSquareIcon className="size-5" />}
             {isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
           </ButtonSecondary>
           <ButtonPrimary href={viewHref} className="h-12 justify-center">
@@ -308,6 +318,7 @@ const Page = () => {
             {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
           </ButtonPrimary>
         </div>
+        {editError ? <p className="mt-3 font-sarabun text-sm text-red-600">{editError}</p> : null}
       </StatusCard>
     )
   }

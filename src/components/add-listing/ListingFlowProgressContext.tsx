@@ -39,6 +39,8 @@ type ListingFlowProgressValue = {
   setMediaProgress: Dispatch<SetStateAction<ListingMediaProgressState>>
   pendingMedia: ListingPendingMedia
   setPendingMedia: Dispatch<SetStateAction<ListingPendingMedia>>
+  submittingStep: number | null
+  setSubmittingStep: Dispatch<SetStateAction<number | null>>
 }
 
 const ListingFlowProgressContext = createContext<ListingFlowProgressValue | null>(null)
@@ -46,9 +48,10 @@ const ListingFlowProgressContext = createContext<ListingFlowProgressValue | null
 export const ListingFlowProgressProvider = ({ children }: { children: React.ReactNode }) => {
   const [mediaProgress, setMediaProgress] = useState(initialListingMediaProgress)
   const [pendingMedia, setPendingMedia] = useState(initialListingPendingMedia)
+  const [submittingStep, setSubmittingStep] = useState<number | null>(null)
   const value = useMemo(
-    () => ({ mediaProgress, setMediaProgress, pendingMedia, setPendingMedia }),
-    [mediaProgress, pendingMedia]
+    () => ({ mediaProgress, setMediaProgress, pendingMedia, setPendingMedia, submittingStep, setSubmittingStep }),
+    [mediaProgress, pendingMedia, submittingStep]
   )
 
   return <ListingFlowProgressContext.Provider value={value}>{children}</ListingFlowProgressContext.Provider>

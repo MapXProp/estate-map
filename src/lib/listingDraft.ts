@@ -62,6 +62,7 @@ let listingDraftSaveQueue: Promise<SaveListingDraftResponse | null> = Promise.re
 export type CreateListingPayload = {
   submission_key?: string
   editing_public_listing_id?: string
+  replace_media?: boolean
   discovery_channel_code?: string
   property_group_code?: string
   property_type_code: string
@@ -559,8 +560,29 @@ export const clearCloudListingDraft = async () => {
   }
 }
 
+export const createListingSubmissionKey = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
+
+export const ensureListingSubmissionKey = (draft: ListingDraft = getListingDraft()) => {
+  if (typeof window === 'undefined' || text(draft.submissionKey)) return draft
+
+  const updatedAt = new Date()
+  const next: ListingDraft = {
+    ...draft,
+    submissionKey: createListingSubmissionKey(),
+    updatedAt: updatedAt.toISOString(),
+    draftExpiresAt: new Date(updatedAt.getTime() + LISTING_DRAFT_TTL_MS).toISOString(),
+  }
+  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(next))
+  return next
+}
+
 export const publishListingDraft = async () => {
-  const payload = buildCreateListingPayload(getListingDraft())
+  // Persist the idempotency key before the request. A retry after a timeout or
+  // refresh must update the same listing instead of creating a duplicate.
+  const payload = buildCreateListingPayload(ensureListingSubmissionKey())
 
   const response = await fetchWithAuthRetry(getAuthApiUrl('listings'), {
     method: 'POST',
@@ -653,11 +675,17 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const photoURLs = values(draft['listingPhotoUrls[]'])
   const videoURLs = values(draft['listingVideoUrls[]'])
   const panoramaURLs = values(draft['listingPanoramaUrls[]'])
+  const editingPublicListingId = text(draft.editingPublicListingId)
+  const mediaLoadedForEdit =
+    !editingPublicListingId ||
+    text(draft.listingMediaLoaded) === 'yes' ||
+    photoURLs.length + videoURLs.length + panoramaURLs.length > 0
   const petPolicyCode = normalizeCode(text(draft.Pets))
 
   return {
     submission_key: text(draft.submissionKey),
-    editing_public_listing_id: text(draft.editingPublicListingId),
+    editing_public_listing_id: editingPublicListingId,
+    replace_media: mediaLoadedForEdit,
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
     property_group_code: normalizeCode(text(draft.property_group_code)),
     property_type_code: normalizeCode(text(draft.property_type_code) || text(draft.propertyType) || 'condo'),

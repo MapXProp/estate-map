@@ -9,6 +9,7 @@ import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
 import { getApiBaseUrl, getStoredUser } from '@/lib/auth'
 import { loadListingContactProfile } from '@/lib/listingContactProfile'
 import {
+  createListingSubmissionKey,
   getListingDraft,
   getListingDraftSummary,
   saveListingStep,
@@ -330,7 +331,7 @@ const Page = () => {
     replaceFormDataValues(formData, 'listingPhotoUrls[]', uploadedPhotoUrls)
     replaceFormDataValues(formData, 'listingVideoUrls[]', uploadedVideoUrls)
     replaceFormDataValues(formData, 'listingPanoramaUrls[]', uploadedPanoramaUrls)
-    formData.set('submissionKey', readText(draft?.submissionKey) || createSubmissionKey())
+    formData.set('submissionKey', readText(draft?.submissionKey) || createListingSubmissionKey())
     saveListingStep(3, formData)
     setPendingMedia({ photos, videos, panoramas })
     sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
@@ -1440,9 +1441,4 @@ const offersFromLegacy = (value: string): OfferTypeCode[] => {
   if (value === 'sale_and_rent') return ['sale', 'rent']
   return isOfferTypeCode(value) ? [value] : ['rent']
 }
-const createSubmissionKey = () =>
-  typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`
-
 export default Page

@@ -1,4 +1,4 @@
-import { getApiBaseUrl, getAuthApiUrl } from './auth'
+import { fetchWithAuthRetry, getApiBaseUrl, getAuthApiUrl } from './auth'
 
 export type MyListing = {
   id: number
@@ -25,6 +25,12 @@ type MyListingsResponse = {
   error?: string
 }
 
+type DeleteMyListingResponse = {
+  success?: boolean
+  already_deleted?: boolean
+  error?: string
+}
+
 export const getMyListings = async () => {
   const response = await fetch(getAuthApiUrl('me/listings'), {
     cache: 'no-store',
@@ -35,6 +41,27 @@ export const getMyListings = async () => {
     throw new Error(data.error || 'Cannot load your listings right now')
   }
   return data.listings || []
+}
+
+export const deleteMyListing = async (publicListingId: string) => {
+  const listingId = publicListingId.trim()
+  if (!listingId) {
+    throw new Error('Invalid listing ID')
+  }
+
+  const response = await fetchWithAuthRetry(
+    getAuthApiUrl(`me/listings/${encodeURIComponent(listingId)}`),
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+      credentials: 'include',
+    }
+  )
+  const data = (await response.json().catch(() => ({}))) as DeleteMyListingResponse
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Cannot delete this listing right now')
+  }
+  return data
 }
 
 export const getListingMediaUrl = (url: string) => {

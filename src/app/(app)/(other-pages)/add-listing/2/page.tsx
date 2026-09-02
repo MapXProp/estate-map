@@ -2,6 +2,7 @@
 
 import BusinessDetails from '@/components/add-listing/BusinessDetails'
 import HomesDetails from '@/components/add-listing/HomesDetails'
+import { useListingFlowProgress } from '@/components/add-listing/ListingFlowProgressContext'
 import MonthlyStayDetails from '@/components/add-listing/MonthlyStayDetails'
 import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -18,7 +19,7 @@ import {
 } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import FormItem from '../FormItem'
 
 const amenities = [
@@ -47,6 +48,7 @@ type LongdoAddress = {
 
 const Page = () => {
   const router = useRouter()
+  const { setSubmittingStep } = useListingFlowProgress()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
@@ -60,9 +62,12 @@ const Page = () => {
   const [district, setDistrict] = useState('')
   const [province, setProvince] = useState('')
   const [postalCode, setPostalCode] = useState('')
+  const submitLockRef = useRef(false)
 
   useEffect(() => {
     router.prefetch('/add-listing/3')
+    submitLockRef.current = false
+    setSubmittingStep(null)
     const frame = requestAnimationFrame(() => {
       const savedDraft = getListingDraft()
       const savedLng = readText(savedDraft.lngMapPosition)
@@ -79,7 +84,7 @@ const Page = () => {
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [router])
+  }, [router, setSubmittingStep])
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
@@ -216,6 +221,10 @@ const Page = () => {
     setLocationValidationError(false)
     setLocationError('')
     if (!validateListingForm({ isThai })) return
+    if (submitLockRef.current) return
+
+    submitLockRef.current = true
+    setSubmittingStep(2)
     if (isLand) {
       const rai = parseDecimal(formData.get('landAreaRai'))
       const ngan = parseDecimal(formData.get('landAreaNgan'))

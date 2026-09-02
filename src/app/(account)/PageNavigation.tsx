@@ -1,7 +1,8 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { Building2, CreditCard, Heart, ShieldCheck, UserRound } from 'lucide-react'
+import { Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
@@ -39,10 +40,26 @@ const navigation = [
   },
 ]
 
+const adminNavigation = {
+  titleTh: 'จัดการสิทธิ์',
+  titleEn: 'Role management',
+  href: '/account-admin',
+  icon: UserCog,
+}
+
+const approvalNavigation = {
+  titleTh: 'อนุมัติประกาศ',
+  titleEn: 'Listing approvals',
+  href: '/account-approvals',
+  icon: ClipboardCheck,
+}
+
 export const PageNavigation = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
+  const { user } = useAuth()
   const isThai = locale === 'th'
+  const visibleNavigation = user?.role_code === 'super_admin' ? [...navigation, approvalNavigation, adminNavigation] : navigation
   const activeMobileItemRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {
@@ -53,9 +70,11 @@ export const PageNavigation = () => {
     <div className="container">
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className="hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid xl:grid-cols-5 dark:bg-neutral-800/80 dark:ring-neutral-700"
+        className={`hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid dark:bg-neutral-800/80 dark:ring-neutral-700 ${
+          visibleNavigation.length === 7 ? 'xl:grid-cols-7' : 'xl:grid-cols-5'
+        }`}
       >
-        {navigation.map((item) => {
+        {visibleNavigation.map((item) => {
           const isActive = pathname === item.href
           const label = isThai ? item.titleTh : item.titleEn
           return (
@@ -88,7 +107,7 @@ export const PageNavigation = () => {
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
         className="-mx-4 hidden-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 py-1 min-[744px]:hidden"
       >
-        {navigation.map((item) => {
+        {visibleNavigation.map((item) => {
           const isActive = pathname === item.href
           const label = isThai ? item.titleTh : item.titleEn
           return (

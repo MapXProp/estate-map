@@ -1,6 +1,11 @@
 'use client'
 
 import ListingAuthCheckpoint from '@/components/add-listing/ListingAuthCheckpoint'
+import {
+  initialListingMediaProgress,
+  initialListingPendingMedia,
+  useListingFlowProgress,
+} from '@/components/add-listing/ListingFlowProgressContext'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import {
@@ -29,6 +34,7 @@ import {
   clearCloudListingDraft,
   clearListingDraft,
   getListingDraft,
+  LISTING_SUBMISSION_RESULT_KEY,
   resetListingDetailsForCategoryChange,
   saveListingDraftToCloud,
   saveListingStep,
@@ -61,7 +67,7 @@ import {
 } from 'lucide-react'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import FormItem from '../FormItem'
 
 const propertyTypeIcons = {
@@ -139,6 +145,7 @@ const discoveryChannelVisuals = {
 
 const Page = () => {
   const router = useRouter()
+  const { setMediaProgress, setPendingMedia, setSubmittingStep } = useListingFlowProgress()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [selectedChannel, setSelectedChannel] = useState<DiscoveryChannelCode | ''>('')
@@ -154,6 +161,7 @@ const Page = () => {
   const [error, setError] = useState('')
   const [errorSection, setErrorSection] = useState<number | null>(null)
   const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
+  const submitLockRef = useRef(false)
   const [draftReady, setDraftReady] = useState(false)
   const { isAuthenticated, refresh } = useAuth()
 
@@ -310,11 +318,18 @@ const Page = () => {
 
   useEffect(() => {
     router.prefetch('/add-listing/2')
+    submitLockRef.current = false
+    setSubmittingStep(null)
 
     let cancelled = false
     const initializeDraft = async () => {
       const shouldStartNew = new URLSearchParams(window.location.search).get('new') === '1'
       if (shouldStartNew) {
+        sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
+        setPendingMedia(initialListingPendingMedia)
+        setMediaProgress(initialListingMediaProgress)
+        setSubmittingStep(null)
+        submitLockRef.current = false
         clearListingDraft()
         await clearCloudListingDraft().catch(() => undefined)
         if (cancelled) return
@@ -407,7 +422,7 @@ const Page = () => {
     return () => {
       cancelled = true
     }
-  }, [router])
+  }, [router, setMediaProgress, setPendingMedia, setSubmittingStep])
 
   const selectChannel = (channelCode: DiscoveryChannelCode) => {
     const channel = getDiscoveryChannel(channelCode)
@@ -528,6 +543,10 @@ const Page = () => {
       return
     }
     if (!validateListingForm({ isThai })) return
+    if (submitLockRef.current) return
+
+    submitLockRef.current = true
+    setSubmittingStep(1)
 
     formData.set('property_group_code', selectedGroup)
     formData.set('discovery_channel_code', selectedChannel)
@@ -544,6 +563,8 @@ const Page = () => {
     const authenticated = isAuthenticated || Boolean(await refresh())
 
     if (!authenticated) {
+      submitLockRef.current = false
+      setSubmittingStep(null)
       setAuthCheckpointOpen(true)
       return
     }

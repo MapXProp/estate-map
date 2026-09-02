@@ -1,13 +1,14 @@
 'use client'
 
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
+import NotificationMessages from '@/components/Header/NotificationMessages'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
-import { useWelcomeNotification } from '@/hooks/useWelcomeNotification'
+import { useNotificationCenter } from '@/hooks/useNotificationCenter'
 import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
 import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { BellIcon, CheckIcon, ChevronRightIcon, GlobeAltIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { BellIcon, CheckIcon, ChevronRightIcon, ClipboardDocumentCheckIcon, GlobeAltIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useRouter } from 'next/navigation'
@@ -30,11 +31,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
   const { openAuthModal } = useAuthModal()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const { currency, locale, setCurrency, setLocale } = usePreferences()
-  const welcomeNotification = useWelcomeNotification({
-    isAuthenticated,
-    locale,
-    userId: user?.public_user_id || user?.email,
-  })
+  const notificationCenter = useNotificationCenter({ isAuthenticated, locale })
   const displayName =
     [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || (locale === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')
 
@@ -154,6 +151,33 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                     </span>
                     <span className="ms-3 text-sm font-medium">{locale === 'th' ? 'ที่บันทึกไว้' : 'Saved'}</span>
                   </Link>
+
+                  {user?.role_code === 'super_admin' ? (
+                    <>
+                      <Link
+                        href={'/account-approvals'}
+                        className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-neutral-500/25 dark:hover:bg-neutral-700"
+                      >
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
+                          <ClipboardDocumentCheckIcon className="size-5" />
+                        </span>
+                        <span className="ms-3 text-sm font-medium">
+                          {locale === 'th' ? 'อนุมัติประกาศ' : 'Listing approvals'}
+                        </span>
+                      </Link>
+                      <Link
+                        href={'/account-admin'}
+                        className="flex min-h-11 items-center rounded-2xl px-2.5 py-1.5 transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-neutral-500/25 dark:hover:bg-neutral-700"
+                      >
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
+                          <ShieldCheckIcon className="size-5" />
+                        </span>
+                        <span className="ms-3 text-sm font-medium">
+                          {locale === 'th' ? 'จัดการสิทธิ์ผู้ใช้' : 'Role management'}
+                        </span>
+                      </Link>
+                    </>
+                  ) : null}
                 </div>
               </section>
             )}
@@ -184,21 +208,21 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   onClick={() => setNotificationsOpen(true)}
                   className="flex min-h-11 w-full items-center rounded-2xl px-2.5 py-1.5 text-start transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-blue-500/25 dark:hover:bg-neutral-700"
                 >
-                  <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                  <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
                     <BellIcon className="size-5" />
-                    {welcomeNotification.isUnread && (
-                      <span className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-neutral-800" />
+                    {notificationCenter.isUnread && (
+                      <span className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-neutral-800" />
                     )}
                   </span>
                   <span className="ms-3 min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{welcomeNotification.panelLabel}</span>
+                    <span className="block text-sm font-medium">{notificationCenter.panelLabel}</span>
                     <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
-                      {welcomeNotification.unreadSummary}
+                      {notificationCenter.unreadSummary}
                     </span>
                   </span>
-                  {welcomeNotification.unreadCount > 0 && (
-                    <span className="me-1 grid min-w-6 place-items-center rounded-full bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-200">
-                      {welcomeNotification.unreadCount}
+                  {notificationCenter.unreadCount > 0 && (
+                    <span className="me-1 grid min-w-6 place-items-center rounded-full bg-orange-50 px-1.5 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
+                      {notificationCenter.unreadCount}
                     </span>
                   )}
                   <ChevronRightIcon className="size-4 shrink-0 text-neutral-400" />
@@ -254,10 +278,10 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             <div className="flex items-start justify-between gap-4 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
               <div>
                 <DialogTitle className="text-lg font-semibold text-neutral-950 dark:text-white">
-                  {welcomeNotification.panelLabel}
+                  {notificationCenter.panelLabel}
                 </DialogTitle>
                 <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                  {welcomeNotification.sourceLabel}
+                  {notificationCenter.sourceLabel}
                 </p>
               </div>
               <button
@@ -270,35 +294,29 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
               </button>
             </div>
 
-            <div className="px-4 py-4">
-              <div className="flex gap-3 rounded-2xl bg-blue-50/70 px-4 py-4 dark:bg-blue-950/25">
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-200">
-                  <BellIcon className="size-5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    {welcomeNotification.title}
-                  </span>
-                  <span className="mt-1 block text-xs/5 text-neutral-600 dark:text-neutral-400">
-                    {welcomeNotification.detail}
-                  </span>
-                </span>
-                {welcomeNotification.isUnread && <span className="mt-2 size-2 shrink-0 rounded-full bg-blue-500" />}
-              </div>
-            </div>
+            <NotificationMessages
+              notifications={notificationCenter.notifications}
+              isThai={locale === 'th'}
+              loading={notificationCenter.loading}
+              error={notificationCenter.error}
+              onRead={(id) => void notificationCenter.markAsRead(id)}
+              onNavigate={() => setNotificationsOpen(false)}
+            />
 
-            <div className="border-t border-neutral-100 p-4 dark:border-neutral-800">
-              <button
-                type="button"
-                onClick={() => {
-                  welcomeNotification.markAsRead()
-                  setNotificationsOpen(false)
-                }}
-                className="min-h-11 w-full rounded-full bg-[#124e3c] px-4 text-sm font-semibold text-white transition hover:bg-[#0d3d2f] focus-visible:ring-3 focus-visible:ring-[#176b50]/30 focus-visible:outline-hidden"
-              >
-                {welcomeNotification.doneLabel}
-              </button>
-            </div>
+            {notificationCenter.unreadCount > 0 ? (
+              <div className="border-t border-neutral-100 p-4 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void notificationCenter.markAllAsRead()
+                    setNotificationsOpen(false)
+                  }}
+                  className="min-h-11 w-full rounded-full bg-neutral-900 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 focus-visible:ring-3 focus-visible:ring-neutral-500/25 focus-visible:outline-hidden dark:bg-white dark:text-neutral-900"
+                >
+                  {locale === 'th' ? 'อ่านทั้งหมดแล้ว' : 'Mark all as read'}
+                </button>
+              </div>
+            ) : null}
           </DialogPanel>
         </div>
       </Dialog>
