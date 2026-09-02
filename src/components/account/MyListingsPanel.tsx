@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import { getPropertyType } from '@/data/propertyTaxonomy'
 import { loadMyListingForEdit } from '@/lib/listingDraft'
 import { getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
@@ -12,7 +13,6 @@ import {
   DocumentPlusIcon,
   MapPinIcon,
   PencilSquareIcon,
-  PhotoIcon,
 } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -186,13 +186,7 @@ const ListingRow = ({
   return (
     <article className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm sm:flex dark:border-neutral-800 dark:bg-neutral-900">
       <div className="relative h-44 bg-neutral-100 sm:h-auto sm:w-56 dark:bg-neutral-800">
-        {listing.primary_image_url ? (
-          <img src={getListingMediaUrl(listing.primary_image_url)} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <span className="grid h-full w-full place-items-center text-neutral-400 dark:text-neutral-500">
-            <PhotoIcon className="size-8" />
-          </span>
-        )}
+        <ListingCardImage url={listing.primary_image_url} />
       </div>
       <div className="min-w-0 flex-1 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -257,6 +251,24 @@ const ListingRow = ({
         </div>
       </div>
     </article>
+  )
+}
+
+const ListingCardImage = ({ url }: { url: string }) => {
+  const resolvedURL = getListingMediaUrl(url)
+  const [failedURL, setFailedURL] = useState('')
+
+  if (!resolvedURL || failedURL === resolvedURL) {
+    return <ListingImageFallback />
+  }
+
+  return (
+    <img
+      src={resolvedURL}
+      alt=""
+      className="h-full w-full object-cover"
+      onError={() => setFailedURL(resolvedURL)}
+    />
   )
 }
 

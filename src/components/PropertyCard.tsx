@@ -1,5 +1,6 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { TRealEstateListing } from '@/data/listings'
@@ -94,6 +95,7 @@ const PropertyCard: FC<Props> = ({
           autoPlayInterval={2500}
           autoPlayDelay={autoPlayDelay}
           openInNewTab={shouldOpenInNewTab}
+          emptyFallback={<ListingImageFallback />}
         />
         <div
           className={clsx(

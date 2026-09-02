@@ -2,6 +2,7 @@
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -54,6 +55,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           galleryImgs={galleryImgs}
           className="h-full w-full overflow-hidden rounded-2xl"
           href={listingHref}
+          emptyFallback={<ListingImageFallback />}
         />
 
         {saleOff && <SaleOffBadge className="absolute start-5 top-5 bg-orange-500!" />}

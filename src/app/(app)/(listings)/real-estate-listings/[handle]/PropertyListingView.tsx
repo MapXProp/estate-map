@@ -1,12 +1,12 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import { getPropertyType } from '@/data/propertyTaxonomy'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
   BedDouble,
-  Building2,
   CarFront,
   ExternalLink,
   Mail,
@@ -106,9 +106,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             }}
           />
         ) : (
-          <div className="flex aspect-[16/7] items-center justify-center rounded-[28px] border border-neutral-200 bg-neutral-100 text-neutral-400 dark:border-neutral-800 dark:bg-neutral-900">
-            <Building2 className="size-12" />
-          </div>
+          <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
         )}
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">

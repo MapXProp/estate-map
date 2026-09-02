@@ -1,4 +1,5 @@
 import type { PropertyListingDetail } from '@/lib/propertySearch'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import {
   Building2,
   CarFront,
@@ -94,7 +95,11 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   return (
     <div className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 py-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
-        <HeaderGallery images={images} media={media} gridType="grid2" />
+        {media.length ? (
+          <HeaderGallery images={images} media={media} gridType="grid2" />
+        ) : (
+          <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
+        )}
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">

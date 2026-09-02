@@ -8,7 +8,7 @@ import clsx from 'clsx'
 import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useSwipeable } from 'react-swipeable'
 
 interface GallerySliderProps {
@@ -30,6 +30,7 @@ interface GallerySliderProps {
   autoPlayInterval?: number
   autoPlayDelay?: number
   openInNewTab?: boolean
+  emptyFallback?: ReactNode
 }
 
 export default function GallerySlider({
@@ -44,6 +45,7 @@ export default function GallerySlider({
   autoPlayInterval = 2500,
   autoPlayDelay = 0,
   openInNewTab = false,
+  emptyFallback,
 }: GallerySliderProps) {
   const { locale } = usePreferences()
   const sliderRef = useRef<HTMLDivElement>(null)
@@ -57,6 +59,7 @@ export default function GallerySlider({
   const [isPageVisible, setIsPageVisible] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [isManuallyPaused, setIsManuallyPaused] = useState(false)
+  const [failedImage, setFailedImage] = useState('')
   const images = galleryImgs
 
   const pauseAfterInteraction = useCallback(() => {
@@ -178,6 +181,8 @@ export default function GallerySlider({
   )
 
   let currentImage = images[index]
+  const currentImageKey = typeof currentImage === 'string' ? currentImage : currentImage?.src || ''
+  const hasCurrentImage = Boolean(currentImageKey && failedImage !== currentImageKey)
 
   return (
     <MotionConfig
@@ -219,14 +224,22 @@ export default function GallerySlider({
                 exit="exit"
                 className="absolute inset-0"
               >
-                <Image
-                  src={currentImage || ''}
-                  fill
-                  alt="listing card gallery"
-                  className={clsx(`rounded-xl object-cover`, imageClass)}
-                  onLoad={() => setLoaded(true)}
-                  sizes="(max-width: 1025px) 100vw, 25vw"
-                />
+                {hasCurrentImage ? (
+                  <Image
+                    src={currentImage}
+                    fill
+                    alt="listing card gallery"
+                    className={clsx(`rounded-xl object-cover`, imageClass)}
+                    onLoad={() => setLoaded(true)}
+                    onError={() => {
+                      setLoaded(false)
+                      setFailedImage(currentImageKey)
+                    }}
+                    sizes="(max-width: 1025px) 100vw, 25vw"
+                  />
+                ) : (
+                  emptyFallback
+                )}
               </motion.div>
             </AnimatePresence>
           </Link>
@@ -235,7 +248,7 @@ export default function GallerySlider({
         {/* Buttons + bottom nav bar */}
         <>
           {/* Buttons */}
-          {loaded && navigation && (
+          {hasCurrentImage && loaded && navigation && (
             <div className="opacity-0 transition-opacity group-hover/cardGallerySlider:opacity-100">
               {index > 0 && (
                 <div className="absolute start-3 top-[calc(50%-1rem)]">
@@ -271,21 +284,25 @@ export default function GallerySlider({
           )}
 
           {/* Bottom Nav bar */}
-          <div className="absolute inset-x-0 bottom-0 h-10 rounded-b-xl bg-linear-to-t from-neutral-900 opacity-50"></div>
-          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center justify-center gap-x-1.5">
-            {images.map((_, i) => (
-              <button
-                type="button"
-                aria-label={`${locale === 'th' ? 'ดูรูปที่' : 'View image'} ${i + 1}`}
-                className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-white' : 'bg-white/60'}`}
-                onClick={() => {
-                  pauseAfterInteraction()
-                  changePhotoId(i)
-                }}
-                key={i}
-              />
-            ))}
-          </div>
+          {hasCurrentImage && images.length > 1 ? (
+            <>
+              <div className="absolute inset-x-0 bottom-0 h-10 rounded-b-xl bg-linear-to-t from-neutral-900 opacity-50"></div>
+              <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center justify-center gap-x-1.5">
+                {images.map((_, i) => (
+                  <button
+                    type="button"
+                    aria-label={`${locale === 'th' ? 'ดูรูปที่' : 'View image'} ${i + 1}`}
+                    className={`h-1.5 w-1.5 rounded-full ${i === index ? 'bg-white' : 'bg-white/60'}`}
+                    onClick={() => {
+                      pauseAfterInteraction()
+                      changePhotoId(i)
+                    }}
+                    key={i}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
         </>
       </div>
     </MotionConfig>

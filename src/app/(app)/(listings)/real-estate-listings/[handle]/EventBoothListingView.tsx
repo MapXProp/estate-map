@@ -1,4 +1,5 @@
 import type { PropertyListingDetail } from '@/lib/propertySearch'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import { CalendarDays, CircleHelp, ExternalLink, MapPin, MessageCircle, Phone, ShieldCheck, Store, Users } from 'lucide-react'
 import Image from 'next/image'
 
@@ -34,7 +35,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                   className="mx-auto max-h-[760px] w-full object-contain"
                 />
               ) : (
-                <div className="flex aspect-[2/3] items-center justify-center text-neutral-400">ยังไม่มีรูปภาพ</div>
+                <ListingImageFallback className="aspect-[2/3]" />
               )}
             </div>
             <p className="mt-3 text-xs leading-5 text-neutral-500">

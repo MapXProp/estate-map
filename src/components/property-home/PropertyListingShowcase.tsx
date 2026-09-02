@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingImageFallback from '@/components/ListingImageFallback'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
@@ -41,6 +42,8 @@ const DeferredListingImage = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [shouldLoad, setShouldLoad] = useState(eager)
+  const [failedSrc, setFailedSrc] = useState('')
+  const hasError = Boolean(src && failedSrc === src)
 
   useEffect(() => {
     if (shouldLoad || !containerRef.current) return
@@ -60,7 +63,9 @@ const DeferredListingImage = ({
 
   return (
     <div ref={containerRef} className="absolute inset-0">
-      {shouldLoad ? (
+      {!src || hasError ? (
+        <ListingImageFallback />
+      ) : shouldLoad ? (
         <Image
           fill
           src={src}
@@ -69,6 +74,7 @@ const DeferredListingImage = ({
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'low'}
           preload={eager}
+          onError={() => setFailedSrc(src)}
           className={`object-cover transition duration-500 group-hover:scale-[1.035] ${
             position === 'top' ? 'object-top' : 'object-center'
           }`}
@@ -417,7 +423,7 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
       : [area, listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : ''].filter(Boolean),
     price,
     unit: listing.price_on_request ? undefined : isRental ? 'บาท/เดือน' : 'บาท',
-    image: listing.primary_image_url || '/M5.png',
+    image: listing.primary_image_url || '',
     href: `/real-estate-listings/${listing.slug || listing.public_listing_id}`,
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
     verified: listing.is_verified,
