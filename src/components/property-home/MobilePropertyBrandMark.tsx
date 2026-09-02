@@ -2,11 +2,12 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, House, Store } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 
 const mobileSites = [
   {
@@ -60,10 +61,21 @@ const MobilePropertyBrandMark = () => {
     <Popover className="group relative shrink-0">
       <PopoverButton
         aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
-        className="relative grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a] bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.20)] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 dark:border-emerald-800 dark:bg-emerald-200 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.25)] data-open:ring-4 data-open:ring-[#176b50]/10"
+        className="relative grid size-10 shrink-0 place-items-center rounded-[14px] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.20)] data-open:ring-4 data-open:ring-[#176b50]/10"
       >
-        <span className="font-serif text-[20px] leading-none font-bold text-white dark:text-emerald-950">M</span>
-        <span className={`absolute end-1.5 top-1.5 size-1.5 rounded-full ring-1 ring-white/80 ${activeSite.dotTone}`} />
+        <Image
+          src="/mapxprop-mobile-mark.png"
+          alt=""
+          width={40}
+          height={40}
+          sizes="40px"
+          className="size-10 object-contain drop-shadow-[0_4px_10px_rgba(18,63,50,0.16)]"
+          priority
+        />
+        <span
+          aria-hidden="true"
+          className={`absolute -end-0.5 -bottom-0.5 size-2.5 rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
+        />
       </PopoverButton>
 
       <PopoverPanel
