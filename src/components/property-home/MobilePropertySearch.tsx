@@ -562,14 +562,10 @@ const MobilePropertySearch = ({
           className={`flex min-w-0 flex-1 items-center rounded-full border border-neutral-200 bg-white text-start transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 ${
             compactMapHeader && isMapResults
               ? 'min-h-11 gap-2 py-1.5 ps-2.5 pe-3 shadow-sm'
-              : 'min-h-14 gap-3 py-2 ps-3 pe-4 shadow-[0_6px_22px_rgba(15,23,42,0.10)]'
+              : 'min-h-12 gap-2.5 py-1.5 ps-2.5 pe-3 shadow-[0_5px_18px_rgba(15,23,42,0.09)]'
           }`}
         >
-          <span
-            className={`grid shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200 ${
-              compactMapHeader && isMapResults ? 'size-8' : 'size-9'
-            }`}
-          >
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200">
             <Search className="size-4.5" strokeWidth={2} />
           </span>
           <span className="min-w-0 flex-1">

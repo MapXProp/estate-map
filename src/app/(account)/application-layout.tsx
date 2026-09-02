@@ -19,7 +19,7 @@ const ApplicationLayout: React.FC<Props> = ({ children }) => {
         <Header />
       </div>
       {/* Keep the mobile search header for phones only. */}
-      <div className="sticky top-0 z-10 container flex h-20 items-center justify-center bg-white min-[744px]:hidden dark:bg-neutral-900">
+      <div className="sticky top-0 z-10 container flex h-16 items-center justify-center bg-white min-[744px]:hidden dark:bg-neutral-900">
         <HeroSearchFormMobile />
       </div>
       {/*  */}
