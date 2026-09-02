@@ -67,16 +67,16 @@ const MobilePropertyBrandMark = () => {
           <Image
             src="/mapxprop-mobile-mark.png"
             alt=""
-            width={42}
-            height={42}
-            sizes="42px"
-            className="size-[42px] max-w-none object-contain"
+            width={34}
+            height={34}
+            sizes="34px"
+            className="size-[34px] translate-x-[0.5px] -translate-y-[0.5px] object-contain"
             priority
           />
         </span>
         <span
           aria-hidden="true"
-          className={`absolute end-1 top-1 size-2 rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
+          className={`absolute end-1 top-1 size-[7px] rounded-full shadow-sm ring-2 ring-white dark:ring-neutral-900 ${activeSite.dotTone}`}
         />
       </PopoverButton>
 
