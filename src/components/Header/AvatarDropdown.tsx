@@ -104,7 +104,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
           <div className="relative bg-white px-5 py-5 dark:bg-neutral-800">
             <div className="flex items-center gap-3 px-1">
               <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
-                <FriendlyWinkIcon size={22} />
+                <HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.5} />
               </span>
 
               <div className="min-w-0 grow">
