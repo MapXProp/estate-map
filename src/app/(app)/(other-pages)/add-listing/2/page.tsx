@@ -8,7 +8,11 @@ import LongdoLocationPicker from '@/components/map/LongdoLocationPicker'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
-import { clearListingFormErrors, validateListingForm } from '@/lib/listingFormValidation'
+import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
+import {
+  consumeListingPublishValidationIssue,
+  listingValidationMessage,
+} from '@/lib/listingPublishValidation'
 import Input from '@/shared/Input'
 import {
   BuildingOffice2Icon,
@@ -85,6 +89,36 @@ const Page = () => {
 
     return () => cancelAnimationFrame(frame)
   }, [router, setSubmittingStep])
+
+  useEffect(() => {
+    if (!draft) return
+    const validationIssue = consumeListingPublishValidationIssue()
+    if (!validationIssue || validationIssue.step !== 2) return
+
+    const message = listingValidationMessage(validationIssue, locale)
+    if (validationIssue.target === 'location') {
+      setLocationError(message)
+      setLocationValidationError(true)
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      if (
+        validationIssue.fieldName &&
+        showListingFieldError({ fieldName: validationIssue.fieldName, message, isThai })
+      ) {
+        return
+      }
+
+      const target = document.getElementById('listing-location-section')
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(
+        () => target?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')?.focus({ preventScroll: true }),
+        280
+      )
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [draft, isThai, locale])
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY

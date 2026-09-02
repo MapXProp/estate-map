@@ -23,6 +23,10 @@ import {
   type ListingDraftValue,
   type ListingMediaType,
 } from '@/lib/listingDraft'
+import {
+  storeListingPublishValidationIssue,
+  validateListingDraftForPublish,
+} from '@/lib/listingPublishValidation'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import {
@@ -96,6 +100,18 @@ const Page = () => {
       })
       setStage('error')
       processLockRef.current = false
+      return
+    }
+
+    // Step 4 is not clickable, but this guard also protects direct URLs,
+    // restored tabs and stale drafts from uploading before required data is
+    // complete.
+    const validationIssue = validateListingDraftForPublish(startingDraft)
+    if (validationIssue) {
+      storeListingPublishValidationIssue(validationIssue)
+      setMediaProgress(initialListingMediaProgress)
+      processLockRef.current = false
+      router.replace(`/add-listing/${validationIssue.step}`)
       return
     }
 
@@ -237,7 +253,7 @@ const Page = () => {
     } finally {
       processLockRef.current = false
     }
-  }, [isThai, pendingMedia, persistMedia, setMediaProgress, setPendingMedia])
+  }, [isThai, pendingMedia, persistMedia, router, setMediaProgress, setPendingMedia])
 
   useEffect(() => {
     const storedResult = readSubmissionResult()

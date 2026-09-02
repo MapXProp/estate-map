@@ -17,7 +17,13 @@ import {
   type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
-import { validateListingForm } from '@/lib/listingFormValidation'
+import { showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
+import {
+  consumeListingPublishValidationIssue,
+  listingValidationMessage,
+  storeListingPublishValidationIssue,
+  validateListingDraftForPublish,
+} from '@/lib/listingPublishValidation'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import {
@@ -27,6 +33,7 @@ import {
   ChatBubbleLeftRightIcon,
   CheckCircleIcon,
   ChevronDownIcon,
+  ExclamationCircleIcon,
   IdentificationIcon,
   HomeModernIcon,
   MapPinIcon,
@@ -123,6 +130,7 @@ const Page = () => {
   const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [publishValidationError, setPublishValidationError] = useState('')
   const uploadLockRef = useRef(false)
   const initialPreferredCurrencyRef = useRef(preferredCurrency)
 
@@ -180,6 +188,26 @@ const Page = () => {
 
     return () => cancelAnimationFrame(frame)
   }, [router])
+
+  useEffect(() => {
+    if (!draft) return
+    const validationIssue = consumeListingPublishValidationIssue()
+    if (!validationIssue || validationIssue.step !== 3) return
+
+    const message = listingValidationMessage(validationIssue, locale)
+    const frame = window.requestAnimationFrame(() => {
+      setPublishValidationError(message)
+      const shown = validationIssue.fieldName
+        ? showListingFieldError({ fieldName: validationIssue.fieldName, message, isThai })
+        : false
+      if (shown) return
+
+      const form = document.getElementById('add-listing-form')
+      form?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [draft, isThai, locale])
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
@@ -287,20 +315,7 @@ const Page = () => {
 
   const handleSubmitForm = async (formData: FormData) => {
     if (uploadLockRef.current) return
-    if (!validateListingForm({ isThai })) return
-
-    uploadLockRef.current = true
-    setIsUploading(true)
-    const pendingMediaTotal = photos.length + videos.length + panoramas.length
-
-    setMediaProgress({
-      phase: 'saving',
-      pendingCount: pendingMediaTotal,
-      uploadedCount: uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length,
-      completedCount: 0,
-      totalCount: pendingMediaTotal,
-      currentFileName: '',
-    })
+    setPublishValidationError('')
 
     if (priceOnRequest || !hasSale) formData.set('salePrice', '')
     if (priceOnRequest || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
@@ -332,6 +347,42 @@ const Page = () => {
     replaceFormDataValues(formData, 'listingVideoUrls[]', uploadedVideoUrls)
     replaceFormDataValues(formData, 'listingPanoramaUrls[]', uploadedPanoramaUrls)
     formData.set('submissionKey', readText(draft?.submissionKey) || createListingSubmissionKey())
+
+    // Save the current page before the final gate so validation always sees a
+    // single fresh snapshot covering steps 1-3. No upload or API write starts
+    // until this complete-draft check passes.
+    const validationDraft = saveListingStep(3, formData, { resumeStep: 3 })
+    const validationIssue = validateListingDraftForPublish(validationDraft)
+    if (validationIssue) {
+      const message = listingValidationMessage(validationIssue, locale)
+      if (validationIssue.step < 3) {
+        storeListingPublishValidationIssue(validationIssue)
+        router.push(`/add-listing/${validationIssue.step}`)
+        return
+      }
+
+      setPublishValidationError(message)
+      validateListingForm({ isThai })
+      if (validationIssue.fieldName) {
+        showListingFieldError({ fieldName: validationIssue.fieldName, message, isThai })
+      }
+      return
+    }
+    if (!validateListingForm({ isThai })) return
+
+    uploadLockRef.current = true
+    setIsUploading(true)
+    const pendingMediaTotal = photos.length + videos.length + panoramas.length
+
+    setMediaProgress({
+      phase: 'saving',
+      pendingCount: pendingMediaTotal,
+      uploadedCount: uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length,
+      completedCount: 0,
+      totalCount: pendingMediaTotal,
+      currentFileName: '',
+    })
+
     saveListingStep(3, formData)
     setPendingMedia({ photos, videos, panoramas })
     sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
@@ -374,7 +425,26 @@ const Page = () => {
         </div>
       </section>
 
-      <Form id="add-listing-form" action={handleSubmitForm} noValidate aria-busy={isUploading} className="space-y-6">
+      {publishValidationError ? (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 font-sarabun text-sm font-medium text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300"
+        >
+          <ExclamationCircleIcon className="mt-0.5 size-5 shrink-0" />
+          <span>{publishValidationError}</span>
+        </div>
+      ) : null}
+
+      <Form
+        id="add-listing-form"
+        action={handleSubmitForm}
+        noValidate
+        aria-busy={isUploading}
+        className="space-y-6"
+        onInput={() => {
+          if (publishValidationError) setPublishValidationError('')
+        }}
+      >
         <PricingPanel
           isThai={isThai}
           offers={offers}

@@ -42,6 +42,10 @@ import {
   type ListingDraftValue,
 } from '@/lib/listingDraft'
 import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
+import {
+  consumeListingPublishValidationIssue,
+  listingValidationMessage,
+} from '@/lib/listingPublishValidation'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import Textarea from '@/shared/Textarea'
@@ -423,6 +427,34 @@ const Page = () => {
       cancelled = true
     }
   }, [router, setMediaProgress, setPendingMedia, setSubmittingStep])
+
+  useEffect(() => {
+    if (!draftReady) return
+    const validationIssue = consumeListingPublishValidationIssue()
+    if (!validationIssue || validationIssue.step !== 1) return
+
+    const message = listingValidationMessage(validationIssue, locale)
+    const section = validationIssue.section || 1
+    setError(message)
+    setErrorSection(section)
+    const frame = window.requestAnimationFrame(() => {
+      if (
+        validationIssue.fieldName &&
+        showListingFieldError({ fieldName: validationIssue.fieldName, message, isThai })
+      ) {
+        return
+      }
+
+      const target = document.getElementById(`listing-wizard-section-${section}`)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(
+        () => target?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')?.focus({ preventScroll: true }),
+        280
+      )
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [draftReady, isThai, locale])
 
   const selectChannel = (channelCode: DiscoveryChannelCode) => {
     const channel = getDiscoveryChannel(channelCode)
