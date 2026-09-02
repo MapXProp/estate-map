@@ -8,8 +8,16 @@ import { useNotificationCenter } from '@/hooks/useNotificationCenter'
 import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
 import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { BellIcon, CheckIcon, ChevronRightIcon, ClipboardDocumentCheckIcon, GlobeAltIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon, WinkIcon } from '@hugeicons/core-free-icons'
+import {
+  BellIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ClipboardDocumentCheckIcon,
+  GlobeAltIcon,
+  ShieldCheckIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
+import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -22,6 +30,34 @@ interface Props {
   showMobileActions?: boolean
   showListingActionWhenCtaHidden?: boolean
   showPreferencesAction?: boolean
+}
+
+function FriendlyWinkIcon({ size }: { size: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="12" cy="12" r="8.75" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="8.6" cy="9.7" r="0.8" fill="currentColor" />
+      <path
+        d="M14.55 9.75C15.2 9.05 16.35 9.05 17 9.75"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8.25 14.15C9.25 15.35 10.5 15.95 12 15.95C13.5 15.95 14.75 15.35 15.75 14.15"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
 }
 
 export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClassName, className }: Props) {
@@ -53,7 +89,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
           <span
             className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
           >
-            <HugeiconsIcon icon={WinkIcon} size={19} strokeWidth={1.5} />
+            <FriendlyWinkIcon size={19} />
           </span>
         </PopoverButton>
 
@@ -68,7 +104,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
           <div className="relative bg-white px-5 py-5 dark:bg-neutral-800">
             <div className="flex items-center gap-3 px-1">
               <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
-                <HugeiconsIcon icon={WinkIcon} size={22} strokeWidth={1.5} />
+                <FriendlyWinkIcon size={22} />
               </span>
 
               <div className="min-w-0 grow">
