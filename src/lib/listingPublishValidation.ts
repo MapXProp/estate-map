@@ -44,6 +44,11 @@ const isPositiveInteger = (value: string) => {
   const parsed = parseNumber(value)
   return Number.isInteger(parsed) && parsed > 0
 }
+const isISODate = (value: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00.000Z`)
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
 
 export const validateListingDraftForPublish = (draft: ListingDraft): ListingPublishValidationIssue | null => {
   const channel = getDiscoveryChannel(text(draft.discovery_channel_code))
@@ -253,23 +258,82 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   }
 
   const isTemporarySpace = spaceTypes.includes('event_booth')
+  const isRetailSpace = text(draft.property_type_code) === 'retail_space'
   const priceOnRequest = text(draft.priceOnRequest) === 'yes'
+  if (isTemporarySpace) {
+    if (!text(draft.eventName)) {
+      return issue('event_name_required', 3, 'กรุณากรอกชื่องาน', 'Enter the event name.', {
+        target: 'field',
+        fieldName: 'eventName',
+      })
+    }
+    if (!text(draft.eventVenueName)) {
+      return issue('event_venue_required', 3, 'กรุณากรอกชื่อสถานที่จัดงาน', 'Enter the event venue.', {
+        target: 'field',
+        fieldName: 'eventVenueName',
+      })
+    }
+
+    const roundStarts = values(draft['eventRoundStarts[]'])
+    const roundEnds = values(draft['eventRoundEnds[]'])
+    if (!roundStarts.length || roundStarts.length !== roundEnds.length || roundStarts.length > 12) {
+      return issue(
+        'event_rounds_required',
+        3,
+        'กรุณากรอกวันเริ่มและวันสิ้นสุดให้ครบทุกรอบงาน',
+        'Enter a start and end date for every event round.',
+        { target: 'field', fieldName: 'eventRoundStarts[]' }
+      )
+    }
+
+    const seenRounds = new Set<string>()
+    for (let index = 0; index < roundStarts.length; index += 1) {
+      const startsOn = roundStarts[index]
+      const endsOn = roundEnds[index]
+      if (!isISODate(startsOn) || !isISODate(endsOn)) {
+        return issue('event_round_date_invalid', 3, 'กรุณาตรวจสอบวันที่จัดงาน', 'Enter valid event dates.', {
+          target: 'field',
+          fieldName: 'eventRoundStarts[]',
+        })
+      }
+      if (endsOn < startsOn) {
+        return issue(
+          'event_round_date_order',
+          3,
+          'วันสิ้นสุดต้องไม่มาก่อนวันเริ่มงาน',
+          'The end date cannot be before the start date.',
+          { target: 'field', fieldName: 'eventRoundEnds[]' }
+        )
+      }
+      const roundKey = `${startsOn}:${endsOn}`
+      if (seenRounds.has(roundKey)) {
+        return issue(
+          'event_round_duplicate',
+          3,
+          'มีรอบงานที่ใช้ช่วงวันที่ซ้ำกัน กรุณาตรวจสอบอีกครั้ง',
+          'Two event rounds use the same date range.',
+          { target: 'field', fieldName: 'eventRoundStarts[]' }
+        )
+      }
+      seenRounds.add(roundKey)
+    }
+  }
   if (!priceOnRequest) {
     const requiredPrices: Array<[boolean, string, string, string, string]> = [
       [offerTypes.includes('sale'), 'salePrice', text(draft.salePrice), 'กรุณากรอกราคาขาย', 'Enter the sale price.'],
       [
-        !isTemporarySpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
+        !isRetailSpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
         'rentPriceMonthly',
         text(draft.rentPriceMonthly),
         'กรุณากรอกค่าเช่ารายเดือน',
         'Enter the monthly rent.',
       ],
       [
-        isTemporarySpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
-        'temporarySpacePrice',
-        text(draft.temporarySpacePrice),
-        'กรุณากรอกค่าเช่าพื้นที่ชั่วคราว',
-        'Enter the temporary-space rental price.',
+        isRetailSpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
+        'retailRentPrice',
+        text(draft.retailRentPrice),
+        'กรุณากรอกค่าเช่าพื้นที่ค้าขาย',
+        'Enter the retail-space rental price.',
       ],
       [
         offerTypes.includes('business_transfer'),
@@ -289,18 +353,39 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
         })
       }
     }
+    const retailPriceUnit =
+      text(draft.retailPriceUnit) || text(draft.price_unit) || (isTemporarySpace ? 'event_period' : 'month')
     if (
-      isTemporarySpace &&
+      isRetailSpace &&
       (offerTypes.includes('rent') || offerTypes.includes('sublease')) &&
-      !isPositiveInteger(text(draft.temporarySpaceDurationDays))
+      (!['day', 'week', 'month', 'event_period'].includes(retailPriceUnit) ||
+        (retailPriceUnit === 'event_period' && !isTemporarySpace))
     ) {
       return issue(
-        'temporarySpaceDurationDays_required',
+        'retailPriceUnit_invalid',
         3,
-        'กรุณาระบุจำนวนวันที่รวมในค่าเช่า',
-        'Enter the number of days included in the rental price.',
-        { target: 'field', fieldName: 'temporarySpaceDurationDays' }
+        'กรุณาเลือกหน่วยค่าเช่าให้ถูกต้อง',
+        'Choose a valid retail rent period.',
+        { target: 'field', fieldName: 'retailPriceUnit' }
       )
+    }
+    for (const [fieldName, value, messageTh, messageEn] of [
+      [
+        'depositAmount',
+        text(draft.depositAmount),
+        'กรุณากรอกค่ามัดจำเป็นตัวเลขที่ถูกต้อง',
+        'Enter a valid deposit amount.',
+      ],
+      [
+        'advanceRentAmount',
+        text(draft.advanceRentAmount),
+        'กรุณากรอกค่าเช่าล่วงหน้าเป็นตัวเลขที่ถูกต้อง',
+        'Enter a valid advance rent amount.',
+      ],
+    ] as const) {
+      if (value && !isPositiveNumber(value)) {
+        return issue(`${fieldName}_invalid`, 3, messageTh, messageEn, { target: 'field', fieldName })
+      }
     }
   }
 

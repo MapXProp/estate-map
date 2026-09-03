@@ -40,6 +40,48 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     .filter(Boolean)
     .join(' ')
   const price = formatPrice(listing, isThai)
+  const currencySymbol = listing.currency === 'USD' ? 'US$' : '฿'
+  const formatRetailAmount = (amount: number) =>
+    `${currencySymbol}${amount.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 })}`
+  const retailTerms =
+    listing.property_type_code === 'retail_space'
+      ? [
+          ...(listing.deposit_amount !== undefined
+            ? [
+                {
+                  label: isThai ? 'ค่ามัดจำ' : 'Security deposit',
+                  value: formatRetailAmount(listing.deposit_amount),
+                },
+              ]
+            : []),
+          ...(listing.advance_rent_amount !== undefined
+            ? [
+                {
+                  label: isThai ? 'ค่าเช่าล่วงหน้า' : 'Advance rent',
+                  value: formatRetailAmount(listing.advance_rent_amount),
+                },
+              ]
+            : []),
+          ...(listing.minimum_contract_months !== undefined
+            ? [
+                {
+                  label: isThai ? 'สัญญาขั้นต่ำ' : 'Minimum contract',
+                  value: isThai
+                    ? `${formatNumber(listing.minimum_contract_months, locale)} เดือน`
+                    : `${formatNumber(listing.minimum_contract_months, locale)} month${listing.minimum_contract_months === 1 ? '' : 's'}`,
+                },
+              ]
+            : []),
+          ...(listing.service_fee_monthly !== undefined
+            ? [
+                {
+                  label: isThai ? 'ค่าส่วนกลาง / ค่าบริการ' : 'Service fee',
+                  value: `${formatRetailAmount(listing.service_fee_monthly)}${isThai ? '/เดือน' : '/month'}`,
+                },
+              ]
+            : []),
+        ]
+      : []
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
   const lineHandle = listing.line_id.replace(/^@/, '')
@@ -162,6 +204,16 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </section>
             ) : null}
 
+            {listing.property_type_code === 'retail_space' ? (
+              <section className="mt-7 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 lg:hidden dark:border-[#205e30] dark:bg-[#173520]">
+                <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-300">
+                  {isThai ? 'ค่าเช่าและเงื่อนไข' : 'Rent & terms'}
+                </p>
+                <p className="mt-1 font-sarabun text-2xl font-semibold text-[#123f32] dark:text-white">{price}</p>
+                <RetailTerms items={retailTerms} />
+              </section>
+            ) : null}
+
             <section className="mt-10 border-t border-neutral-200 pt-8 dark:border-neutral-800">
               <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'รายละเอียดประกาศ' : 'Listing details'}
@@ -216,6 +268,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <p className="mt-1 font-sarabun text-3xl font-semibold tracking-tight text-neutral-950 dark:text-white">
                 {price}
               </p>
+              <RetailTerms items={retailTerms} />
               <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
               <p className="font-sarabun font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'ติดต่อ' : 'Contact'} {listing.contact_name}
@@ -284,6 +337,21 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   )
 }
 
+const RetailTerms = ({ items }: { items: Array<{ label: string; value: string }> }) => {
+  if (!items.length) return null
+
+  return (
+    <dl className="mt-4 grid gap-2 border-t border-[#dce9e4] pt-4 dark:border-neutral-700">
+      {items.map((item) => (
+        <div key={item.label} className="flex items-start justify-between gap-4 font-sarabun text-sm">
+          <dt className="text-neutral-500 dark:text-neutral-400">{item.label}</dt>
+          <dd className="text-right font-semibold text-neutral-900 dark:text-neutral-100">{item.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
 const formatNumber = (value: number, locale: 'th' | 'en') =>
   value.toLocaleString(locale === 'th' ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 })
 
@@ -300,7 +368,15 @@ const formatPrice = (listing: PropertyListingDetail, isThai: boolean) => {
         ? isThai
           ? '/วัน'
           : '/day'
-        : ''
+        : listing.price_unit === 'week'
+          ? isThai
+            ? '/สัปดาห์'
+            : '/week'
+          : listing.price_unit === 'event_period'
+            ? isThai
+              ? '/งาน'
+              : '/event'
+            : ''
   return `${currency}${amount}${unit}`
 }
 

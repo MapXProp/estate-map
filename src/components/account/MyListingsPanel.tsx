@@ -489,7 +489,24 @@ const statusFor = (listing: MyListing, isThai: boolean) => {
 const formatPrice = (listing: MyListing, isThai: boolean) => {
   if (typeof listing.price !== 'number') return isThai ? 'ยังไม่ระบุราคา' : 'Price on request'
   const price = new Intl.NumberFormat(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 }).format(listing.price)
-  const unit = listing.price_unit === 'month' ? (isThai ? '/ เดือน' : '/ month') : ''
+  const unit =
+    listing.price_unit === 'month'
+      ? isThai
+        ? '/ เดือน'
+        : '/ month'
+      : listing.price_unit === 'day'
+        ? isThai
+          ? '/ วัน'
+          : '/ day'
+        : listing.price_unit === 'week'
+          ? isThai
+            ? '/ สัปดาห์'
+            : '/ week'
+          : listing.price_unit === 'event_period'
+            ? isThai
+              ? '/ งาน'
+              : '/ event'
+            : ''
   return `${price} ${isThai ? 'บาท' : 'THB'}${unit}`
 }
 

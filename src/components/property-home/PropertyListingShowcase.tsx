@@ -396,17 +396,20 @@ const formatEventSchedule = (startsOn?: string, endsOn?: string) => {
 
 const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => {
   const group = getListingGroup(listing)
+  const isRetailSpace = listing.property_type_code === 'retail_space'
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
-  const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
+  const isRental = Boolean(
+    (listing.offer_type === 'rent' || listing.offer_type === 'sublease' || listing.rent_price_monthly) &&
+    !listing.sale_price
+  )
   const area =
     listing.land_area_sqm && group === 'land'
       ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
       : listing.usable_area_sqm
         ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.`
         : ''
-  const price = listing.price_on_request
-    ? ''
-    : new Intl.NumberFormat('th-TH').format(isRental ? listing.rent_price_monthly || 0 : listing.sale_price || 0)
+  const priceAmount = isRetailSpace ? listing.offer_amount : isRental ? listing.rent_price_monthly : listing.sale_price
+  const price = listing.price_on_request || !priceAmount ? '' : new Intl.NumberFormat('th-TH').format(priceAmount)
   const eventSchedule = isEvent ? formatEventSchedule(listing.event_starts_on, listing.event_ends_on) : ''
 
   return {
@@ -418,20 +421,32 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
       : group === 'land'
         ? 'ที่ดินเปล่า'
         : listing.property_type_code || 'อสังหาริมทรัพย์',
-    offer: isEvent ? 'ติดต่อผู้จัดงาน' : isRental ? 'เช่า' : 'ขาย',
+    offer: isEvent ? (listing.price_on_request ? 'ติดต่อผู้จัดงาน' : 'เช่า') : isRental ? 'เช่า' : 'ขาย',
     title: listing.title,
     location: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
     facts: isEvent
       ? [eventSchedule, listing.event_round_count ? `${listing.event_round_count} รอบ` : ''].filter(Boolean)
       : [area, listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : ''].filter(Boolean),
     price,
-    unit: listing.price_on_request ? undefined : isRental ? 'บาท/เดือน' : 'บาท',
+    unit: listing.price_on_request
+      ? undefined
+      : isRetailSpace
+        ? listing.offer_price_unit === 'day'
+          ? 'บาท/วัน'
+          : listing.offer_price_unit === 'week'
+            ? 'บาท/สัปดาห์'
+            : listing.offer_price_unit === 'month'
+              ? 'บาท/เดือน'
+              : 'บาท/งาน'
+        : isRental
+          ? 'บาท/เดือน'
+          : 'บาท',
     image: listing.primary_image_url || '',
     href: `/real-estate-listings/${listing.slug || listing.public_listing_id}`,
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
     verified: listing.is_verified,
     verificationLabel: listing.is_verified ? 'ตรวจสอบแล้ว' : undefined,
-    priceLabel: listing.price_on_request ? 'สอบถามราคา' : undefined,
+    priceLabel: listing.price_on_request ? (isEvent ? 'ติดต่อผู้จัดงาน' : 'สอบถามราคา') : undefined,
     imagePosition: isEvent ? 'top' : 'center',
   }
 }

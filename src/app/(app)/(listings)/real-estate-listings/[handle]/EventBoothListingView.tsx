@@ -35,6 +35,28 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
   const fixedPrice = listing.offer_amount
     ? `${currencySymbol}${listing.offer_amount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`
     : ''
+  const formatCost = (amount: number) =>
+    `${currencySymbol}${amount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`
+  const rentalTerms = [
+    ...(listing.deposit_amount !== undefined ? [{ label: 'ค่ามัดจำ', value: formatCost(listing.deposit_amount) }] : []),
+    ...(listing.advance_rent_amount !== undefined
+      ? [{ label: 'ค่าเช่าล่วงหน้า', value: formatCost(listing.advance_rent_amount) }]
+      : []),
+    ...(listing.minimum_contract_months !== undefined
+      ? [{ label: 'สัญญาขั้นต่ำ', value: `${listing.minimum_contract_months.toLocaleString('th-TH')} เดือน` }]
+      : []),
+    ...(listing.service_fee_monthly !== undefined
+      ? [{ label: 'ค่าส่วนกลาง / ค่าบริการ', value: `${formatCost(listing.service_fee_monthly)}/เดือน` }]
+      : []),
+  ]
+  const fixedPriceUnit =
+    listing.price_unit === 'day'
+      ? ' / วัน'
+      : listing.price_unit === 'event_period'
+        ? ' / งาน'
+        : temporarySpaceDays
+          ? ` / ${temporarySpaceDays} วัน`
+          : ''
   const eventOfferLabel =
     listing.offer_type === 'business_transfer'
       ? 'เซ้งกิจการ'
@@ -92,7 +114,13 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </div>
             <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-              <span>{fullAddress}</span>
+              <span>
+                <strong className="block font-semibold text-neutral-900">
+                  {event.venue_name}
+                  {event.venue_floor_label ? ` · ${event.venue_floor_label}` : ''}
+                </strong>
+                <span className="mt-0.5 block text-sm text-neutral-500">{fullAddress}</span>
+              </span>
             </div>
 
             <div className="mt-6 rounded-3xl border border-[#dce9e4] bg-[#f4f9f7] p-5">
@@ -101,15 +129,27 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </p>
               <p className="mt-1 text-2xl font-semibold text-[#123f32]">
                 {isContactOrganizer ? 'ติดต่อผู้จัดงาน' : fixedPrice || 'สอบถามราคา'}
-                {!isContactOrganizer && fixedPrice && temporarySpaceDays ? (
-                  <span className="text-base font-medium text-neutral-600"> / {temporarySpaceDays} วัน</span>
+                {!isContactOrganizer && fixedPrice && fixedPriceUnit ? (
+                  <span className="text-base font-medium text-neutral-600">{fixedPriceUnit}</span>
                 ) : null}
               </p>
               <p className="mt-2 text-sm leading-6 text-neutral-600">
                 {isContactOrganizer
                   ? 'ผู้จัดจะแจ้งราคา ขนาดบูธ พื้นที่ว่าง และเงื่อนไขให้ผู้สนใจโดยตรง'
-                  : 'ราคานี้เป็นราคาตายตัวตามระยะเวลาที่ผู้ลงประกาศกำหนด โปรดติดต่อเพื่อตรวจสอบพื้นที่ว่าง'}
+                  : listing.price_unit === 'day'
+                    ? 'ราคานี้คิดต่อ 1 วัน โปรดติดต่อผู้ลงประกาศเพื่อยืนยันวันที่และพื้นที่ว่าง'
+                    : 'ราคานี้เป็นราคารวมสำหรับเข้าร่วมตลอดงาน โปรดติดต่อผู้ลงประกาศเพื่อยืนยันพื้นที่ว่าง'}
               </p>
+              {!isContactOrganizer && rentalTerms.length ? (
+                <dl className="mt-4 grid gap-2 border-t border-[#dce9e4] pt-4 sm:grid-cols-2">
+                  {rentalTerms.map((item) => (
+                    <div key={item.label} className="rounded-xl bg-white/75 px-3 py-2">
+                      <dt className="text-xs text-neutral-500">{item.label}</dt>
+                      <dd className="mt-0.5 text-sm font-semibold text-neutral-900">{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
             </div>
 
             <section className="mt-8">
@@ -174,7 +214,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                   rel="noopener noreferrer"
                   className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#176b50] hover:underline"
                 >
-                  ขอข้อมูลและแปลนจากผู้จัด <ExternalLink className="size-4" />
+                  ดูแปลนพื้นที่ <ExternalLink className="size-4" />
                 </a>
               )}
             </section>

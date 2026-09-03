@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function BusinessPage() {
-  return <PropertyHomePrototype mode="business" />
+  return <PropertyHomePrototype />
 }

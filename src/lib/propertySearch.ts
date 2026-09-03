@@ -185,6 +185,10 @@ export type PropertyListingDetail = {
   offer_amount?: number
   price_unit: string
   currency: string
+  deposit_amount?: number
+  advance_rent_amount?: number
+  minimum_contract_months?: number
+  service_fee_monthly?: number
   amenities: string[]
   published_at?: string
   expires_at?: string

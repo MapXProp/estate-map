@@ -17,6 +17,7 @@ export type ListingPendingMedia = {
   photos: File[]
   videos: File[]
   panoramas: File[]
+  floorPlans: File[]
 }
 
 export const initialListingMediaProgress: ListingMediaProgressState = {
@@ -32,6 +33,7 @@ export const initialListingPendingMedia: ListingPendingMedia = {
   photos: [],
   videos: [],
   panoramas: [],
+  floorPlans: [],
 }
 
 type ListingFlowProgressValue = {

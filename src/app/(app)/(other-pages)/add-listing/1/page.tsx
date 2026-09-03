@@ -939,13 +939,6 @@ const Page = () => {
                   {isThai ? 'เลือกได้มากกว่า 1 รูปแบบ' : 'You can choose more than one option.'}
                 </p>
               ) : null}
-              {hasEventBooth ? (
-                <p className="mt-2 font-sarabun text-xs leading-5 text-orange-700 dark:text-orange-300">
-                  {isThai
-                    ? 'เลือกรูปแบบประกาศตรงนี้ก่อน จากนั้นเลือกระบุราคา หรือให้ผู้สนใจติดต่อผู้จัดงานในขั้นตอนราคา'
-                    : 'Choose the listing option here, then enter a fixed price or ask customers to contact the organizer in the pricing step.'}
-                </p>
-              ) : null}
             </div>
           )}
         </WizardSection>

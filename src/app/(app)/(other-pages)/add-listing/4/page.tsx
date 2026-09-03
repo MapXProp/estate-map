@@ -23,10 +23,7 @@ import {
   type ListingDraftValue,
   type ListingMediaType,
 } from '@/lib/listingDraft'
-import {
-  storeListingPublishValidationIssue,
-  validateListingDraftForPublish,
-} from '@/lib/listingPublishValidation'
+import { storeListingPublishValidationIssue, validateListingDraftForPublish } from '@/lib/listingPublishValidation'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import {
@@ -76,11 +73,13 @@ const Page = () => {
   const autoStartedRef = useRef(false)
 
   const persistMedia = useCallback(
-    (photoUrls: string[], videoUrls: string[], panoramaUrls: string[], syncCloud = false) => {
+    (photoUrls: string[], videoUrls: string[], panoramaUrls: string[], floorPlanUrl: string, syncCloud = false) => {
       const formData = new FormData()
       replaceFormDataValues(formData, 'listingPhotoUrls[]', photoUrls)
       replaceFormDataValues(formData, 'listingVideoUrls[]', videoUrls)
       replaceFormDataValues(formData, 'listingPanoramaUrls[]', panoramaUrls)
+      formData.set('eventFloorPlanUrl', floorPlanUrl)
+      formData.set('selectedFloorPlanCount', floorPlanUrl ? '1' : '0')
       const savedDraft = saveListingStep(3, formData, { resumeStep: 4 })
       return syncCloud ? saveListingDraftToCloud(savedDraft).catch(() => null) : Promise.resolve(null)
     },
@@ -118,10 +117,18 @@ const Page = () => {
     let photoUrls = readValues(startingDraft['listingPhotoUrls[]'])
     let videoUrls = readValues(startingDraft['listingVideoUrls[]'])
     let panoramaUrls = readValues(startingDraft['listingPanoramaUrls[]'])
+    let floorPlanUrls = readText(startingDraft.eventFloorPlanUrl) ? [readText(startingDraft.eventFloorPlanUrl)] : []
     const missingFileCount =
       Math.max(0, readCount(startingDraft.selectedPhotoCount) - photoUrls.length - pendingMedia.photos.length) +
       Math.max(0, readCount(startingDraft.selectedVideoCount) - videoUrls.length - pendingMedia.videos.length) +
-      Math.max(0, readCount(startingDraft.selectedPanoramaCount) - panoramaUrls.length - pendingMedia.panoramas.length)
+      Math.max(
+        0,
+        readCount(startingDraft.selectedPanoramaCount) - panoramaUrls.length - pendingMedia.panoramas.length
+      ) +
+      Math.max(
+        0,
+        readCount(startingDraft.selectedFloorPlanCount) - floorPlanUrls.length - pendingMedia.floorPlans.length
+      )
 
     if (missingFileCount > 0) {
       setFailure({
@@ -136,9 +143,13 @@ const Page = () => {
       return
     }
 
-    const totalCount = pendingMedia.photos.length + pendingMedia.videos.length + pendingMedia.panoramas.length
+    const totalCount =
+      pendingMedia.photos.length +
+      pendingMedia.videos.length +
+      pendingMedia.panoramas.length +
+      pendingMedia.floorPlans.length
     let completedCount = 0
-    let uploadedCount = photoUrls.length + videoUrls.length + panoramaUrls.length
+    let uploadedCount = photoUrls.length + videoUrls.length + panoramaUrls.length + floorPlanUrls.length
     setStage(totalCount ? 'uploading' : 'saving')
     setMediaProgress({
       phase: totalCount ? 'uploading' : 'saving',
@@ -175,10 +186,11 @@ const Page = () => {
         uploadedCount += uploaded.length
         setPendingMedia((current) => ({ ...current, [pendingKey]: files.slice(index + 1) }))
 
-        if (mediaType === 'image') photoUrls = urls
-        if (mediaType === 'video') videoUrls = urls
-        if (mediaType === '360') panoramaUrls = urls
-        await persistMedia(photoUrls, videoUrls, panoramaUrls)
+        if (pendingKey === 'photos') photoUrls = urls
+        if (pendingKey === 'videos') videoUrls = urls
+        if (pendingKey === 'panoramas') panoramaUrls = urls
+        if (pendingKey === 'floorPlans') floorPlanUrls = urls
+        await persistMedia(photoUrls, videoUrls, panoramaUrls, floorPlanUrls[0] || '')
 
         setMediaProgress({
           phase: 'uploading',
@@ -196,8 +208,9 @@ const Page = () => {
       photoUrls = await uploadQueue(pendingMedia.photos, 'image', photoUrls, MAX_PHOTOS, 'photos')
       videoUrls = await uploadQueue(pendingMedia.videos, 'video', videoUrls, MAX_VIDEOS, 'videos')
       panoramaUrls = await uploadQueue(pendingMedia.panoramas, '360', panoramaUrls, MAX_PANORAMAS, 'panoramas')
+      floorPlanUrls = await uploadQueue(pendingMedia.floorPlans, 'image', floorPlanUrls, 1, 'floorPlans')
     } catch (error) {
-      await persistMedia(photoUrls, videoUrls, panoramaUrls, true)
+      await persistMedia(photoUrls, videoUrls, panoramaUrls, floorPlanUrls[0] || '', true)
       setFailure({
         stage: 'upload',
         message: getMediaUploadErrorMessage(error, isThai),
@@ -326,7 +339,11 @@ const Page = () => {
             disabled={isOpeningEdit}
             className="h-12 justify-center"
           >
-            {isOpeningEdit ? <ArrowPathIcon className="size-5 animate-spin" /> : <PencilSquareIcon className="size-5" />}
+            {isOpeningEdit ? (
+              <ArrowPathIcon className="size-5 animate-spin" />
+            ) : (
+              <PencilSquareIcon className="size-5" />
+            )}
             {isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
           </ButtonSecondary>
           <ButtonPrimary href={viewHref} className="h-12 justify-center">
@@ -385,7 +402,7 @@ const Page = () => {
         {failure.detail ? (
           <details className="mt-5 text-left font-sarabun text-xs text-neutral-400">
             <summary className="cursor-pointer">{isThai ? 'รายละเอียดสำหรับตรวจสอบ' : 'Technical details'}</summary>
-            <p className="mt-2 break-words rounded-xl bg-neutral-100 px-3 py-2 dark:bg-neutral-800">{failure.detail}</p>
+            <p className="mt-2 rounded-xl bg-neutral-100 px-3 py-2 break-words dark:bg-neutral-800">{failure.detail}</p>
           </details>
         ) : null}
       </StatusCard>
@@ -447,13 +464,7 @@ const Page = () => {
   )
 }
 
-const StatusCard = ({
-  tone,
-  children,
-}: {
-  tone: 'processing' | 'success' | 'error'
-  children: React.ReactNode
-}) => (
+const StatusCard = ({ tone, children }: { tone: 'processing' | 'success' | 'error'; children: React.ReactNode }) => (
   <section
     aria-live="polite"
     className={`mx-auto w-full max-w-2xl rounded-[30px] border px-5 py-9 text-center shadow-[0_28px_80px_-52px_rgba(15,23,42,0.38)] sm:px-9 sm:py-11 dark:bg-neutral-900 ${
@@ -571,9 +582,7 @@ const contactProfileFromDraft = (draft: ListingDraft) => {
     role_code: roleCode,
     authority_source_code: roleCode === 'owner' ? 'self' : readText(draft.contactAuthorityCode),
     organization_name: organizationName,
-    organization_registration_no: organizationName
-      ? readText(draft.contactOrganizationRegistrationNo).trim()
-      : '',
+    organization_registration_no: organizationName ? readText(draft.contactOrganizationRegistrationNo).trim() : '',
   }
 }
 

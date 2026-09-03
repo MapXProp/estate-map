@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function HomesPage() {
-  return <PropertyHomePrototype mode="homes" />
+  return <PropertyHomePrototype />
 }

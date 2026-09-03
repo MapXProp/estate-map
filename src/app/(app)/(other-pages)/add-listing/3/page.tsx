@@ -1,5 +1,6 @@
 'use client'
 
+import EventDetailsPanel, { type EventRoundDraft } from '@/components/add-listing/EventDetailsPanel'
 import {
   initialListingMediaProgress,
   useListingFlowProgress,
@@ -54,6 +55,8 @@ const MAX_PHOTOS = 10
 const MAX_VIDEOS = 4
 const MAX_PANORAMAS = 4
 
+type RetailPriceUnit = 'day' | 'week' | 'month' | 'event_period'
+
 const fileIdentity = (file: File) => `${file.name}:${file.size}:${file.lastModified}`
 
 const appendUniqueFiles = (current: File[], incoming: File[], limit: number) => {
@@ -107,7 +110,9 @@ const Page = () => {
   const [rentPriceMonthly, setRentPriceMonthly] = useState('')
   const [rentPriceDaily, setRentPriceDaily] = useState('')
   const [temporarySpacePrice, setTemporarySpacePrice] = useState('')
-  const [temporarySpaceDurationDays, setTemporarySpaceDurationDays] = useState('')
+  const [temporarySpacePriceUnit, setTemporarySpacePriceUnit] = useState<RetailPriceUnit>('month')
+  const [depositAmount, setDepositAmount] = useState('')
+  const [advanceRentAmount, setAdvanceRentAmount] = useState('')
   const [keyMoneyAmount, setKeyMoneyAmount] = useState('')
   const [serviceFeeMonthly, setServiceFeeMonthly] = useState('')
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState('')
@@ -124,12 +129,18 @@ const Page = () => {
   const [lineId, setLineId] = useState('')
   const [instagramHandle, setInstagramHandle] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+  const [eventName, setEventName] = useState('')
+  const [eventVenueName, setEventVenueName] = useState('')
+  const [eventVenueFloor, setEventVenueFloor] = useState('')
+  const [eventRounds, setEventRounds] = useState<EventRoundDraft[]>([{ id: 'event-round-0', startsOn: '', endsOn: '' }])
   const [photos, setPhotos] = useState<File[]>(() => pendingMedia.photos)
   const [videos, setVideos] = useState<File[]>(() => pendingMedia.videos)
   const [panoramas, setPanoramas] = useState<File[]>(() => pendingMedia.panoramas)
+  const [floorPlans, setFloorPlans] = useState<File[]>(() => pendingMedia.floorPlans)
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
+  const [uploadedFloorPlanUrl, setUploadedFloorPlanUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const [publishValidationError, setPublishValidationError] = useState('')
   const uploadLockRef = useRef(false)
@@ -149,8 +160,28 @@ const Page = () => {
       setSalePrice(formatPriceInput(readText(savedDraft.salePrice)))
       setRentPriceMonthly(formatPriceInput(readText(savedDraft.rentPriceMonthly)))
       setRentPriceDaily(formatPriceInput(readText(savedDraft.rentPriceDaily)))
-      setTemporarySpacePrice(formatPriceInput(readText(savedDraft.temporarySpacePrice)))
-      setTemporarySpaceDurationDays(readText(savedDraft.temporarySpaceDurationDays))
+      const savedSpaceTypes = [readText(savedDraft.space_type_code), ...readValues(savedDraft['spaceTypeCodes[]'])]
+      const savedIsTemporarySpace = savedSpaceTypes.includes('event_booth')
+      const savedRetailPriceUnit = readText(savedDraft.retailPriceUnit) || readText(savedDraft.price_unit)
+      const allowedRetailPriceUnits: RetailPriceUnit[] = savedIsTemporarySpace
+        ? ['day', 'week', 'month', 'event_period']
+        : ['day', 'week', 'month']
+      setTemporarySpacePrice(
+        formatPriceInput(
+          readText(savedDraft.retailRentPrice) ||
+            readText(savedDraft.temporarySpacePrice) ||
+            readText(savedDraft.rentPriceMonthly)
+        )
+      )
+      setTemporarySpacePriceUnit(
+        allowedRetailPriceUnits.includes(savedRetailPriceUnit as RetailPriceUnit)
+          ? (savedRetailPriceUnit as RetailPriceUnit)
+          : savedIsTemporarySpace
+            ? 'event_period'
+            : 'month'
+      )
+      setDepositAmount(formatPriceInput(readText(savedDraft.depositAmount)))
+      setAdvanceRentAmount(formatPriceInput(readText(savedDraft.advanceRentAmount)))
       setKeyMoneyAmount(formatPriceInput(readText(savedDraft.keyMoneyAmount)))
       setServiceFeeMonthly(formatPriceInput(readText(savedDraft.serviceFeeMonthly)))
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
@@ -175,9 +206,25 @@ const Page = () => {
       setLineId(readText(savedDraft.lineId))
       setInstagramHandle(readText(savedDraft.instagramHandle))
       setContactEmail(readText(savedDraft.contactEmail) || storedUser?.email || '')
+      setEventName(readText(savedDraft.eventName))
+      setEventVenueName(readText(savedDraft.eventVenueName) || readText(savedDraft.placeName))
+      setEventVenueFloor(readText(savedDraft.eventVenueFloor))
+      const savedRoundStarts = readValues(savedDraft['eventRoundStarts[]'])
+      const savedRoundEnds = readValues(savedDraft['eventRoundEnds[]'])
+      const savedRoundCount = Math.max(savedRoundStarts.length, savedRoundEnds.length)
+      setEventRounds(
+        savedRoundCount
+          ? Array.from({ length: savedRoundCount }, (_, index) => ({
+              id: `event-round-loaded-${index}`,
+              startsOn: savedRoundStarts[index] || '',
+              endsOn: savedRoundEnds[index] || '',
+            }))
+          : [{ id: 'event-round-0', startsOn: '', endsOn: '' }]
+      )
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
       setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
       setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
+      setUploadedFloorPlanUrl(readText(savedDraft.eventFloorPlanUrl))
 
       void loadListingContactProfile()
         .then((profile) => {
@@ -219,9 +266,23 @@ const Page = () => {
     return () => window.cancelAnimationFrame(frame)
   }, [draft, isThai, locale])
 
+  const hasSale = offers.includes('sale')
+  const hasRent = offers.includes('rent') || offers.includes('sublease')
+  const hasTransfer = offers.includes('business_transfer')
+  const isRetailSpace = readText(draft?.property_type_code) === 'retail_space'
+  const isTemporarySpace = [readText(draft?.space_type_code), ...readValues(draft?.['spaceTypeCodes[]'])].includes(
+    'event_booth'
+  )
+  const effectiveFloorPlans = useMemo(() => (isTemporarySpace ? floorPlans : []), [floorPlans, isTemporarySpace])
+  const effectiveUploadedFloorPlanUrl = isTemporarySpace ? uploadedFloorPlanUrl : ''
+
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
   const panoramaPreviewUrls = useMemo(() => panoramas.map((panorama) => URL.createObjectURL(panorama)), [panoramas])
+  const pendingFloorPlanPreviewUrl = useMemo(
+    () => (isTemporarySpace && floorPlans[0] ? URL.createObjectURL(floorPlans[0]) : ''),
+    [floorPlans, isTemporarySpace]
+  )
 
   useEffect(() => {
     return () => previewUrls.forEach((url) => URL.revokeObjectURL(url))
@@ -236,11 +297,21 @@ const Page = () => {
   }, [panoramaPreviewUrls])
 
   useEffect(() => {
+    return () => {
+      if (pendingFloorPlanPreviewUrl) URL.revokeObjectURL(pendingFloorPlanPreviewUrl)
+    }
+  }, [pendingFloorPlanPreviewUrl])
+
+  useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setMediaProgress({
         ...initialListingMediaProgress,
-        pendingCount: photos.length + videos.length + panoramas.length,
-        uploadedCount: uploadedPhotoUrls.length + uploadedVideoUrls.length + uploadedPanoramaUrls.length,
+        pendingCount: photos.length + videos.length + panoramas.length + effectiveFloorPlans.length,
+        uploadedCount:
+          uploadedPhotoUrls.length +
+          uploadedVideoUrls.length +
+          uploadedPanoramaUrls.length +
+          (effectiveUploadedFloorPlanUrl ? 1 : 0),
       })
     })
 
@@ -248,7 +319,9 @@ const Page = () => {
   }, [
     panoramas.length,
     photos.length,
+    effectiveFloorPlans.length,
     setMediaProgress,
+    effectiveUploadedFloorPlanUrl,
     uploadedPanoramaUrls.length,
     uploadedPhotoUrls.length,
     uploadedVideoUrls.length,
@@ -256,15 +329,9 @@ const Page = () => {
   ])
 
   useEffect(() => {
-    setPendingMedia({ photos, videos, panoramas })
-  }, [panoramas, photos, setPendingMedia, videos])
+    setPendingMedia({ photos, videos, panoramas, floorPlans: effectiveFloorPlans })
+  }, [effectiveFloorPlans, panoramas, photos, setPendingMedia, videos])
 
-  const hasSale = offers.includes('sale')
-  const hasRent = offers.includes('rent') || offers.includes('sublease')
-  const hasTransfer = offers.includes('business_transfer')
-  const isTemporarySpace = [readText(draft?.space_type_code), ...readValues(draft?.['spaceTypeCodes[]'])].includes(
-    'event_booth'
-  )
   const effectivePriceOnRequest = priceOnRequest
   const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
   const listingSummary = useMemo(() => (draft ? getListingDraftSummary(locale) : null), [draft, locale])
@@ -297,6 +364,30 @@ const Page = () => {
     event.target.value = ''
   }
 
+  const handleFloorPlan = (event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files || []).find((file) => file.type.startsWith('image/'))
+    if (selected) {
+      setFloorPlans([selected])
+      setUploadedFloorPlanUrl('')
+    }
+    event.target.value = ''
+  }
+
+  const handleEventRoundChange = (id: string, field: 'startsOn' | 'endsOn', value: string) => {
+    setEventRounds((current) => current.map((round) => (round.id === id ? { ...round, [field]: value } : round)))
+  }
+
+  const addEventRound = () => {
+    setEventRounds((current) => [
+      ...current,
+      { id: `event-round-${Date.now()}-${current.length}`, startsOn: '', endsOn: '' },
+    ])
+  }
+
+  const removeEventRound = (id: string) => {
+    setEventRounds((current) => (current.length > 1 ? current.filter((round) => round.id !== id) : current))
+  }
+
   const removePhoto = (index: number) => {
     if (index < uploadedPhotoUrls.length) {
       setUploadedPhotoUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
@@ -324,21 +415,37 @@ const Page = () => {
     setPanoramas((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
   }
 
+  const removeFloorPlan = () => {
+    setFloorPlans([])
+    setUploadedFloorPlanUrl('')
+  }
+
   const handleSubmitForm = async (formData: FormData) => {
     if (uploadLockRef.current) return
     setPublishValidationError('')
 
     if (effectivePriceOnRequest || !hasSale) formData.set('salePrice', '')
-    if (effectivePriceOnRequest || isTemporarySpace || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
+    if (effectivePriceOnRequest || isRetailSpace || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
     if (effectivePriceOnRequest || !isMonthlyHotel) formData.set('rentPriceDaily', '')
     if (effectivePriceOnRequest || !hasTransfer) formData.set('keyMoneyAmount', '')
     formData.set('eventBookingPrice', '')
-    if (effectivePriceOnRequest || !isTemporarySpace || !hasRent) {
+    if (effectivePriceOnRequest || !isRetailSpace || !hasRent) {
+      formData.set('retailRentPrice', '')
+      formData.set('retailPriceUnit', '')
+      formData.set('depositAmount', '')
+      formData.set('advanceRentAmount', '')
       formData.set('temporarySpacePrice', '')
-      formData.set('temporarySpaceDurationDays', '')
+      formData.set('temporarySpacePriceUnit', '')
+    } else {
+      formData.set('retailPriceUnit', temporarySpacePriceUnit)
     }
+    formData.set('temporarySpacePrice', '')
+    formData.set('temporarySpacePriceUnit', '')
+    formData.set('temporarySpaceDurationDays', '')
     if (effectivePriceOnRequest || (!hasRent && !hasTransfer)) formData.set('serviceFeeMonthly', '')
-    if (!hasRent && !hasTransfer) formData.set('minimumLeaseMonths', '')
+    if ((!hasRent && !hasTransfer) || (effectivePriceOnRequest && isRetailSpace)) {
+      formData.set('minimumLeaseMonths', '')
+    }
     formData.set('priceOnRequest', effectivePriceOnRequest ? 'yes' : '')
     formData.set('priceNegotiable', !effectivePriceOnRequest && priceNegotiable ? 'yes' : '')
     formData.set('currency', currency)
@@ -355,6 +462,31 @@ const Page = () => {
     formData.set('lineId', lineId.trim())
     formData.set('instagramHandle', instagramHandle.trim())
     formData.set('contactEmail', contactEmail.trim())
+    if (isTemporarySpace) {
+      formData.set('eventName', eventName.trim())
+      formData.set('eventVenueName', eventVenueName.trim())
+      formData.set('eventVenueFloor', eventVenueFloor.trim())
+      replaceFormDataValues(
+        formData,
+        'eventRoundStarts[]',
+        eventRounds.map((round) => round.startsOn)
+      )
+      replaceFormDataValues(
+        formData,
+        'eventRoundEnds[]',
+        eventRounds.map((round) => round.endsOn)
+      )
+      formData.set('eventFloorPlanUrl', uploadedFloorPlanUrl)
+      formData.set('selectedFloorPlanCount', floorPlans.length > 0 || uploadedFloorPlanUrl ? '1' : '0')
+    } else {
+      formData.set('eventName', '')
+      formData.set('eventVenueName', '')
+      formData.set('eventVenueFloor', '')
+      replaceFormDataValues(formData, 'eventRoundStarts[]', [])
+      replaceFormDataValues(formData, 'eventRoundEnds[]', [])
+      formData.set('eventFloorPlanUrl', '')
+      formData.set('selectedFloorPlanCount', '0')
+    }
     formData.set('selectedPhotoCount', String(uploadedPhotoUrls.length + photos.length))
     formData.set('selectedVideoCount', String(uploadedVideoUrls.length + videos.length))
     formData.set('selectedPanoramaCount', String(uploadedPanoramaUrls.length + panoramas.length))
@@ -387,7 +519,7 @@ const Page = () => {
 
     uploadLockRef.current = true
     setIsUploading(true)
-    const pendingMediaTotal = photos.length + videos.length + panoramas.length
+    const pendingMediaTotal = photos.length + videos.length + panoramas.length + effectiveFloorPlans.length
 
     setMediaProgress({
       phase: 'saving',
@@ -399,7 +531,7 @@ const Page = () => {
     })
 
     saveListingStep(3, formData)
-    setPendingMedia({ photos, videos, panoramas })
+    setPendingMedia({ photos, videos, panoramas, floorPlans: effectiveFloorPlans })
     sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
     router.push('/add-listing/4')
   }
@@ -460,6 +592,29 @@ const Page = () => {
           if (publishValidationError) setPublishValidationError('')
         }}
       >
+        {isTemporarySpace ? (
+          <EventDetailsPanel
+            isThai={isThai}
+            eventName={eventName}
+            onEventNameChange={setEventName}
+            venueName={eventVenueName}
+            onVenueNameChange={setEventVenueName}
+            venueFloor={eventVenueFloor}
+            onVenueFloorChange={setEventVenueFloor}
+            rounds={eventRounds}
+            onRoundChange={handleEventRoundChange}
+            onAddRound={addEventRound}
+            onRemoveRound={removeEventRound}
+            floorPlanPreviewUrl={
+              pendingFloorPlanPreviewUrl || (uploadedFloorPlanUrl ? resolveListingMediaUrl(uploadedFloorPlanUrl) : '')
+            }
+            floorPlanFileName={floorPlans[0]?.name || ''}
+            onFloorPlanChange={handleFloorPlan}
+            onRemoveFloorPlan={removeFloorPlan}
+            disabled={isUploading}
+          />
+        ) : null}
+
         <PricingPanel
           isThai={isThai}
           offers={offers}
@@ -475,6 +630,7 @@ const Page = () => {
           hasSale={hasSale}
           hasRent={hasRent}
           hasTransfer={hasTransfer}
+          isRetailSpace={isRetailSpace}
           isTemporarySpace={isTemporarySpace}
           isMonthlyHotel={isMonthlyHotel}
           salePrice={salePrice}
@@ -485,8 +641,12 @@ const Page = () => {
           onRentPriceDailyChange={setRentPriceDaily}
           temporarySpacePrice={temporarySpacePrice}
           onTemporarySpacePriceChange={setTemporarySpacePrice}
-          temporarySpaceDurationDays={temporarySpaceDurationDays}
-          onTemporarySpaceDurationDaysChange={setTemporarySpaceDurationDays}
+          temporarySpacePriceUnit={temporarySpacePriceUnit}
+          onTemporarySpacePriceUnitChange={setTemporarySpacePriceUnit}
+          depositAmount={depositAmount}
+          onDepositAmountChange={setDepositAmount}
+          advanceRentAmount={advanceRentAmount}
+          onAdvanceRentAmountChange={setAdvanceRentAmount}
           keyMoneyAmount={keyMoneyAmount}
           onKeyMoneyAmountChange={setKeyMoneyAmount}
           serviceFeeMonthly={serviceFeeMonthly}
@@ -959,6 +1119,7 @@ type PricingPanelProps = {
   hasSale: boolean
   hasRent: boolean
   hasTransfer: boolean
+  isRetailSpace: boolean
   isTemporarySpace: boolean
   isMonthlyHotel: boolean
   salePrice: string
@@ -969,8 +1130,12 @@ type PricingPanelProps = {
   onRentPriceDailyChange: (value: string) => void
   temporarySpacePrice: string
   onTemporarySpacePriceChange: (value: string) => void
-  temporarySpaceDurationDays: string
-  onTemporarySpaceDurationDaysChange: (value: string) => void
+  temporarySpacePriceUnit: RetailPriceUnit
+  onTemporarySpacePriceUnitChange: (value: RetailPriceUnit) => void
+  depositAmount: string
+  onDepositAmountChange: (value: string) => void
+  advanceRentAmount: string
+  onAdvanceRentAmountChange: (value: string) => void
   keyMoneyAmount: string
   onKeyMoneyAmountChange: (value: string) => void
   serviceFeeMonthly: string
@@ -991,6 +1156,7 @@ const PricingPanel = ({
   hasSale,
   hasRent,
   hasTransfer,
+  isRetailSpace,
   isTemporarySpace,
   isMonthlyHotel,
   salePrice,
@@ -1001,8 +1167,12 @@ const PricingPanel = ({
   onRentPriceDailyChange,
   temporarySpacePrice,
   onTemporarySpacePriceChange,
-  temporarySpaceDurationDays,
-  onTemporarySpaceDurationDaysChange,
+  temporarySpacePriceUnit,
+  onTemporarySpacePriceUnitChange,
+  depositAmount,
+  onDepositAmountChange,
+  advanceRentAmount,
+  onAdvanceRentAmountChange,
   keyMoneyAmount,
   onKeyMoneyAmountChange,
   serviceFeeMonthly,
@@ -1013,6 +1183,52 @@ const PricingPanel = ({
   const symbol = currency === 'USD' ? '$' : '฿'
   const currencyUnit = currency === 'USD' ? 'USD' : isThai ? 'บาท' : 'THB'
   const monthlyUnit = `${currencyUnit}/${isThai ? 'เดือน' : 'month'}`
+  const retailPriceOptions: Array<{
+    value: RetailPriceUnit
+    titleTh: string
+    titleEn: string
+  }> = [
+    {
+      value: 'day',
+      titleTh: 'รายวัน',
+      titleEn: 'Daily',
+    },
+    {
+      value: 'week',
+      titleTh: 'รายสัปดาห์',
+      titleEn: 'Weekly',
+    },
+    {
+      value: 'month',
+      titleTh: 'รายเดือน',
+      titleEn: 'Monthly',
+    },
+    ...(isTemporarySpace
+      ? [
+          {
+            value: 'event_period' as const,
+            titleTh: 'รวมทั้งงาน',
+            titleEn: 'Whole event',
+          },
+        ]
+      : []),
+  ]
+  const retailUnitLabel =
+    temporarySpacePriceUnit === 'day'
+      ? isThai
+        ? 'วัน'
+        : 'day'
+      : temporarySpacePriceUnit === 'week'
+        ? isThai
+          ? 'สัปดาห์'
+          : 'week'
+        : temporarySpacePriceUnit === 'month'
+          ? isThai
+            ? 'เดือน'
+            : 'month'
+          : isThai
+            ? 'งาน'
+            : 'event'
 
   return (
     <section className="overflow-hidden rounded-[30px] border border-orange-200 bg-white shadow-[0_18px_50px_-32px_rgba(234,88,12,0.45)] dark:border-orange-900/60 dark:bg-neutral-900">
@@ -1190,14 +1406,14 @@ const PricingPanel = ({
               <PricingGroup
                 icon={<CalendarDaysIcon className="size-5" />}
                 title={
-                  isTemporarySpace
+                  isRetailSpace
                     ? offers.includes('sublease')
                       ? isThai
-                        ? 'ค่าเช่าช่วงพื้นที่ชั่วคราว'
-                        : 'Temporary-space sublease'
+                        ? 'ค่าเช่าช่วงพื้นที่ค้าขาย'
+                        : 'Retail-space sublease'
                       : isThai
-                        ? 'ค่าเช่าพื้นที่ชั่วคราว'
-                        : 'Temporary-space rent'
+                        ? 'ค่าเช่าพื้นที่ค้าขาย'
+                        : 'Retail-space rent'
                     : offers.includes('sublease')
                       ? isThai
                         ? 'ค่าเช่าช่วง'
@@ -1207,34 +1423,149 @@ const PricingPanel = ({
                         : 'Rental price'
                 }
               >
-                {isTemporarySpace ? (
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <FormItem label={isThai ? 'ค่าเช่าตายตัว' : 'Fixed rental price'}>
+                {isRetailSpace ? (
+                  <div className="space-y-5">
+                    <input type="hidden" name="retailPriceUnit" value={temporarySpacePriceUnit} />
+                    <div>
+                      <p className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                        {isThai ? 'คิดค่าเช่าแบบไหน?' : 'How is the rent calculated?'}
+                      </p>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4" role="radiogroup">
+                        {retailPriceOptions.map((option) => {
+                          const selected = temporarySpacePriceUnit === option.value
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              onClick={() => onTemporarySpacePriceUnitChange(option.value)}
+                              className={`flex min-h-16 items-center gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                                selected
+                                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+                              }`}
+                            >
+                              <span
+                                className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
+                                  selected ? 'border-orange-600 bg-orange-600 text-white' : 'border-neutral-300'
+                                }`}
+                              >
+                                {selected ? <span className="size-2 rounded-full bg-white" /> : null}
+                              </span>
+                              <span className="min-w-0 font-sarabun">
+                                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                                  {isThai ? option.titleTh : option.titleEn}
+                                </span>
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <FormItem label={isThai ? `ค่าเช่าต่อ${retailUnitLabel}` : `Rent per ${retailUnitLabel}`}>
                       <PriceInput
-                        name="temporarySpacePrice"
+                        name="retailRentPrice"
                         value={temporarySpacePrice}
                         onChange={onTemporarySpacePriceChange}
-                        suffix={currencyUnit}
+                        suffix={`${currencyUnit}/${retailUnitLabel}`}
                         symbol={symbol}
-                        placeholder={currency === 'THB' ? '5,000' : '150'}
+                        placeholder={
+                          temporarySpacePriceUnit === 'day'
+                            ? currency === 'THB'
+                              ? '1,500'
+                              : '45'
+                            : temporarySpacePriceUnit === 'week'
+                              ? currency === 'THB'
+                                ? '5,000'
+                                : '150'
+                              : temporarySpacePriceUnit === 'month'
+                                ? currency === 'THB'
+                                  ? '15,000'
+                                  : '450'
+                                : currency === 'THB'
+                                  ? '5,000'
+                                  : '150'
+                        }
                         required
                       />
                     </FormItem>
-                    <FormItem label={isThai ? 'ระยะเวลาที่ได้รับ (วัน)' : 'Included duration (days)'}>
-                      <Input
-                        name="temporarySpaceDurationDays"
-                        value={temporarySpaceDurationDays}
-                        onChange={(event) => onTemporarySpaceDurationDaysChange(event.target.value)}
-                        inputMode="numeric"
-                        pattern="[1-9][0-9]*"
-                        placeholder="3"
-                        className="h-12 rounded-2xl"
-                        required
-                      />
-                    </FormItem>
-                    <p className="font-sarabun text-xs leading-5 text-neutral-500 sm:col-span-2 dark:text-neutral-400">
-                      {isThai ? 'ตัวอย่าง: 5,000 บาท สำหรับ 3 วัน' : 'Example: 5,000 THB for 3 days.'}
-                    </p>
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-orange-50/70 px-4 py-3 font-sarabun dark:bg-orange-950/25">
+                      <span className="text-xs text-neutral-600 dark:text-neutral-300">
+                        {isThai ? 'ตัวอย่างที่ผู้สนใจจะเห็น' : 'What customers will see'}
+                      </span>
+                      <strong className="text-sm text-orange-700 dark:text-orange-300">
+                        {symbol}
+                        {temporarySpacePrice ||
+                          (temporarySpacePriceUnit === 'day'
+                            ? '1,500'
+                            : temporarySpacePriceUnit === 'week'
+                              ? '5,000'
+                              : temporarySpacePriceUnit === 'month'
+                                ? '15,000'
+                                : '5,000')}{' '}
+                        / {retailUnitLabel}
+                      </strong>
+                    </div>
+
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 sm:p-5 dark:border-neutral-700 dark:bg-neutral-900/70">
+                      <div>
+                        <h4 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                          {isThai ? 'ค่าแรกเข้าและเงื่อนไขสัญญา' : 'Upfront costs & contract terms'}
+                        </h4>
+                      </div>
+                      <div className="mt-4 grid gap-5 sm:grid-cols-2">
+                        <FormItem label={isThai ? 'ค่ามัดจำ (ถ้ามี)' : 'Security deposit (optional)'}>
+                          <PriceInput
+                            name="depositAmount"
+                            value={depositAmount}
+                            onChange={onDepositAmountChange}
+                            suffix={currencyUnit}
+                            symbol={symbol}
+                            placeholder={currency === 'THB' ? '30,000' : '900'}
+                          />
+                        </FormItem>
+                        <FormItem label={isThai ? 'ค่าเช่าล่วงหน้า (ถ้ามี)' : 'Advance rent (optional)'}>
+                          <PriceInput
+                            name="advanceRentAmount"
+                            value={advanceRentAmount}
+                            onChange={onAdvanceRentAmountChange}
+                            suffix={currencyUnit}
+                            symbol={symbol}
+                            placeholder={currency === 'THB' ? '15,000' : '450'}
+                          />
+                        </FormItem>
+                        <FormItem label={isThai ? 'สัญญาเช่าขั้นต่ำ' : 'Minimum contract'}>
+                          <Select
+                            name="minimumLeaseMonths"
+                            value={minimumLeaseMonths}
+                            onChange={(event) => onMinimumLeaseMonthsChange(event.target.value)}
+                            className="[&_select]:h-12 [&_select]:rounded-2xl"
+                          >
+                            <option value="">{isThai ? 'ไม่มี / ไม่ระบุ' : 'None / not specified'}</option>
+                            <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
+                            <option value="2">{isThai ? '2 เดือน' : '2 months'}</option>
+                            <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
+                            <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
+                            <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
+                            <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
+                            <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
+                          </Select>
+                        </FormItem>
+                        <FormItem
+                          label={isThai ? 'ค่าส่วนกลาง / ค่าบริการต่อเดือน (ถ้ามี)' : 'Monthly service fee (optional)'}
+                        >
+                          <PriceInput
+                            name="serviceFeeMonthly"
+                            value={serviceFeeMonthly}
+                            onChange={onServiceFeeMonthlyChange}
+                            suffix={monthlyUnit}
+                            symbol={symbol}
+                            placeholder={currency === 'THB' ? '1,500' : '45'}
+                          />
+                        </FormItem>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="grid gap-5 sm:grid-cols-2">

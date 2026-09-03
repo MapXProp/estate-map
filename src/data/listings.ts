@@ -1143,12 +1143,26 @@ const getListingOfferTypes = (listing: PropertySearchListing) => {
 
 export const toRealEstateListing = (listing: PropertySearchListing) => {
   const group = getListingGroup(listing)
+  const isRetailSpace = listing.property_type_code === 'retail_space'
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isPriceOnRequest =
     listing.price_on_request ||
     listing.offer_type === 'contact_organizer' ||
     listing.listing_type === 'contact_organizer'
-  const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
+  const isRental = Boolean(
+    (listing.offer_type === 'rent' || listing.offer_type === 'sublease' || listing.rent_price_monthly) &&
+    !listing.sale_price
+  )
+  const retailPriceSuffix =
+    listing.offer_price_unit === 'day'
+      ? ' / วัน'
+      : listing.offer_price_unit === 'week'
+        ? ' / สัปดาห์'
+        : listing.offer_price_unit === 'month'
+          ? ' / เดือน'
+          : listing.offer_price_unit === 'event_period'
+            ? ' / งาน'
+            : ''
   const galleryImgs = [...new Set([listing.primary_image_url, ...(listing.image_urls || [])].filter(Boolean))].slice(
     0,
     4
@@ -1176,13 +1190,12 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     reviewStart: 0,
     reviewCount: 0,
     price:
-      isEvent && isPriceOnRequest
-        ? 'ติดต่อผู้จัดงาน'
-        : isEvent && listing.offer_amount
-          ? formatListingPrice(
-              listing.offer_amount,
-              listing.temporary_space_duration_days ? ` / ${listing.temporary_space_duration_days} วัน` : ''
-            )
+      isRetailSpace && isPriceOnRequest
+        ? isEvent
+          ? 'ติดต่อผู้จัดงาน'
+          : 'สอบถามราคา'
+        : isRetailSpace && listing.offer_amount
+          ? formatListingPrice(listing.offer_amount, retailPriceSuffix)
           : listing.price_on_request
             ? 'สอบถามราคา'
             : isRental
@@ -1217,7 +1230,14 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
         ? 'เช่า'
         : 'ขาย',
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
-    priceLabel: isEvent && isPriceOnRequest ? 'ติดต่อผู้จัดงาน' : listing.price_on_request ? 'สอบถามราคา' : undefined,
+    priceLabel:
+      isRetailSpace && isPriceOnRequest
+        ? isEvent
+          ? 'ติดต่อผู้จัดงาน'
+          : 'สอบถามราคา'
+        : listing.price_on_request
+          ? 'สอบถามราคา'
+          : undefined,
     host: {
       displayName: 'MapxProp',
       avatarUrl: avatars2.src,

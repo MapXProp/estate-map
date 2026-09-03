@@ -41,6 +41,11 @@ export type ListingMediaInput = {
   media_type: ListingMediaType
 }
 
+export type ListingEventRoundInput = {
+  starts_on: string
+  ends_on: string
+}
+
 type CloudListingDraftResponse = {
   draft?: {
     data?: ListingDraft
@@ -125,7 +130,15 @@ export type CreateListingPayload = {
   event_booking_price?: string
   temporary_space_price?: string
   temporary_space_duration_days?: string
+  retail_rent_price?: string
+  deposit_amount?: string
+  advance_rent_amount?: string
   service_fee_monthly?: string
+  event_name?: string
+  event_venue_name?: string
+  event_venue_floor_label?: string
+  event_floor_plan_url?: string
+  event_rounds?: ListingEventRoundInput[]
   allowed_business_types?: string[]
   amenities?: string[]
   category_details?: Record<string, string | boolean | string[]>
@@ -342,6 +355,13 @@ const CATEGORY_DETAIL_DRAFT_KEYS = [
   'sharedFacilities[]',
   'servicesIncluded[]',
   'residentGroups[]',
+  'eventName',
+  'eventVenueName',
+  'eventVenueFloor',
+  'eventRoundStarts[]',
+  'eventRoundEnds[]',
+  'eventFloorPlanUrl',
+  'selectedFloorPlanCount',
 ]
 
 export const resetListingDetailsForCategoryChange = (nextChannel: string, nextPropertyType: string) => {
@@ -675,6 +695,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     (value, index, all) => Boolean(value) && all.indexOf(value) === index
   )
   const isTemporarySpace = spaceTypeCodes.includes('event_booth')
+  const isRetailSpace = normalizeCode(text(draft.property_type_code)) === 'retail_space'
   const offerTypeCodes = rawOfferTypeCodes
     .map((code) =>
       ['event_booking', 'contact_organizer'].includes(normalizeCode(code)) ? 'rent' : normalizeCode(code)
@@ -685,9 +706,25 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     ? 'rent'
     : normalizedListingType
   const priceOnRequest = text(draft.priceOnRequest) === 'yes'
+  const requestedRetailPriceUnit = normalizeCode(
+    text(draft.retailPriceUnit) || text(draft.temporarySpacePriceUnit) || text(draft.price_unit)
+  )
+  const retailPriceUnit = ['day', 'week', 'month'].includes(requestedRetailPriceUnit)
+    ? requestedRetailPriceUnit
+    : requestedRetailPriceUnit === 'event_period' && isTemporarySpace
+      ? 'event_period'
+      : isTemporarySpace
+        ? 'event_period'
+        : 'month'
   const photoURLs = values(draft['listingPhotoUrls[]'])
   const videoURLs = values(draft['listingVideoUrls[]'])
   const panoramaURLs = values(draft['listingPanoramaUrls[]'])
+  const eventRoundStarts = values(draft['eventRoundStarts[]'])
+  const eventRoundEnds = values(draft['eventRoundEnds[]'])
+  const eventRounds = eventRoundStarts.map((startsOn, index) => ({
+    starts_on: startsOn,
+    ends_on: eventRoundEnds[index] || '',
+  }))
   const editingPublicListingId = text(draft.editingPublicListingId)
   const mediaLoadedForEdit =
     !editingPublicListingId ||
@@ -713,7 +750,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     custom_project_name: text(draft.placeName),
     custom_unit_number: text(draft['room-number']),
     sale_price: priceOnRequest ? '' : text(draft.salePrice),
-    rent_price_monthly: priceOnRequest || isTemporarySpace ? '' : text(draft.rentPriceMonthly || draft['base-price1']),
+    rent_price_monthly: priceOnRequest || isRetailSpace ? '' : text(draft.rentPriceMonthly || draft['base-price1']),
     rent_price_daily: priceOnRequest ? '' : text(draft.rentPriceDaily || draft['base-price2']),
     price_negotiable: !priceOnRequest && text(draft.priceNegotiable) === 'yes',
     price_on_request: priceOnRequest,
@@ -729,8 +766,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     furnishing_status: normalizeCode(text(draft.furnishingStatus)),
     property_condition: normalizeCode(text(draft.propertyCondition)),
     occupancy_status: normalizeCode(text(draft.occupancyStatus)),
-    minimum_lease_months:
-      priceOnRequest || isTemporarySpace ? '' : text(draft.minimumLeaseMonths || draft['Nights-min']),
+    minimum_lease_months: priceOnRequest ? '' : text(draft.minimumLeaseMonths || draft['Nights-min']),
     pet_allowed: petPolicyCode === 'allowed' || petPolicyCode === 'case_by_case',
     pet_policy_code: petPolicyCode,
     utilities_included: text(draft.utilitiesIncluded) === 'yes',
@@ -757,20 +793,25 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     space_type_code: spaceTypeCodes[0] || '',
     space_type_codes: spaceTypeCodes,
     price_unit:
-      isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
-        ? 'event_period'
+      isRetailSpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+        ? retailPriceUnit
         : normalizeCode(text(draft.price_unit)) || (listingType.includes('rent') ? 'month' : ''),
     key_money_amount: priceOnRequest ? '' : text(draft.keyMoneyAmount),
     event_booking_price: '',
-    temporary_space_price:
-      !priceOnRequest && isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
-        ? text(draft.temporarySpacePrice)
+    temporary_space_price: '',
+    temporary_space_duration_days: '',
+    retail_rent_price:
+      !priceOnRequest && isRetailSpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+        ? text(draft.retailRentPrice || draft.temporarySpacePrice || draft.rentPriceMonthly)
         : '',
-    temporary_space_duration_days:
-      !priceOnRequest && isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
-        ? text(draft.temporarySpaceDurationDays)
-        : '',
-    service_fee_monthly: priceOnRequest || isTemporarySpace ? '' : text(draft.serviceFeeMonthly),
+    deposit_amount: !priceOnRequest && isRetailSpace ? text(draft.depositAmount) : '',
+    advance_rent_amount: !priceOnRequest && isRetailSpace ? text(draft.advanceRentAmount) : '',
+    service_fee_monthly: priceOnRequest ? '' : text(draft.serviceFeeMonthly),
+    event_name: isTemporarySpace ? text(draft.eventName) : '',
+    event_venue_name: isTemporarySpace ? text(draft.eventVenueName) : '',
+    event_venue_floor_label: isTemporarySpace ? text(draft.eventVenueFloor) : '',
+    event_floor_plan_url: isTemporarySpace ? text(draft.eventFloorPlanUrl) : '',
+    event_rounds: isTemporarySpace ? eventRounds : [],
     allowed_business_types: allowedBusinessTypes,
     amenities: [
       ...values(draft['amenities[]']),
@@ -1117,11 +1158,27 @@ const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {
   const currency = payload.currency || 'THB'
   const unit = currency === 'THB' ? (locale === 'th' ? 'บาท' : 'THB') : currency
   const prices: string[] = []
-  if (payload.temporary_space_price && payload.temporary_space_duration_days) {
+  if (payload.retail_rent_price) {
+    const pricePeriod =
+      payload.price_unit === 'day'
+        ? locale === 'th'
+          ? 'วัน'
+          : 'day'
+        : payload.price_unit === 'week'
+          ? locale === 'th'
+            ? 'สัปดาห์'
+            : 'week'
+          : payload.price_unit === 'month'
+            ? locale === 'th'
+              ? 'เดือน'
+              : 'month'
+            : locale === 'th'
+              ? 'งาน'
+              : 'event'
     prices.push(
       locale === 'th'
-        ? `เช่า ${payload.temporary_space_price} ${unit} / ${payload.temporary_space_duration_days} วัน`
-        : `Rent ${payload.temporary_space_price} ${unit} / ${payload.temporary_space_duration_days} days`
+        ? `เช่า ${payload.retail_rent_price} ${unit} / ${pricePeriod}`
+        : `Rent ${payload.retail_rent_price} ${unit} / ${pricePeriod}`
     )
   }
   if (payload.sale_price)

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Image, { getImageProps } from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const discoveryModes = [
   {
@@ -264,7 +265,15 @@ const siteThemes = {
   }
 >
 
-const PropertyHomePrototype = ({ mode = 'homes' }: { mode?: PropertySiteMode }) => {
+const propertySiteModeFromPathname = (pathname: string): PropertySiteMode => {
+  if (pathname === '/rooms' || pathname === '/rent') return 'rooms'
+  if (pathname === '/business') return 'business'
+  return 'homes'
+}
+
+const PropertyHomePrototype = () => {
+  const pathname = usePathname()
+  const mode = propertySiteModeFromPathname(pathname)
   const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
   const isMainLanding = mode === 'all'
