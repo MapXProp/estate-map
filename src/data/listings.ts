@@ -1131,7 +1131,8 @@ const getListingOfferTypes = (listing: PropertySearchListing) => {
   if (rawListingType.includes('rent')) offers.add('rent')
   if (rawListingType.includes('sublease')) offers.add('sublease')
   if (rawListingType.includes('business_transfer')) offers.add('business_transfer')
-  if (rawListingType.includes('event')) offers.add('event_booking')
+  if (rawListingType.includes('contact_organizer') || rawListingType.includes('event')) offers.add('contact_organizer')
+  if (listing.offer_type) offers.add(listing.offer_type)
   if (listing.sale_price) offers.add('sale')
   if (listing.rent_price_monthly) offers.add('rent')
 
@@ -1141,6 +1142,7 @@ const getListingOfferTypes = (listing: PropertySearchListing) => {
 export const toRealEstateListing = (listing: PropertySearchListing) => {
   const group = getListingGroup(listing)
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
+  const isContactOrganizer = listing.offer_type === 'contact_organizer' || listing.listing_type === 'contact_organizer'
   const isRental = Boolean(listing.rent_price_monthly && !listing.sale_price)
   const galleryImgs = [...new Set([listing.primary_image_url, ...(listing.image_urls || [])].filter(Boolean))].slice(
     0,
@@ -1168,11 +1170,19 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
     reviewStart: 0,
     reviewCount: 0,
-    price: listing.price_on_request
-      ? 'สอบถามราคา'
-      : isRental
-        ? formatListingPrice(listing.rent_price_monthly, ' / เดือน')
-        : formatListingPrice(listing.sale_price),
+    price:
+      isEvent && isContactOrganizer
+        ? 'ติดต่อผู้จัดงาน'
+        : isEvent && listing.offer_amount
+          ? formatListingPrice(
+              listing.offer_amount,
+              listing.temporary_space_duration_days ? ` / ${listing.temporary_space_duration_days} วัน` : ''
+            )
+          : listing.price_on_request
+            ? 'สอบถามราคา'
+            : isRental
+              ? formatListingPrice(listing.rent_price_monthly, ' / เดือน')
+              : formatListingPrice(listing.sale_price),
     maxGuests: 0,
     bedrooms: listing.bedroom_count || 0,
     bathrooms: listing.bathroom_count || 0,
@@ -1192,9 +1202,19 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     landAreaSqm: listing.land_area_sqm || 0,
     petAllowed: listing.pet_allowed,
     group,
-    offer: isEvent ? 'เปิดจอง' : isRental ? 'เช่า' : 'ขาย',
+    offer: isEvent
+      ? isContactOrganizer
+        ? 'ติดต่อผู้จัดงาน'
+        : listing.offer_type === 'business_transfer'
+          ? 'เซ้งกิจการ'
+          : listing.offer_type === 'sublease'
+            ? 'เช่าช่วง'
+            : 'เช่า'
+      : isRental
+        ? 'เช่า'
+        : 'ขาย',
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
-    priceLabel: listing.price_on_request ? 'สอบถามราคา' : undefined,
+    priceLabel: isEvent && isContactOrganizer ? 'ติดต่อผู้จัดงาน' : listing.price_on_request ? 'สอบถามราคา' : undefined,
     host: {
       displayName: 'MapxProp',
       avatarUrl: avatars2.src,

@@ -73,6 +73,10 @@ export type PropertySearchListing = {
   event_starts_on?: string
   event_ends_on?: string
   price_on_request: boolean
+  offer_type?: string
+  offer_amount?: number
+  offer_price_unit?: string
+  temporary_space_duration_days?: number
   is_verified: boolean
   source_type: string
 }

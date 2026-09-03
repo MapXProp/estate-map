@@ -1,7 +1,7 @@
 'use client'
 
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
@@ -117,7 +117,7 @@ export const archivedPrototypeListings: PrototypeListing[] = [
     id: 9,
     group: 'commercial',
     type: 'พื้นที่ออกบูธ · กลุ่มออฟฟิศ',
-    offer: 'เปิดจอง',
+    offer: 'ติดต่อผู้จัดงาน',
     title: 'Food O’Clock — THE EMPIRE TOWER',
     location: 'ชั้น M, THE EMPIRE TOWER, สาทร',
     facts: ['5 รอบ', '31 ส.ค.–2 ต.ค. 2569', 'อาหารและไลฟ์สไตล์'],
@@ -134,7 +134,7 @@ export const archivedPrototypeListings: PrototypeListing[] = [
     id: 10,
     group: 'commercial',
     type: 'พื้นที่ออกบูธ · ศูนย์การค้า',
-    offer: 'เปิดจอง',
+    offer: 'ติดต่อผู้จัดงาน',
     title: 'LOCAL FAVORITES — EMSPHERE',
     location: 'EM MARKET HALL ชั้น G, EMSPHERE',
     facts: ['11–22 ก.ย. 2569', 'อาหารและเครื่องดื่ม', 'คนเดินห้างและต่างชาติ'],
@@ -418,7 +418,7 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
       : group === 'land'
         ? 'ที่ดินเปล่า'
         : listing.property_type_code || 'อสังหาริมทรัพย์',
-    offer: isEvent ? 'เปิดจอง' : isRental ? 'เช่า' : 'ขาย',
+    offer: isEvent ? 'ติดต่อผู้จัดงาน' : isRental ? 'เช่า' : 'ขาย',
     title: listing.title,
     location: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
     facts: isEvent

@@ -62,7 +62,7 @@ const offerIcons: Partial<Record<OfferTypeCode, typeof House>> = {
   rent: KeyRound,
   business_transfer: Building2,
   sublease: KeyRound,
-  event_booking: Sparkles,
+  contact_organizer: Sparkles,
 }
 
 const featureOptions: Array<{

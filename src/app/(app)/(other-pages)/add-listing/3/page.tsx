@@ -12,8 +12,8 @@ import {
   createListingSubmissionKey,
   getListingDraft,
   getListingDraftSummary,
-  saveListingStep,
   LISTING_SUBMISSION_RESULT_KEY,
+  saveListingStep,
   type ListingDraft,
   type ListingDraftValue,
 } from '@/lib/listingDraft'
@@ -34,8 +34,8 @@ import {
   CheckCircleIcon,
   ChevronDownIcon,
   ExclamationCircleIcon,
-  IdentificationIcon,
   HomeModernIcon,
+  IdentificationIcon,
   MapPinIcon,
   PhoneIcon,
   PhotoIcon,
@@ -106,8 +106,9 @@ const Page = () => {
   const [salePrice, setSalePrice] = useState('')
   const [rentPriceMonthly, setRentPriceMonthly] = useState('')
   const [rentPriceDaily, setRentPriceDaily] = useState('')
+  const [temporarySpacePrice, setTemporarySpacePrice] = useState('')
+  const [temporarySpaceDurationDays, setTemporarySpaceDurationDays] = useState('')
   const [keyMoneyAmount, setKeyMoneyAmount] = useState('')
-  const [eventBookingPrice, setEventBookingPrice] = useState('')
   const [serviceFeeMonthly, setServiceFeeMonthly] = useState('')
   const [minimumLeaseMonths, setMinimumLeaseMonths] = useState('')
   const [priceOnRequest, setPriceOnRequest] = useState(false)
@@ -139,20 +140,33 @@ const Page = () => {
     const frame = requestAnimationFrame(() => {
       const savedDraft = getListingDraft()
       const savedOffers = readValues(savedDraft['offerTypes[]']).filter(isOfferTypeCode)
+      const normalizedOffers = savedOffers.length ? savedOffers : offersFromLegacy(readText(savedDraft.listing_type))
       setDraft(savedDraft)
-      setOffers(savedOffers.length ? savedOffers : offersFromLegacy(readText(savedDraft.listing_type)))
+      setOffers(normalizedOffers)
       setSalePrice(formatPriceInput(readText(savedDraft.salePrice)))
       setRentPriceMonthly(formatPriceInput(readText(savedDraft.rentPriceMonthly)))
       setRentPriceDaily(formatPriceInput(readText(savedDraft.rentPriceDaily)))
+      setTemporarySpacePrice(formatPriceInput(readText(savedDraft.temporarySpacePrice)))
+      setTemporarySpaceDurationDays(readText(savedDraft.temporarySpaceDurationDays))
       setKeyMoneyAmount(formatPriceInput(readText(savedDraft.keyMoneyAmount)))
-      setEventBookingPrice(formatPriceInput(readText(savedDraft.eventBookingPrice)))
       setServiceFeeMonthly(formatPriceInput(readText(savedDraft.serviceFeeMonthly)))
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
       const savedPriceOnRequest = readText(savedDraft.priceOnRequest) === 'yes'
       const savedCurrency = readText(savedDraft.currency)
-      setPriceOnRequest(savedPriceOnRequest)
-      setPriceNegotiable(!savedPriceOnRequest && readText(savedDraft.priceNegotiable) === 'yes')
-      setCurrency(savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : initialPreferredCurrencyRef.current)
+      const contactOrganizerOnly = normalizedOffers.includes('contact_organizer')
+      const savedHasEventBooth = [
+        readText(savedDraft.space_type_code),
+        ...readValues(savedDraft['spaceTypeCodes[]']),
+      ].includes('event_booth')
+      setPriceOnRequest(savedPriceOnRequest || contactOrganizerOnly)
+      setPriceNegotiable(
+        !contactOrganizerOnly &&
+          (!savedPriceOnRequest || savedHasEventBooth) &&
+          readText(savedDraft.priceNegotiable) === 'yes'
+      )
+      setCurrency(
+        savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : initialPreferredCurrencyRef.current
+      )
       setContactRoleCode(asContactRoleCode(readText(savedDraft.contactRoleCode)))
       setContactAuthorityCode(asContactAuthorityCode(readText(savedDraft.contactAuthorityCode)))
       setContactOrganizationName(readText(savedDraft.contactOrganizationName))
@@ -252,7 +266,11 @@ const Page = () => {
   const hasSale = offers.includes('sale')
   const hasRent = offers.includes('rent') || offers.includes('sublease')
   const hasTransfer = offers.includes('business_transfer')
-  const hasEventBooking = offers.includes('event_booking')
+  const hasContactOrganizer = offers.includes('contact_organizer')
+  const isTemporarySpace = [readText(draft?.space_type_code), ...readValues(draft?.['spaceTypeCodes[]'])].includes(
+    'event_booth'
+  )
+  const effectivePriceOnRequest = hasContactOrganizer || (!isTemporarySpace && priceOnRequest)
   const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
   const listingSummary = useMemo(() => (draft ? getListingDraftSummary(locale) : null), [draft, locale])
   const firstStepSummary = listingSummary
@@ -260,9 +278,7 @@ const Page = () => {
         .filter(Boolean)
         .join(' · ')
     : ''
-  const secondStepSummary = draft
-    ? buildSecondStepSummary(draft, listingSummary?.location || '', isThai)
-    : ''
+  const secondStepSummary = draft ? buildSecondStepSummary(draft, listingSummary?.location || '', isThai) : ''
 
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
@@ -317,15 +333,19 @@ const Page = () => {
     if (uploadLockRef.current) return
     setPublishValidationError('')
 
-    if (priceOnRequest || !hasSale) formData.set('salePrice', '')
-    if (priceOnRequest || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
-    if (priceOnRequest || !isMonthlyHotel) formData.set('rentPriceDaily', '')
-    if (priceOnRequest || !hasTransfer) formData.set('keyMoneyAmount', '')
-    if (priceOnRequest || !hasEventBooking) formData.set('eventBookingPrice', '')
-    if (priceOnRequest || (!hasRent && !hasTransfer)) formData.set('serviceFeeMonthly', '')
+    if (effectivePriceOnRequest || !hasSale) formData.set('salePrice', '')
+    if (effectivePriceOnRequest || isTemporarySpace || (!hasRent && !hasTransfer)) formData.set('rentPriceMonthly', '')
+    if (effectivePriceOnRequest || !isMonthlyHotel) formData.set('rentPriceDaily', '')
+    if (effectivePriceOnRequest || !hasTransfer) formData.set('keyMoneyAmount', '')
+    formData.set('eventBookingPrice', '')
+    if (effectivePriceOnRequest || !isTemporarySpace || !hasRent) {
+      formData.set('temporarySpacePrice', '')
+      formData.set('temporarySpaceDurationDays', '')
+    }
+    if (effectivePriceOnRequest || (!hasRent && !hasTransfer)) formData.set('serviceFeeMonthly', '')
     if (!hasRent && !hasTransfer) formData.set('minimumLeaseMonths', '')
-    formData.set('priceOnRequest', priceOnRequest ? 'yes' : '')
-    formData.set('priceNegotiable', !priceOnRequest && priceNegotiable ? 'yes' : '')
+    formData.set('priceOnRequest', effectivePriceOnRequest ? 'yes' : '')
+    formData.set('priceNegotiable', !effectivePriceOnRequest && priceNegotiable ? 'yes' : '')
     formData.set('currency', currency)
     formData.set('contactRoleCode', contactRoleCode)
     formData.set('contactAuthorityCode', contactRoleCode === 'owner' ? 'self' : contactAuthorityCode)
@@ -450,7 +470,7 @@ const Page = () => {
           offers={offers}
           currency={currency}
           onCurrencyChange={setCurrency}
-          priceOnRequest={priceOnRequest}
+          priceOnRequest={effectivePriceOnRequest}
           onPriceOnRequestChange={(value) => {
             setPriceOnRequest(value)
             if (value) setPriceNegotiable(false)
@@ -460,7 +480,8 @@ const Page = () => {
           hasSale={hasSale}
           hasRent={hasRent}
           hasTransfer={hasTransfer}
-          hasEventBooking={hasEventBooking}
+          hasContactOrganizer={hasContactOrganizer}
+          isTemporarySpace={isTemporarySpace}
           isMonthlyHotel={isMonthlyHotel}
           salePrice={salePrice}
           onSalePriceChange={setSalePrice}
@@ -468,10 +489,12 @@ const Page = () => {
           onRentPriceMonthlyChange={setRentPriceMonthly}
           rentPriceDaily={rentPriceDaily}
           onRentPriceDailyChange={setRentPriceDaily}
+          temporarySpacePrice={temporarySpacePrice}
+          onTemporarySpacePriceChange={setTemporarySpacePrice}
+          temporarySpaceDurationDays={temporarySpaceDurationDays}
+          onTemporarySpaceDurationDaysChange={setTemporarySpaceDurationDays}
           keyMoneyAmount={keyMoneyAmount}
           onKeyMoneyAmountChange={setKeyMoneyAmount}
-          eventBookingPrice={eventBookingPrice}
-          onEventBookingPriceChange={setEventBookingPrice}
           serviceFeeMonthly={serviceFeeMonthly}
           onServiceFeeMonthlyChange={setServiceFeeMonthly}
           minimumLeaseMonths={minimumLeaseMonths}
@@ -829,7 +852,6 @@ const Page = () => {
                 />
               </FormItem>
             </div>
-
           </div>
 
           <div className="mt-6 grid gap-5 border-t border-neutral-100 pt-6 sm:grid-cols-2 dark:border-neutral-800">
@@ -864,7 +886,12 @@ const Page = () => {
               />
             </FormItem>
             <FormItem label={isThai ? 'LINE ID (ถ้ามี)' : 'LINE ID (if any)'}>
-              <Input name="lineId" value={lineId} onChange={(event) => setLineId(event.target.value)} placeholder="Line ID" />
+              <Input
+                name="lineId"
+                value={lineId}
+                onChange={(event) => setLineId(event.target.value)}
+                placeholder="Line ID"
+              />
             </FormItem>
             <FormItem label={isThai ? 'Instagram (ถ้ามี)' : 'Instagram (if any)'}>
               <Input
@@ -920,7 +947,9 @@ const SummaryRow = ({ icon, text }: { icon: React.ReactNode; text: string }) => 
     <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-emerald-300 dark:ring-neutral-700">
       {icon}
     </span>
-    <p className="min-w-0 font-sarabun text-sm font-semibold leading-6 text-neutral-900 dark:text-neutral-100">{text}</p>
+    <p className="min-w-0 font-sarabun text-sm leading-6 font-semibold text-neutral-900 dark:text-neutral-100">
+      {text}
+    </p>
   </div>
 )
 
@@ -936,7 +965,8 @@ type PricingPanelProps = {
   hasSale: boolean
   hasRent: boolean
   hasTransfer: boolean
-  hasEventBooking: boolean
+  hasContactOrganizer: boolean
+  isTemporarySpace: boolean
   isMonthlyHotel: boolean
   salePrice: string
   onSalePriceChange: (value: string) => void
@@ -944,10 +974,12 @@ type PricingPanelProps = {
   onRentPriceMonthlyChange: (value: string) => void
   rentPriceDaily: string
   onRentPriceDailyChange: (value: string) => void
+  temporarySpacePrice: string
+  onTemporarySpacePriceChange: (value: string) => void
+  temporarySpaceDurationDays: string
+  onTemporarySpaceDurationDaysChange: (value: string) => void
   keyMoneyAmount: string
   onKeyMoneyAmountChange: (value: string) => void
-  eventBookingPrice: string
-  onEventBookingPriceChange: (value: string) => void
   serviceFeeMonthly: string
   onServiceFeeMonthlyChange: (value: string) => void
   minimumLeaseMonths: string
@@ -966,7 +998,8 @@ const PricingPanel = ({
   hasSale,
   hasRent,
   hasTransfer,
-  hasEventBooking,
+  hasContactOrganizer,
+  isTemporarySpace,
   isMonthlyHotel,
   salePrice,
   onSalePriceChange,
@@ -974,10 +1007,12 @@ const PricingPanel = ({
   onRentPriceMonthlyChange,
   rentPriceDaily,
   onRentPriceDailyChange,
+  temporarySpacePrice,
+  onTemporarySpacePriceChange,
+  temporarySpaceDurationDays,
+  onTemporarySpaceDurationDaysChange,
   keyMoneyAmount,
   onKeyMoneyAmountChange,
-  eventBookingPrice,
-  onEventBookingPriceChange,
   serviceFeeMonthly,
   onServiceFeeMonthlyChange,
   minimumLeaseMonths,
@@ -1014,109 +1049,127 @@ const PricingPanel = ({
       </div>
 
       <div className="space-y-6 p-5 sm:p-7">
-        <div>
-          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
-              </h3>
+        {!hasContactOrganizer ? (
+          <div>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
+                </h3>
+              </div>
             </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
-            {[
-              { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
-              { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
-            ].map((option) => {
-              const isSelected = currency === option.code
-              return (
-                <button
-                  key={option.code}
-                  type="button"
-                  aria-pressed={isSelected}
-                  onClick={() => onCurrencyChange(option.code)}
-                  className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                    isSelected
-                      ? 'border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500 dark:bg-orange-950/35 dark:text-orange-100'
-                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
-                  }`}
-                >
-                  <span
-                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
-                      isSelected ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
+              {[
+                { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
+                { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
+              ].map((option) => {
+                const isSelected = currency === option.code
+                return (
+                  <button
+                    key={option.code}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => onCurrencyChange(option.code)}
+                    className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                      isSelected
+                        ? 'border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500 dark:bg-orange-950/35 dark:text-orange-100'
+                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
                     }`}
                   >
-                    {option.symbol}
-                  </span>
-                  <span className="min-w-0 font-sarabun">
-                    <span className="block text-sm font-semibold">{option.code}</span>
-                    <span className="block truncate text-xs opacity-70">{option.label}</span>
-                  </span>
-                  {isSelected ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-                </button>
-              )
-            })}
+                    <span
+                      className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
+                        isSelected ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'
+                      }`}
+                    >
+                      {option.symbol}
+                    </span>
+                    <span className="min-w-0 font-sarabun">
+                      <span className="block text-sm font-semibold">{option.code}</span>
+                      <span className="block truncate text-xs opacity-70">{option.label}</span>
+                    </span>
+                    {isSelected ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        <div className="border-t border-neutral-100 pt-6 dark:border-neutral-800">
-          <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {isThai ? 'ต้องการแสดงราคาแบบไหน' : 'How would you like to show the price?'}
-          </h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              aria-pressed={!priceOnRequest}
-              onClick={() => onPriceOnRequestChange(false)}
-              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                !priceOnRequest
-                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
-                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-              }`}
-            >
-              <span
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${!priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+        {!hasContactOrganizer && !isTemporarySpace ? (
+          <div className="border-t border-neutral-100 pt-6 dark:border-neutral-800">
+            <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              {isThai ? 'ต้องการแสดงราคาแบบไหน' : 'How would you like to show the price?'}
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                aria-pressed={!priceOnRequest}
+                onClick={() => onPriceOnRequestChange(false)}
+                className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                  !priceOnRequest
+                    ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                    : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+                }`}
               >
-                <BanknotesIcon className="size-5" />
-              </span>
-              <span className="min-w-0 font-sarabun">
-                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                  {isThai ? 'ระบุราคา' : 'Enter a price'}
+                <span
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${!priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+                >
+                  <BanknotesIcon className="size-5" />
                 </span>
-                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                  {isThai ? 'กรอกตัวเลขให้ผู้สนใจเห็นได้ทันที' : 'Show the amount to customers immediately.'}
+                <span className="min-w-0 font-sarabun">
+                  <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                    {isThai ? 'ระบุราคา' : 'Enter a price'}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                    {isThai ? 'กรอกตัวเลขให้ผู้สนใจเห็นได้ทันที' : 'Show the amount to customers immediately.'}
+                  </span>
                 </span>
-              </span>
-              {!priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-            </button>
-            <button
-              type="button"
-              aria-pressed={priceOnRequest}
-              onClick={() => onPriceOnRequestChange(true)}
-              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                priceOnRequest
-                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
-                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-              }`}
-            >
-              <span
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+                {!priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+              </button>
+              <button
+                type="button"
+                aria-pressed={priceOnRequest}
+                onClick={() => onPriceOnRequestChange(true)}
+                className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                  priceOnRequest
+                    ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                    : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+                }`}
               >
-                <ChatBubbleLeftRightIcon className="size-5" />
-              </span>
-              <span className="min-w-0 font-sarabun">
-                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                  {isThai ? 'ไม่ระบุราคา' : 'Price on request'}
+                <span
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+                >
+                  <ChatBubbleLeftRightIcon className="size-5" />
                 </span>
-                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                  {isThai ? 'แสดงให้ผู้สนใจสอบถามราคาโดยตรง' : 'Ask customers to contact you for the price.'}
+                <span className="min-w-0 font-sarabun">
+                  <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                    {isThai ? 'ไม่ระบุราคา' : 'Price on request'}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                    {isThai ? 'แสดงให้ผู้สนใจสอบถามราคาโดยตรง' : 'Ask customers to contact you for the price.'}
+                  </span>
                 </span>
-              </span>
-              {priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-            </button>
+                {priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
 
-        {priceOnRequest ? (
+        {hasContactOrganizer ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-5 dark:border-orange-800 dark:bg-orange-950/30">
+            <ChatBubbleLeftRightIcon className="mt-0.5 size-6 shrink-0 text-orange-600" />
+            <div className="font-sarabun">
+              <p className="font-semibold text-orange-950 dark:text-orange-100">
+                {isThai ? 'ติดต่อผู้จัดงานเพื่อสอบถามราคา' : 'Contact the organizer for pricing'}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-orange-800 dark:text-orange-200">
+                {isThai
+                  ? 'พื้นที่ชั่วคราวจะไม่เก็บหรือแสดงราคาเช่า ผู้สนใจจะติดต่อคุณหรือผู้จัดงานโดยตรง'
+                  : 'Temporary-space listings do not store or display a rental price. Interested customers contact you or the organizer directly.'}
+              </p>
+            </div>
+          </div>
+        ) : priceOnRequest ? (
           <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/70 dark:bg-orange-950/25">
             <ChatBubbleLeftRightIcon className="mt-0.5 size-5 shrink-0 text-orange-600" />
             <p className="font-sarabun text-sm leading-6 text-orange-950 dark:text-orange-100">
@@ -1128,10 +1181,7 @@ const PricingPanel = ({
         ) : (
           <div className="space-y-4 border-t border-neutral-100 pt-6 dark:border-neutral-800">
             {hasSale ? (
-              <PricingGroup
-                icon={<BanknotesIcon className="size-5" />}
-                title={isThai ? 'ราคาขาย' : 'Sale price'}
-              >
+              <PricingGroup icon={<BanknotesIcon className="size-5" />} title={isThai ? 'ราคาขาย' : 'Sale price'}>
                 <FormItem label={isThai ? 'ราคาขายรวม' : 'Total sale price'}>
                   <PriceInput
                     name="salePrice"
@@ -1150,66 +1200,105 @@ const PricingPanel = ({
               <PricingGroup
                 icon={<CalendarDaysIcon className="size-5" />}
                 title={
-                  offers.includes('sublease')
-                    ? isThai
-                      ? 'ค่าเช่าช่วง'
-                      : 'Sublease price'
-                    : isThai
-                      ? 'ค่าเช่า'
-                      : 'Rental price'
+                  isTemporarySpace
+                    ? offers.includes('sublease')
+                      ? isThai
+                        ? 'ค่าเช่าช่วงพื้นที่ชั่วคราว'
+                        : 'Temporary-space sublease'
+                      : isThai
+                        ? 'ค่าเช่าพื้นที่ชั่วคราว'
+                        : 'Temporary-space rent'
+                    : offers.includes('sublease')
+                      ? isThai
+                        ? 'ค่าเช่าช่วง'
+                        : 'Sublease price'
+                      : isThai
+                        ? 'ค่าเช่า'
+                        : 'Rental price'
                 }
               >
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <FormItem label={isThai ? 'ค่าเช่ารายเดือน' : 'Monthly rent'}>
-                    <PriceInput
-                      name="rentPriceMonthly"
-                      value={rentPriceMonthly}
-                      onChange={onRentPriceMonthlyChange}
-                      suffix={monthlyUnit}
-                      symbol={symbol}
-                      placeholder={currency === 'THB' ? '15,000' : '450'}
-                      required
-                    />
-                  </FormItem>
-                  {isMonthlyHotel ? (
-                    <FormItem label={isThai ? 'ราคารายวัน (ถ้ามี)' : 'Daily rate (if any)'}>
+                {isTemporarySpace ? (
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <FormItem label={isThai ? 'ค่าเช่าตายตัว' : 'Fixed rental price'}>
                       <PriceInput
-                        name="rentPriceDaily"
-                        value={rentPriceDaily}
-                        onChange={onRentPriceDailyChange}
-                        suffix={`${currencyUnit}/${isThai ? 'คืน' : 'night'}`}
+                        name="temporarySpacePrice"
+                        value={temporarySpacePrice}
+                        onChange={onTemporarySpacePriceChange}
+                        suffix={currencyUnit}
                         symbol={symbol}
-                        placeholder={currency === 'THB' ? '1,200' : '35'}
+                        placeholder={currency === 'THB' ? '5,000' : '150'}
+                        required
                       />
                     </FormItem>
-                  ) : null}
-                  <FormItem label={isThai ? 'ระยะสัญญาขั้นต่ำ' : 'Minimum lease'}>
-                    <Select
-                      name="minimumLeaseMonths"
-                      value={minimumLeaseMonths}
-                      onChange={(event) => onMinimumLeaseMonthsChange(event.target.value)}
-                      className="[&_select]:h-12 [&_select]:rounded-2xl"
-                    >
-                      <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
-                      <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
-                      <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
-                      <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
-                      <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
-                      <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
-                      <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
-                    </Select>
-                  </FormItem>
-                  <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ถ้ามี)' : 'Monthly service fee (if any)'}>
-                    <PriceInput
-                      name="serviceFeeMonthly"
-                      value={serviceFeeMonthly}
-                      onChange={onServiceFeeMonthlyChange}
-                      suffix={monthlyUnit}
-                      symbol={symbol}
-                      placeholder={currency === 'THB' ? '1,500' : '45'}
-                    />
-                  </FormItem>
-                </div>
+                    <FormItem label={isThai ? 'ระยะเวลาที่ได้รับ (วัน)' : 'Included duration (days)'}>
+                      <Input
+                        name="temporarySpaceDurationDays"
+                        value={temporarySpaceDurationDays}
+                        onChange={(event) => onTemporarySpaceDurationDaysChange(event.target.value)}
+                        inputMode="numeric"
+                        pattern="[1-9][0-9]*"
+                        placeholder="3"
+                        className="h-12 rounded-2xl"
+                        required
+                      />
+                    </FormItem>
+                    <p className="font-sarabun text-xs leading-5 text-neutral-500 sm:col-span-2 dark:text-neutral-400">
+                      {isThai ? 'ตัวอย่าง: 5,000 บาท สำหรับ 3 วัน' : 'Example: 5,000 THB for 3 days.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <FormItem label={isThai ? 'ค่าเช่ารายเดือน' : 'Monthly rent'}>
+                      <PriceInput
+                        name="rentPriceMonthly"
+                        value={rentPriceMonthly}
+                        onChange={onRentPriceMonthlyChange}
+                        suffix={monthlyUnit}
+                        symbol={symbol}
+                        placeholder={currency === 'THB' ? '15,000' : '450'}
+                        required
+                      />
+                    </FormItem>
+                    {isMonthlyHotel ? (
+                      <FormItem label={isThai ? 'ราคารายวัน (ถ้ามี)' : 'Daily rate (if any)'}>
+                        <PriceInput
+                          name="rentPriceDaily"
+                          value={rentPriceDaily}
+                          onChange={onRentPriceDailyChange}
+                          suffix={`${currencyUnit}/${isThai ? 'คืน' : 'night'}`}
+                          symbol={symbol}
+                          placeholder={currency === 'THB' ? '1,200' : '35'}
+                        />
+                      </FormItem>
+                    ) : null}
+                    <FormItem label={isThai ? 'ระยะสัญญาขั้นต่ำ' : 'Minimum lease'}>
+                      <Select
+                        name="minimumLeaseMonths"
+                        value={minimumLeaseMonths}
+                        onChange={(event) => onMinimumLeaseMonthsChange(event.target.value)}
+                        className="[&_select]:h-12 [&_select]:rounded-2xl"
+                      >
+                        <option value="">{isThai ? 'ไม่ระบุ' : 'Not specified'}</option>
+                        <option value="1">{isThai ? '1 เดือน' : '1 month'}</option>
+                        <option value="3">{isThai ? '3 เดือน' : '3 months'}</option>
+                        <option value="6">{isThai ? '6 เดือน' : '6 months'}</option>
+                        <option value="12">{isThai ? '1 ปี' : '1 year'}</option>
+                        <option value="24">{isThai ? '2 ปี' : '2 years'}</option>
+                        <option value="36">{isThai ? '3 ปี' : '3 years'}</option>
+                      </Select>
+                    </FormItem>
+                    <FormItem label={isThai ? 'ค่าส่วนกลางต่อเดือน (ถ้ามี)' : 'Monthly service fee (if any)'}>
+                      <PriceInput
+                        name="serviceFeeMonthly"
+                        value={serviceFeeMonthly}
+                        onChange={onServiceFeeMonthlyChange}
+                        suffix={monthlyUnit}
+                        symbol={symbol}
+                        placeholder={currency === 'THB' ? '1,500' : '45'}
+                      />
+                    </FormItem>
+                  </div>
+                )}
               </PricingGroup>
             ) : null}
 
@@ -1235,11 +1324,9 @@ const PricingPanel = ({
                       required
                     />
                   </FormItem>
-                  {!hasRent ? (
+                  {!hasRent && !isTemporarySpace ? (
                     <>
-                      <FormItem
-                        label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อเดือน (ถ้ามี)' : 'Ongoing monthly rent (if any)'}
-                      >
+                      <FormItem label={isThai ? 'ค่าเช่าที่ต้องจ่ายต่อเดือน (ถ้ามี)' : 'Ongoing monthly rent (if any)'}>
                         <PriceInput
                           name="rentPriceMonthly"
                           value={rentPriceMonthly}
@@ -1280,68 +1367,48 @@ const PricingPanel = ({
                 </div>
               </PricingGroup>
             ) : null}
-
-            {hasEventBooking ? (
-              <PricingGroup
-                icon={<CalendarDaysIcon className="size-5" />}
-                title={isThai ? 'ราคาพื้นที่ชั่วคราว' : 'Temporary space price'}
-                description={
-                  isThai ? 'ราคาต่อหนึ่งรอบงานหรือช่วงเวลาที่ตกลงกัน' : 'Price per event or agreed booking period'
-                }
-              >
-                <FormItem label={isThai ? 'ราคาต่อรอบงาน' : 'Price per event period'}>
-                  <PriceInput
-                    name="eventBookingPrice"
-                    value={eventBookingPrice}
-                    onChange={onEventBookingPriceChange}
-                    suffix={`${currencyUnit}/${isThai ? 'รอบ' : 'period'}`}
-                    symbol={symbol}
-                    placeholder={currency === 'THB' ? '5,000' : '150'}
-                    required
-                  />
-                </FormItem>
-              </PricingGroup>
-            ) : null}
           </div>
         )}
 
-        <label
-          className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
-            priceOnRequest
-              ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-55 dark:border-neutral-800 dark:bg-neutral-950'
-              : priceNegotiable
-                ? 'border-orange-400 bg-orange-50/70 dark:border-orange-900 dark:bg-orange-950/25'
-                : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-          }`}
-        >
-          <span
-            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceNegotiable && !priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+        {!hasContactOrganizer ? (
+          <label
+            className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
+              priceOnRequest
+                ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-55 dark:border-neutral-800 dark:bg-neutral-950'
+                : priceNegotiable
+                  ? 'border-orange-400 bg-orange-50/70 dark:border-orange-900 dark:bg-orange-950/25'
+                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+            }`}
           >
-            <ScaleIcon className="size-5" />
-          </span>
-          <span className="min-w-0 flex-1 font-sarabun">
-            <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-              {isThai ? 'ต่อรองราคาได้' : 'Price is negotiable'}
+            <span
+              className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceNegotiable && !priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
+            >
+              <ScaleIcon className="size-5" />
             </span>
-            <span className="mt-0.5 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-              {priceOnRequest
-                ? isThai
-                  ? 'ไม่จำเป็นเมื่อเลือกไม่ระบุราคา'
-                  : 'Not needed when price is on request.'
-                : isThai
-                  ? 'เปิดไว้เมื่อคุณยืดหยุ่นเรื่องราคา'
-                  : 'Turn this on when you are flexible on price.'}
+            <span className="min-w-0 flex-1 font-sarabun">
+              <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                {isThai ? 'ต่อรองราคาได้' : 'Price is negotiable'}
+              </span>
+              <span className="mt-0.5 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                {priceOnRequest
+                  ? isThai
+                    ? 'ไม่จำเป็นเมื่อเลือกไม่ระบุราคา'
+                    : 'Not needed when price is on request.'
+                  : isThai
+                    ? 'เปิดไว้เมื่อคุณยืดหยุ่นเรื่องราคา'
+                    : 'Turn this on when you are flexible on price.'}
+              </span>
             </span>
-          </span>
-          <input
-            type="checkbox"
-            checked={!priceOnRequest && priceNegotiable}
-            disabled={priceOnRequest}
-            onChange={(event) => onPriceNegotiableChange(event.target.checked)}
-            className="peer sr-only"
-          />
-          <span className="relative h-7 w-12 shrink-0 rounded-full bg-neutral-300 transition peer-checked:bg-orange-600 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-disabled:opacity-60 after:absolute after:start-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 dark:bg-neutral-700" />
-        </label>
+            <input
+              type="checkbox"
+              checked={!priceOnRequest && priceNegotiable}
+              disabled={priceOnRequest}
+              onChange={(event) => onPriceNegotiableChange(event.target.checked)}
+              className="peer sr-only"
+            />
+            <span className="relative h-7 w-12 shrink-0 rounded-full bg-neutral-300 transition peer-checked:bg-orange-600 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-disabled:opacity-60 after:absolute after:start-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 dark:bg-neutral-700" />
+          </label>
+        ) : null}
       </div>
     </section>
   )
@@ -1506,9 +1573,10 @@ const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value)
 const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
 const resolveListingMediaUrl = (value: string) => (value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value)
 const isOfferTypeCode = (value: string): value is OfferTypeCode =>
-  ['sale', 'rent', 'sublease', 'business_transfer', 'event_booking'].includes(value)
+  ['sale', 'rent', 'sublease', 'business_transfer', 'contact_organizer'].includes(value)
 const offersFromLegacy = (value: string): OfferTypeCode[] => {
   if (value === 'sale_and_rent') return ['sale', 'rent']
+  if (value === 'event_booking') return ['contact_organizer']
   return isOfferTypeCode(value) ? [value] : ['rent']
 }
 export default Page

@@ -42,10 +42,7 @@ import {
   type ListingDraftValue,
 } from '@/lib/listingDraft'
 import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
-import {
-  consumeListingPublishValidationIssue,
-  listingValidationMessage,
-} from '@/lib/listingPublishValidation'
+import { consumeListingPublishValidationIssue, listingValidationMessage } from '@/lib/listingPublishValidation'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import Textarea from '@/shared/Textarea'
@@ -185,9 +182,7 @@ const Page = () => {
     ? useCases.filter((useCase) => propertyType.allowedUseCases.includes(useCase.code))
     : []
   const availableOffers = offerTypes.filter(
-    (offer) =>
-      propertyType?.allowedOffers.includes(offer.code) &&
-      (hasEventBooth ? offer.code === 'event_booking' : offer.code !== 'event_booking')
+    (offer) => propertyType?.allowedOffers.includes(offer.code) && (hasEventBooth || offer.code !== 'contact_organizer')
   )
   const selectedChannelOption = selectedChannel ? getDiscoveryChannel(selectedChannel) : undefined
   const selectedChannelLabel = selectedChannelOption
@@ -235,11 +230,7 @@ const Page = () => {
       ? isThai
         ? 'ให้เช่ารายเดือน'
         : 'Monthly rental'
-      : hasEventBooth
-        ? isThai
-          ? 'จองพื้นที่ตามรอบงาน'
-          : 'Book by event period'
-        : selectedOfferLabels.join(', ')
+      : selectedOfferLabels.join(', ')
   const hasCompleteListingOption = Boolean(hasCompletePropertySelection && propertyType && listingOptionLabel)
   const showsRooms = selectedGroup === 'residential' || selectedGroup === 'mixed_use'
   const isLand = selectedPropertyType === 'land' || selectedGroup === 'land'
@@ -253,8 +244,7 @@ const Page = () => {
     'factory',
     'hotel_resort',
   ].includes(selectedPropertyType)
-  const isIndustrialBusiness =
-    selectedChannel === 'business' && ['warehouse', 'factory'].includes(selectedPropertyType)
+  const isIndustrialBusiness = selectedChannel === 'business' && ['warehouse', 'factory'].includes(selectedPropertyType)
   const isHospitalityBusiness = selectedChannel === 'business' && selectedPropertyType === 'hotel_resort'
   const isMonthlyPortfolio = selectedChannel === 'rooms' && selectedScope === 'multi_unit'
   const showsBedrooms = showsRooms && !isMonthlyPortfolio
@@ -262,8 +252,7 @@ const Page = () => {
   const showsFloorNumber = !isLand && ['single_unit', 'space_slot'].includes(selectedScope)
   const showsTotalFloors = !isLand
   const showsFurnishing =
-    !isLand &&
-    (selectedChannel !== 'business' || ['shophouse', 'home_office', 'office'].includes(selectedPropertyType))
+    !isLand && (selectedChannel !== 'business' || ['shophouse', 'home_office', 'office'].includes(selectedPropertyType))
   const coreDetailsTitle =
     isIndustrialBusiness || isHospitalityBusiness
       ? isThai
@@ -406,9 +395,6 @@ const Page = () => {
           ? savedUseCases
           : mapLegacyUsageToUseCases(draft.usage_type, nextPropertyType.defaultUseCases)
       )
-      setSelectedOffers(
-        nextChannel === 'rooms' ? ['rent'] : savedOffers.length ? savedOffers : offersFromLegacy(draft.listing_type)
-      )
       const savedPrimarySpaceType = getBusinessSpaceType(readDraftText(draft.space_type_code))?.code
       const savedBusinessSpaceTypes = [
         savedPrimarySpaceType,
@@ -417,6 +403,9 @@ const Page = () => {
         .filter((code): code is BusinessSpaceTypeCode => Boolean(code))
         .filter((code, index, all) => all.indexOf(code) === index)
         .slice(0, 3)
+      setSelectedOffers(
+        nextChannel === 'rooms' ? ['rent'] : savedOffers.length ? savedOffers : offersFromLegacy(draft.listing_type)
+      )
       setBusinessSpaceTypes(savedBusinessSpaceTypes)
       setDraftReady(true)
     }
@@ -448,7 +437,10 @@ const Page = () => {
       const target = document.getElementById(`listing-wizard-section-${section}`)
       target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       window.setTimeout(
-        () => target?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')?.focus({ preventScroll: true }),
+        () =>
+          target
+            ?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')
+            ?.focus({ preventScroll: true }),
         280
       )
     })
@@ -516,11 +508,9 @@ const Page = () => {
       return withRetail
     })
     setSelectedOffers((current) => {
-      if (nextHasEventBooth) return ['event_booking']
-      const compatible = current.filter(
-        (offer) => retailSpace.allowedOffers.includes(offer) && offer !== 'event_booking'
-      )
-      return compatible
+      const compatible = current.filter((offer) => retailSpace.allowedOffers.includes(offer))
+      if (nextHasEventBooth) return compatible
+      return compatible.filter((offer) => offer !== 'contact_organizer')
     })
     setBusinessSpaceTypes(nextSpaceTypes)
     clearWizardError()
@@ -534,9 +524,11 @@ const Page = () => {
   }
 
   const toggleOffer = (code: OfferTypeCode) => {
-    setSelectedOffers((current) =>
-      current.includes(code) ? current.filter((item) => item !== code) : [...current, code]
-    )
+    setSelectedOffers((current) => {
+      if (code === 'contact_organizer') return current.includes(code) ? [] : [code]
+      const withoutContact = current.filter((item) => item !== 'contact_organizer')
+      return withoutContact.includes(code) ? withoutContact.filter((item) => item !== code) : [...withoutContact, code]
+    })
     clearWizardError()
   }
 
@@ -567,11 +559,7 @@ const Page = () => {
       return
     }
     if (!description.trim()) {
-      showWizardError(
-        4,
-        isThai ? 'กรุณากรอกรายละเอียดประกาศ' : 'Enter a listing description.',
-        'listingDescription'
-      )
+      showWizardError(4, isThai ? 'กรุณากรอกรายละเอียดประกาศ' : 'Enter a listing description.', 'listingDescription')
       return
     }
     if (!validateListingForm({ isThai })) return
@@ -904,13 +892,17 @@ const Page = () => {
           invalid={errorSection === 3}
           errorText={errorSection === 3 ? error : ''}
           title={
-            selectedChannel === 'rooms' || hasEventBooth
+            selectedChannel === 'rooms'
               ? isThai
                 ? 'รูปแบบประกาศ'
                 : 'Listing option'
-              : isThai
-                ? 'ต้องการขายหรือให้เช่า'
-                : 'For sale or rent'
+              : hasEventBooth
+                ? isThai
+                  ? 'รูปแบบประกาศพื้นที่ชั่วคราว'
+                  : 'Temporary-space listing option'
+                : isThai
+                  ? 'ต้องการขายหรือให้เช่า'
+                  : 'For sale or rent'
           }
         >
           {!hasCompletePropertySelection ? (
@@ -919,23 +911,6 @@ const Page = () => {
               textTh="เมื่อเลือกประเภททรัพย์แล้ว ตัวเลือกขาย ให้เช่า หรือรูปแบบที่เกี่ยวข้องจะแสดงตรงนี้"
               textEn="Sale, rental or other relevant listing options will appear after you choose a property type."
             />
-          ) : hasEventBooth ? (
-            <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-orange-50 p-3 ring-1 ring-orange-200 ring-inset dark:bg-orange-950/30 dark:ring-orange-800">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 text-white">
-                <CalendarRange className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-sarabun text-sm font-semibold text-orange-950 dark:text-orange-100">
-                  {isThai ? 'จองพื้นที่ตามรอบงาน' : 'Book by event period'}
-                </p>
-                <p className="mt-0.5 font-sarabun text-xs leading-5 text-orange-700/80 dark:text-orange-300">
-                  {isThai
-                    ? 'ระบุวันจัดงาน รอบที่เปิดรับ และราคาของแต่ละรอบเพิ่มเติมได้'
-                    : 'Add event dates, available rounds and the price for each period.'}
-                </p>
-              </div>
-              <CheckCircleIcon className="size-5 shrink-0 text-orange-600" />
-            </div>
           ) : selectedChannel === 'rooms' ? (
             <div className="flex min-h-16 items-center gap-3 rounded-2xl bg-sky-50 p-3 ring-1 ring-sky-200 ring-inset dark:bg-sky-950/30 dark:ring-sky-800">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
@@ -969,7 +944,20 @@ const Page = () => {
               </div>
               {availableOffers.length > 1 ? (
                 <p className="mt-2.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                  {isThai ? 'เลือกได้มากกว่า 1 รูปแบบ' : 'You can choose more than one option.'}
+                  {hasEventBooth
+                    ? isThai
+                      ? 'เลือกได้มากกว่า 1 รูปแบบ ยกเว้น “ติดต่อผู้จัดงาน” ที่เลือกเดี่ยว'
+                      : 'You can choose more than one priced option. “Contact organizer” is selected by itself.'
+                    : isThai
+                      ? 'เลือกได้มากกว่า 1 รูปแบบ'
+                      : 'You can choose more than one option.'}
+                </p>
+              ) : null}
+              {hasEventBooth ? (
+                <p className="mt-2 font-sarabun text-xs leading-5 text-orange-700 dark:text-orange-300">
+                  {isThai
+                    ? 'ถ้ามีราคาตายตัวให้เลือกรูปแบบเช่าและระบุราคากับจำนวนวัน หากราคาเป็นส่วนตัวให้เลือก “ติดต่อผู้จัดงาน”'
+                    : 'Choose a rental option to show a fixed price and number of days, or choose “Contact organizer” for a private quote.'}
                 </p>
               ) : null}
             </div>
@@ -1035,9 +1023,7 @@ const Page = () => {
                 : 'Listing information completed'
               : ''
           }
-          pendingText={
-            isThai ? 'กรอกหัวข้อและรายละเอียดประกาศให้ครบ' : 'Complete the listing title and description'
-          }
+          pendingText={isThai ? 'กรอกหัวข้อและรายละเอียดประกาศให้ครบ' : 'Complete the listing title and description'}
           tone={selectedChannel || undefined}
           invalid={errorSection === 4}
           errorText={errorSection === 4 ? error : ''}
@@ -1069,9 +1055,7 @@ const Page = () => {
             </FormItem>
 
             <FormItem
-              label={
-                isThai ? 'ชื่อโครงการ อาคาร หรือสถานที่ (ถ้ามี)' : 'Project, building or place name (if any)'
-              }
+              label={isThai ? 'ชื่อโครงการ อาคาร หรือสถานที่ (ถ้ามี)' : 'Project, building or place name (if any)'}
             >
               <Input
                 name="placeName"
@@ -1581,12 +1565,13 @@ const mapLegacyUsageToUseCases = (value: ListingDraftValue | undefined, fallback
 const offersFromLegacy = (value: ListingDraftValue | undefined): OfferTypeCode[] => {
   const listingType = readDraftText(value)
   if (listingType === 'sale_and_rent') return ['sale', 'rent']
+  if (listingType === 'event_booking') return ['contact_organizer']
   if (
     listingType === 'sale' ||
     listingType === 'rent' ||
     listingType === 'sublease' ||
     listingType === 'business_transfer' ||
-    listingType === 'event_booking'
+    listingType === 'contact_organizer'
   ) {
     return [listingType]
   }

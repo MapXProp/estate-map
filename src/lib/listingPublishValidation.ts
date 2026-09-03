@@ -20,8 +20,7 @@ export type ListingPublishValidationIssue = {
   messageEn: string
 }
 
-const text = (value: ListingDraftValue | undefined) =>
-  (Array.isArray(value) ? value[0] || '' : value || '').trim()
+const text = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '').trim()
 
 const values = (value: ListingDraftValue | undefined) =>
   (value ? (Array.isArray(value) ? value : [value]) : []).map((item) => item.trim()).filter(Boolean)
@@ -91,10 +90,16 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     spaceTypes.some((spaceType) => !getBusinessSpaceType(spaceType)) ||
     (!propertyType.supportsBusinessSpaceType && spaceTypes.length > 0)
   ) {
-    return issue('business_space_type_invalid', 1, 'กรุณาเลือกรูปแบบพื้นที่ค้าขายใหม่อีกครั้ง', 'Choose the business space type again.', {
-      section: 2,
-      target: 'wizard',
-    })
+    return issue(
+      'business_space_type_invalid',
+      1,
+      'กรุณาเลือกรูปแบบพื้นที่ค้าขายใหม่อีกครั้ง',
+      'Choose the business space type again.',
+      {
+        section: 2,
+        target: 'wizard',
+      }
+    )
   }
 
   if (!propertyType.allowedScopes.includes(text(draft.listing_scope) as ListingScopeCode)) {
@@ -112,12 +117,29 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     })
   }
 
-  const offerTypes = values(draft['offerTypes[]'])
+  const offerTypes = values(draft['offerTypes[]']).map((value) =>
+    value === 'event_booking' ? 'contact_organizer' : value
+  )
   if (!offerTypes.length || offerTypes.some((value) => !propertyType.allowedOffers.includes(value as OfferTypeCode))) {
-    return issue('offer_type_required', 1, 'กรุณาเลือกรูปแบบการประกาศอย่างน้อยหนึ่งรายการ', 'Choose at least one listing option.', {
-      section: 3,
-      target: 'wizard',
-    })
+    return issue(
+      'offer_type_required',
+      1,
+      'กรุณาเลือกรูปแบบการประกาศอย่างน้อยหนึ่งรายการ',
+      'Choose at least one listing option.',
+      {
+        section: 3,
+        target: 'wizard',
+      }
+    )
+  }
+  if (offerTypes.includes('contact_organizer') && offerTypes.length > 1) {
+    return issue(
+      'contact_organizer_exclusive',
+      1,
+      'เลือก “ติดต่อผู้จัดงาน” เพียงรายการเดียว หรือเลือกรูปแบบที่มีราคา',
+      'Choose “Contact organizer” by itself, or choose a priced listing option.',
+      { section: 3, target: 'wizard' }
+    )
   }
 
   if (!text(draft.listingTitle)) {
@@ -129,11 +151,17 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   }
 
   if (Array.from(text(draft.listingTitle)).length > 160) {
-    return issue('listing_title_too_long', 1, 'หัวข้อประกาศต้องไม่เกิน 160 ตัวอักษร', 'The listing title must not exceed 160 characters.', {
-      section: 4,
-      target: 'field',
-      fieldName: 'listingTitle',
-    })
+    return issue(
+      'listing_title_too_long',
+      1,
+      'หัวข้อประกาศต้องไม่เกิน 160 ตัวอักษร',
+      'The listing title must not exceed 160 characters.',
+      {
+        section: 4,
+        target: 'field',
+        fieldName: 'listingTitle',
+      }
+    )
   }
 
   if (!text(draft.listingDescription)) {
@@ -222,22 +250,37 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     })
   }
   if (text(draft.floorNo) && totalFloors && parseNumber(text(draft.floorNo)) > parseNumber(totalFloors)) {
-    return issue('floor_exceeds_total', 2, 'ชั้นที่ต้องไม่มากกว่าจำนวนชั้นทั้งหมด', 'Floor number cannot exceed total floors.', {
-      target: 'field',
-      fieldName: 'floorNo',
-    })
+    return issue(
+      'floor_exceeds_total',
+      2,
+      'ชั้นที่ต้องไม่มากกว่าจำนวนชั้นทั้งหมด',
+      'Floor number cannot exceed total floors.',
+      {
+        target: 'field',
+        fieldName: 'floorNo',
+      }
+    )
   }
 
-  const priceOnRequest = text(draft.priceOnRequest) === 'yes'
+  const isTemporarySpace = spaceTypes.includes('event_booth')
+  const priceOnRequest =
+    offerTypes.includes('contact_organizer') || (!isTemporarySpace && text(draft.priceOnRequest) === 'yes')
   if (!priceOnRequest) {
     const requiredPrices: Array<[boolean, string, string, string, string]> = [
       [offerTypes.includes('sale'), 'salePrice', text(draft.salePrice), 'กรุณากรอกราคาขาย', 'Enter the sale price.'],
       [
-        offerTypes.includes('rent') || offerTypes.includes('sublease'),
+        !isTemporarySpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
         'rentPriceMonthly',
         text(draft.rentPriceMonthly),
         'กรุณากรอกค่าเช่ารายเดือน',
         'Enter the monthly rent.',
+      ],
+      [
+        isTemporarySpace && (offerTypes.includes('rent') || offerTypes.includes('sublease')),
+        'temporarySpacePrice',
+        text(draft.temporarySpacePrice),
+        'กรุณากรอกค่าเช่าพื้นที่ชั่วคราว',
+        'Enter the temporary-space rental price.',
       ],
       [
         offerTypes.includes('business_transfer'),
@@ -246,22 +289,29 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
         'กรุณากรอกราคาเซ้งหรือค่าโอนสิทธิ',
         'Enter the transfer price.',
       ],
-      [
-        offerTypes.includes('event_booking'),
-        'eventBookingPrice',
-        text(draft.eventBookingPrice),
-        'กรุณากรอกราคาต่อรอบงาน',
-        'Enter the event-period price.',
-      ],
     ]
     for (const [required, fieldName, value, messageTh, messageEn] of requiredPrices) {
-      if (required && !value) return issue(`${fieldName}_required`, 3, messageTh, messageEn, { target: 'field', fieldName })
+      if (required && !value)
+        return issue(`${fieldName}_required`, 3, messageTh, messageEn, { target: 'field', fieldName })
       if (value && !isNonNegativeNumber(value)) {
         return issue(`${fieldName}_invalid`, 3, 'กรุณากรอกราคาเป็นตัวเลขที่ถูกต้อง', 'Enter a valid numeric price.', {
           target: 'field',
           fieldName,
         })
       }
+    }
+    if (
+      isTemporarySpace &&
+      (offerTypes.includes('rent') || offerTypes.includes('sublease')) &&
+      !isPositiveInteger(text(draft.temporarySpaceDurationDays))
+    ) {
+      return issue(
+        'temporarySpaceDurationDays_required',
+        3,
+        'กรุณาระบุจำนวนวันที่รวมในค่าเช่า',
+        'Enter the number of days included in the rental price.',
+        { target: 'field', fieldName: 'temporarySpaceDurationDays' }
+      )
     }
   }
 
@@ -298,18 +348,30 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     'property_management_company',
   ]
   if (role !== 'owner' && !allowedAuthorities.includes(authority)) {
-    return issue('contact_authority_required', 3, 'กรุณาเลือกแหล่งที่มาของสิทธิลงประกาศ', 'Choose the authority source.', {
-      target: 'field',
-      fieldName: 'contactAuthorityCode',
-    })
+    return issue(
+      'contact_authority_required',
+      3,
+      'กรุณาเลือกแหล่งที่มาของสิทธิลงประกาศ',
+      'Choose the authority source.',
+      {
+        target: 'field',
+        fieldName: 'contactAuthorityCode',
+      }
+    )
   }
 
   const organizationName = text(draft.contactOrganizationName)
   if (['agency_broker', 'developer_investor_representative'].includes(role) && !organizationName) {
-    return issue('contact_organization_required', 3, 'กรุณากรอกบริษัทหรือสังกัด', 'Enter the company or organization.', {
-      target: 'field',
-      fieldName: 'contactOrganizationName',
-    })
+    return issue(
+      'contact_organization_required',
+      3,
+      'กรุณากรอกบริษัทหรือสังกัด',
+      'Enter the company or organization.',
+      {
+        target: 'field',
+        fieldName: 'contactOrganizationName',
+      }
+    )
   }
   if (text(draft.contactOrganizationRegistrationNo) && !organizationName) {
     return issue(
@@ -321,16 +383,28 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     )
   }
   if (Array.from(organizationName).length > 160) {
-    return issue('contact_organization_too_long', 3, 'ชื่อบริษัทหรือสังกัดต้องไม่เกิน 160 ตัวอักษร', 'The company or organization must not exceed 160 characters.', {
-      target: 'field',
-      fieldName: 'contactOrganizationName',
-    })
+    return issue(
+      'contact_organization_too_long',
+      3,
+      'ชื่อบริษัทหรือสังกัดต้องไม่เกิน 160 ตัวอักษร',
+      'The company or organization must not exceed 160 characters.',
+      {
+        target: 'field',
+        fieldName: 'contactOrganizationName',
+      }
+    )
   }
   if (text(draft.contactOrganizationRegistrationNo).length > 64) {
-    return issue('contact_registration_too_long', 3, 'เลขทะเบียนนิติบุคคลต้องไม่เกิน 64 ตัวอักษร', 'The company registration number must not exceed 64 characters.', {
-      target: 'field',
-      fieldName: 'contactOrganizationRegistrationNo',
-    })
+    return issue(
+      'contact_registration_too_long',
+      3,
+      'เลขทะเบียนนิติบุคคลต้องไม่เกิน 64 ตัวอักษร',
+      'The company registration number must not exceed 64 characters.',
+      {
+        target: 'field',
+        fieldName: 'contactOrganizationRegistrationNo',
+      }
+    )
   }
 
   if (!text(draft.contactName)) {
@@ -345,7 +419,6 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
       fieldName: 'contactPhone',
     })
   }
-
 
   const contactEmail = text(draft.contactEmail)
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {

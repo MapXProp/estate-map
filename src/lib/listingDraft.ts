@@ -123,6 +123,8 @@ export type CreateListingPayload = {
   price_unit?: string
   key_money_amount?: string
   event_booking_price?: string
+  temporary_space_price?: string
+  temporary_space_duration_days?: string
   service_fee_monthly?: string
   allowed_business_types?: string[]
   amenities?: string[]
@@ -657,13 +659,13 @@ export const uploadListingPhotos = (files: File[]) => uploadListingMedia(files, 
 export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPayload => {
   const title = text(draft.listingTitle) || text(draft.placeName) || 'New property listing'
   const descriptionParts = [text(draft.listingDescription), text(draft['place-description'])].filter(Boolean)
-  const listingType = text(draft.listing_type) || 'rent'
+  const rawListingType = text(draft.listing_type) || 'rent'
   const useCaseCodes = values(draft['useCaseCodes[]']).length
     ? values(draft['useCaseCodes[]'])
     : mapLegacyUsageToUseCases(text(draft.usage_type))
-  const offerTypeCodes = values(draft['offerTypes[]']).length
+  const rawOfferTypeCodes = values(draft['offerTypes[]']).length
     ? values(draft['offerTypes[]'])
-    : offersFromLegacy(listingType)
+    : offersFromLegacy(rawListingType)
   const allowedBusinessTypes = [
     ...values(draft['allowedBusinessTypes[]']),
     ...useCaseCodes.filter((code) => code !== 'residential'),
@@ -672,6 +674,14 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const spaceTypeCodes = [primarySpaceTypeCode, ...values(draft['spaceTypeCodes[]']).map(normalizeCode)].filter(
     (value, index, all) => Boolean(value) && all.indexOf(value) === index
   )
+  const isTemporarySpace = spaceTypeCodes.includes('event_booth')
+  const offerTypeCodes = rawOfferTypeCodes
+    .map((code) => (normalizeCode(code) === 'event_booking' ? 'contact_organizer' : normalizeCode(code)))
+    .filter((value, index, all) => Boolean(value) && all.indexOf(value) === index)
+  const listingType =
+    normalizeCode(rawListingType) === 'event_booking' ? 'contact_organizer' : normalizeCode(rawListingType)
+  const priceOnRequest =
+    offerTypeCodes.includes('contact_organizer') || (!isTemporarySpace && text(draft.priceOnRequest) === 'yes')
   const photoURLs = values(draft['listingPhotoUrls[]'])
   const videoURLs = values(draft['listingVideoUrls[]'])
   const panoramaURLs = values(draft['listingPanoramaUrls[]'])
@@ -692,18 +702,18 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     accommodation_model: normalizeCode(text(draft.accommodation_model)),
     listing_scope: normalizeCode(text(draft.listing_scope)) || 'whole_property',
     use_case_codes: useCaseCodes.map(normalizeCode),
-    offer_types: offerTypeCodes.map(normalizeCode),
+    offer_types: offerTypeCodes,
     usage_type: normalizeCode(text(draft.usage_type) || inferUsageType(draft)),
     listing_type: normalizeCode(listingType),
     title,
     description: descriptionParts.join('\n\n'),
     custom_project_name: text(draft.placeName),
     custom_unit_number: text(draft['room-number']),
-    sale_price: text(draft.salePrice),
-    rent_price_monthly: text(draft.rentPriceMonthly || draft['base-price1']),
-    rent_price_daily: text(draft.rentPriceDaily || draft['base-price2']),
-    price_negotiable: text(draft.priceNegotiable) === 'yes',
-    price_on_request: text(draft.priceOnRequest) === 'yes',
+    sale_price: priceOnRequest ? '' : text(draft.salePrice),
+    rent_price_monthly: priceOnRequest || isTemporarySpace ? '' : text(draft.rentPriceMonthly || draft['base-price1']),
+    rent_price_daily: priceOnRequest ? '' : text(draft.rentPriceDaily || draft['base-price2']),
+    price_negotiable: !priceOnRequest && text(draft.priceNegotiable) === 'yes',
+    price_on_request: priceOnRequest,
     currency: text(draft.currency) || 'THB',
     usable_area_sqm: text(draft.usableAreaSqm || draft.acreage),
     land_area_sqm: text(draft.landAreaSqm),
@@ -716,7 +726,8 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     furnishing_status: normalizeCode(text(draft.furnishingStatus)),
     property_condition: normalizeCode(text(draft.propertyCondition)),
     occupancy_status: normalizeCode(text(draft.occupancyStatus)),
-    minimum_lease_months: text(draft.minimumLeaseMonths || draft['Nights-min']),
+    minimum_lease_months:
+      priceOnRequest || isTemporarySpace ? '' : text(draft.minimumLeaseMonths || draft['Nights-min']),
     pet_allowed: petPolicyCode === 'allowed' || petPolicyCode === 'case_by_case',
     pet_policy_code: petPolicyCode,
     utilities_included: text(draft.utilitiesIncluded) === 'yes',
@@ -742,12 +753,22 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     business_type_code: normalizeCode(text(draft.business_type_code)),
     space_type_code: spaceTypeCodes[0] || '',
     space_type_codes: spaceTypeCodes,
-    price_unit:
-      normalizeCode(text(draft.price_unit)) ||
-      (listingType === 'event_booking' ? 'event_round' : listingType.includes('rent') ? 'month' : ''),
-    key_money_amount: text(draft.keyMoneyAmount),
-    event_booking_price: text(draft.eventBookingPrice),
-    service_fee_monthly: text(draft.serviceFeeMonthly),
+    price_unit: offerTypeCodes.includes('contact_organizer')
+      ? 'contact'
+      : isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+        ? 'event_period'
+        : normalizeCode(text(draft.price_unit)) || (listingType.includes('rent') ? 'month' : ''),
+    key_money_amount: priceOnRequest ? '' : text(draft.keyMoneyAmount),
+    event_booking_price: '',
+    temporary_space_price:
+      !priceOnRequest && isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+        ? text(draft.temporarySpacePrice)
+        : '',
+    temporary_space_duration_days:
+      !priceOnRequest && isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+        ? text(draft.temporarySpaceDurationDays)
+        : '',
+    service_fee_monthly: priceOnRequest || isTemporarySpace ? '' : text(draft.serviceFeeMonthly),
     allowed_business_types: allowedBusinessTypes,
     amenities: [
       ...values(draft['amenities[]']),
@@ -1070,6 +1091,7 @@ const formatUseCaseLabels = (values: string[] | undefined, fallback: string, loc
 
 const offersFromLegacy = (listingType: string) => {
   if (listingType === 'sale_and_rent') return ['sale', 'rent']
+  if (listingType === 'event_booking') return ['contact_organizer']
   return listingType ? [listingType] : ['rent']
 }
 
@@ -1080,10 +1102,19 @@ const mapLegacyUsageToUseCases = (usageType: string) => {
 }
 
 const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {
+  if (payload.offer_types?.includes('contact_organizer'))
+    return locale === 'th' ? 'ติดต่อผู้จัดงาน' : 'Contact organizer'
   if (payload.price_on_request) return locale === 'th' ? 'สอบถามราคา' : 'Price on request'
   const currency = payload.currency || 'THB'
   const unit = currency === 'THB' ? (locale === 'th' ? 'บาท' : 'THB') : currency
   const prices: string[] = []
+  if (payload.temporary_space_price && payload.temporary_space_duration_days) {
+    prices.push(
+      locale === 'th'
+        ? `เช่า ${payload.temporary_space_price} ${unit} / ${payload.temporary_space_duration_days} วัน`
+        : `Rent ${payload.temporary_space_price} ${unit} / ${payload.temporary_space_duration_days} days`
+    )
+  }
   if (payload.sale_price)
     prices.push(locale === 'th' ? `ขาย ${payload.sale_price} ${unit}` : `Sale ${payload.sale_price} ${unit}`)
   if (payload.rent_price_monthly)
@@ -1099,13 +1130,6 @@ const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {
   if (payload.key_money_amount && payload.offer_types?.includes('business_transfer')) {
     prices.push(
       locale === 'th' ? `เซ้ง ${payload.key_money_amount} ${unit}` : `Transfer ${payload.key_money_amount} ${unit}`
-    )
-  }
-  if (payload.event_booking_price && payload.offer_types?.includes('event_booking')) {
-    prices.push(
-      locale === 'th'
-        ? `รอบงาน ${payload.event_booking_price} ${unit}`
-        : `Event period ${payload.event_booking_price} ${unit}`
     )
   }
   return prices.join(' · ') || (locale === 'th' ? 'ยังไม่ระบุราคา' : 'Price not specified')

@@ -1,7 +1,17 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
-import type { PropertyListingDetail } from '@/lib/propertySearch'
 import ListingImageFallback from '@/components/ListingImageFallback'
-import { CalendarDays, CircleHelp, ExternalLink, MapPin, MessageCircle, Phone, ShieldCheck, Store, Users } from 'lucide-react'
+import type { PropertyListingDetail } from '@/lib/propertySearch'
+import {
+  CalendarDays,
+  CircleHelp,
+  ExternalLink,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Store,
+  Users,
+} from 'lucide-react'
 import Image from 'next/image'
 
 const formatThaiDate = (value: string) =>
@@ -19,10 +29,22 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
   const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const isVerifiedOrganizer = event.organizer_verification_status === 'verified'
+  const isContactOrganizer = listing.offer_type === 'contact_organizer' || event.price_on_request
+  const temporarySpaceDays = Number(listing.category_details.temporary_space_duration_days) || 0
+  const currencySymbol = listing.currency === 'USD' ? 'US$' : '฿'
+  const fixedPrice = listing.offer_amount
+    ? `${currencySymbol}${listing.offer_amount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`
+    : ''
+  const eventOfferLabel =
+    listing.offer_type === 'business_transfer'
+      ? 'เซ้งกิจการ'
+      : listing.offer_type === 'sublease'
+        ? 'ให้เช่าช่วง'
+        : 'ให้เช่า'
 
   return (
     <div className="pb-24 min-[744px]:pb-0">
-      <main className="mx-auto max-w-screen-xl px-4 py-5 sm:px-6 min-[744px]:py-8 lg:px-8">
+      <main className="mx-auto max-w-screen-xl px-4 py-5 min-[744px]:py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 min-[900px]:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)] min-[1100px]:gap-12">
           <div className="min-w-0">
             <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-[#f6f7f5] shadow-sm">
@@ -40,14 +62,21 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               )}
             </div>
             <p className="mt-3 text-xs leading-5 text-neutral-500">
-              ข้อมูลจากประกาศสาธารณะของ {event.organizer_name} โปรดตรวจสอบรอบ ราคา และเงื่อนไขกับผู้จัดก่อนชำระเงิน
+              ข้อมูลจากประกาศสาธารณะของ {event.organizer_name}{' '}
+              {isContactOrganizer
+                ? 'โปรดติดต่อผู้จัดโดยตรงเพื่อสอบถามราคา พื้นที่ว่าง และเงื่อนไข'
+                : 'โปรดติดต่อผู้จัดเพื่อยืนยันพื้นที่ว่าง วันที่ และเงื่อนไข'}
             </p>
           </div>
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[#fff1eb] px-3 py-1 text-sm font-medium text-[#d94721]">พื้นที่ออกบูธ</span>
-              <span className="rounded-full bg-[#eef7f3] px-3 py-1 text-sm font-medium text-[#176b50]">เปิดรับจอง</span>
+              <span className="rounded-full bg-[#fff1eb] px-3 py-1 text-sm font-medium text-[#d94721]">
+                พื้นที่ออกบูธ
+              </span>
+              <span className="rounded-full bg-[#eef7f3] px-3 py-1 text-sm font-medium text-[#176b50]">
+                {isContactOrganizer ? 'ติดต่อผู้จัดงาน' : eventOfferLabel}
+              </span>
             </div>
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
             <div className="mt-2 flex items-start justify-between gap-4">
@@ -67,15 +96,26 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </div>
 
             <div className="mt-6 rounded-3xl border border-[#dce9e4] bg-[#f4f9f7] p-5">
-              <p className="text-sm text-neutral-500">ราคาบูธ</p>
-              <p className="mt-1 text-2xl font-semibold text-[#123f32]">สอบถามผู้จัด</p>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">ราคาและขนาดบูธอาจแตกต่างกันตามรอบและตำแหน่ง</p>
+              <p className="text-sm text-neutral-500">
+                {isContactOrganizer ? 'การรับราคาและรายละเอียด' : 'ค่าเช่าพื้นที่ชั่วคราว'}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-[#123f32]">
+                {isContactOrganizer ? 'ติดต่อผู้จัดงาน' : fixedPrice || 'สอบถามราคา'}
+                {!isContactOrganizer && fixedPrice && temporarySpaceDays ? (
+                  <span className="text-base font-medium text-neutral-600"> / {temporarySpaceDays} วัน</span>
+                ) : null}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-neutral-600">
+                {isContactOrganizer
+                  ? 'ผู้จัดจะแจ้งราคา ขนาดบูธ พื้นที่ว่าง และเงื่อนไขให้ผู้สนใจโดยตรง'
+                  : 'ราคานี้เป็นราคาตายตัวตามระยะเวลาที่ผู้ลงประกาศกำหนด โปรดติดต่อเพื่อตรวจสอบพื้นที่ว่าง'}
+              </p>
             </div>
 
             <section className="mt-8">
               <div className="flex items-center gap-2">
                 <CalendarDays className="size-5 text-[#176b50]" />
-                <h2 className="text-xl font-semibold">รอบที่เปิดจอง</h2>
+                <h2 className="text-xl font-semibold">กำหนดการจัดงาน</h2>
                 <span className="text-sm text-neutral-500">{event.rounds.length} รอบ</span>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -83,7 +123,9 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                   <div key={round.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-medium text-neutral-900">{round.label}</p>
-                      <span className="rounded-full bg-[#eef7f3] px-2 py-1 text-xs text-[#176b50]">เปิดรับจอง</span>
+                      <span className="rounded-full bg-[#eef7f3] px-2 py-1 text-xs text-[#176b50]">
+                        สอบถามพื้นที่ว่าง
+                      </span>
                     </div>
                     <p className="mt-2 text-sm text-neutral-600">
                       {formatThaiDate(round.starts_on)} – {formatThaiDate(round.ends_on)}
@@ -95,26 +137,43 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
 
             <section className="mt-8 grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-neutral-200 p-5">
-                <div className="flex items-center gap-2 font-semibold"><Store className="size-5 text-[#176b50]" /> สินค้าที่เปิดรับ</div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <Store className="size-5 text-[#176b50]" /> สินค้าที่เปิดรับ
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {event.accepted_product_categories.map((category) => (
-                    <span key={category} className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm text-neutral-700">{category}</span>
+                    <span key={category} className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm text-neutral-700">
+                      {category}
+                    </span>
                   ))}
                 </div>
               </div>
               <div className="rounded-3xl border border-neutral-200 p-5">
-                <div className="flex items-center gap-2 font-semibold"><Users className="size-5 text-[#176b50]" /> กลุ่มลูกค้า</div>
+                <div className="flex items-center gap-2 font-semibold">
+                  <Users className="size-5 text-[#176b50]" /> กลุ่มลูกค้า
+                </div>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
-                  {event.audience_segments.map((audience) => <li key={audience}>• {audience}</li>)}
+                  {event.audience_segments.map((audience) => (
+                    <li key={audience}>• {audience}</li>
+                  ))}
                 </ul>
               </div>
             </section>
 
             <section className="mt-6 rounded-3xl border border-[#f0dfce] bg-[#fffaf4] p-5">
-              <div className="flex items-center gap-2 font-semibold"><CircleHelp className="size-5 text-[#d66a22]" /> ข้อมูลที่ควรถามก่อนจอง</div>
-              <p className="mt-3 text-sm leading-6 text-neutral-600">ราคา ขนาดและเลขบูธ แปลนพื้นที่ จุดไฟฟ้า/น้ำ เงื่อนไขการขายอาหาร และรอบที่ยังว่าง</p>
+              <div className="flex items-center gap-2 font-semibold">
+                <CircleHelp className="size-5 text-[#d66a22]" /> ข้อมูลที่ควรสอบถามผู้จัดงาน
+              </div>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">
+                ราคา ขนาดและเลขบูธ แปลนพื้นที่ จุดไฟฟ้า/น้ำ เงื่อนไขการขายอาหาร และรอบที่ยังว่าง
+              </p>
               {event.floor_plan_url && (
-                <a href={event.floor_plan_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#176b50] hover:underline">
+                <a
+                  href={event.floor_plan_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#176b50] hover:underline"
+                >
                   ขอข้อมูลและแปลนจากผู้จัด <ExternalLink className="size-4" />
                 </a>
               )}
@@ -124,7 +183,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm text-white/70">ผู้ประสานงาน</p>
                 {isVerifiedOrganizer && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/18">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/18 ring-inset">
                     <ShieldCheck className="size-3.5 text-[#9bd8c3]" />
                     ผู้จัดที่ MapxProp ตรวจสอบแล้ว
                   </span>
@@ -145,8 +204,24 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </div>
               <p className="mt-2 text-sm leading-6 text-white/75">{event.application_instructions}</p>
               <div className="mt-5 flex flex-wrap gap-3">
-                {phoneURL && <a href={phoneURL} className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 font-medium text-[#123f32]"><Phone className="size-4" /> โทร {listing.contact_phone}</a>}
-                {lineURL && <a href={lineURL} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-full border border-white/30 px-5 font-medium hover:bg-white/10"><MessageCircle className="size-4" /> LINE {listing.line_id}</a>}
+                {phoneURL && (
+                  <a
+                    href={phoneURL}
+                    className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 font-medium text-[#123f32]"
+                  >
+                    <Phone className="size-4" /> โทร {listing.contact_phone}
+                  </a>
+                )}
+                {lineURL && (
+                  <a
+                    href={lineURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 items-center gap-2 rounded-full border border-white/30 px-5 font-medium hover:bg-white/10"
+                  >
+                    <MessageCircle className="size-4" /> LINE {listing.line_id}
+                  </a>
+                )}
               </div>
             </section>
           </div>
@@ -155,8 +230,24 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur min-[744px]:hidden">
         <div className="mx-auto flex max-w-md gap-2">
-          {lineURL && <a href={lineURL} target="_blank" rel="noopener noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#cddfd8] font-medium text-[#123f32]"><MessageCircle className="size-4" /> LINE</a>}
-          {phoneURL && <a href={phoneURL} className="flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-[#123f32] font-medium text-white"><Phone className="size-4" /> ติดต่อผู้จัด</a>}
+          {lineURL && (
+            <a
+              href={lineURL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#cddfd8] font-medium text-[#123f32]"
+            >
+              <MessageCircle className="size-4" /> LINE
+            </a>
+          )}
+          {phoneURL && (
+            <a
+              href={phoneURL}
+              className="flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-[#123f32] font-medium text-white"
+            >
+              <Phone className="size-4" /> ติดต่อผู้จัด
+            </a>
+          )}
         </div>
       </div>
     </div>

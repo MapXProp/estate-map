@@ -31,7 +31,7 @@ export type UseCaseCode =
   | 'agriculture'
 
 export type ListingScopeCode = 'single_unit' | 'whole_property' | 'multi_unit' | 'land_plot' | 'space_slot'
-export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer' | 'event_booking'
+export type OfferTypeCode = 'sale' | 'rent' | 'sublease' | 'business_transfer' | 'contact_organizer'
 export type DiscoveryChannelCode = 'homes' | 'rooms' | 'business'
 export type AccommodationModelCode = 'standard' | 'serviced'
 
@@ -316,7 +316,7 @@ export const propertyTypes: PropertyTypeDefinition[] = [
     defaultUseCases: ['retail'],
     allowedScopes: ['space_slot', 'single_unit', 'whole_property'],
     defaultScope: 'space_slot',
-    allowedOffers: ['rent', 'sublease', 'business_transfer', 'event_booking'],
+    allowedOffers: ['rent', 'sublease', 'business_transfer', 'contact_organizer'],
     supportsBusinessSpaceType: true,
   },
   {
@@ -452,10 +452,10 @@ export const offerTypes: TaxonomyOption<OfferTypeCode>[] = [
     description: 'โอนสิทธิการเช่าหรือกิจการพร้อมอุปกรณ์',
   },
   {
-    code: 'event_booking',
-    nameTh: 'จองพื้นที่ตามรอบงาน',
-    nameEn: 'Event booking',
-    description: 'เปิดรับร้านค้าตามวันหรือรอบของงาน',
+    code: 'contact_organizer',
+    nameTh: 'ติดต่อผู้จัดงาน',
+    nameEn: 'Contact organizer',
+    description: 'ผู้สนใจติดต่อผู้จัดหรือผู้ลงประกาศโดยตรงเพื่อสอบถามราคาและรายละเอียด',
   },
 ]
 
@@ -583,6 +583,6 @@ export const offersToLegacyListingType = (codes: OfferTypeCode[]) => {
   if (codes.includes('rent')) return 'rent'
   if (codes.includes('sublease')) return 'sublease'
   if (codes.includes('business_transfer')) return 'business_transfer'
-  if (codes.includes('event_booking')) return 'event_booking'
+  if (codes.includes('contact_organizer')) return 'contact_organizer'
   return 'rent'
 }

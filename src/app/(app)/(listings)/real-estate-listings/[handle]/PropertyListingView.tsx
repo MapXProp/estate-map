@@ -1,8 +1,8 @@
 'use client'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
@@ -148,9 +148,14 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             {facts.length ? (
               <section className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {facts.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+                  >
                     <item.icon className="size-5 text-[#176b50]" />
-                    <p className="mt-3 font-sarabun text-lg font-semibold text-neutral-950 dark:text-white">{item.value}</p>
+                    <p className="mt-3 font-sarabun text-lg font-semibold text-neutral-950 dark:text-white">
+                      {item.value}
+                    </p>
                     <p className="mt-0.5 font-sarabun text-xs text-neutral-500">{item.label}</p>
                   </div>
                 ))}
@@ -161,7 +166,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'รายละเอียดประกาศ' : 'Listing details'}
               </h2>
-              <div className="mt-5 space-y-4 whitespace-pre-line font-sarabun text-[15px] leading-7 text-neutral-700 sm:text-base dark:text-neutral-300">
+              <div className="mt-5 space-y-4 font-sarabun text-[15px] leading-7 whitespace-pre-line text-neutral-700 sm:text-base dark:text-neutral-300">
                 {listing.description}
               </div>
             </section>
@@ -173,7 +178,10 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 </h2>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {listing.amenities.map((amenity) => (
-                    <span key={amenity} className="rounded-full bg-neutral-100 px-3 py-2 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                    <span
+                      key={amenity}
+                      className="rounded-full bg-neutral-100 px-3 py-2 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                    >
                       {amenityLabel(amenity, isThai)}
                     </span>
                   ))}
@@ -184,10 +192,18 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             {mapURL ? (
               <section className="mt-10 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 sm:p-6 dark:border-[#205e30] dark:bg-[#173520]">
                 <h2 className="flex items-center gap-2 font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
-                  <MapPin className="size-5 text-[#176b50] dark:text-[#8bd49c]" /> {isThai ? 'ตำแหน่งทรัพย์' : 'Property location'}
+                  <MapPin className="size-5 text-[#176b50] dark:text-[#8bd49c]" />{' '}
+                  {isThai ? 'ตำแหน่งทรัพย์' : 'Property location'}
                 </h2>
-                <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">{fullAddress}</p>
-                <a href={mapURL} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 font-sarabun text-sm font-semibold text-[#176b50] hover:underline dark:text-[#8bd49c]">
+                <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+                  {fullAddress}
+                </p>
+                <a
+                  href={mapURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-1.5 font-sarabun text-sm font-semibold text-[#176b50] hover:underline dark:text-[#8bd49c]"
+                >
                   {isThai ? 'เปิดตำแหน่งบนแผนที่' : 'Open in maps'} <ExternalLink className="size-4" />
                 </a>
               </section>
@@ -197,7 +213,9 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)] dark:border-neutral-800 dark:bg-neutral-900">
               <p className="font-sarabun text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              <p className="mt-1 font-sarabun text-3xl font-semibold tracking-tight text-neutral-950 dark:text-white">{price}</p>
+              <p className="mt-1 font-sarabun text-3xl font-semibold tracking-tight text-neutral-950 dark:text-white">
+                {price}
+              </p>
               <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
               <p className="font-sarabun font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'ติดต่อ' : 'Contact'} {listing.contact_name}
@@ -207,17 +225,28 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               ) : null}
               <div className="mt-5 grid gap-2.5">
                 {phoneURL ? (
-                  <a href={phoneURL} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun font-semibold text-white transition hover:bg-[#145d46]">
+                  <a
+                    href={phoneURL}
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun font-semibold text-white transition hover:bg-[#145d46]"
+                  >
                     <Phone className="size-4" /> {listing.contact_phone}
                   </a>
                 ) : null}
                 {lineURL ? (
-                  <a href={lineURL} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">
+                  <a
+                    href={lineURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  >
                     <MessageCircle className="size-4" /> LINE
                   </a>
                 ) : null}
                 {emailURL ? (
-                  <a href={emailURL} className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">
+                  <a
+                    href={emailURL}
+                    className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  >
                     <Mail className="size-4" /> {isThai ? 'ส่งอีเมล' : 'Email'}
                   </a>
                 ) : null}
@@ -231,12 +260,20 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
           <div className="mx-auto flex max-w-md gap-2">
             {lineURL ? (
-              <a href={lineURL} target="_blank" rel="noopener noreferrer" className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#cddfd8] font-sarabun font-medium text-[#123f32] dark:text-white">
+              <a
+                href={lineURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#cddfd8] font-sarabun font-medium text-[#123f32] dark:text-white"
+              >
                 <MessageCircle className="size-4" /> LINE
               </a>
             ) : null}
             {phoneURL ? (
-              <a href={phoneURL} className="flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-[#123f32] font-sarabun font-medium text-white">
+              <a
+                href={phoneURL}
+                className="flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-[#123f32] font-sarabun font-medium text-white"
+              >
                 <Phone className="size-4" /> {isThai ? 'โทรหาผู้ติดต่อ' : 'Call contact'}
               </a>
             ) : null}
@@ -273,7 +310,7 @@ const offerLabel = (value: string, isThai: boolean) => {
     rent: ['ให้เช่า', 'For rent'],
     sublease: ['ให้เช่าช่วง', 'Sublease'],
     business_transfer: ['เซ้ง / โอนกิจการ', 'Business transfer'],
-    event_booking: ['เปิดจอง', 'Booking'],
+    contact_organizer: ['ติดต่อผู้จัดงาน', 'Contact organizer'],
   }
   return labels[value]?.[isThai ? 0 : 1] || value
 }
