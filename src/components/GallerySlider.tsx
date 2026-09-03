@@ -36,6 +36,7 @@ interface GallerySliderProps {
   instantImageChange?: boolean
   openInNewTab?: boolean
   emptyFallback?: ReactNode
+  imageAlt?: string
 }
 
 export default function GallerySlider({
@@ -56,6 +57,7 @@ export default function GallerySlider({
   instantImageChange = false,
   openInNewTab = false,
   emptyFallback,
+  imageAlt = 'รูปประกาศอสังหาริมทรัพย์',
 }: GallerySliderProps) {
   const { locale } = usePreferences()
   const sliderRef = useRef<HTMLDivElement>(null)
@@ -238,7 +240,7 @@ export default function GallerySlider({
     <Image
       src={currentImage}
       fill
-      alt="listing card gallery"
+      alt={`${imageAlt} รูปที่ ${index + 1}`}
       className={clsx(`rounded-xl object-cover`, imageClass)}
       onLoad={() => setLoaded(true)}
       onError={() => {

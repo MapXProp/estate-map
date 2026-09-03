@@ -14,9 +14,12 @@ import {
   Wifi01Icon,
 } from '@/components/Icons'
 import StartRating from '@/components/StartRating'
+import JsonLd from '@/components/seo/JsonLd'
 import { getListingReviews } from '@/data/data'
 import { getRealEstateListingByHandle } from '@/data/listings'
-import { fetchPropertyListingDetail } from '@/lib/propertySearch'
+import { getPropertyType } from '@/data/propertyTaxonomy'
+import { fetchPropertyListingDetail, type PropertyListingDetail } from '@/lib/propertySearch'
+import { absoluteUrl, createPageMetadata, SITE_NAME, SITE_URL } from '@/lib/seo'
 import { Button } from '@/shared/Button'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { DescriptionDetails, DescriptionList, DescriptionTerm } from '@/shared/description-list'
@@ -35,7 +38,7 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { Fragment } from 'react'
+import { cache, Fragment } from 'react'
 import HeaderGallery from '../../components/HeaderGallery'
 import HostAvatar from '../../components/HostAvatar'
 import MobilePropertyOverview from '../../components/MobilePropertyOverview'
@@ -48,43 +51,229 @@ import EventBoothListingView from './EventBoothListingView'
 import LandListingView from './LandListingView'
 import PropertyListingView from './PropertyListingView'
 
+const getDatabaseListing = cache(fetchPropertyListingDetail)
+
+const getListingPath = (handle: string) => `/real-estate-listings/${encodeURIComponent(handle)}`
+
+const getListingImages = (listing: PropertyListingDetail) =>
+  listing.media
+    .filter((item) => item.media_type === 'image')
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+    .map((item) => absoluteUrl(item.url))
+
+const getListingSection = (listing: PropertyListingDetail) => {
+  if (
+    listing.event ||
+    ['shophouse', 'home_office', 'office', 'retail_space', 'warehouse', 'factory', 'hotel_resort'].includes(
+      listing.property_type_code
+    )
+  ) {
+    return { name: 'พื้นที่ธุรกิจ', url: absoluteUrl('/business') }
+  }
+  if (['rental_room', 'apartment', 'flat', 'dormitory', 'monthly_hotel'].includes(listing.property_type_code)) {
+    return { name: 'ห้องเช่าและที่พัก', url: absoluteUrl('/rooms') }
+  }
+  return { name: 'บ้านและที่อยู่อาศัย', url: absoluteUrl('/homes') }
+}
+
+const getAddressStructuredData = (listing: PropertyListingDetail) => ({
+  '@type': 'PostalAddress',
+  streetAddress: [listing.address, listing.road].filter(Boolean).join(' '),
+  addressLocality: listing.district,
+  addressRegion: listing.province,
+  postalCode: listing.postal_code,
+  addressCountry: 'TH',
+})
+
+const getListingStructuredData = (listing: PropertyListingDetail) => {
+  const canonicalUrl = absoluteUrl(getListingPath(listing.slug))
+  const images = getListingImages(listing)
+  const section = getListingSection(listing)
+  const breadcrumb = {
+    '@type': 'BreadcrumbList',
+    '@id': `${canonicalUrl}#breadcrumb`,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'MapxProp', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: section.name, item: section.url },
+      { '@type': 'ListItem', position: 3, name: listing.title, item: canonicalUrl },
+    ],
+  }
+
+  if (listing.event?.rounds.length) {
+    const event = listing.event
+    const organizerName = event.organizer_name || listing.contact_organization_name || listing.contact_name || SITE_NAME
+    const locationName = event.venue_name || listing.building_name || listing.project_name || listing.address
+    const events = event.rounds.map((round, index) => ({
+      '@type': 'Event',
+      '@id': `${canonicalUrl}#round-${index + 1}`,
+      name: round.label ? `${event.name} – ${round.label}` : `${event.name} รอบที่ ${index + 1}`,
+      description: listing.description,
+      startDate: round.starts_on,
+      endDate: round.ends_on,
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+      image: images,
+      url: `${canonicalUrl}#round-${index + 1}`,
+      location: {
+        '@type': 'Place',
+        name: [locationName, event.venue_floor_label].filter(Boolean).join(' · '),
+        address: getAddressStructuredData(listing),
+        ...(listing.latitude !== undefined && listing.longitude !== undefined
+          ? {
+              geo: {
+                '@type': 'GeoCoordinates',
+                latitude: listing.latitude,
+                longitude: listing.longitude,
+              },
+            }
+          : {}),
+      },
+      organizer: {
+        '@type': event.organizer_name || listing.contact_organization_name ? 'Organization' : 'Person',
+        name: organizerName,
+        ...(event.organizer_website_url ? { url: event.organizer_website_url } : {}),
+      },
+      ...(!event.price_on_request && (round.price_amount ?? listing.offer_amount) !== undefined
+        ? {
+            offers: {
+              '@type': 'Offer',
+              url: canonicalUrl,
+              price: round.price_amount ?? listing.offer_amount,
+              priceCurrency: listing.currency || 'THB',
+              availability:
+                round.availability_status === 'closed' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+            },
+          }
+        : {}),
+    }))
+
+    return { '@context': 'https://schema.org', '@graph': [breadcrumb, ...events] }
+  }
+
+  const place = {
+    '@type': 'Place',
+    '@id': `${canonicalUrl}#property`,
+    name: listing.title,
+    description: listing.description,
+    image: images,
+    address: getAddressStructuredData(listing),
+    ...(listing.latitude !== undefined && listing.longitude !== undefined
+      ? {
+          geo: {
+            '@type': 'GeoCoordinates',
+            latitude: listing.latitude,
+            longitude: listing.longitude,
+          },
+        }
+      : {}),
+  }
+
+  const offer =
+    listing.offer_amount !== undefined
+      ? {
+          '@type': 'Offer',
+          '@id': `${canonicalUrl}#offer`,
+          price: listing.offer_amount,
+          priceCurrency: listing.currency || 'THB',
+          url: canonicalUrl,
+          availability: 'https://schema.org/InStock',
+          itemOffered: { '@id': `${canonicalUrl}#property` },
+        }
+      : undefined
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      breadcrumb,
+      place,
+      ...(offer ? [offer] : []),
+      {
+        '@type': 'WebPage',
+        '@id': canonicalUrl,
+        url: canonicalUrl,
+        name: listing.title,
+        description: listing.description,
+        primaryImageOfPage: images[0] ? { '@type': 'ImageObject', url: images[0] } : undefined,
+        mainEntity: { '@id': `${canonicalUrl}#property` },
+        datePublished: listing.published_at,
+        inLanguage: 'th-TH',
+        breadcrumb: { '@id': `${canonicalUrl}#breadcrumb` },
+      },
+    ],
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
-  const databaseListing = await fetchPropertyListingDetail(handle)
+  const databaseListing = await getDatabaseListing(handle)
 
   if (databaseListing) {
-    return {
+    const propertyType = getPropertyType(databaseListing.property_type_code)
+    const location = [databaseListing.district, databaseListing.province].filter(Boolean).join(' ')
+    return createPageMetadata({
       title: databaseListing.title,
-      description: databaseListing.description,
-    }
+      description:
+        databaseListing.description ||
+        `ดูรายละเอียด${propertyType?.nameTh || 'อสังหาริมทรัพย์'}${location ? `ใน${location}` : ''} พร้อมราคา รูปภาพ ทำเล และข้อมูลติดต่อ`,
+      path: getListingPath(databaseListing.slug || handle),
+      keywords: [
+        databaseListing.event?.name,
+        propertyType?.nameTh,
+        databaseListing.offer_type === 'sale' ? 'ขาย' : 'ให้เช่า',
+        databaseListing.district,
+        databaseListing.province,
+        'MapxProp',
+      ].filter((value): value is string => Boolean(value)),
+      images: getListingImages(databaseListing),
+      type: 'article',
+    })
   }
   const listing = await getRealEstateListingByHandle(handle)
 
   if (!listing) {
-    return {
-      title: 'Listing not found',
-      description: 'The listing you are looking for does not exist.',
-    }
+    return createPageMetadata({
+      title: 'ไม่พบประกาศ',
+      description: 'ไม่พบประกาศอสังหาริมทรัพย์ที่คุณกำลังค้นหา',
+      path: getListingPath(handle),
+      index: false,
+    })
   }
 
-  return {
-    title: listing?.title,
-    description: listing?.description,
-  }
+  return createPageMetadata({
+    title: listing.title,
+    description: listing.description,
+    path: getListingPath(handle),
+    index: false,
+  })
 }
 
 const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const { handle } = await params
 
-  const databaseListing = await fetchPropertyListingDetail(handle)
+  const databaseListing = await getDatabaseListing(handle)
   if (databaseListing?.event) {
-    return <EventBoothListingView listing={databaseListing} />
+    return (
+      <>
+        <JsonLd data={getListingStructuredData(databaseListing)} />
+        <EventBoothListingView listing={databaseListing} />
+      </>
+    )
   }
   if (databaseListing?.property_type_code === 'land') {
-    return <LandListingView listing={databaseListing} />
+    return (
+      <>
+        <JsonLd data={getListingStructuredData(databaseListing)} />
+        <LandListingView listing={databaseListing} />
+      </>
+    )
   }
   if (databaseListing) {
-    return <PropertyListingView listing={databaseListing} />
+    return (
+      <>
+        <JsonLd data={getListingStructuredData(databaseListing)} />
+        <PropertyListingView listing={databaseListing} />
+      </>
+    )
   }
 
   const listing = await getRealEstateListingByHandle(handle)

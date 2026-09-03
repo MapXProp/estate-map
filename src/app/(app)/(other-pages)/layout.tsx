@@ -4,10 +4,12 @@ import OtherPagesFooter from './OtherPagesFooter'
 import OtherPagesHeader from './OtherPagesHeader'
 
 export const metadata: Metadata = {
-  title: 'Home',
-  description:
-    'Chisfis is a modern and elegant template for Next.js, Tailwind CSS, and TypeScript. It is designed to be simple and easy to use, with a focus on performance and accessibility.',
-  keywords: ['Next.js', 'Tailwind CSS', 'TypeScript', 'Chisfis', 'Travel', 'E-commerce', 'Booking', 'Cars'],
+  title: {
+    default: 'MapxProp',
+    template: '%s | MapxProp',
+  },
+  description: 'บริการและข้อมูลสำหรับผู้ใช้งาน MapxProp',
+  robots: { index: false, follow: false },
 }
 
 export default function Layout({ children, params }: { children: React.ReactNode; params: any }) {

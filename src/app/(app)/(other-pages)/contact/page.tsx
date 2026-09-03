@@ -1,10 +1,13 @@
+import { createPageMetadata } from '@/lib/seo'
 import ContactPageContent from './ContactPageContent'
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Contact MapxProp | ติดต่อเรา',
-  description: 'Contact MapxProp by phone, email, LINE, or social media. ติดต่อทีมงาน MapxProp ทางโทรศัพท์ อีเมล LINE และโซเชียลมีเดีย',
-}
+export const metadata = createPageMetadata({
+  title: 'ติดต่อ MapxProp และสอบถามการลงประกาศ',
+  description:
+    'ติดต่อทีมงาน MapxProp เพื่อสอบถามการใช้งาน การค้นหาอสังหาริมทรัพย์ การลงประกาศ หรือแจ้งปัญหา ผ่านโทรศัพท์ อีเมล LINE และโซเชียลมีเดีย',
+  path: '/contact',
+  keywords: ['ติดต่อ MapxProp', 'สอบถามลงประกาศอสังหาริมทรัพย์', 'ช่วยเหลือ MapxProp'],
+})
 
 type ContactSearchParams = Promise<{ topic?: string | string[] }>
 

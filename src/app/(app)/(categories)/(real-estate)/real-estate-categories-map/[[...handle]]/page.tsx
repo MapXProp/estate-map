@@ -1,20 +1,17 @@
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
+import { createPageMetadata } from '@/lib/seo'
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import SectionGridHasMap from './SectionGridHasMap'
 
-export async function generateMetadata({ params }: { params: Promise<{ handle?: string[] }> }): Promise<Metadata> {
-  const { handle } = await params
-  const category = await getRealEstateCategoryByHandle(handle?.[0])
-  if (!category) {
-    return {
-      title: 'Collection not found',
-      description: 'The collection you are looking for does not exist.',
-    }
-  }
-  const { name, description } = category
-  return { title: name, description }
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    title: 'ค้นหาอสังหาริมทรัพย์บนแผนที่',
+    description: 'ค้นหาบ้าน คอนโด ที่ดิน และพื้นที่ธุรกิจบนแผนที่ MapxProp',
+    path: '/properties/map',
+    index: false,
+  })
 }
 
 const Page = async ({

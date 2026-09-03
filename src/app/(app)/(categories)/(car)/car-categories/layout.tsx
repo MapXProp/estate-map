@@ -6,7 +6,10 @@ import SectionSubscribe2 from '@/components/SectionSubscribe2'
 import { getAuthors } from '@/data/authors'
 import { getCarCategories } from '@/data/categories'
 import Heading from '@/shared/Heading'
+import type { Metadata } from 'next'
 import { ReactNode } from 'react'
+
+export const metadata: Metadata = { robots: { index: false, follow: true } }
 
 const Layout = async ({ children }: { children: ReactNode }) => {
   const categories = (await getCarCategories()).slice(0, 7)

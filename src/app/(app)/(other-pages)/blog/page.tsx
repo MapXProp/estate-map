@@ -8,8 +8,9 @@ import { Metadata } from 'next'
 import React from 'react'
 
 export const metadata: Metadata = {
-  title: 'Blog',
-  description: 'Explore our blog for the latest news, articles, and insights on various topics.',
+  title: 'บทความ',
+  description: 'พื้นที่บทความของ MapxProp อยู่ระหว่างการจัดเตรียมเนื้อหาอสังหาริมทรัพย์',
+  robots: { index: false, follow: true },
 }
 
 const BlogPage: React.FC = async () => {

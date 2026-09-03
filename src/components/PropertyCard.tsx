@@ -114,6 +114,7 @@ const PropertyCard: FC<Props> = ({
         <GallerySlider
           ratioClass="aspect-w-4 aspect-h-3"
           galleryImgs={galleryImgs}
+          imageAlt={title}
           href={detailHref}
           hoverAutoPlay={hoverPreviewGallery}
           hoverAutoPlayDelay={1200}

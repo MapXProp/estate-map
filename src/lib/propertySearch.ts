@@ -236,6 +236,7 @@ export type PropertyDiscoveryChannel = 'homes' | 'rooms' | 'business'
 export type PropertySearchOptions = {
   discoveryChannel?: PropertyDiscoveryChannel
   limit?: number
+  offset?: number
 }
 
 export type PropertyMapAreaSearchRequest = {
@@ -292,6 +293,7 @@ export const fetchPropertySearch = async (
   const params = new URLSearchParams({ q: query.trim() })
   if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
   if (options.limit) params.set('limit', String(options.limit))
+  if (options.offset) params.set('offset', String(options.offset))
   const response = await fetch(`${getAuthApiUrl('properties/search')}?${params.toString()}`, {
     signal,
     cache: 'no-store',

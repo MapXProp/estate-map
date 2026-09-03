@@ -2,6 +2,7 @@ import SectionGridHasMap from '@/app/(app)/(categories)/(real-estate)/real-estat
 import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
+import { createPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
@@ -19,14 +20,21 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
 export async function generateMetadata({ searchParams }: { searchParams: PageSearchParams }): Promise<Metadata> {
   const { query } = await getMapSearch(searchParams)
 
-  return {
+  return createPageMetadata({
     title: query ? `ค้นหา ${query} บนแผนที่` : 'ค้นหาอสังหาริมทรัพย์บนแผนที่',
     description: query
       ? `ดูประกาศ ${query} พร้อมตำแหน่งบนแผนที่ ราคา และตัวกรองอสังหาริมทรัพย์`
       : 'ค้นหาบ้าน คอนโด ที่ดิน และพื้นที่ธุรกิจทั่วประเทศไทยด้วยแผนที่และตัวกรองที่ใช้งานง่าย',
-    alternates: { canonical: '/properties/map' },
-    robots: query ? { index: false, follow: true } : { index: true, follow: true },
-  }
+    path: '/properties/map',
+    keywords: [
+      'ค้นหาอสังหาริมทรัพย์บนแผนที่',
+      'แผนที่บ้านขาย',
+      'แผนที่ห้องเช่า',
+      'แผนที่ที่ดิน',
+      'แผนที่พื้นที่ธุรกิจ',
+    ],
+    index: !query,
+  })
 }
 
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {

@@ -1,6 +1,7 @@
 import RequireAuth from '@/components/auth/RequireAuth'
 import PropertyHeaderPrototype from '@/components/Header/PropertyHeaderPrototype'
 import PropertyFooterPrototype from '@/components/property-home/PropertyFooterPrototype'
+import type { Metadata } from 'next'
 import React, { FC } from 'react'
 import { ApplicationLayout } from '../(app)/application-layout'
 import { PageNavigation } from './PageNavigation'
@@ -9,12 +10,14 @@ interface Props {
   children?: React.ReactNode
 }
 
+export const metadata: Metadata = {
+  title: 'บัญชีผู้ใช้',
+  robots: { index: false, follow: false },
+}
+
 const Layout: FC<Props> = ({ children }) => {
   return (
-    <ApplicationLayout
-      header={<PropertyHeaderPrototype />}
-      footer={<PropertyFooterPrototype showListingCta={false} />}
-    >
+    <ApplicationLayout header={<PropertyHeaderPrototype />} footer={<PropertyFooterPrototype showListingCta={false} />}>
       <div className="bg-neutral-50 dark:bg-neutral-900">
         <div className="border-b border-neutral-200 bg-white py-4 min-[744px]:py-5 dark:border-neutral-700 dark:bg-neutral-900">
           <PageNavigation />

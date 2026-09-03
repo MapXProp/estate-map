@@ -1,7 +1,7 @@
 'use client'
 
-import { Button } from '@/shared/Button'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
+import { Button } from '@/shared/Button'
 import ButtonClose from '@/shared/ButtonClose'
 import T from '@/utils/getT'
 import { CloseButton, Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
@@ -27,7 +27,7 @@ import {
   X,
 } from 'lucide-react'
 import Image from 'next/image'
-import { type RefObject, type TouchEvent as ReactTouchEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type TouchEvent as ReactTouchEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import PanoramaViewer from './PanoramaViewer'
 
 type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
@@ -88,7 +88,10 @@ const MediaFilterTabs = ({
   }, [activeFilter])
 
   return (
-    <nav aria-label="เลือกดูประเภทสื่อ" className="w-full overflow-x-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[744px]:px-6 lg:px-8">
+    <nav
+      aria-label="เลือกดูประเภทสื่อ"
+      className="w-full overflow-x-auto px-3 pb-3 [scrollbar-width:none] min-[744px]:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden"
+    >
       <div className="flex min-w-max items-center gap-1.5">
         {MEDIA_NAV_FILTERS.map((filter) => {
           const isActive = activeFilter === filter.value
@@ -116,7 +119,9 @@ const MediaFilterTabs = ({
                 <span
                   className={clsx(
                     'min-w-5 rounded-full px-1.5 py-0.5 text-center text-[10px] leading-4',
-                    isActive ? 'bg-white/18 text-white' : 'bg-white text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'
+                    isActive
+                      ? 'bg-white/18 text-white'
+                      : 'bg-white text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300'
                   )}
                 >
                   {count}
@@ -135,7 +140,9 @@ const EmptyMediaState = ({ type }: { type: PropertyMediaFilter }) => (
     <span className="grid size-14 place-items-center rounded-full bg-[#edf5f1] text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
       {getMediaIcon(type, 'size-6')}
     </span>
-    <h3 className="mt-4 text-base font-semibold text-neutral-900 dark:text-white">ยังไม่มี{MEDIA_LABELS[type]}ในประกาศนี้</h3>
+    <h3 className="mt-4 text-base font-semibold text-neutral-900 dark:text-white">
+      ยังไม่มี{MEDIA_LABELS[type]}ในประกาศนี้
+    </h3>
     <p className="mt-1.5 text-sm leading-6 text-neutral-500 dark:text-neutral-400">
       เมื่อผู้ลงประกาศเพิ่มสื่อประเภทนี้ ระบบจะแสดงไว้ในหมวดนี้โดยอัตโนมัติ
     </p>
@@ -145,7 +152,8 @@ const EmptyMediaState = ({ type }: { type: PropertyMediaFilter }) => (
 const getMediaCounts = (media: PropertyMediaItem[]) =>
   MEDIA_FILTERS.reduce(
     (result, filter) => {
-      result[filter.value] = filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
+      result[filter.value] =
+        filter.value === 'all' ? media.length : media.filter((item) => item.type === filter.value).length
       return result
     },
     {} as Record<PropertyMediaFilter, number>
@@ -243,6 +251,7 @@ const DeferredMediaSection = ({
   onSectionRef,
   scrollRootRef,
   layout,
+  imageAlt,
 }: {
   type: PropertyMediaType
   items: PropertyMediaItem[]
@@ -252,6 +261,7 @@ const DeferredMediaSection = ({
   onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
   scrollRootRef: RefObject<HTMLDivElement | null>
   layout: 'mobile' | 'desktop'
+  imageAlt: string
 }) => {
   const sectionRef = useRef<HTMLElement | null>(null)
   const [isReady, setIsReady] = useState(type === 'photo')
@@ -286,7 +296,7 @@ const DeferredMediaSection = ({
       ref={setSectionNode}
       data-media-section={type}
       aria-labelledby={`media-section-${layout}-${type}`}
-      className="scroll-mt-4 border-b border-neutral-200 py-5 last:border-b-0 dark:border-neutral-800 lg:py-6"
+      className="scroll-mt-4 border-b border-neutral-200 py-5 last:border-b-0 lg:py-6 dark:border-neutral-800"
     >
       <div className="mb-4 flex items-center justify-between gap-3 px-0.5">
         <div className="flex items-center gap-2.5">
@@ -311,7 +321,11 @@ const DeferredMediaSection = ({
       ) : items.length === 0 ? (
         <EmptyMediaState type={type} />
       ) : (
-        <div className={layout === 'mobile' ? 'columns-2 gap-2' : 'grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3'}>
+        <div
+          className={
+            layout === 'mobile' ? 'columns-2 gap-2' : 'grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3'
+          }
+        >
           {items.map((item, index) => {
             const imageIndex = item.type === 'photo' ? images.indexOf(item.url) : -1
 
@@ -327,14 +341,17 @@ const DeferredMediaSection = ({
                 className={clsx(
                   'group relative min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800',
                   layout === 'mobile'
-                    ? ['mb-2 block w-full break-inside-avoid rounded-xl', index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]']
+                    ? [
+                        'mb-2 block w-full break-inside-avoid rounded-xl',
+                        index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]',
+                      ]
                     : 'aspect-[4/3] rounded-xl'
                 )}
               >
                 {item.type === 'photo' || item.thumbnailUrl ? (
                   <Image
                     src={item.thumbnailUrl || item.url}
-                    alt={`${MEDIA_LABELS[item.type]}ของอสังหาริมทรัพย์ ${index + 1}`}
+                    alt={`${imageAlt} ${MEDIA_LABELS[item.type]}ที่ ${index + 1}`}
                     fill
                     sizes={layout === 'mobile' ? '50vw' : '(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw'}
                     className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95 group-active:scale-[0.99]"
@@ -348,7 +365,11 @@ const DeferredMediaSection = ({
                 {item.type !== 'photo' && (
                   <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/18 text-white">
                     <span className="grid size-12 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-lg min-[744px]:size-14">
-                      {item.type === 'video' ? <Play className="ml-0.5 size-5 fill-current min-[744px]:size-6" /> : getMediaIcon(item.type, 'size-5 min-[744px]:size-6')}
+                      {item.type === 'video' ? (
+                        <Play className="ml-0.5 size-5 fill-current min-[744px]:size-6" />
+                      ) : (
+                        getMediaIcon(item.type, 'size-5 min-[744px]:size-6')
+                      )}
                     </span>
                   </span>
                 )}
@@ -375,6 +396,7 @@ const ProgressiveMediaSections = ({
   onSectionRef,
   scrollRootRef,
   layout,
+  imageAlt,
 }: {
   media: PropertyMediaItem[]
   images: string[]
@@ -383,6 +405,7 @@ const ProgressiveMediaSections = ({
   onSectionRef: (type: PropertyMediaType, node: HTMLElement | null) => void
   scrollRootRef: RefObject<HTMLDivElement | null>
   layout: 'mobile' | 'desktop'
+  imageAlt: string
 }) => (
   <div>
     {MEDIA_SECTION_TYPES.map((type) => (
@@ -396,12 +419,21 @@ const ProgressiveMediaSections = ({
         onSectionRef={onSectionRef}
         scrollRootRef={scrollRootRef}
         layout={layout}
+        imageAlt={imageAlt}
       />
     ))}
   </div>
 )
 
-const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOptionsType }) => {
+const EmblaCarousel = ({
+  images,
+  option,
+  imageAlt,
+}: {
+  images: string[]
+  option: EmblaOptionsType
+  imageAlt: string
+}) => {
   const [selectedIndex, setSelectedIndex] = useState(option.startIndex ?? 0)
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel({
     ...option,
@@ -441,9 +473,12 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
       <div className="embla__viewport relative mx-auto size-full overflow-hidden" ref={emblaMainRef}>
         <div className="embla__container size-full">
           {images.map((image, index) => (
-            <div className="relative z-50 flex embla__slide basis-full items-center justify-center px-3 py-16 sm:px-10" key={index}>
+            <div
+              className="relative z-50 flex embla__slide basis-full items-center justify-center px-3 py-16 sm:px-10"
+              key={index}
+            >
               <Image
-                alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
+                alt={`${imageAlt} รูปที่ ${index + 1}`}
                 src={image}
                 width={1280}
                 height={853}
@@ -480,7 +515,13 @@ const EmblaCarousel = ({ images, option }: { images: string[]; option: EmblaOpti
                 )}
                 onClick={() => onThumbClick(index)}
               >
-                <Image alt="Slide image" src={image} fill sizes="100px" className={'object-cover'} />
+                <Image
+                  alt={`${imageAlt} ภาพย่อที่ ${index + 1}`}
+                  src={image}
+                  fill
+                  sizes="100px"
+                  className={'object-cover'}
+                />
               </div>
             ))}
           </div>
@@ -499,6 +540,7 @@ const MobilePhotoGallery = ({
   onOpenMedia,
   initiallySaved,
   listingIdentifier,
+  imageAlt,
 }: {
   images: string[]
   media: PropertyMediaItem[]
@@ -508,6 +550,7 @@ const MobilePhotoGallery = ({
   onOpenMedia: (item: PropertyMediaItem) => void
   initiallySaved: boolean
   listingIdentifier?: string
+  imageAlt: string
 }) => {
   const savedListings = useSavedListings()
   const [localSaved, setLocalSaved] = useState(initiallySaved)
@@ -526,10 +569,8 @@ const MobilePhotoGallery = ({
   const lastScrollTopRef = useRef(0)
   const upwardDistanceRef = useRef(0)
   const counts = getMediaCounts(media)
-  const { activeFilter, navigateToFilter, registerSection, resetNavigation, handleSectionScroll } = useMediaSectionNavigation(
-    scrollContainerRef,
-    open
-  )
+  const { activeFilter, navigateToFilter, registerSection, resetNavigation, handleSectionScroll } =
+    useMediaSectionNavigation(scrollContainerRef, open)
 
   const resetDrag = useCallback(() => {
     setDragOffset(0)
@@ -680,9 +721,12 @@ const MobilePhotoGallery = ({
                 type="button"
                 data-gallery-drag-handle
                 aria-label="ลากลงเพื่อปิดแกลเลอรี"
-                className="absolute inset-y-0 inset-x-24 z-10 flex touch-none cursor-grab items-center justify-center select-none active:cursor-grabbing"
+                className="absolute inset-x-24 inset-y-0 z-10 flex cursor-grab touch-none items-center justify-center select-none active:cursor-grabbing"
               >
-                <span aria-hidden="true" className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300" />
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1.5 left-1/2 h-1 w-9 -translate-x-1/2 rounded-full bg-neutral-300"
+                />
                 <span className="text-base font-semibold whitespace-nowrap">สื่อทั้งหมด</span>
               </button>
               <button
@@ -697,7 +741,9 @@ const MobilePhotoGallery = ({
                 type="button"
                 disabled={listingIdentifier ? savedListings.isBusy(listingIdentifier) : false}
                 onClick={() =>
-                  listingIdentifier ? void savedListings.toggleSaved(listingIdentifier) : setLocalSaved((saved) => !saved)
+                  listingIdentifier
+                    ? void savedListings.toggleSaved(listingIdentifier)
+                    : setLocalSaved((saved) => !saved)
                 }
                 aria-pressed={isSaved}
                 aria-label={isSaved ? 'นำออกจากรายการที่บันทึก' : 'บันทึกประกาศนี้'}
@@ -722,9 +768,9 @@ const MobilePhotoGallery = ({
               onSectionRef={registerSection}
               scrollRootRef={scrollContainerRef}
               layout="mobile"
+              imageAlt={imageAlt}
             />
           </main>
-
         </DialogPanel>
 
         <button
@@ -758,6 +804,7 @@ const DesktopPhotoGallery = ({
   initiallySaved,
   listingIdentifier,
   propertyDetails,
+  imageAlt,
 }: {
   images: string[]
   media: PropertyMediaItem[]
@@ -768,6 +815,7 @@ const DesktopPhotoGallery = ({
   initiallySaved: boolean
   listingIdentifier?: string
   propertyDetails?: PropertyGalleryDetails
+  imageAlt: string
 }) => {
   const savedListings = useSavedListings()
   const [localSaved, setLocalSaved] = useState(initiallySaved)
@@ -778,7 +826,10 @@ const DesktopPhotoGallery = ({
   const lastScrollTopRef = useRef(0)
   const scrollUpDistanceRef = useRef(0)
   const counts = getMediaCounts(media)
-  const { activeFilter, navigateToFilter, registerSection, handleSectionScroll } = useMediaSectionNavigation(mediaScrollRef, open)
+  const { activeFilter, navigateToFilter, registerSection, handleSectionScroll } = useMediaSectionNavigation(
+    mediaScrollRef,
+    open
+  )
 
   const hideQuickClose = useCallback(() => {
     setIsQuickCloseVisible(false)
@@ -851,7 +902,7 @@ const DesktopPhotoGallery = ({
     <Dialog open={open} onClose={handleClose} className="relative z-50 hidden min-[744px]:block">
       <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
       <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
-        <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-neutral-900 lg:max-h-[calc(100dvh-2.5rem)]">
+        <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900">
           <header className="relative z-10 shrink-0 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex min-h-20 items-center justify-between gap-4 px-6 lg:px-8">
               <div className="min-w-0">
@@ -879,7 +930,7 @@ const DesktopPhotoGallery = ({
             <div className="relative min-h-0 min-w-0 flex-1">
               <div
                 ref={mediaScrollRef}
-                className="h-full min-h-0 overflow-y-auto overscroll-contain bg-neutral-50 px-3 dark:bg-neutral-950/60 lg:px-4"
+                className="h-full min-h-0 overflow-y-auto overscroll-contain bg-neutral-50 px-3 lg:px-4 dark:bg-neutral-950/60"
                 onScroll={handleGalleryScroll}
               >
                 <ProgressiveMediaSections
@@ -890,6 +941,7 @@ const DesktopPhotoGallery = ({
                   onSectionRef={registerSection}
                   scrollRootRef={mediaScrollRef}
                   layout="desktop"
+                  imageAlt={imageAlt}
                 />
               </div>
 
@@ -912,7 +964,7 @@ const DesktopPhotoGallery = ({
             </div>
 
             {propertyDetails && (
-              <aside className="hidden w-[310px] shrink-0 flex-col border-l border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 lg:flex xl:w-[350px]">
+              <aside className="hidden w-[310px] shrink-0 flex-col border-l border-neutral-200 bg-white lg:flex xl:w-[350px] dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="min-h-0 flex-1 overflow-y-auto p-5 xl:p-6">
                   <div className="flex items-start justify-between gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff7f3] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
@@ -941,7 +993,7 @@ const DesktopPhotoGallery = ({
                   <p className="mt-5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
                     {propertyDetails.category}
                   </p>
-                  <h3 className="mt-1 text-xl font-semibold leading-snug text-neutral-950 dark:text-white">
+                  <h3 className="mt-1 text-xl leading-snug font-semibold text-neutral-950 dark:text-white">
                     {propertyDetails.title}
                   </h3>
                   <div className="mt-3 flex items-start gap-2 text-sm text-neutral-500 dark:text-neutral-400">
@@ -952,7 +1004,9 @@ const DesktopPhotoGallery = ({
                   <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
 
                   <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">ราคาเสนอ</p>
-                  <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">{propertyDetails.price}</p>
+                  <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">
+                    {propertyDetails.price}
+                  </p>
 
                   <div className="mt-5 grid grid-cols-3 gap-2">
                     <div className="rounded-2xl bg-neutral-50 p-3 text-center dark:bg-neutral-800/70">
@@ -987,7 +1041,7 @@ const DesktopPhotoGallery = ({
                   </ul>
                 </div>
 
-                <div className="shrink-0 border-t border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900 xl:p-6">
+                <div className="shrink-0 border-t border-neutral-200 bg-white p-5 xl:p-6 dark:border-neutral-800 dark:bg-neutral-900">
                   <button
                     type="button"
                     onClick={handleRequestViewing}
@@ -1014,13 +1068,7 @@ const DesktopPhotoGallery = ({
   )
 }
 
-const PanoramaDialog = ({
-  item,
-  onClose,
-}: {
-  item: PropertyMediaItem | null
-  onClose: () => void
-}) => (
+const PanoramaDialog = ({ item, onClose }: { item: PropertyMediaItem | null; onClose: () => void }) => (
   <Dialog open={Boolean(item)} onClose={onClose} className="relative z-[80]">
     <DialogBackdrop className="fixed inset-0 bg-neutral-950/90 backdrop-blur-sm" />
     <div className="fixed inset-0 flex items-center justify-center p-0 min-[744px]:p-4">
@@ -1032,7 +1080,9 @@ const PanoramaDialog = ({
             </span>
             <div className="min-w-0">
               <h2 className="truncate text-base font-semibold sm:text-lg">ภาพ 360°</h2>
-              <p className="truncate text-xs text-white/60 sm:text-sm">{item?.caption || 'สำรวจพื้นที่และสภาพแวดล้อมโดยรอบ'}</p>
+              <p className="truncate text-xs text-white/60 sm:text-sm">
+                {item?.caption || 'สำรวจพื้นที่และสภาพแวดล้อมโดยรอบ'}
+              </p>
             </div>
           </div>
 
@@ -1040,7 +1090,7 @@ const PanoramaDialog = ({
             type="button"
             onClick={onClose}
             aria-label="ปิดภาพ 360 องศา"
-            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 active:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:bg-white/15"
           >
             <X className="size-6" aria-hidden="true" />
           </button>
@@ -1052,13 +1102,7 @@ const PanoramaDialog = ({
   </Dialog>
 )
 
-const VideoDialog = ({
-  item,
-  onClose,
-}: {
-  item: PropertyMediaItem | null
-  onClose: () => void
-}) => (
+const VideoDialog = ({ item, onClose }: { item: PropertyMediaItem | null; onClose: () => void }) => (
   <Dialog open={Boolean(item)} onClose={onClose} className="relative z-[80]">
     <DialogBackdrop className="fixed inset-0 bg-neutral-950/90 backdrop-blur-sm" />
     <div className="fixed inset-0 flex items-center justify-center p-0 min-[744px]:p-4">
@@ -1080,7 +1124,7 @@ const VideoDialog = ({
             type="button"
             onClick={onClose}
             aria-label="ปิดวิดีโอ"
-            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 active:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="grid size-11 shrink-0 place-items-center rounded-full text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:bg-white/15"
           >
             <X className="size-6" aria-hidden="true" />
           </button>
@@ -1114,6 +1158,7 @@ interface Props {
   initiallySaved?: boolean
   listingIdentifier?: string
   propertyDetails?: PropertyGalleryDetails
+  imageAlt?: string
 }
 
 interface PropertyGalleryDetails {
@@ -1134,6 +1179,7 @@ const HeaderGallery = ({
   initiallySaved = false,
   listingIdentifier,
   propertyDetails,
+  imageAlt,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
@@ -1141,6 +1187,7 @@ const HeaderGallery = ({
   const [activePanorama, setActivePanorama] = useState<PropertyMediaItem | null>(null)
   const [activeVideo, setActiveVideo] = useState<PropertyMediaItem | null>(null)
   const [startIndex, setStartIndex] = useState(0)
+  const galleryImageAlt = imageAlt || propertyDetails?.title || 'อสังหาริมทรัพย์'
   const mediaItems: PropertyMediaItem[] =
     media && media.length > 0
       ? media
@@ -1173,10 +1220,18 @@ const HeaderGallery = ({
 
   return (
     <>
-      {gridType === 'grid1' && <HeaderGalleryGrid1 images={images} handleOpenDialog={handleOpenDialog} />}
-      {gridType === 'grid2' && <HeaderGalleryGrid2 images={images} handleOpenDialog={handleOpenDialog} />}
-      {gridType === 'grid3' && <HeaderGalleryGrid3 images={images} handleOpenDialog={handleOpenDialog} />}
-      {gridType === 'grid4' && <HeaderGalleryGrid4 images={images} handleOpenDialog={handleOpenDialog} />}
+      {gridType === 'grid1' && (
+        <HeaderGalleryGrid1 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
+      )}
+      {gridType === 'grid2' && (
+        <HeaderGalleryGrid2 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
+      )}
+      {gridType === 'grid3' && (
+        <HeaderGalleryGrid3 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
+      )}
+      {gridType === 'grid4' && (
+        <HeaderGalleryGrid4 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
+      )}
 
       <MobilePhotoGallery
         images={images}
@@ -1190,6 +1245,7 @@ const HeaderGallery = ({
         }}
         initiallySaved={initiallySaved}
         listingIdentifier={listingIdentifier}
+        imageAlt={galleryImageAlt}
       />
 
       {gridType === 'grid2' && (
@@ -1206,6 +1262,7 @@ const HeaderGallery = ({
           initiallySaved={initiallySaved}
           listingIdentifier={listingIdentifier}
           propertyDetails={propertyDetails}
+          imageAlt={galleryImageAlt}
         />
       )}
 
@@ -1223,7 +1280,7 @@ const HeaderGallery = ({
             transition
             className="relative mx-auto h-full w-full max-w-7xl flex-1 transition data-closed:opacity-0"
           >
-            <EmblaCarousel images={images} option={{ startIndex, slidesToScroll: 1 }} />
+            <EmblaCarousel images={images} option={{ startIndex, slidesToScroll: 1 }} imageAlt={galleryImageAlt} />
           </DialogPanel>
         </div>
       </Dialog>
@@ -1234,9 +1291,11 @@ const HeaderGallery = ({
 const HeaderGalleryGrid1 = ({
   images,
   handleOpenDialog,
+  imageAlt,
 }: {
   images: string[]
   handleOpenDialog: (index?: number) => void
+  imageAlt: string
 }) => {
   return (
     <header className="relative md:grid md:grid-cols-4 md:gap-2">
@@ -1246,7 +1305,7 @@ const HeaderGalleryGrid1 = ({
             fill
             className="rounded-xl object-cover transition-[filter] hover:brightness-75"
             src={images[0]}
-            alt="bigger"
+            alt={`${imageAlt} รูปหลัก`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 80vw"
             priority
           />
@@ -1259,7 +1318,7 @@ const HeaderGalleryGrid1 = ({
               fill
               className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
               src={item || ''}
-              alt="others"
+              alt={`${imageAlt} รูปที่ ${index + 2}`}
               sizes="(max-width: 768px) 33vw, 33vw"
               priority
             />
@@ -1279,9 +1338,11 @@ const HeaderGalleryGrid1 = ({
 const HeaderGalleryGrid2 = ({
   images,
   handleOpenDialog,
+  imageAlt,
 }: {
   images: string[]
   handleOpenDialog: (index?: number) => void
+  imageAlt: string
 }) => {
   const mobilePreviewImages = images.slice(0, 5)
   const tabletSideImages = images.slice(1, 3)
@@ -1306,7 +1367,7 @@ const HeaderGalleryGrid2 = ({
               )}
             >
               <Image
-                alt={`รูปอสังหาริมทรัพย์ ${index + 1}`}
+                alt={`${imageAlt} รูปที่ ${index + 1}`}
                 src={image}
                 fill
                 sizes={isTopRow ? '50vw' : '34vw'}
@@ -1334,7 +1395,7 @@ const HeaderGalleryGrid2 = ({
           >
             {images[0] && (
               <Image
-                alt="รูปหลักของอสังหาริมทรัพย์"
+                alt={`${imageAlt} รูปหลัก`}
                 src={images[0]}
                 fill
                 className="object-cover transition duration-300 hover:brightness-90"
@@ -1357,7 +1418,7 @@ const HeaderGalleryGrid2 = ({
                 )}
               >
                 <Image
-                  alt={`รูปอสังหาริมทรัพย์ ${index + 2}`}
+                  alt={`${imageAlt} รูปที่ ${index + 2}`}
                   src={image}
                   fill
                   className="object-cover transition duration-300 hover:brightness-90"
@@ -1382,13 +1443,13 @@ const HeaderGalleryGrid2 = ({
                 aria-label={isLast ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${imageIndex + 1}`}
                 className="relative aspect-[16/9] overflow-hidden rounded-lg bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
               >
-              <Image
-                alt={`รูปอสังหาริมทรัพย์ ${imageIndex + 1}`}
-                src={image}
-                fill
-                className="object-cover transition duration-300 hover:brightness-90"
-                sizes="20vw"
-              />
+                <Image
+                  alt={`${imageAlt} รูปที่ ${imageIndex + 1}`}
+                  src={image}
+                  fill
+                  className="object-cover transition duration-300 hover:brightness-90"
+                  sizes="20vw"
+                />
                 {isLast && (
                   <span className="absolute inset-0 flex items-center justify-center gap-2 bg-neutral-950/52 px-2 text-sm font-semibold text-white lg:text-base">
                     <Squares2X2Icon className="size-5" />
@@ -1406,16 +1467,18 @@ const HeaderGalleryGrid2 = ({
 const HeaderGalleryGrid3 = ({
   images,
   handleOpenDialog,
+  imageAlt,
 }: {
   images: string[]
   handleOpenDialog: (index?: number) => void
+  imageAlt: string
 }) => {
   return (
     <header className="relative md:grid md:grid-cols-3 md:gap-x-2">
       <div className="relative aspect-4/5 size-full md:aspect-3/4" onClick={() => handleOpenDialog(0)}>
         {images[0] && (
           <Image
-            alt=""
+            alt={`${imageAlt} รูปหลัก`}
             src={images[0]}
             fill
             className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1429,7 +1492,7 @@ const HeaderGalleryGrid3 = ({
         <div className="relative aspect-3/2 size-full" onClick={() => handleOpenDialog(1)}>
           {images[1] && (
             <Image
-              alt=""
+              alt={`${imageAlt} รูปที่ 2`}
               src={images[1]}
               fill
               className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1441,7 +1504,7 @@ const HeaderGalleryGrid3 = ({
         <div className="relative aspect-3/2 size-full" onClick={() => handleOpenDialog(2)}>
           {images[2] && (
             <Image
-              alt=""
+              alt={`${imageAlt} รูปที่ 3`}
               src={images[2]}
               fill
               className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1455,7 +1518,7 @@ const HeaderGalleryGrid3 = ({
       <div className="relative hidden size-full md:block md:aspect-3/4" onClick={() => handleOpenDialog(3)}>
         {images[3] && (
           <Image
-            alt=""
+            alt={`${imageAlt} รูปที่ 4`}
             src={images[3]}
             fill
             className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1477,16 +1540,18 @@ const HeaderGalleryGrid3 = ({
 const HeaderGalleryGrid4 = ({
   images,
   handleOpenDialog,
+  imageAlt,
 }: {
   images: string[]
   handleOpenDialog: (index?: number) => void
+  imageAlt: string
 }) => {
   return (
     <header className="relative md:grid md:grid-cols-3 md:gap-x-2">
       <div className="relative aspect-4/5 size-full md:aspect-3/4" onClick={() => handleOpenDialog(0)}>
         {images[0] && (
           <Image
-            alt=""
+            alt={`${imageAlt} รูปหลัก`}
             src={images[0]}
             fill
             className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1499,7 +1564,7 @@ const HeaderGalleryGrid4 = ({
       <div className="relative hidden aspect-4/5 size-full md:block md:aspect-3/4" onClick={() => handleOpenDialog(3)}>
         {images[3] && (
           <Image
-            alt=""
+            alt={`${imageAlt} รูปที่ 4`}
             src={images[3]}
             fill
             className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1513,7 +1578,7 @@ const HeaderGalleryGrid4 = ({
         <div className="relative aspect-3/2 size-full" onClick={() => handleOpenDialog(1)}>
           {images[1] && (
             <Image
-              alt=""
+              alt={`${imageAlt} รูปที่ 2`}
               src={images[1]}
               fill
               className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"
@@ -1525,7 +1590,7 @@ const HeaderGalleryGrid4 = ({
         <div className="relative aspect-3/2 size-full" onClick={() => handleOpenDialog(2)}>
           {images[2] && (
             <Image
-              alt=""
+              alt={`${imageAlt} รูปที่ 3`}
               src={images[2]}
               fill
               className="rounded-xl object-cover brightness-100 transition-[filter] hover:brightness-75"

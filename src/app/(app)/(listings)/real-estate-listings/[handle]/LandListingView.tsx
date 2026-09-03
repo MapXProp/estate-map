@@ -1,6 +1,6 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
-import type { PropertyListingDetail } from '@/lib/propertySearch'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
   CarFront,
@@ -102,6 +102,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             media={media}
             listingIdentifier={listing.slug || listing.public_listing_id}
             gridType="grid2"
+            imageAlt={listing.title}
           />
         ) : (
           <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />

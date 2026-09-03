@@ -1,10 +1,13 @@
-import type { Metadata } from 'next'
+import { createPageMetadata } from '@/lib/seo'
 import PropertyHomePrototype from '../property-home/page'
 
-export const metadata: Metadata = {
-  title: 'เช่าบ้าน คอนโด และที่พักรายเดือน',
-  description: 'ค้นหาบ้านเช่า คอนโด อพาร์ตเมนต์ ห้องพัก และโรงแรมรายเดือนทั่วประเทศไทยบน MapxProp',
-}
+export const metadata = createPageMetadata({
+  title: 'เช่าบ้าน คอนโด ห้องพัก และที่พักรายเดือน',
+  description:
+    'รวมประกาศบ้านเช่า คอนโดเช่า อพาร์ตเมนต์ ห้องพัก หอพัก และที่พักรายเดือน ค้นหาตามราคาและทำเลทั่วประเทศไทย',
+  path: '/rent',
+  keywords: ['เช่าบ้าน', 'บ้านเช่า', 'คอนโดเช่า', 'ห้องพัก', 'อพาร์ตเมนต์', 'หอพัก', 'ที่พักรายเดือน'],
+})
 
 export default function RentPage() {
   return <PropertyHomePrototype />

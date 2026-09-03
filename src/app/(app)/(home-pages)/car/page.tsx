@@ -19,6 +19,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Car - Home',
   description: 'Explore the best car rentals and experiences around the world.',
+  robots: { index: false, follow: true },
 }
 
 async function PageHome() {

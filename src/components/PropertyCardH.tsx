@@ -53,6 +53,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
         <GallerySlider
           ratioClass="aspect-w-1 aspect-h-1"
           galleryImgs={galleryImgs}
+          imageAlt={title}
           className="h-full w-full overflow-hidden rounded-2xl"
           href={listingHref}
           emptyFallback={<ListingImageFallback />}
@@ -123,7 +124,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-3xl border border-neutral-200/80 bg-white nc-PropertyCardH dark:border-neutral-700 dark:bg-neutral-900 ${className}`}
+      className={`group nc-PropertyCardH relative overflow-hidden rounded-3xl border border-neutral-200/80 bg-white dark:border-neutral-700 dark:bg-neutral-900 ${className}`}
     >
       <Link href={listingHref} className="absolute inset-0"></Link>
       <div className="flex h-full w-full flex-col sm:flex-row sm:items-center">

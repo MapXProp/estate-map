@@ -23,6 +23,7 @@ import { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Experiences Home',
   description: 'Home page of the Experiences application',
+  robots: { index: false, follow: true },
 }
 
 async function Home() {
