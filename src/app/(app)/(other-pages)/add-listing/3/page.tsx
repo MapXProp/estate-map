@@ -139,8 +139,11 @@ const Page = () => {
     router.prefetch('/add-listing/4')
     const frame = requestAnimationFrame(() => {
       const savedDraft = getListingDraft()
-      const savedOffers = readValues(savedDraft['offerTypes[]']).filter(isOfferTypeCode)
+      const savedOfferValues = readValues(savedDraft['offerTypes[]'])
+      const savedOffers = savedOfferValues.filter(isOfferTypeCode)
       const normalizedOffers = savedOffers.length ? savedOffers : offersFromLegacy(readText(savedDraft.listing_type))
+      const legacyContactOrganizer =
+        savedOfferValues.includes('contact_organizer') || readText(savedDraft.listing_type) === 'contact_organizer'
       setDraft(savedDraft)
       setOffers(normalizedOffers)
       setSalePrice(formatPriceInput(readText(savedDraft.salePrice)))
@@ -153,16 +156,9 @@ const Page = () => {
       setMinimumLeaseMonths(readText(savedDraft.minimumLeaseMonths))
       const savedPriceOnRequest = readText(savedDraft.priceOnRequest) === 'yes'
       const savedCurrency = readText(savedDraft.currency)
-      const contactOrganizerOnly = normalizedOffers.includes('contact_organizer')
-      const savedHasEventBooth = [
-        readText(savedDraft.space_type_code),
-        ...readValues(savedDraft['spaceTypeCodes[]']),
-      ].includes('event_booth')
-      setPriceOnRequest(savedPriceOnRequest || contactOrganizerOnly)
+      setPriceOnRequest(savedPriceOnRequest || legacyContactOrganizer)
       setPriceNegotiable(
-        !contactOrganizerOnly &&
-          (!savedPriceOnRequest || savedHasEventBooth) &&
-          readText(savedDraft.priceNegotiable) === 'yes'
+        !savedPriceOnRequest && !legacyContactOrganizer && readText(savedDraft.priceNegotiable) === 'yes'
       )
       setCurrency(
         savedCurrency === 'THB' || savedCurrency === 'USD' ? savedCurrency : initialPreferredCurrencyRef.current
@@ -266,11 +262,10 @@ const Page = () => {
   const hasSale = offers.includes('sale')
   const hasRent = offers.includes('rent') || offers.includes('sublease')
   const hasTransfer = offers.includes('business_transfer')
-  const hasContactOrganizer = offers.includes('contact_organizer')
   const isTemporarySpace = [readText(draft?.space_type_code), ...readValues(draft?.['spaceTypeCodes[]'])].includes(
     'event_booth'
   )
-  const effectivePriceOnRequest = hasContactOrganizer || (!isTemporarySpace && priceOnRequest)
+  const effectivePriceOnRequest = priceOnRequest
   const isMonthlyHotel = readText(draft?.property_type_code) === 'monthly_hotel'
   const listingSummary = useMemo(() => (draft ? getListingDraftSummary(locale) : null), [draft, locale])
   const firstStepSummary = listingSummary
@@ -480,7 +475,6 @@ const Page = () => {
           hasSale={hasSale}
           hasRent={hasRent}
           hasTransfer={hasTransfer}
-          hasContactOrganizer={hasContactOrganizer}
           isTemporarySpace={isTemporarySpace}
           isMonthlyHotel={isMonthlyHotel}
           salePrice={salePrice}
@@ -965,7 +959,6 @@ type PricingPanelProps = {
   hasSale: boolean
   hasRent: boolean
   hasTransfer: boolean
-  hasContactOrganizer: boolean
   isTemporarySpace: boolean
   isMonthlyHotel: boolean
   salePrice: string
@@ -998,7 +991,6 @@ const PricingPanel = ({
   hasSale,
   hasRent,
   hasTransfer,
-  hasContactOrganizer,
   isTemporarySpace,
   isMonthlyHotel,
   salePrice,
@@ -1049,133 +1041,131 @@ const PricingPanel = ({
       </div>
 
       <div className="space-y-6 p-5 sm:p-7">
-        {!hasContactOrganizer ? (
-          <div>
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
-                </h3>
-              </div>
+        <div>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                {isThai ? 'สกุลเงินของประกาศ' : 'Listing currency'}
+              </h3>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
-              {[
-                { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
-                { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
-              ].map((option) => {
-                const isSelected = currency === option.code
-                return (
-                  <button
-                    key={option.code}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => onCurrencyChange(option.code)}
-                    className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                      isSelected
-                        ? 'border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500 dark:bg-orange-950/35 dark:text-orange-100'
-                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
+            {[
+              { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
+              { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
+            ].map((option) => {
+              const isSelected = currency === option.code
+              return (
+                <button
+                  key={option.code}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onCurrencyChange(option.code)}
+                  className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                    isSelected
+                      ? 'border-orange-500 bg-orange-50 text-orange-950 ring-1 ring-orange-500 dark:bg-orange-950/35 dark:text-orange-100'
+                      : 'border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
+                  }`}
+                >
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
+                      isSelected ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'
                     }`}
                   >
-                    <span
-                      className={`flex size-9 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
-                        isSelected ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'
-                      }`}
-                    >
-                      {option.symbol}
-                    </span>
-                    <span className="min-w-0 font-sarabun">
-                      <span className="block text-sm font-semibold">{option.code}</span>
-                      <span className="block truncate text-xs opacity-70">{option.label}</span>
-                    </span>
-                    {isSelected ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-                  </button>
-                )
-              })}
-            </div>
+                    {option.symbol}
+                  </span>
+                  <span className="min-w-0 font-sarabun">
+                    <span className="block text-sm font-semibold">{option.code}</span>
+                    <span className="block truncate text-xs opacity-70">{option.label}</span>
+                  </span>
+                  {isSelected ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+                </button>
+              )
+            })}
           </div>
-        ) : null}
+        </div>
 
-        {!hasContactOrganizer && !isTemporarySpace ? (
-          <div className="border-t border-neutral-100 pt-6 dark:border-neutral-800">
-            <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {isThai ? 'ต้องการแสดงราคาแบบไหน' : 'How would you like to show the price?'}
-            </h3>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                aria-pressed={!priceOnRequest}
-                onClick={() => onPriceOnRequestChange(false)}
-                className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                  !priceOnRequest
-                    ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
-                    : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-                }`}
+        <div className="border-t border-neutral-100 pt-6 dark:border-neutral-800">
+          <h3 className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            {isThai ? 'ต้องการแสดงราคาแบบไหน' : 'How would you like to show the price?'}
+          </h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              aria-pressed={!priceOnRequest}
+              onClick={() => onPriceOnRequestChange(false)}
+              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                !priceOnRequest
+                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+              }`}
+            >
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${!priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
               >
-                <span
-                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${!priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
-                >
-                  <BanknotesIcon className="size-5" />
+                <BanknotesIcon className="size-5" />
+              </span>
+              <span className="min-w-0 font-sarabun">
+                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                  {isThai ? 'ระบุราคา' : 'Enter a price'}
                 </span>
-                <span className="min-w-0 font-sarabun">
-                  <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                    {isThai ? 'ระบุราคา' : 'Enter a price'}
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                    {isThai ? 'กรอกตัวเลขให้ผู้สนใจเห็นได้ทันที' : 'Show the amount to customers immediately.'}
-                  </span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isThai ? 'กรอกตัวเลขให้ผู้สนใจเห็นได้ทันที' : 'Show the amount to customers immediately.'}
                 </span>
-                {!priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-              </button>
-              <button
-                type="button"
-                aria-pressed={priceOnRequest}
-                onClick={() => onPriceOnRequestChange(true)}
-                className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
-                  priceOnRequest
-                    ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
-                    : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-                }`}
+              </span>
+              {!priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+            </button>
+            <button
+              type="button"
+              aria-pressed={priceOnRequest}
+              onClick={() => onPriceOnRequestChange(true)}
+              className={`flex min-h-20 items-start gap-3 rounded-2xl border p-4 text-start transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
+                priceOnRequest
+                  ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500 dark:bg-orange-950/35'
+                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+              }`}
+            >
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
               >
-                <span
-                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
-                >
-                  <ChatBubbleLeftRightIcon className="size-5" />
+                <ChatBubbleLeftRightIcon className="size-5" />
+              </span>
+              <span className="min-w-0 font-sarabun">
+                <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+                  {isTemporarySpace
+                    ? isThai
+                      ? 'ไม่ระบุราคา — ติดต่อผู้จัดงาน'
+                      : 'No price — contact organizer'
+                    : isThai
+                      ? 'ไม่ระบุราคา'
+                      : 'Price on request'}
                 </span>
-                <span className="min-w-0 font-sarabun">
-                  <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                    {isThai ? 'ไม่ระบุราคา' : 'Price on request'}
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                    {isThai ? 'แสดงให้ผู้สนใจสอบถามราคาโดยตรง' : 'Ask customers to contact you for the price.'}
-                  </span>
+                <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                  {isTemporarySpace
+                    ? isThai
+                      ? 'ให้ผู้สนใจติดต่อผู้จัดงานหรือผู้ลงประกาศเพื่อรับราคาโดยตรง'
+                      : 'Ask customers to contact the organizer or listing owner for the price.'
+                    : isThai
+                      ? 'แสดงให้ผู้สนใจสอบถามราคาโดยตรง'
+                      : 'Ask customers to contact you for the price.'}
                 </span>
-                {priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
-              </button>
-            </div>
+              </span>
+              {priceOnRequest ? <CheckCircleIcon className="ms-auto size-5 shrink-0 text-orange-600" /> : null}
+            </button>
           </div>
-        ) : null}
+        </div>
 
-        {hasContactOrganizer ? (
-          <div className="flex items-start gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-5 dark:border-orange-800 dark:bg-orange-950/30">
-            <ChatBubbleLeftRightIcon className="mt-0.5 size-6 shrink-0 text-orange-600" />
-            <div className="font-sarabun">
-              <p className="font-semibold text-orange-950 dark:text-orange-100">
-                {isThai ? 'ติดต่อผู้จัดงานเพื่อสอบถามราคา' : 'Contact the organizer for pricing'}
-              </p>
-              <p className="mt-1 text-sm leading-6 text-orange-800 dark:text-orange-200">
-                {isThai
-                  ? 'พื้นที่ชั่วคราวจะไม่เก็บหรือแสดงราคาเช่า ผู้สนใจจะติดต่อคุณหรือผู้จัดงานโดยตรง'
-                  : 'Temporary-space listings do not store or display a rental price. Interested customers contact you or the organizer directly.'}
-              </p>
-            </div>
-          </div>
-        ) : priceOnRequest ? (
+        {priceOnRequest ? (
           <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900/70 dark:bg-orange-950/25">
             <ChatBubbleLeftRightIcon className="mt-0.5 size-5 shrink-0 text-orange-600" />
             <p className="font-sarabun text-sm leading-6 text-orange-950 dark:text-orange-100">
-              {isThai
-                ? 'หน้าประกาศจะแสดง “สอบถามราคา” และระบบจะไม่นำตัวเลขราคาเดิมไปบันทึก'
-                : 'The listing will show “Price on request”, and previously entered amounts will not be saved.'}
+              {isTemporarySpace
+                ? isThai
+                  ? 'หน้าประกาศจะแสดง “ติดต่อผู้จัดงาน” และระบบจะไม่บันทึกตัวเลขราคาเดิม'
+                  : 'The listing will show “Contact organizer”, and previously entered amounts will not be saved.'
+                : isThai
+                  ? 'หน้าประกาศจะแสดง “สอบถามราคา” และระบบจะไม่นำตัวเลขราคาเดิมไปบันทึก'
+                  : 'The listing will show “Price on request”, and previously entered amounts will not be saved.'}
             </p>
           </div>
         ) : (
@@ -1370,45 +1360,43 @@ const PricingPanel = ({
           </div>
         )}
 
-        {!hasContactOrganizer ? (
-          <label
-            className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
-              priceOnRequest
-                ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-55 dark:border-neutral-800 dark:bg-neutral-950'
-                : priceNegotiable
-                  ? 'border-orange-400 bg-orange-50/70 dark:border-orange-900 dark:bg-orange-950/25'
-                  : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
-            }`}
+        <label
+          className={`flex cursor-pointer items-center gap-4 rounded-2xl border p-4 transition ${
+            priceOnRequest
+              ? 'cursor-not-allowed border-neutral-200 bg-neutral-50 opacity-55 dark:border-neutral-800 dark:bg-neutral-950'
+              : priceNegotiable
+                ? 'border-orange-400 bg-orange-50/70 dark:border-orange-900 dark:bg-orange-950/25'
+                : 'border-neutral-200 bg-white hover:border-orange-300 dark:border-neutral-700 dark:bg-neutral-950'
+          }`}
+        >
+          <span
+            className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceNegotiable && !priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
           >
-            <span
-              className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${priceNegotiable && !priceOnRequest ? 'bg-orange-600 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800'}`}
-            >
-              <ScaleIcon className="size-5" />
+            <ScaleIcon className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1 font-sarabun">
+            <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
+              {isThai ? 'ต่อรองราคาได้' : 'Price is negotiable'}
             </span>
-            <span className="min-w-0 flex-1 font-sarabun">
-              <span className="block text-sm font-semibold text-neutral-950 dark:text-white">
-                {isThai ? 'ต่อรองราคาได้' : 'Price is negotiable'}
-              </span>
-              <span className="mt-0.5 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                {priceOnRequest
-                  ? isThai
-                    ? 'ไม่จำเป็นเมื่อเลือกไม่ระบุราคา'
-                    : 'Not needed when price is on request.'
-                  : isThai
-                    ? 'เปิดไว้เมื่อคุณยืดหยุ่นเรื่องราคา'
-                    : 'Turn this on when you are flexible on price.'}
-              </span>
+            <span className="mt-0.5 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+              {priceOnRequest
+                ? isThai
+                  ? 'ไม่จำเป็นเมื่อเลือกไม่ระบุราคา'
+                  : 'Not needed when price is on request.'
+                : isThai
+                  ? 'เปิดไว้เมื่อคุณยืดหยุ่นเรื่องราคา'
+                  : 'Turn this on when you are flexible on price.'}
             </span>
-            <input
-              type="checkbox"
-              checked={!priceOnRequest && priceNegotiable}
-              disabled={priceOnRequest}
-              onChange={(event) => onPriceNegotiableChange(event.target.checked)}
-              className="peer sr-only"
-            />
-            <span className="relative h-7 w-12 shrink-0 rounded-full bg-neutral-300 transition peer-checked:bg-orange-600 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-disabled:opacity-60 after:absolute after:start-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 dark:bg-neutral-700" />
-          </label>
-        ) : null}
+          </span>
+          <input
+            type="checkbox"
+            checked={!priceOnRequest && priceNegotiable}
+            disabled={priceOnRequest}
+            onChange={(event) => onPriceNegotiableChange(event.target.checked)}
+            className="peer sr-only"
+          />
+          <span className="relative h-7 w-12 shrink-0 rounded-full bg-neutral-300 transition peer-checked:bg-orange-600 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-orange-500 peer-disabled:opacity-60 after:absolute after:start-1 after:top-1 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-5 rtl:peer-checked:after:-translate-x-5 dark:bg-neutral-700" />
+        </label>
       </div>
     </section>
   )
@@ -1573,10 +1561,10 @@ const readText = (value: ListingDraftValue | undefined) => (Array.isArray(value)
 const readValues = (value: ListingDraftValue | undefined) => (value ? (Array.isArray(value) ? value : [value]) : [])
 const resolveListingMediaUrl = (value: string) => (value.startsWith('/') ? `${getApiBaseUrl()}${value}` : value)
 const isOfferTypeCode = (value: string): value is OfferTypeCode =>
-  ['sale', 'rent', 'sublease', 'business_transfer', 'contact_organizer'].includes(value)
+  ['sale', 'rent', 'sublease', 'business_transfer'].includes(value)
 const offersFromLegacy = (value: string): OfferTypeCode[] => {
   if (value === 'sale_and_rent') return ['sale', 'rent']
-  if (value === 'event_booking') return ['contact_organizer']
+  if (value === 'event_booking' || value === 'contact_organizer') return ['rent']
   return isOfferTypeCode(value) ? [value] : ['rent']
 }
 export default Page

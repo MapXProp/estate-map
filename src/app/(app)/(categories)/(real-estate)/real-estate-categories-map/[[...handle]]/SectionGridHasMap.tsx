@@ -74,10 +74,7 @@ const SectionGridHasMap: FC<Props> = ({
         prices.push(listing.salePrice)
       if ((!selectedOffers.length || selectedOffers.includes('rent')) && listing.rentPriceMonthly)
         prices.push(listing.rentPriceMonthly)
-      if (
-        selectedOffers.some((offer) => ['business_transfer', 'sublease', 'contact_organizer'].includes(offer)) &&
-        listing.salePrice
-      )
+      if (selectedOffers.some((offer) => ['business_transfer', 'sublease'].includes(offer)) && listing.salePrice)
         prices.push(listing.salePrice)
       return prices
     }

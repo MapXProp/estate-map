@@ -181,9 +181,7 @@ const Page = () => {
   const availableUseCases = propertyType
     ? useCases.filter((useCase) => propertyType.allowedUseCases.includes(useCase.code))
     : []
-  const availableOffers = offerTypes.filter(
-    (offer) => propertyType?.allowedOffers.includes(offer.code) && (hasEventBooth || offer.code !== 'contact_organizer')
-  )
+  const availableOffers = offerTypes.filter((offer) => propertyType?.allowedOffers.includes(offer.code))
   const selectedChannelOption = selectedChannel ? getDiscoveryChannel(selectedChannel) : undefined
   const selectedChannelLabel = selectedChannelOption
     ? isThai
@@ -507,11 +505,7 @@ const Page = () => {
       if (!hasFoodSpace) return withRetail.filter((code) => code !== 'food_service')
       return withRetail
     })
-    setSelectedOffers((current) => {
-      const compatible = current.filter((offer) => retailSpace.allowedOffers.includes(offer))
-      if (nextHasEventBooth) return compatible
-      return compatible.filter((offer) => offer !== 'contact_organizer')
-    })
+    setSelectedOffers((current) => current.filter((offer) => retailSpace.allowedOffers.includes(offer)))
     setBusinessSpaceTypes(nextSpaceTypes)
     clearWizardError()
   }
@@ -524,11 +518,9 @@ const Page = () => {
   }
 
   const toggleOffer = (code: OfferTypeCode) => {
-    setSelectedOffers((current) => {
-      if (code === 'contact_organizer') return current.includes(code) ? [] : [code]
-      const withoutContact = current.filter((item) => item !== 'contact_organizer')
-      return withoutContact.includes(code) ? withoutContact.filter((item) => item !== code) : [...withoutContact, code]
-    })
+    setSelectedOffers((current) =>
+      current.includes(code) ? current.filter((item) => item !== code) : [...current, code]
+    )
     clearWizardError()
   }
 
@@ -944,20 +936,14 @@ const Page = () => {
               </div>
               {availableOffers.length > 1 ? (
                 <p className="mt-2.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                  {hasEventBooth
-                    ? isThai
-                      ? 'เลือกได้มากกว่า 1 รูปแบบ ยกเว้น “ติดต่อผู้จัดงาน” ที่เลือกเดี่ยว'
-                      : 'You can choose more than one priced option. “Contact organizer” is selected by itself.'
-                    : isThai
-                      ? 'เลือกได้มากกว่า 1 รูปแบบ'
-                      : 'You can choose more than one option.'}
+                  {isThai ? 'เลือกได้มากกว่า 1 รูปแบบ' : 'You can choose more than one option.'}
                 </p>
               ) : null}
               {hasEventBooth ? (
                 <p className="mt-2 font-sarabun text-xs leading-5 text-orange-700 dark:text-orange-300">
                   {isThai
-                    ? 'ถ้ามีราคาตายตัวให้เลือกรูปแบบเช่าและระบุราคากับจำนวนวัน หากราคาเป็นส่วนตัวให้เลือก “ติดต่อผู้จัดงาน”'
-                    : 'Choose a rental option to show a fixed price and number of days, or choose “Contact organizer” for a private quote.'}
+                    ? 'เลือกรูปแบบประกาศตรงนี้ก่อน จากนั้นเลือกระบุราคา หรือให้ผู้สนใจติดต่อผู้จัดงานในขั้นตอนราคา'
+                    : 'Choose the listing option here, then enter a fixed price or ask customers to contact the organizer in the pricing step.'}
                 </p>
               ) : null}
             </div>
@@ -1565,13 +1551,12 @@ const mapLegacyUsageToUseCases = (value: ListingDraftValue | undefined, fallback
 const offersFromLegacy = (value: ListingDraftValue | undefined): OfferTypeCode[] => {
   const listingType = readDraftText(value)
   if (listingType === 'sale_and_rent') return ['sale', 'rent']
-  if (listingType === 'event_booking') return ['contact_organizer']
+  if (listingType === 'event_booking' || listingType === 'contact_organizer') return ['rent']
   if (
     listingType === 'sale' ||
     listingType === 'rent' ||
     listingType === 'sublease' ||
-    listingType === 'business_transfer' ||
-    listingType === 'contact_organizer'
+    listingType === 'business_transfer'
   ) {
     return [listingType]
   }

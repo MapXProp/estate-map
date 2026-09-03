@@ -24,7 +24,6 @@ import {
   PawPrint,
   RotateCcw,
   SlidersHorizontal,
-  Sparkles,
   UserRoundCheck,
   X,
 } from 'lucide-react'
@@ -62,7 +61,6 @@ const offerIcons: Partial<Record<OfferTypeCode, typeof House>> = {
   rent: KeyRound,
   business_transfer: Building2,
   sublease: KeyRound,
-  contact_organizer: Sparkles,
 }
 
 const featureOptions: Array<{

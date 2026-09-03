@@ -118,7 +118,7 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   }
 
   const offerTypes = values(draft['offerTypes[]']).map((value) =>
-    value === 'event_booking' ? 'contact_organizer' : value
+    value === 'event_booking' || value === 'contact_organizer' ? 'rent' : value
   )
   if (!offerTypes.length || offerTypes.some((value) => !propertyType.allowedOffers.includes(value as OfferTypeCode))) {
     return issue(
@@ -132,16 +132,6 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
       }
     )
   }
-  if (offerTypes.includes('contact_organizer') && offerTypes.length > 1) {
-    return issue(
-      'contact_organizer_exclusive',
-      1,
-      'เลือก “ติดต่อผู้จัดงาน” เพียงรายการเดียว หรือเลือกรูปแบบที่มีราคา',
-      'Choose “Contact organizer” by itself, or choose a priced listing option.',
-      { section: 3, target: 'wizard' }
-    )
-  }
-
   if (!text(draft.listingTitle)) {
     return issue('listing_title_required', 1, 'กรุณากรอกหัวข้อประกาศ', 'Enter a listing title.', {
       section: 4,
@@ -263,8 +253,7 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   }
 
   const isTemporarySpace = spaceTypes.includes('event_booth')
-  const priceOnRequest =
-    offerTypes.includes('contact_organizer') || (!isTemporarySpace && text(draft.priceOnRequest) === 'yes')
+  const priceOnRequest = text(draft.priceOnRequest) === 'yes'
   if (!priceOnRequest) {
     const requiredPrices: Array<[boolean, string, string, string, string]> = [
       [offerTypes.includes('sale'), 'salePrice', text(draft.salePrice), 'กรุณากรอกราคาขาย', 'Enter the sale price.'],

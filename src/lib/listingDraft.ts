@@ -676,12 +676,15 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   )
   const isTemporarySpace = spaceTypeCodes.includes('event_booth')
   const offerTypeCodes = rawOfferTypeCodes
-    .map((code) => (normalizeCode(code) === 'event_booking' ? 'contact_organizer' : normalizeCode(code)))
+    .map((code) =>
+      ['event_booking', 'contact_organizer'].includes(normalizeCode(code)) ? 'rent' : normalizeCode(code)
+    )
     .filter((value, index, all) => Boolean(value) && all.indexOf(value) === index)
-  const listingType =
-    normalizeCode(rawListingType) === 'event_booking' ? 'contact_organizer' : normalizeCode(rawListingType)
-  const priceOnRequest =
-    offerTypeCodes.includes('contact_organizer') || (!isTemporarySpace && text(draft.priceOnRequest) === 'yes')
+  const normalizedListingType = normalizeCode(rawListingType)
+  const listingType = ['event_booking', 'contact_organizer'].includes(normalizedListingType)
+    ? 'rent'
+    : normalizedListingType
+  const priceOnRequest = text(draft.priceOnRequest) === 'yes'
   const photoURLs = values(draft['listingPhotoUrls[]'])
   const videoURLs = values(draft['listingVideoUrls[]'])
   const panoramaURLs = values(draft['listingPanoramaUrls[]'])
@@ -753,9 +756,8 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     business_type_code: normalizeCode(text(draft.business_type_code)),
     space_type_code: spaceTypeCodes[0] || '',
     space_type_codes: spaceTypeCodes,
-    price_unit: offerTypeCodes.includes('contact_organizer')
-      ? 'contact'
-      : isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
+    price_unit:
+      isTemporarySpace && offerTypeCodes.some((offer) => offer === 'rent' || offer === 'sublease')
         ? 'event_period'
         : normalizeCode(text(draft.price_unit)) || (listingType.includes('rent') ? 'month' : ''),
     key_money_amount: priceOnRequest ? '' : text(draft.keyMoneyAmount),
@@ -1091,7 +1093,7 @@ const formatUseCaseLabels = (values: string[] | undefined, fallback: string, loc
 
 const offersFromLegacy = (listingType: string) => {
   if (listingType === 'sale_and_rent') return ['sale', 'rent']
-  if (listingType === 'event_booking') return ['contact_organizer']
+  if (listingType === 'event_booking' || listingType === 'contact_organizer') return ['rent']
   return listingType ? [listingType] : ['rent']
 }
 
@@ -1102,9 +1104,16 @@ const mapLegacyUsageToUseCases = (usageType: string) => {
 }
 
 const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {
-  if (payload.offer_types?.includes('contact_organizer'))
-    return locale === 'th' ? 'ติดต่อผู้จัดงาน' : 'Contact organizer'
-  if (payload.price_on_request) return locale === 'th' ? 'สอบถามราคา' : 'Price on request'
+  const isTemporarySpace =
+    payload.space_type_code === 'event_booth' || payload.space_type_codes?.includes('event_booth')
+  if (payload.price_on_request)
+    return isTemporarySpace
+      ? locale === 'th'
+        ? 'ติดต่อผู้จัดงาน'
+        : 'Contact organizer'
+      : locale === 'th'
+        ? 'สอบถามราคา'
+        : 'Price on request'
   const currency = payload.currency || 'THB'
   const unit = currency === 'THB' ? (locale === 'th' ? 'บาท' : 'THB') : currency
   const prices: string[] = []

@@ -310,7 +310,6 @@ const offerLabel = (value: string, isThai: boolean) => {
     rent: ['ให้เช่า', 'For rent'],
     sublease: ['ให้เช่าช่วง', 'Sublease'],
     business_transfer: ['เซ้ง / โอนกิจการ', 'Business transfer'],
-    contact_organizer: ['ติดต่อผู้จัดงาน', 'Contact organizer'],
   }
   return labels[value]?.[isThai ? 0 : 1] || value
 }
