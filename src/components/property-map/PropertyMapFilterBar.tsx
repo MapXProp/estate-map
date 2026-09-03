@@ -3,9 +3,12 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   discoveryChannels,
+  getBusinessSpaceType,
   offerTypes,
+  primaryBusinessSpaceTypeCodes,
   propertyGroups,
   propertyTypes,
+  type BusinessSpaceTypeCode,
   type DiscoveryChannelCode,
   type OfferTypeCode,
   type PropertyTypeCode,
@@ -36,6 +39,7 @@ export type PropertyMapFilterState = {
   discoveryChannels: DiscoveryChannelCode[]
   offerTypes: OfferTypeCode[]
   propertyTypes: PropertyTypeCode[]
+  spaceTypes: BusinessSpaceTypeCode[]
   minPrice: string
   maxPrice: string
   bedrooms: number
@@ -48,6 +52,7 @@ export const emptyPropertyMapFilters: PropertyMapFilterState = {
   discoveryChannels: [],
   offerTypes: [],
   propertyTypes: [],
+  spaceTypes: [],
   minPrice: '',
   maxPrice: '',
   bedrooms: 0,
@@ -192,6 +197,7 @@ const PropertyMapFilterBar = ({
     value.discoveryChannels.length +
     value.offerTypes.length +
     value.propertyTypes.length +
+    value.spaceTypes.length +
     Number(Boolean(value.minPrice || value.maxPrice)) +
     Number(value.bedrooms > 0) +
     Number(value.bathrooms > 0) +
@@ -214,6 +220,10 @@ const PropertyMapFilterBar = ({
 
   const selectedPropertyLabels = value.propertyTypes
     .map((code) => propertyTypes.find((item) => item.code === code))
+    .filter(Boolean)
+    .map((item) => (isThai ? item!.nameTh : item!.nameEn))
+  const selectedSpaceLabels = value.spaceTypes
+    .map((code) => getBusinessSpaceType(code))
     .filter(Boolean)
     .map((item) => (isThai ? item!.nameTh : item!.nameEn))
 
@@ -343,6 +353,7 @@ const PropertyMapFilterBar = ({
         </div>
 
         {(selectedPropertyLabels.length > 0 ||
+          selectedSpaceLabels.length > 0 ||
           value.features.length > 0 ||
           value.bedrooms > 0 ||
           value.bathrooms > 0 ||
@@ -373,6 +384,33 @@ const PropertyMapFilterBar = ({
                 className="shrink-0 text-xs font-semibold text-[#176b50]"
               >
                 +{value.propertyTypes.length - 3}
+              </button>
+            )}
+            {selectedSpaceLabels.slice(0, 2).map((label, index) => {
+              const code = value.spaceTypes[index]
+              return (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() =>
+                    update(
+                      'spaceTypes',
+                      value.spaceTypes.filter((item) => item !== code)
+                    )
+                  }
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-800 hover:bg-orange-100 dark:bg-orange-950/35 dark:text-orange-200"
+                >
+                  {label} <X className="size-3" />
+                </button>
+              )
+            })}
+            {value.spaceTypes.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="shrink-0 text-xs font-semibold text-orange-700"
+              >
+                +{value.spaceTypes.length - 2}
               </button>
             )}
             {(value.features.length > 0 || value.bedrooms > 0 || value.bathrooms > 0 || value.minArea) && (
@@ -543,6 +581,45 @@ const PropertyMapFilterBar = ({
                       </div>
                     )
                   })}
+                </div>
+
+                <div className="mt-6 border-t border-neutral-100 pt-5 dark:border-neutral-800">
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                        {isThai ? 'ร้านค้า ล็อก และพื้นที่ชั่วคราว' : 'Shops, stalls and temporary spaces'}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+                        {primaryBusinessSpaceTypeCodes.length} {isThai ? 'ประเภทย่อย' : 'subtypes'}
+                      </p>
+                    </div>
+                    {value.spaceTypes.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => update('spaceTypes', [])}
+                        className="shrink-0 text-sm font-semibold text-[#176b50]"
+                      >
+                        {isThai ? 'ทุกประเภท' : 'All types'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {primaryBusinessSpaceTypeCodes.map((code) => {
+                      const item = getBusinessSpaceType(code)!
+                      const selected = value.spaceTypes.includes(code)
+                      return (
+                        <SelectionButton
+                          key={code}
+                          selected={selected}
+                          onClick={() => update('spaceTypes', toggleValue(value.spaceTypes, code))}
+                          className="relative pe-8"
+                        >
+                          <span className="line-clamp-2">{isThai ? item.nameTh : item.nameEn}</span>
+                          {selected && <Check className="absolute end-3 top-1/2 size-4 -translate-y-1/2" />}
+                        </SelectionButton>
+                      )
+                    })}
+                  </div>
                 </div>
               </section>
 

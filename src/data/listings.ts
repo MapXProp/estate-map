@@ -1213,6 +1213,8 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     isVerified: listing.is_verified,
     isOwnerDirect: listing.source_type === 'owner',
     propertyTypeCode: listing.property_type_code,
+    spaceTypeCode: listing.space_type_code,
+    spaceTypeCodes: listing.space_type_codes || [],
     offerTypes: getListingOfferTypes(listing),
     salePrice: listing.sale_price || 0,
     rentPriceMonthly: listing.rent_price_monthly || 0,

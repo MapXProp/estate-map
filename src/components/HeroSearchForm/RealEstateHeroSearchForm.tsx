@@ -2,18 +2,28 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import {
+  getBusinessSpaceType,
+  getDiscoveryChannel,
+  getPropertyTypesForDiscoveryChannel,
+  primaryBusinessSpaceTypeCodes,
+  type DiscoveryChannelCode,
+} from '@/data/propertyTaxonomy'
+import { savePropertyRecentLocation } from '@/lib/propertyRecentLocations'
+import { fetchLongdoPropertyLocation } from '@/lib/propertySearch'
 import * as Headless from '@headlessui/react'
 import clsx from 'clsx'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 import {
   ButtonSubmit,
-  LocationInputField,
   PriceRangeInputField,
+  PropertyLocationInputField,
   PropertyTypeSelectField,
   VerticalDividerLine,
 } from './ui'
+import type { PropertyTypeSelectSection } from './ui/PropertyTypeSelectField'
 
 export type RealEstateSearchTab = 'all' | 'homes' | 'rooms' | 'business'
 
@@ -51,64 +61,6 @@ const tabs = [
   },
 ] as const
 
-const propertyTypesByTab = {
-  all: [
-    { name: 'บ้าน', value: 'house', description: 'บ้านเดี่ยว บ้านแฝด และบ้านเช่า' },
-    { name: 'คอนโด', value: 'condo', description: 'คอนโดสำหรับซื้อหรือเช่า' },
-    { name: 'ห้องเช่า', value: 'monthly_room', description: 'อพาร์ตเมนต์ หอพัก และห้องรายเดือน' },
-    { name: 'ตึกแถว', value: 'rowhouse', description: 'อยู่อาศัยหรือใช้ทำธุรกิจ' },
-    { name: 'ร้านค้า', value: 'retail', description: 'ร้านค้า ล็อคตลาด และคีออส' },
-    { name: 'ออฟฟิศ', value: 'office', description: 'สำนักงานและพื้นที่ทำงาน' },
-    { name: 'โกดัง / โรงงาน', value: 'warehouse_factory', description: 'พื้นที่จัดเก็บและพื้นที่ผลิต' },
-    { name: 'ที่ดิน', value: 'land', description: 'ที่ดินเพื่ออยู่อาศัยหรือธุรกิจ' },
-  ],
-  homes: [
-    { name: 'บ้าน', value: 'house', description: 'บ้านเดี่ยวและบ้านแฝด' },
-    { name: 'คอนโด', value: 'condo', description: 'คอนโดสำหรับซื้อหรือเช่า' },
-    { name: 'ทาวน์โฮม', value: 'townhome', description: 'ทาวน์เฮาส์และทาวน์โฮม' },
-    { name: 'ตึกแถว', value: 'rowhouse', description: 'ตึกแถวสำหรับอยู่อาศัย' },
-    { name: 'ที่ดินสร้างบ้าน', value: 'residential_land', description: 'ที่ดินสำหรับสร้างที่อยู่อาศัย' },
-  ],
-  rooms: [
-    { name: 'ห้องเช่า', value: 'monthly_room', description: 'ห้องพักให้เช่ารายเดือน' },
-    { name: 'อพาร์ตเมนต์', value: 'apartment', description: 'อพาร์ตเมนต์และเซอร์วิสอพาร์ตเมนต์' },
-    { name: 'หอพัก', value: 'dormitory', description: 'หอพักนักเรียน นักศึกษา และคนทำงาน' },
-    { name: 'แฟลต', value: 'flat', description: 'แฟลตและที่พักระยะยาว' },
-    { name: 'คอนโดให้เช่า', value: 'rental_condo', description: 'ห้องคอนโดสำหรับเช่ารายเดือน' },
-  ],
-  business: [
-    { name: 'ตึกแถว', value: 'commercial_rowhouse', description: 'อาคารพาณิชย์และตึกแถว' },
-    { name: 'ร้านค้า', value: 'standalone_retail', description: 'ร้านค้า Standalone และพื้นที่ขายของ' },
-    { name: 'ล็อคตลาด / คีออส', value: 'stall_kiosk', description: 'ล็อคในตลาดและล็อคในห้าง' },
-    { name: 'ออฟฟิศ', value: 'office', description: 'สำนักงานและ Co-working space' },
-    { name: 'โกดัง / โรงงาน', value: 'warehouse_factory', description: 'พื้นที่จัดเก็บและพื้นที่ผลิต' },
-    { name: 'ที่ดินธุรกิจ', value: 'business_land', description: 'ที่ดินเพื่อการค้าและอุตสาหกรรม' },
-    { name: 'พื้นที่ออกบูธ', value: 'event_space', description: 'งานอีเวนต์และพื้นที่ชั่วคราว' },
-  ],
-}
-
-const englishPropertyTypes: Record<string, { name: string; description: string }> = {
-  house: { name: 'House', description: 'Detached, semi-detached and rental houses' },
-  condo: { name: 'Condo', description: 'Condominiums available to buy or rent' },
-  monthly_room: { name: 'Rental room', description: 'Apartments, dormitories and monthly rooms' },
-  rowhouse: { name: 'Rowhouse', description: 'For residential or business use' },
-  retail: { name: 'Retail space', description: 'Shops, market stalls and kiosks' },
-  office: { name: 'Office', description: 'Offices and workspaces' },
-  warehouse_factory: { name: 'Warehouse / Factory', description: 'Storage and production spaces' },
-  land: { name: 'Land', description: 'Land for residential or business use' },
-  townhome: { name: 'Townhome', description: 'Townhouses and townhomes' },
-  residential_land: { name: 'Residential land', description: 'Land suitable for building a home' },
-  apartment: { name: 'Apartment', description: 'Apartments and serviced apartments' },
-  dormitory: { name: 'Dormitory', description: 'Student and worker accommodation' },
-  flat: { name: 'Flat', description: 'Flats and long-term accommodation' },
-  rental_condo: { name: 'Condo for rent', description: 'Condo units available for monthly rent' },
-  commercial_rowhouse: { name: 'Commercial rowhouse', description: 'Commercial buildings and rowhouses' },
-  standalone_retail: { name: 'Standalone shop', description: 'Standalone retail and selling spaces' },
-  stall_kiosk: { name: 'Market stall / Kiosk', description: 'Stalls in markets and shopping centres' },
-  business_land: { name: 'Commercial land', description: 'Land for commercial and industrial use' },
-  event_space: { name: 'Event space', description: 'Event booths and temporary spaces' },
-}
-
 export const RealEstateHeroSearchForm: FC<Props> = ({
   className,
   formStyle = 'default',
@@ -126,10 +78,52 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
   const internalTab = uncontrolledSelection.contextZone === propertyZone ? uncontrolledSelection.tab : propertyZone
   const tabType = selectedTab ?? internalTab
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<string[]>([])
+  const [selectedSpaceTypes, setSelectedSpaceTypes] = useState<string[]>([])
   const router = useRouter()
+
+  const propertyTypeSections = useMemo<PropertyTypeSelectSection[]>(() => {
+    const sectionCodes: DiscoveryChannelCode[] =
+      tabType === 'all' ? ['homes', 'rooms', 'business'] : [tabType as DiscoveryChannelCode]
+
+    return sectionCodes.map((code) => {
+      const channel = getDiscoveryChannel(code)!
+      const propertyTypes = getPropertyTypesForDiscoveryChannel(code)
+        .filter((item) => code !== 'business' || item.code !== 'retail_space')
+        .map((item) => ({
+          name: isThai ? item.nameTh : item.nameEn,
+          value: item.code,
+          description: isThai ? item.description : item.nameEn,
+        }))
+      const spaceTypes =
+        code === 'business'
+          ? primaryBusinessSpaceTypeCodes.flatMap((spaceTypeCode) => {
+              const item = getBusinessSpaceType(spaceTypeCode)
+              return item
+                ? [
+                    {
+                      name: isThai ? item.nameTh : item.nameEn,
+                      value: item.code,
+                      description: isThai ? item.description : item.nameEn,
+                    },
+                  ]
+                : []
+            })
+          : undefined
+
+      return {
+        id: code,
+        name: isThai ? channel.nameTh : channel.nameEn,
+        countLabel: spaceTypes ? `${propertyTypes.length} + ${spaceTypes.length}` : String(propertyTypes.length),
+        propertyTypes,
+        spaceTypes,
+        spaceTypesTitle: isThai ? 'ร้านค้า ล็อก และพื้นที่ชั่วคราว' : 'Shops, stalls and temporary spaces',
+      }
+    })
+  }, [isThai, tabType])
 
   const handleTabChange = (tab: RealEstateSearchTab) => {
     setSelectedPropertyTypes([])
+    setSelectedSpaceTypes([])
     if (selectedTab === undefined) {
       setUncontrolledSelection({
         contextZone: tab === 'all' ? propertyZone : tab,
@@ -145,12 +139,14 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
     router.prefetch('/properties/map')
   }, [router])
 
-  const handleFormSubmit = (formData: FormData) => {
+  const handleFormSubmit = async (formData: FormData) => {
     const formDataEntries = Object.fromEntries(formData.entries())
     console.log('Form submitted', formDataEntries)
     // You can also redirect or perform other actions based on the form data
 
     const location = formDataEntries['location'] as string
+    const locationLabel = formDataEntries['location_label'] as string
+    const locationSource = String(formDataEntries['location_source'] || 'manual') as 'local' | 'longdo' | 'manual'
     const channelPrefix = isThai
       ? {
           all: '',
@@ -176,6 +172,18 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
     formData
       .getAll('property_type')
       .forEach((propertyType) => searchParams.append('property_type', String(propertyType)))
+    formData.getAll('space_type').forEach((spaceType) => searchParams.append('space_type', String(spaceType)))
+    if (location?.trim()) {
+      savePropertyRecentLocation(location, locationLabel, locationSource)
+      if (locationSource !== 'local') {
+        const place = await fetchLongdoPropertyLocation(location)
+        if (place) {
+          searchParams.set('lat', String(place.lat))
+          searchParams.set('lon', String(place.lon))
+          searchParams.set('zoom', '15')
+        }
+      }
+    }
     const searchString = searchParams.toString()
     router.push(searchString ? `/properties/map?${searchString}` : '/properties/map')
   }
@@ -247,7 +255,7 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           responsive && 'flex-col gap-2 p-3 min-[744px]:flex-row min-[744px]:gap-0 min-[744px]:p-0'
         )}
       >
-        <LocationInputField
+        <PropertyLocationInputField
           className={clsx(
             'hero-search-form__field-after flex-1',
             responsive &&
@@ -258,7 +266,6 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
             isThai ? 'จังหวัด เขต ย่าน ถนน หรือชื่อโครงการ' : 'Province, district, area, road or project name'
           }
           ariaLabel={isThai ? 'ค้นหาทำเล' : 'Search for a location'}
-          suggestionsLabel={isThai ? 'ทำเลแนะนำ' : 'Suggested locations'}
           fieldStyle={formStyle}
           responsive={responsive}
         />
@@ -271,20 +278,25 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
             responsive &&
               'w-full rounded-2xl bg-neutral-50 min-[744px]:w-auto min-[744px]:rounded-none min-[744px]:bg-transparent dark:bg-neutral-900/60 min-[744px]:dark:bg-transparent'
           )}
-          propertyTypes={propertyTypesByTab[tabType].map((propertyType) =>
-            isThai ? propertyType : { ...propertyType, ...englishPropertyTypes[propertyType.value] }
-          )}
+          sections={propertyTypeSections}
           defaultSelected={[]}
+          defaultSelectedSpaceTypes={[]}
           placeholder={isThai ? 'ทุกประเภท' : 'All property types'}
           description={isThai ? 'เลือกประเภทอสังหา' : 'Choose property type'}
           panelTitle={tabs.find((tab) => tab.value === tabType)?.[isThai ? 'label' : 'labelEn']}
           panelDescription={
+            isThai ? 'เริ่มจากทุกประเภท แล้วเลือกเพิ่มเมื่ออยากเจาะจง' : 'Start with all types, then refine if needed'
+          }
+          allTypesLabel={isThai ? 'ทุกประเภทในหมวดนี้' : 'All types in this category'}
+          allTypesDescription={isThai ? 'ค้นหาได้ทันทีโดยไม่ต้องเลือกทีละรายการ' : 'Search without selecting each item'}
+          selectionSummary={
             isThai
-              ? 'เลือกได้หลายประเภท หรือเว้นไว้เพื่อดูทั้งหมด'
-              : 'Select multiple types, or leave blank to view all'
+              ? `เลือกแล้ว ${selectedPropertyTypes.length + selectedSpaceTypes.length} ประเภท`
+              : `${selectedPropertyTypes.length + selectedSpaceTypes.length} types selected`
           }
           tone="mapx"
           onSelectionChange={setSelectedPropertyTypes}
+          onSpaceTypeSelectionChange={setSelectedSpaceTypes}
         />
         <VerticalDividerLine responsive={responsive} />
         <PriceRangeInputField
@@ -301,7 +313,9 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           minLabel={isThai ? 'ราคาต่ำสุด' : 'Min price'}
           maxLabel={isThai ? 'ราคาสูงสุด' : 'Max price'}
           priceContext={tabType}
-          selectedPropertyTypes={selectedPropertyTypes}
+          selectedPropertyTypes={
+            selectedSpaceTypes.length ? [...new Set([...selectedPropertyTypes, 'retail_space'])] : selectedPropertyTypes
+          }
         />
 
         <ButtonSubmit

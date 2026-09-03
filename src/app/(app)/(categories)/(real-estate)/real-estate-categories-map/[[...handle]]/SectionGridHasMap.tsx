@@ -31,6 +31,7 @@ interface Props {
   query?: string
   initialMapCenter?: { lat: number; lon: number }
   initialMapZoom?: number
+  initialFilters?: Partial<PropertyMapFilterState>
 }
 
 const SectionGridHasMap: FC<Props> = ({
@@ -40,24 +41,46 @@ const SectionGridHasMap: FC<Props> = ({
   query = '',
   initialMapCenter,
   initialMapZoom,
+  initialFilters,
 }) => {
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
-  const [filters, setFilters] = useState<PropertyMapFilterState>(emptyPropertyMapFilters)
+  const [filters, setFilters] = useState<PropertyMapFilterState>(() => ({
+    ...emptyPropertyMapFilters,
+    ...initialFilters,
+  }))
   const [sort, setSort] = useState<PropertyMapSort>('recommended')
-  const [isQueryLoading, setIsQueryLoading] = useState(Boolean(query.trim()))
   const enableGalleryHoverPreview = useSyncExternalStore(
     subscribeGalleryHoverPreview,
     getGalleryHoverPreviewSnapshot,
     getGalleryHoverPreviewServerSnapshot
   )
-  const [areaResults, setAreaResults] = useState<{ query: string; listings: TRealEstateListing[] } | null>(null)
+  const [areaResults, setAreaResults] = useState<{ requestKey: string; listings: TRealEstateListing[] } | null>(null)
   const [areaSearch, setAreaSearch] = useState<PropertyMapAreaSearch | null>(null)
-  const hasInitialQuery = Boolean(query.trim())
   const currentQuery = query.trim()
-  const hasResultsForCurrentQuery = areaResults?.query === currentQuery
+  const serverFilters = useMemo(
+    () => ({
+      propertyTypes: filters.propertyTypes,
+      spaceTypes: filters.spaceTypes,
+      offerTypes: filters.offerTypes,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+    }),
+    [filters.maxPrice, filters.minPrice, filters.offerTypes, filters.propertyTypes, filters.spaceTypes]
+  )
+  const hasDatabaseRequest = Boolean(
+    currentQuery ||
+    serverFilters.propertyTypes.length ||
+    serverFilters.spaceTypes.length ||
+    serverFilters.offerTypes.length ||
+    serverFilters.minPrice ||
+    serverFilters.maxPrice
+  )
+  const currentRequestKey = JSON.stringify([currentQuery, serverFilters])
+  const hasResultsForCurrentRequest = areaResults?.requestKey === currentRequestKey
+  const isQueryLoading = hasDatabaseRequest && !hasResultsForCurrentRequest
   const resultSourceListings = useMemo(
-    () => (hasResultsForCurrentQuery ? areaResults.listings : hasInitialQuery ? [] : listings),
-    [areaResults, hasInitialQuery, hasResultsForCurrentQuery, listings]
+    () => (hasResultsForCurrentRequest ? areaResults.listings : hasDatabaseRequest ? [] : listings),
+    [areaResults, hasDatabaseRequest, hasResultsForCurrentRequest, listings]
   )
 
   const filteredListings = useMemo(() => {
@@ -88,7 +111,12 @@ const SectionGridHasMap: FC<Props> = ({
       const area = listing.usableAreaSqm || listing.landAreaSqm || listing.acreage || 0
 
       if (selectedChannelPropertyTypes.size && !selectedChannelPropertyTypes.has(normalizedType)) return false
-      if (filters.propertyTypes.length && !filters.propertyTypes.includes(normalizedType)) return false
+      if (filters.propertyTypes.length || filters.spaceTypes.length) {
+        const matchesPropertyType = filters.propertyTypes.includes(normalizedType)
+        const listingSpaceTypes = new Set([listing.spaceTypeCode, ...(listing.spaceTypeCodes || [])].filter(Boolean))
+        const matchesSpaceType = filters.spaceTypes.some((spaceType) => listingSpaceTypes.has(spaceType))
+        if (!matchesPropertyType && !matchesSpaceType) return false
+      }
       if (filters.offerTypes.length && !filters.offerTypes.some((offer) => listingOffers.includes(offer))) return false
       if (
         (filters.minPrice || filters.maxPrice) &&
@@ -141,24 +169,21 @@ const SectionGridHasMap: FC<Props> = ({
   )
 
   useEffect(() => {
-    if (!currentQuery) return
+    if (!hasDatabaseRequest) return
     const controller = new AbortController()
-    setIsQueryLoading(true)
-    fetchPropertySearch(currentQuery, controller.signal)
+    fetchPropertySearch(currentQuery, controller.signal, { ...serverFilters, limit: 60 })
       .then((response) => {
         const databaseResults = response.listings
           .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
           .map(mapDatabaseListing)
-        setAreaResults({ query: currentQuery, listings: databaseResults })
-        setIsQueryLoading(false)
+        setAreaResults({ requestKey: currentRequestKey, listings: databaseResults })
       })
       .catch(() => {
         if (controller.signal.aborted) return
-        setAreaResults({ query: currentQuery, listings: [] })
-        setIsQueryLoading(false)
+        setAreaResults({ requestKey: currentRequestKey, listings: [] })
       })
     return () => controller.abort()
-  }, [currentQuery, mapDatabaseListing])
+  }, [currentQuery, currentRequestKey, hasDatabaseRequest, mapDatabaseListing, serverFilters])
 
   const handleSearchArea = useCallback(
     async (search: PropertyMapAreaSearch, listingIds: string[]) => {
@@ -172,6 +197,7 @@ const SectionGridHasMap: FC<Props> = ({
           maxLat: search.bounds.maxLat,
           maxLon: search.bounds.maxLon,
           limit: 40,
+          ...serverFilters,
         })
         const databaseResults = response.listings
           .filter((listing) => Number.isFinite(listing.latitude) && Number.isFinite(listing.longitude))
@@ -179,12 +205,12 @@ const SectionGridHasMap: FC<Props> = ({
         nextResults = databaseResults
       } catch {}
 
-      setAreaResults({ query: currentQuery, listings: nextResults })
+      setAreaResults({ requestKey: currentRequestKey, listings: nextResults })
       setAreaSearch(search)
       setCurrentHoverID('')
       return nextResults.length
     },
-    [currentQuery, mapDatabaseListing, query]
+    [currentRequestKey, mapDatabaseListing, query, serverFilters]
   )
 
   return (
@@ -223,7 +249,7 @@ const SectionGridHasMap: FC<Props> = ({
             </div>
           ))}
         </div>
-        {hasInitialQuery && !hasResultsForCurrentQuery && (
+        {hasDatabaseRequest && !hasResultsForCurrentRequest && (
           <div className="rounded-3xl border border-[#dbe7e2] bg-[#f7faf8] px-6 py-10 text-center">
             <h2 className="text-lg font-semibold text-[#173f34]">กำลังค้นหาประกาศในพื้นที่นี้</h2>
           </div>
@@ -232,7 +258,7 @@ const SectionGridHasMap: FC<Props> = ({
           <div className="rounded-3xl border border-[#dbe7e2] bg-[#f7faf8] px-6 py-10 text-center">
             <h2 className="text-lg font-semibold text-[#173f34]">ยังไม่พบประกาศที่ตรงกับเงื่อนไข</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              {areaSearch || hasInitialQuery
+              {areaSearch || hasDatabaseRequest
                 ? 'ลองขยายพื้นที่ค้นหาหรือลดตัวกรองบางข้อ'
                 : 'ลองลดตัวกรองบางข้อเพื่อดูประกาศเพิ่มเติม'}
             </p>

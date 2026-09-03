@@ -7,6 +7,18 @@ export type PropertySearchSuggestion = {
   query: string
 }
 
+export type PropertySearchSuggestionOptions = {
+  limit?: number
+  scope?: 'all' | 'location'
+}
+
+export type PropertyLocationMatch = {
+  name: string
+  address: string
+  lat: number
+  lon: number
+}
+
 export type PropertySearchChip = {
   type: string
   value: string
@@ -235,6 +247,11 @@ export type PropertyDiscoveryChannel = 'homes' | 'rooms' | 'business'
 
 export type PropertySearchOptions = {
   discoveryChannel?: PropertyDiscoveryChannel
+  propertyTypes?: string[]
+  spaceTypes?: string[]
+  offerTypes?: string[]
+  minPrice?: string
+  maxPrice?: string
   limit?: number
   offset?: number
 }
@@ -248,6 +265,20 @@ export type PropertyMapAreaSearchRequest = {
   limit?: number
   offset?: number
   signal?: AbortSignal
+  propertyTypes?: string[]
+  spaceTypes?: string[]
+  offerTypes?: string[]
+  minPrice?: string
+  maxPrice?: string
+}
+
+const appendPropertySearchFilters = (params: URLSearchParams, options: PropertySearchOptions) => {
+  if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
+  options.propertyTypes?.forEach((value) => params.append('property_type', value))
+  options.spaceTypes?.forEach((value) => params.append('space_type', value))
+  options.offerTypes?.forEach((value) => params.append('offer_type', value))
+  if (options.minPrice) params.set('price_min', options.minPrice)
+  if (options.maxPrice) params.set('price_max', options.maxPrice)
 }
 
 const fallbackSuggestions: PropertySearchSuggestion[] = [
@@ -269,10 +300,14 @@ export const getPropertyMapSearchUrl = (query: string) => `/properties/map?q=${e
 
 export const fetchPropertySearchSuggestions = async (
   query: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options: PropertySearchSuggestionOptions = {}
 ): Promise<PropertySearchSuggestion[]> => {
   try {
-    const response = await fetch(`${getAuthApiUrl('search/suggestions')}?q=${encodeURIComponent(query.trim())}`, {
+    const searchParams = new URLSearchParams({ q: query.trim() })
+    if (options.limit) searchParams.set('limit', String(options.limit))
+    if (options.scope) searchParams.set('scope', options.scope)
+    const response = await fetch(`${getAuthApiUrl('search/suggestions')}?${searchParams}`, {
       signal,
       cache: 'no-store',
       credentials: 'include',
@@ -285,13 +320,63 @@ export const fetchPropertySearchSuggestions = async (
   }
 }
 
+export const fetchLongdoPropertyLocationSuggestions = async (
+  query: string,
+  signal?: AbortSignal
+): Promise<PropertySearchSuggestion[]> => {
+  try {
+    const searchParams = new URLSearchParams({ q: query.trim() })
+    const response = await fetch(`/api/location-suggestions?${searchParams}`, {
+      signal,
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+    if (!response.ok) return []
+    const data = (await response.json()) as { suggestions?: PropertySearchSuggestion[] }
+    return data.suggestions || []
+  } catch {
+    return []
+  }
+}
+
+const longdoLocationMatchCache = new Map<string, PropertyLocationMatch>()
+
+export const fetchLongdoPropertyLocation = async (query: string): Promise<PropertyLocationMatch | null> => {
+  const normalizedQuery = query.trim().replace(/\s+/g, ' ')
+  if (!normalizedQuery) return null
+
+  const cacheKey = normalizedQuery.toLocaleLowerCase('th-TH')
+  const cached = longdoLocationMatchCache.get(cacheKey)
+  if (cached) return cached
+
+  try {
+    const searchParams = new URLSearchParams({ q: normalizedQuery })
+    const response = await fetch(`/api/location-search?${searchParams}`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+    if (!response.ok) return null
+    const data = (await response.json()) as { place?: PropertyLocationMatch | null }
+    if (!data.place) return null
+
+    longdoLocationMatchCache.set(cacheKey, data.place)
+    if (longdoLocationMatchCache.size > 20) {
+      const oldestKey = longdoLocationMatchCache.keys().next().value
+      if (oldestKey) longdoLocationMatchCache.delete(oldestKey)
+    }
+    return data.place
+  } catch {
+    return null
+  }
+}
+
 export const fetchPropertySearch = async (
   query: string,
   signal?: AbortSignal,
   options: PropertySearchOptions = {}
 ): Promise<PropertySearchResponse> => {
   const params = new URLSearchParams({ q: query.trim() })
-  if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
+  appendPropertySearchFilters(params, options)
   if (options.limit) params.set('limit', String(options.limit))
   if (options.offset) params.set('offset', String(options.offset))
   const response = await fetch(`${getAuthApiUrl('properties/search')}?${params.toString()}`, {
@@ -325,6 +410,11 @@ export const fetchPropertyMapArea = async ({
   limit = 24,
   offset = 0,
   signal,
+  propertyTypes,
+  spaceTypes,
+  offerTypes,
+  minPrice,
+  maxPrice,
 }: PropertyMapAreaSearchRequest): Promise<PropertySearchResponse> => {
   const params = new URLSearchParams({
     min_lat: String(minLat),
@@ -335,6 +425,7 @@ export const fetchPropertyMapArea = async ({
     offset: String(offset),
   })
   if (query.trim()) params.set('q', query.trim())
+  appendPropertySearchFilters(params, { propertyTypes, spaceTypes, offerTypes, minPrice, maxPrice })
 
   const response = await fetch(`${getAuthApiUrl('properties/search')}?${params}`, {
     signal,
