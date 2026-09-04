@@ -12,6 +12,7 @@ const AUTO_HIDE_ROUTE_PREFIXES = [
 ]
 
 const MOBILE_HEADER_HEIGHT = 64
+const MOBILE_HEADER_EXIT_Y = MOBILE_HEADER_HEIGHT + 8
 const HIDE_TRAVEL = 12
 const REVEAL_MIN_DELTA = 7
 const REVEAL_MIN_SPEED = 0.5
@@ -80,14 +81,19 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
         if (hasOpenHeaderControl || hasOpenDialog) {
           changeMode('visible')
         } else if (nextDirection === 'down') {
-          if (modeRef.current === 'natural' || directionTravelRef.current >= HIDE_TRAVEL) changeMode('hidden')
+          if (
+            (modeRef.current === 'natural' && currentScrollY >= MOBILE_HEADER_EXIT_Y) ||
+            (modeRef.current === 'visible' && directionTravelRef.current >= HIDE_TRAVEL)
+          ) {
+            changeMode('hidden')
+          }
         } else {
           const upwardSpeed = Math.abs(delta) / elapsed
           if (modeRef.current === 'hidden' && Math.abs(delta) >= REVEAL_MIN_DELTA && upwardSpeed >= REVEAL_MIN_SPEED) {
             changeMode('visible')
           }
         }
-      } else if (modeRef.current === 'natural') {
+      } else if (modeRef.current === 'natural' && currentScrollY >= MOBILE_HEADER_EXIT_Y) {
         changeMode('hidden')
       }
 
@@ -118,11 +124,13 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
           modeRef.current = 'visible'
           setMode('visible')
         }}
-        className={`inset-x-0 top-0 bg-white shadow-xs will-change-transform dark:bg-neutral-900 ${
+        className={`inset-x-0 top-0 bg-white dark:bg-neutral-900 ${
           mode === 'natural'
-            ? 'relative transition-none'
-            : 'fixed z-20 transition-transform duration-100 ease-out motion-reduce:transition-none'
-        } ${mode === 'hidden' ? '-translate-y-full' : 'translate-y-0'}`}
+            ? 'relative translate-y-0 shadow-xs transition-none'
+            : mode === 'hidden'
+              ? 'fixed z-20 -translate-y-[calc(100%+0.5rem)] shadow-none transition-none will-change-transform'
+              : 'fixed z-20 translate-y-0 shadow-xs transition-transform duration-100 ease-out will-change-transform motion-reduce:transition-none'
+        }`}
       >
         {children}
       </div>
