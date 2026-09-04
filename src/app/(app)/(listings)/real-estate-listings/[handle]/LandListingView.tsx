@@ -1,13 +1,14 @@
-import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
   CarFront,
+  ChevronDown,
   ExternalLink,
   LandPlot,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Ruler,
   ShieldCheck,
@@ -81,6 +82,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const fullAddress = [listing.address, listing.province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
+  const lineHandle = listing.line_id.replace(/^@/, '')
+  const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
   const mapURL =
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
@@ -111,7 +114,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">
             <div className="flex flex-col">
-              <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
+              <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
                 {listing.offer_type === 'sale' && (
                   <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
                     ขาย
@@ -144,31 +147,17 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 )}
               </div>
 
-              <div className="order-1 flex items-start justify-between gap-4 min-[744px]:order-2 min-[744px]:mt-4">
+              <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
                 <h1 className="max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
                   {listing.title}
                 </h1>
-                <BtnLikeIcon
-                  listingIdentifier={listing.slug || listing.public_listing_id}
-                  className="mt-0.5 shrink-0"
-                  colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
-                  sizeClass="size-11"
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
-              <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-              <div className="min-w-0">
-                <span className="block">{fullAddress}</span>
-                {mapURL && (
-                  <a
-                    href={mapURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1.5 inline-flex items-center gap-1.5 font-semibold text-[#176b50] hover:underline min-[744px]:hidden"
-                  >
-                    เปิดใน Google Maps <ExternalLink className="size-3.5" />
-                  </a>
+                {fullAddress && (
+                  <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
+                    <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
+                    <div className="min-w-0">
+                      <span className="block">{fullAddress}</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -183,19 +172,80 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               ))}
             </section>
 
-            {isTrustedContact && (
-              <section className="mt-4 flex items-center gap-3 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-3 min-[744px]:hidden">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
-                  <UserRoundCheck className="size-4.5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-neutral-500">ผู้ลงประกาศ</p>
-                  <p className="truncate text-sm font-semibold text-neutral-950">{listing.contact_name}</p>
+            {(contactRole || isTrustedContact) && (
+              <details className="group mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden">
+                <summary className="flex cursor-pointer list-none items-center gap-3 p-3 select-none [&::-webkit-details-marker]:hidden">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
+                    {isOwnerDirect ? <UserRoundCheck className="size-4.5" /> : <Building2 className="size-4.5" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-neutral-500">
+                      {isOwnerDirect ? 'เจ้าของขายเอง' : contactRole || 'ผู้ลงประกาศ'}
+                    </p>
+                    <p className="truncate text-sm font-semibold text-neutral-950">{listing.contact_name}</p>
+                  </div>
+                  {isTrustedContact && (
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#176b50]">
+                      <ShieldCheck className="size-4" /> เชื่อถือได้
+                    </span>
+                  )}
+                  <ChevronDown className="size-4 shrink-0 text-neutral-400 transition-transform group-open:rotate-180" />
+                </summary>
+
+                <div className="border-t border-[#dce9e4] px-3 py-2">
+                  {phoneURL && (
+                    <a
+                      href={phoneURL}
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
+                        <Phone className="size-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-neutral-500">โทรศัพท์</span>
+                        <span className="block text-sm font-semibold text-neutral-800">
+                          {formatPhone(listing.contact_phone)}
+                        </span>
+                      </span>
+                    </a>
+                  )}
+                  {lineURL && (
+                    <a
+                      href={lineURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
+                        <MessageCircle className="size-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-neutral-500">LINE</span>
+                        <span className="block truncate text-sm font-semibold text-neutral-800">@{lineHandle}</span>
+                      </span>
+                    </a>
+                  )}
+                  {emailURL && (
+                    <a
+                      href={emailURL}
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
+                        <Mail className="size-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-xs text-neutral-500">อีเมล</span>
+                        <span className="block truncate text-sm font-semibold text-neutral-800">
+                          {listing.contact_email}
+                        </span>
+                      </span>
+                    </a>
+                  )}
+                  {!phoneURL && !lineURL && !emailURL && (
+                    <p className="px-2.5 py-3 text-sm text-neutral-500">ยังไม่มีข้อมูลติดต่อเพิ่มเติม</p>
+                  )}
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#176b50]">
-                  <ShieldCheck className="size-4" /> เชื่อถือได้
-                </span>
-              </section>
+              </details>
             )}
 
             <section className="mt-10 border-t border-neutral-200 pt-8">

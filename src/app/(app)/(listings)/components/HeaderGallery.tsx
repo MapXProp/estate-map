@@ -1,5 +1,6 @@
 'use client'
 
+import BtnLikeIcon from '@/components/BtnLikeIcon'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { Button } from '@/shared/Button'
 import ButtonClose from '@/shared/ButtonClose'
@@ -1208,6 +1209,20 @@ const HeaderGallery = ({
     setIsOpen(true)
   }
 
+  const handleOpenImage = (index: number) => {
+    setStartIndex(index)
+    setIsOpen(true)
+  }
+
+  const handleOpenAllMedia = () => {
+    if (window.matchMedia('(max-width: 743px)').matches) {
+      setIsMobileGalleryOpen(true)
+      return
+    }
+
+    setIsDesktopGalleryOpen(true)
+  }
+
   const handleOpenMobileImage = (index: number) => {
     setStartIndex(index)
     setIsOpen(true)
@@ -1224,7 +1239,14 @@ const HeaderGallery = ({
         <HeaderGalleryGrid1 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
       )}
       {gridType === 'grid2' && (
-        <HeaderGalleryGrid2 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
+        <HeaderGalleryGrid2
+          images={images}
+          handleOpenImage={handleOpenImage}
+          handleOpenAllMedia={handleOpenAllMedia}
+          initiallySaved={initiallySaved}
+          listingIdentifier={listingIdentifier}
+          imageAlt={galleryImageAlt}
+        />
       )}
       {gridType === 'grid3' && (
         <HeaderGalleryGrid3 images={images} handleOpenDialog={handleOpenDialog} imageAlt={galleryImageAlt} />
@@ -1337,11 +1359,17 @@ const HeaderGalleryGrid1 = ({
 }
 const HeaderGalleryGrid2 = ({
   images,
-  handleOpenDialog,
+  handleOpenImage,
+  handleOpenAllMedia,
+  initiallySaved,
+  listingIdentifier,
   imageAlt,
 }: {
   images: string[]
-  handleOpenDialog: (index?: number) => void
+  handleOpenImage: (index: number) => void
+  handleOpenAllMedia: () => void
+  initiallySaved: boolean
+  listingIdentifier?: string
   imageAlt: string
 }) => {
   const mobilePreviewImages = images.slice(0, 5)
@@ -1350,17 +1378,19 @@ const HeaderGalleryGrid2 = ({
 
   return (
     <header className="relative">
-      <div className="relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden rounded-b-2xl bg-neutral-100 min-[744px]:hidden">
+      <div className="relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden rounded-b-xl bg-neutral-100 min-[744px]:hidden">
         {mobilePreviewImages.map((image, index) => {
           const isTopRow = index < 2
-          const isLast = index === mobilePreviewImages.length - 1
+          const isAllMediaTile = index === 4
 
           return (
             <button
               key={`${image}-${index}`}
               type="button"
-              onClick={() => handleOpenDialog(index)}
-              aria-label={isLast ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${index + 1}`}
+              onClick={() => (isAllMediaTile ? handleOpenAllMedia() : handleOpenImage(index))}
+              aria-label={
+                isAllMediaTile ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${index + 1} แบบเต็มจอ`
+              }
               className={clsx(
                 'relative block min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
                 isTopRow ? 'col-span-3 aspect-[4/3]' : 'col-span-2 aspect-square'
@@ -1374,7 +1404,7 @@ const HeaderGalleryGrid2 = ({
                 priority={index < 2}
                 className="object-cover transition duration-200 active:scale-[0.98]"
               />
-              {isLast && (
+              {isAllMediaTile && (
                 <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-neutral-950/48 px-2 text-center text-sm font-semibold text-white">
                   <Squares2X2Icon className="size-5" />
                   ดูสื่อทั้งหมด
@@ -1385,11 +1415,21 @@ const HeaderGalleryGrid2 = ({
         })}
       </div>
 
+      {listingIdentifier ? (
+        <BtnLikeIcon
+          listingIdentifier={listingIdentifier}
+          isLiked={initiallySaved}
+          className="absolute top-3 right-1 z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white [&>svg]:!size-[18px]"
+          colorClass="bg-transparent text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] hover:bg-black/15 active:bg-black/20"
+          sizeClass="size-10"
+        />
+      ) : null}
+
       <div className="hidden min-[744px]:block">
         <div className="grid grid-cols-12 gap-2">
           <button
             type="button"
-            onClick={() => handleOpenDialog(0)}
+            onClick={() => handleOpenImage(0)}
             aria-label="เปิดรูปหลักของอสังหาริมทรัพย์"
             className="relative col-span-8 aspect-[3/2] overflow-hidden rounded-s-2xl bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
           >
@@ -1410,7 +1450,7 @@ const HeaderGalleryGrid2 = ({
               <button
                 key={`${image}-side-${index}`}
                 type="button"
-                onClick={() => handleOpenDialog(index + 1)}
+                onClick={() => handleOpenImage(index + 1)}
                 aria-label={`เปิดรูปที่ ${index + 2}`}
                 className={clsx(
                   'relative overflow-hidden bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
@@ -1439,7 +1479,7 @@ const HeaderGalleryGrid2 = ({
               <button
                 key={`${image}-thumbnail-${index}`}
                 type="button"
-                onClick={() => handleOpenDialog(imageIndex)}
+                onClick={() => (isLast ? handleOpenAllMedia() : handleOpenImage(imageIndex))}
                 aria-label={isLast ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${imageIndex + 1}`}
                 className="relative aspect-[16/9] overflow-hidden rounded-lg bg-neutral-100 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
               >

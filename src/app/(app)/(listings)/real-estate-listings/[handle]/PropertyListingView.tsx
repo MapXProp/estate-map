@@ -1,6 +1,5 @@
 'use client'
 
-import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
@@ -170,16 +169,10 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 ) : null}
               </div>
 
-              <div className="order-1 flex items-start justify-between gap-4 min-[744px]:order-2 min-[744px]:mt-4">
+              <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
                 <h1 className="max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
                   {listing.title}
                 </h1>
-                <BtnLikeIcon
-                  listingIdentifier={listing.slug || listing.public_listing_id}
-                  className="mt-0.5 shrink-0"
-                  colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
-                  sizeClass="size-11"
-                />
               </div>
             </div>
             {fullAddress ? (
@@ -187,16 +180,6 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                 <div className="min-w-0">
                   <span className="block">{fullAddress}</span>
-                  {mapURL ? (
-                    <a
-                      href={mapURL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1.5 inline-flex items-center gap-1.5 font-semibold text-[#176b50] hover:underline min-[744px]:hidden"
-                    >
-                      {isThai ? 'เปิดใน Google Maps' : 'Open in Google Maps'} <ExternalLink className="size-3.5" />
-                    </a>
-                  ) : null}
                 </div>
               </div>
             ) : null}
