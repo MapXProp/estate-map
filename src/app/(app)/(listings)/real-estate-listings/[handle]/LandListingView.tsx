@@ -111,7 +111,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
         )}
 
-        <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
+        <div className="mt-5 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">
             <div className="flex flex-col">
               <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
