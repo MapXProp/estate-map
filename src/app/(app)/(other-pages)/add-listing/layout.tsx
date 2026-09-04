@@ -40,7 +40,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   const content = (
     <ListingFlowProgressProvider>
-      <div className="relative isolate min-h-screen overflow-x-clip bg-[#fffaf6] dark:bg-neutral-950">
+      <div className="relative isolate min-h-screen overflow-x-clip bg-[#faf7f2] min-[744px]:bg-[#fffaf6] dark:bg-neutral-950">
         <div className="relative mx-auto w-full max-w-[1440px] px-3 pt-4 pb-12 min-[744px]:px-8 min-[744px]:pb-28 sm:pt-10 lg:pb-32 xl:px-10">
           <div className="grid items-start gap-7 xl:grid-cols-[280px_minmax(0,1fr)] 2xl:gap-10">
             <SellerGuide />
