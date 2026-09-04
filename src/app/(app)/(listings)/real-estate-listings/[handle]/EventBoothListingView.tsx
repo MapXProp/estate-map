@@ -102,7 +102,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </div>
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
             <div className="mt-2 flex items-start justify-between gap-4">
-              <h1 className="text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl">
+              <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
                 {listing.title}
               </h1>
               <BtnLikeIcon

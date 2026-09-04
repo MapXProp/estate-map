@@ -170,7 +170,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </div>
 
               <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
-                <h1 className="max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+                <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
                   {listing.title}
                 </h1>
               </div>

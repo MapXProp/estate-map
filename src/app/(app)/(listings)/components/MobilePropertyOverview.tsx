@@ -45,12 +45,15 @@ const MobilePropertyOverview = ({
           </span>
         </div>
 
-        <h1 className="mt-4 text-[1.65rem] leading-[1.25] font-semibold tracking-[-0.02em] text-neutral-950 dark:text-white">
+        <h1 className="mt-4 text-2xl leading-[1.3] font-semibold tracking-[-0.02em] text-neutral-950 dark:text-white">
           {title}
         </h1>
         <p className="mt-3 text-[1.55rem] leading-none font-bold text-[#123f32] dark:text-[#65b99e]">{price}</p>
 
-        <a href="#property-location" className="mt-4 flex items-start gap-2.5 text-sm text-neutral-600 dark:text-neutral-300">
+        <a
+          href="#property-location"
+          className="mt-4 flex items-start gap-2.5 text-sm text-neutral-600 dark:text-neutral-300"
+        >
           <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
           <span className="min-w-0 flex-1 leading-6">{address}</span>
           <span className="shrink-0 font-semibold text-[#176b50]">ดูแผนที่</span>
