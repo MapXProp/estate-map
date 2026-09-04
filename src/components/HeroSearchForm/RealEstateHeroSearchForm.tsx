@@ -313,9 +313,8 @@ export const RealEstateHeroSearchForm: FC<Props> = ({
           minLabel={isThai ? 'ราคาต่ำสุด' : 'Min price'}
           maxLabel={isThai ? 'ราคาสูงสุด' : 'Max price'}
           priceContext={tabType}
-          selectedPropertyTypes={
-            selectedSpaceTypes.length ? [...new Set([...selectedPropertyTypes, 'retail_space'])] : selectedPropertyTypes
-          }
+          selectedPropertyTypes={selectedPropertyTypes}
+          selectedSpaceTypes={selectedSpaceTypes}
         />
 
         <ButtonSubmit

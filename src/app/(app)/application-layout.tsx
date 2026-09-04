@@ -1,10 +1,11 @@
+import Aside from '@/components/aside'
+import AsideSidebarNavigation from '@/components/aside-sidebar-navigation'
 import Footer2 from '@/components/Footer2'
 import FooterQuickNavigation from '@/components/FooterQuickNavigation'
 import AvatarDropdown from '@/components/Header/AvatarDropdown'
 import Header from '@/components/Header/Header'
 import HeroSearchFormMobile from '@/components/HeroSearchFormMobile/HeroSearchFormMobile'
-import Aside from '@/components/aside'
-import AsideSidebarNavigation from '@/components/aside-sidebar-navigation'
+import MobilePrimaryNavigation from '@/components/property-home/MobilePrimaryNavigation'
 import 'rc-slider/assets/index.css'
 import React, { ReactNode, Suspense } from 'react'
 
@@ -51,6 +52,7 @@ const ApplicationLayout: React.FC<Props> = ({
       {/*  */}
       {children}
       {/*  */}
+      <MobilePrimaryNavigation />
       {/* FooterQuickNavigation - Displays on mobile devices and is fixed at the bottom of the screen */}
       <FooterQuickNavigation />
       {/* Chose footer style here!!!! */}

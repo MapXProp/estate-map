@@ -4,47 +4,38 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import T from '@/utils/getT'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline'
-import { Check, RotateCcw } from 'lucide-react'
-import Slider from 'rc-slider'
 import clsx from 'clsx'
+import { Check, ChevronDown, RotateCcw, X } from 'lucide-react'
 import { FC, useMemo, useState } from 'react'
 import { ClearDataButton } from './ClearDataButton'
 
 type BudgetOfferType = 'sale' | 'rent'
+type BudgetMode = 'all' | BudgetOfferType
 type PriceContext = 'all' | 'homes' | 'rooms' | 'business'
 type PriceSelection = { minPrice: string; maxPrice: string }
 type PricePreset = PriceSelection
-type PriceConfig = { scale: number[]; presets: PricePreset[] }
+type PriceConfig = { presets: PricePreset[] }
 
 const EMPTY_SELECTION: PriceSelection = { minPrice: '', maxPrice: '' }
 
-const SALE_HOME_SCALE = [
-  0, 500_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000,
-  15_000_000, 20_000_000, 30_000_000, 50_000_000, 75_000_000, 100_000_000,
-]
-const SALE_LARGE_SCALE = [...SALE_HOME_SCALE, 150_000_000, 200_000_000]
-const RENT_ROOM_SCALE = [0, 2_000, 3_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000]
-const RENT_HOME_SCALE = [0, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000, 500_000]
-const RENT_BUSINESS_SCALE = [0, 5_000, 10_000, 20_000, 30_000, 50_000, 100_000, 200_000, 500_000, 1_000_000]
-
-const HOME_TYPES = new Set(['house', 'condo', 'townhome', 'rowhouse', 'residential_land'])
-const ROOM_TYPES = new Set(['monthly_room', 'apartment', 'dormitory', 'flat', 'rental_condo'])
+const HOME_TYPES = new Set(['detached_house', 'semi_detached_house', 'townhouse', 'condo'])
+const ROOM_ONLY_TYPES = new Set(['rental_room', 'apartment', 'dormitory', 'flat', 'monthly_hotel'])
 const BUSINESS_TYPES = new Set([
-  'retail',
+  'shophouse',
+  'home_office',
   'office',
-  'warehouse_factory',
+  'retail_space',
+  'warehouse',
+  'factory',
+  'hotel_resort',
   'land',
-  'commercial_rowhouse',
-  'standalone_retail',
-  'stall_kiosk',
-  'business_land',
-  'event_space',
 ])
 
-const getPriceContext = (context: PriceContext, selectedTypes: string[]) => {
-  if (context === 'rooms' || selectedTypes.some((type) => ROOM_TYPES.has(type))) return 'rooms'
-  if (context === 'business' || selectedTypes.some((type) => BUSINESS_TYPES.has(type))) return 'business'
-  if (context === 'homes' || selectedTypes.some((type) => HOME_TYPES.has(type))) return 'homes'
+const getPriceContext = (context: PriceContext, selectedTypes: string[], selectedSpaceTypes: string[]) => {
+  if (context !== 'all') return context
+  if (selectedSpaceTypes.length || selectedTypes.some((type) => BUSINESS_TYPES.has(type))) return 'business'
+  if (selectedTypes.length && selectedTypes.every((type) => ROOM_ONLY_TYPES.has(type))) return 'rooms'
+  if (selectedTypes.length && selectedTypes.every((type) => HOME_TYPES.has(type))) return 'homes'
   return 'all'
 }
 
@@ -52,7 +43,6 @@ const getPriceConfig = (context: PriceContext, offerType: BudgetOfferType): Pric
   if (offerType === 'rent') {
     if (context === 'rooms') {
       return {
-        scale: RENT_ROOM_SCALE,
         presets: [
           { minPrice: '', maxPrice: '5000' },
           { minPrice: '5000', maxPrice: '10000' },
@@ -63,7 +53,6 @@ const getPriceConfig = (context: PriceContext, offerType: BudgetOfferType): Pric
     }
     if (context === 'business') {
       return {
-        scale: RENT_BUSINESS_SCALE,
         presets: [
           { minPrice: '', maxPrice: '20000' },
           { minPrice: '20000', maxPrice: '50000' },
@@ -73,7 +62,6 @@ const getPriceConfig = (context: PriceContext, offerType: BudgetOfferType): Pric
       }
     }
     return {
-      scale: RENT_HOME_SCALE,
       presets: [
         { minPrice: '', maxPrice: '10000' },
         { minPrice: '10000', maxPrice: '20000' },
@@ -85,7 +73,6 @@ const getPriceConfig = (context: PriceContext, offerType: BudgetOfferType): Pric
 
   const useLargeScale = context === 'all' || context === 'business'
   return {
-    scale: useLargeScale ? SALE_LARGE_SCALE : SALE_HOME_SCALE,
     presets: useLargeScale
       ? [
           { minPrice: '', maxPrice: '3000000' },
@@ -102,16 +89,12 @@ const getPriceConfig = (context: PriceContext, offerType: BudgetOfferType): Pric
   }
 }
 
-const cleanAmount = (value: string) => value.replace(/[^0-9]/g, '').slice(0, 12).replace(/^0+(?=\d)/, '')
+const cleanAmount = (value: string) =>
+  value
+    .replace(/[^0-9]/g, '')
+    .slice(0, 12)
+    .replace(/^0+(?=\d)/, '')
 const formatInputAmount = (value: string) => (value ? Number(value).toLocaleString('en-US') : '')
-
-const closestScaleIndex = (scale: number[], rawValue: string, fallback: number) => {
-  if (!rawValue) return fallback
-  const value = Number(rawValue)
-  return scale.reduce((bestIndex, current, index) =>
-    Math.abs(current - value) < Math.abs(scale[bestIndex] - value) ? index : bestIndex
-  , 0)
-}
 
 const BudgetInput = ({
   label,
@@ -153,7 +136,7 @@ const styles = {
     small: 'text-base',
   },
   panel: {
-    base: 'absolute top-full z-10 mt-3 w-[31rem] transition duration-150 data-closed:translate-y-1 data-closed:opacity-0 end-0 overflow-hidden rounded-[28px] border border-neutral-200 bg-white p-5 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900',
+    base: 'fixed inset-0 z-[60] flex h-dvh w-screen max-w-none flex-col overflow-hidden border-0 bg-white shadow-2xl transition duration-150 data-closed:translate-y-1 data-closed:opacity-0 min-[744px]:absolute min-[744px]:inset-auto min-[744px]:end-0 min-[744px]:top-full min-[744px]:mt-3 min-[744px]:h-auto min-[744px]:max-h-[min(42rem,calc(100dvh-6rem))] min-[744px]:w-[29rem] min-[744px]:rounded-[28px] min-[744px]:border min-[744px]:border-neutral-200 dark:bg-neutral-900 min-[744px]:dark:border-neutral-700',
     default: '',
     small: '',
   },
@@ -171,6 +154,7 @@ interface Props {
   maxLabel?: string
   priceContext?: PriceContext
   selectedPropertyTypes?: string[]
+  selectedSpaceTypes?: string[]
 }
 
 export const PriceRangeInputField: FC<Props> = ({
@@ -185,30 +169,47 @@ export const PriceRangeInputField: FC<Props> = ({
   maxLabel,
   priceContext = 'all',
   selectedPropertyTypes = [],
+  selectedSpaceTypes = [],
 }) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
-  const resolvedContext = getPriceContext(priceContext, selectedPropertyTypes)
+  const resolvedContext = getPriceContext(priceContext, selectedPropertyTypes, selectedSpaceTypes)
   const forcedRent = resolvedContext === 'rooms'
-  const [selectedOfferType, setSelectedOfferType] = useState<BudgetOfferType>(forcedRent ? 'rent' : 'sale')
-  const offerType: BudgetOfferType = forcedRent ? 'rent' : selectedOfferType
+  const [selectedOfferType, setSelectedOfferType] = useState<BudgetMode>(forcedRent ? 'rent' : 'all')
+  const offerType: BudgetMode = forcedRent ? 'rent' : selectedOfferType
   const [selections, setSelections] = useState<Record<BudgetOfferType, PriceSelection>>({
     sale: EMPTY_SELECTION,
     rent: EMPTY_SELECTION,
   })
-  const selection = selections[offerType]
-  const config = useMemo(() => getPriceConfig(resolvedContext, offerType), [offerType, resolvedContext])
-  const hasSelection = Boolean(selection.minPrice || selection.maxPrice)
+  const [showCustomRange, setShowCustomRange] = useState(false)
+  const selection = offerType === 'all' ? EMPTY_SELECTION : selections[offerType]
+  const config = useMemo(
+    () => (offerType === 'all' ? null : getPriceConfig(resolvedContext, offerType)),
+    [offerType, resolvedContext]
+  )
+  const hasPriceSelection = Boolean(selection.minPrice || selection.maxPrice)
+  const hasSelection = hasPriceSelection || (!forcedRent && offerType !== 'all')
   const hasInvalidRange = Boolean(
     selection.minPrice && selection.maxPrice && Number(selection.minPrice) > Number(selection.maxPrice)
   )
   const currencySymbol = currency === 'USD' ? '$' : '฿'
 
   const updateSelection = (next: Partial<PriceSelection>) => {
+    if (offerType === 'all') return
     setSelections((current) => ({ ...current, [offerType]: { ...current[offerType], ...next } }))
   }
   const clearSelection = () => {
+    setSelectedOfferType(forcedRent ? 'rent' : 'all')
+    setSelections({ sale: EMPTY_SELECTION, rent: EMPTY_SELECTION })
+    setShowCustomRange(false)
+  }
+  const clearCurrentPrice = () => {
+    if (offerType === 'all') {
+      clearSelection()
+      return
+    }
     setSelections((current) => ({ ...current, [offerType]: EMPTY_SELECTION }))
+    setShowCustomRange(false)
   }
   const formatPrice = (value: number, compact = false) => {
     if (currency === 'USD') return compact ? `$${value.toLocaleString('en-US')}` : `$${value.toLocaleString('en-US')}`
@@ -220,34 +221,38 @@ export const PriceRangeInputField: FC<Props> = ({
     return `฿${value.toLocaleString(isThai ? 'th-TH' : 'en-US')}`
   }
   const summary = (() => {
+    if (offerType === 'all') return isThai ? 'ไม่จำกัดราคา' : 'Any price'
     const minValue = selection.minPrice ? Number(selection.minPrice) : null
     const maxValue = selection.maxPrice ? Number(selection.maxPrice) : null
     const period = offerType === 'rent' ? (isThai ? '/เดือน' : '/month') : ''
+    const offerLabel = offerType === 'rent' ? (isThai ? 'เช่า' : 'Rent') : isThai ? 'ซื้อ' : 'Buy'
     if (hasInvalidRange) return isThai ? 'ตรวจสอบช่วงราคา' : 'Check price range'
-    if (minValue !== null && maxValue !== null) return `${formatPrice(minValue, true)}–${formatPrice(maxValue, true)}${period}`
-    if (maxValue !== null) return `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(maxValue, true)}${period}`
-    if (minValue !== null) return `${isThai ? 'ตั้งแต่' : 'From'} ${formatPrice(minValue, true)}${period}`
-    return offerType === 'rent'
-      ? isThai
-        ? 'ไม่จำกัดค่าเช่า'
-        : 'Any monthly rent'
-      : isThai
-        ? 'ไม่จำกัดงบซื้อ'
-        : 'Any purchase price'
+    if (minValue !== null && maxValue !== null)
+      return `${offerLabel} · ${formatPrice(minValue, true)}–${formatPrice(maxValue, true)}${period}`
+    if (maxValue !== null)
+      return `${offerLabel} · ${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(maxValue, true)}${period}`
+    if (minValue !== null)
+      return `${offerLabel} · ${isThai ? 'ตั้งแต่' : 'From'} ${formatPrice(minValue, true)}${period}`
+    return `${offerLabel} · ${isThai ? 'ไม่จำกัดราคา' : 'Any price'}`
   })()
-  const sliderMinIndex = closestScaleIndex(config.scale, selection.minPrice, 0)
-  const sliderMaxIndex = closestScaleIndex(config.scale, selection.maxPrice, config.scale.length - 1)
-  const sliderValue: [number, number] = [
-    Math.min(sliderMinIndex, sliderMaxIndex),
-    Math.max(sliderMinIndex, sliderMaxIndex),
-  ]
   const contextLabel = {
     all: isThai ? 'ทุกหมวดอสังหาริมทรัพย์' : 'all property categories',
     homes: isThai ? 'บ้าน คอนโด และที่อยู่อาศัย' : 'homes, condos and residential',
     rooms: isThai ? 'ห้องเช่าและที่พักรายเดือน' : 'rooms and monthly rentals',
     business: isThai ? 'พื้นที่ธุรกิจและที่ดิน' : 'business spaces and land',
   }[resolvedContext]
-  const subDescription = offerType === 'rent' ? (isThai ? 'ค่าเช่าต่อเดือน' : 'Monthly rent') : isThai ? 'ราคาขายรวม' : 'Total purchase price'
+  const subDescription =
+    offerType === 'all'
+      ? isThai
+        ? 'เลือกซื้อหรือเช่าก่อนกำหนดงบ'
+        : 'Choose buy or rent to set a budget'
+      : offerType === 'rent'
+        ? isThai
+          ? 'ค่าเช่าต่อเดือน'
+          : 'Monthly rent'
+        : isThai
+          ? 'ราคาขายรวม'
+          : 'Total purchase price'
 
   const presetLabel = (preset: PricePreset) => {
     if (!preset.minPrice && preset.maxPrice) {
@@ -274,7 +279,7 @@ export const PriceRangeInputField: FC<Props> = ({
               <div className="min-w-0 flex-1 text-start">
                 <span className={clsx('block truncate font-semibold', styles.mainText[fieldStyle])}>{summary}</span>
                 <span className="mt-1 block text-sm leading-none font-light text-neutral-400">
-                  {hasSelection ? subDescription : description}
+                  {forcedRent || hasSelection ? subDescription : description}
                 </span>
               </div>
             </PopoverButton>
@@ -284,174 +289,254 @@ export const PriceRangeInputField: FC<Props> = ({
               onClick={clearSelection}
             />
 
-            <PopoverPanel
-              transition
-              className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle], 'max-w-[calc(100vw-2rem)]')}
-            >
-              <div className="flex items-start justify-between gap-4">
+            {showPopover && (
+              <button
+                type="button"
+                aria-label={isThai ? 'ปิดหน้าต่างงบประมาณ' : 'Close budget window'}
+                onClick={() => close()}
+                className="fixed inset-0 z-[55] block bg-neutral-950/35 min-[744px]:hidden"
+              />
+            )}
+
+            <PopoverPanel transition className={clsx(panelClassName, styles.panel.base, styles.panel[fieldStyle])}>
+              <div className="flex shrink-0 items-start justify-between gap-4 border-b border-neutral-100 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 min-[744px]:px-5 min-[744px]:pt-5 dark:border-neutral-800">
                 <div>
                   <h3 className="text-lg font-semibold text-neutral-950 dark:text-white">
                     {panelTitle ?? (isThai ? 'งบประมาณ' : 'Budget')}
                   </h3>
                   <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    {isThai ? `ช่วงแนะนำสำหรับ${contextLabel}` : `Suggested ranges for ${contextLabel}`}
+                    {isThai ? `เลือกงบสำหรับ${contextLabel}` : `Choose a budget for ${contextLabel}`}
                   </p>
                 </div>
-                {hasSelection && (
+                <div className="flex shrink-0 items-center gap-1">
+                  {hasSelection && (
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white"
+                    >
+                      <RotateCcw className="size-3.5" /> {isThai ? 'ล้าง' : 'Clear'}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={clearSelection}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white"
+                    onClick={() => close()}
+                    aria-label={isThai ? 'ปิด' : 'Close'}
+                    className="grid size-10 place-items-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 min-[744px]:hidden dark:hover:bg-neutral-800 dark:hover:text-white"
                   >
-                    <RotateCcw className="size-3.5" /> {isThai ? 'ล้าง' : 'Clear'}
+                    <X className="size-5" />
                   </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 min-[744px]:px-5">
+                {!forcedRent ? (
+                  <div
+                    className="grid grid-cols-3 gap-1 rounded-2xl bg-neutral-100 p-1 dark:bg-neutral-800"
+                    role="tablist"
+                  >
+                    {(['all', 'sale', 'rent'] as const).map((offer) => {
+                      const active = offerType === offer
+                      const label =
+                        offer === 'all'
+                          ? isThai
+                            ? 'ทั้งหมด'
+                            : 'All'
+                          : offer === 'sale'
+                            ? isThai
+                              ? 'ซื้อ'
+                              : 'Buy'
+                            : isThai
+                              ? 'เช่า'
+                              : 'Rent'
+                      return (
+                        <button
+                          key={offer}
+                          type="button"
+                          role="tab"
+                          aria-selected={active}
+                          onClick={() => {
+                            setSelectedOfferType(offer)
+                            setShowCustomRange(false)
+                          }}
+                          className={clsx(
+                            'min-h-11 rounded-xl px-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+                            active
+                              ? 'bg-white text-[#124e3c] shadow-sm dark:bg-neutral-900 dark:text-emerald-300'
+                              : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+                          )}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-[#eef7f3] px-4 py-3 text-sm font-semibold text-[#176b50] dark:bg-emerald-950/35 dark:text-emerald-200">
+                    {isThai ? 'ค่าเช่าต่อเดือน' : 'Monthly rent'}
+                  </div>
                 )}
-              </div>
 
-              {!forcedRent && (
-                <div className="mt-4 grid grid-cols-2 gap-1 rounded-2xl bg-neutral-100 p-1 dark:bg-neutral-800">
-                  {(['sale', 'rent'] as const).map((offer) => {
-                    const active = offerType === offer
-                    return (
-                      <button
-                        key={offer}
-                        type="button"
-                        onClick={() => setSelectedOfferType(offer)}
-                        className={clsx(
-                          'min-h-10 rounded-xl px-3 text-sm font-semibold transition',
-                          active
-                            ? 'bg-white text-[#124e3c] shadow-sm dark:bg-neutral-900 dark:text-emerald-300'
-                            : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                        )}
-                      >
-                        {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                    {isThai ? 'ช่วงราคาแนะนำ' : 'Suggested ranges'}
-                  </p>
-                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{subDescription}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
-                >
-                  {isThai ? 'ไม่จำกัดงบ' : 'Any budget'}
-                </button>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {config.presets.map((preset) => {
-                  const active = selection.minPrice === preset.minPrice && selection.maxPrice === preset.maxPrice
-                  return (
-                    <button
-                      key={`${offerType}-${preset.minPrice}-${preset.maxPrice}`}
-                      type="button"
-                      onClick={() => updateSelection(preset)}
-                      className={clsx(
-                        'flex min-h-11 items-center justify-center gap-1.5 rounded-2xl border px-2.5 text-sm font-semibold transition',
-                        active
-                          ? 'border-[#176b50] bg-[#eef7f3] text-[#123f32] ring-1 ring-[#176b50] dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100'
-                          : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#9fc2b5] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
-                      )}
-                    >
-                      {active && <Check className="size-3.5" />}
-                      {presetLabel(preset)}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <div className="mt-5 rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 pt-4 pb-5 dark:border-neutral-700 dark:bg-neutral-800/70">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      {isThai ? 'กำหนดช่วงราคาเอง' : 'Set a custom range'}
-                    </h4>
-                    <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      {isThai ? 'รูดเพื่อเลือก หรือพิมพ์ราคาได้โดยตรง' : 'Drag the handles or enter exact amounts'}
+                {offerType === 'all' ? (
+                  <div className="mt-5">
+                    <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-[#176b50] bg-[#eef7f3] px-4 py-3 text-[#123f32] dark:border-emerald-500 dark:bg-emerald-950/35 dark:text-emerald-100">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#176b50] text-white">
+                        <Check className="size-4" />
+                      </span>
+                      <span>
+                        <span className="block text-sm font-semibold">
+                          {isThai ? 'ทุกประกาศ · ไม่จำกัดราคา' : 'All listings · Any price'}
+                        </span>
+                        <span className="mt-0.5 block text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                          {isThai ? 'ระบบจะไม่ตัดประกาศเช่าหรือประกาศขายออก' : 'Includes both rental and sale listings'}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="mt-4 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                      {isThai
+                        ? 'เลือก “ซื้อ” หรือ “เช่า” ด้านบนเมื่อต้องการกำหนดงบ'
+                        : 'Choose Buy or Rent above to set a budget'}
                     </p>
                   </div>
-                  <span className="max-w-[52%] truncate rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#176b50] shadow-sm dark:bg-neutral-900 dark:text-emerald-300">
-                    {summary}
-                  </span>
-                </div>
+                ) : (
+                  <>
+                    <div className="mt-5">
+                      <p className="text-sm font-semibold text-neutral-900 dark:text-white">
+                        {isThai ? 'เลือกงบได้ทันที' : 'Quick budget'}
+                      </p>
+                      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{subDescription}</p>
+                    </div>
 
-                <div className="px-2 pt-7 pb-2">
-                  <Slider
-                    range
-                    allowCross={false}
-                    min={0}
-                    max={config.scale.length - 1}
-                    step={1}
-                    value={sliderValue}
-                    onChange={(value) => {
-                      const [minIndex, maxIndex] = value as [number, number]
-                      updateSelection({
-                        minPrice: minIndex === 0 ? '' : String(config.scale[minIndex]),
-                        maxPrice: maxIndex === config.scale.length - 1 ? '' : String(config.scale[maxIndex]),
-                      })
-                    }}
-                    styles={{
-                      rail: { height: 6, backgroundColor: '#dfe5e2' },
-                      track: { height: 6, backgroundColor: '#2a8063' },
-                      handle: {
-                        width: 22,
-                        height: 22,
-                        marginTop: -8,
-                        border: '3px solid #2a8063',
-                        backgroundColor: '#ffffff',
-                        opacity: 1,
-                        boxShadow: '0 3px 10px rgba(18, 78, 60, 0.18)',
-                      },
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-neutral-400">
-                  <span>{isThai ? 'ไม่กำหนดขั้นต่ำ' : 'No minimum'}</span>
-                  <span>{isThai ? 'ไม่กำหนดสูงสุด' : 'No maximum'}</span>
-                </div>
+                    <button
+                      type="button"
+                      aria-pressed={!hasPriceSelection}
+                      onClick={clearCurrentPrice}
+                      className={clsx(
+                        'mt-3 flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3 text-start text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+                        !hasPriceSelection
+                          ? 'border-[#176b50] bg-[#eef7f3] text-[#123f32] dark:border-emerald-500 dark:bg-emerald-950/35 dark:text-emerald-100'
+                          : 'border-neutral-200 bg-white text-neutral-700 hover:border-[#9fc2b5] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200'
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          'grid size-6 shrink-0 place-items-center rounded-full border',
+                          !hasPriceSelection
+                            ? 'border-[#176b50] bg-[#176b50] text-white'
+                            : 'border-neutral-300 text-transparent dark:border-neutral-600'
+                        )}
+                      >
+                        <Check className="size-3.5" />
+                      </span>
+                      {offerType === 'rent'
+                        ? isThai
+                          ? 'ไม่จำกัดค่าเช่า'
+                          : 'Any monthly rent'
+                        : isThai
+                          ? 'ไม่จำกัดราคาซื้อ'
+                          : 'Any purchase price'}
+                    </button>
 
-                <div className="mt-4 flex items-end gap-2.5">
-                  <BudgetInput
-                    label={minLabel ?? (isThai ? 'ราคาต่ำสุด' : 'Minimum')}
-                    value={selection.minPrice}
-                    placeholder={isThai ? 'ไม่กำหนด' : 'No minimum'}
-                    symbol={currencySymbol}
-                    onChange={(minPrice) => updateSelection({ minPrice })}
-                  />
-                  <span className="mb-3.5 text-neutral-300 dark:text-neutral-600">—</span>
-                  <BudgetInput
-                    label={maxLabel ?? (isThai ? 'ราคาสูงสุด' : 'Maximum')}
-                    value={selection.maxPrice}
-                    placeholder={isThai ? 'ไม่กำหนด' : 'No maximum'}
-                    symbol={currencySymbol}
-                    onChange={(maxPrice) => updateSelection({ maxPrice })}
-                  />
-                </div>
-                {hasInvalidRange && (
-                  <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
-                    {isThai ? 'ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด' : 'Minimum cannot exceed maximum'}
-                  </p>
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
+                      {config?.presets.map((preset) => {
+                        const active = selection.minPrice === preset.minPrice && selection.maxPrice === preset.maxPrice
+                        return (
+                          <button
+                            key={`${offerType}-${preset.minPrice}-${preset.maxPrice}`}
+                            type="button"
+                            aria-pressed={active}
+                            onClick={() => {
+                              updateSelection(preset)
+                              setShowCustomRange(false)
+                            }}
+                            className={clsx(
+                              'flex min-h-12 items-center justify-center gap-1.5 rounded-2xl border px-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]',
+                              active
+                                ? 'border-[#176b50] bg-[#eef7f3] text-[#123f32] ring-1 ring-[#176b50] dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100'
+                                : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#9fc2b5] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
+                            )}
+                          >
+                            {active && <Check className="size-3.5" />}
+                            {presetLabel(preset)}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    <div
+                      className={clsx(
+                        'mt-4 overflow-hidden rounded-[22px] border transition',
+                        showCustomRange
+                          ? 'border-[#9fc2b5] bg-neutral-50 dark:border-emerald-800 dark:bg-neutral-800/70'
+                          : 'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900'
+                      )}
+                    >
+                      <button
+                        type="button"
+                        aria-expanded={showCustomRange}
+                        onClick={() => setShowCustomRange((current) => !current)}
+                        className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-3 text-start"
+                      >
+                        <span>
+                          <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
+                            {isThai ? 'กำหนดราคาเอง' : 'Set a custom range'}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
+                            {isThai ? 'กรอกราคาต่ำสุดหรือราคาสูงสุด' : 'Enter a minimum or maximum price'}
+                          </span>
+                        </span>
+                        <ChevronDown
+                          className={clsx(
+                            'size-5 shrink-0 text-neutral-400 transition-transform',
+                            showCustomRange && 'rotate-180'
+                          )}
+                        />
+                      </button>
+
+                      {showCustomRange && (
+                        <div className="border-t border-neutral-200 px-4 pt-4 pb-5 dark:border-neutral-700">
+                          <div className="grid gap-3 min-[420px]:grid-cols-[1fr_auto_1fr] min-[420px]:items-end">
+                            <BudgetInput
+                              label={minLabel ?? (isThai ? 'ราคาต่ำสุด' : 'Minimum')}
+                              value={selection.minPrice}
+                              placeholder={isThai ? 'ไม่กำหนด' : 'No minimum'}
+                              symbol={currencySymbol}
+                              onChange={(minPrice) => updateSelection({ minPrice })}
+                            />
+                            <span className="mb-3.5 hidden text-neutral-300 min-[420px]:block dark:text-neutral-600">
+                              —
+                            </span>
+                            <BudgetInput
+                              label={maxLabel ?? (isThai ? 'ราคาสูงสุด' : 'Maximum')}
+                              value={selection.maxPrice}
+                              placeholder={isThai ? 'ไม่กำหนด' : 'No maximum'}
+                              symbol={currencySymbol}
+                              onChange={(maxPrice) => updateSelection({ maxPrice })}
+                            />
+                          </div>
+                          {hasInvalidRange && (
+                            <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">
+                              {isThai ? 'ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด' : 'Minimum cannot exceed maximum'}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-                <p className="min-w-0 truncate text-sm font-medium text-neutral-600 dark:text-neutral-300">{summary}</p>
+              <div className="flex shrink-0 flex-col gap-3 border-t border-neutral-100 bg-white px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] min-[744px]:flex-row min-[744px]:items-center min-[744px]:justify-between min-[744px]:px-5 min-[744px]:pb-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <p className="min-w-0 truncate text-center text-sm font-medium text-neutral-600 min-[744px]:text-start dark:text-neutral-300">
+                  {summary}
+                </p>
                 <button
                   type="button"
                   onClick={() => close()}
                   disabled={hasInvalidRange}
-                  className="shrink-0 rounded-full bg-[#123f32] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0b3227] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-200 dark:text-emerald-950"
+                  className="min-h-12 w-full shrink-0 rounded-full bg-[#123f32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0b3227] disabled:cursor-not-allowed disabled:opacity-40 min-[744px]:min-h-10 min-[744px]:w-auto min-[744px]:py-2.5 dark:bg-emerald-200 dark:text-emerald-950"
                 >
-                  {isThai ? 'ใช้ช่วงราคานี้' : 'Apply range'}
+                  {isThai ? 'ใช้ตัวกรองนี้' : 'Apply filter'}
                 </button>
               </div>
             </PopoverPanel>
@@ -459,7 +544,7 @@ export const PriceRangeInputField: FC<Props> = ({
         )}
       </Popover>
 
-      <input type="hidden" name="offer_type" value={offerType} />
+      <input type="hidden" name="offer_type" value={offerType === 'all' ? '' : offerType} />
       <input type="hidden" name="price_min" value={selection.minPrice} />
       <input type="hidden" name="price_max" value={selection.maxPrice} />
     </>
