@@ -11,9 +11,12 @@ const AUTO_HIDE_ROUTE_PREFIXES = [
   '/add-listing/',
 ]
 
-const HIDE_AFTER_Y = 80
-const HIDE_TRAVEL = 36
-const SHOW_TRAVEL = 12
+const MOBILE_HEADER_HEIGHT = 64
+const HIDE_TRAVEL = 12
+const REVEAL_MIN_DELTA = 7
+const REVEAL_MIN_SPEED = 0.5
+
+type HeaderMode = 'natural' | 'hidden' | 'visible'
 
 function shouldAutoHideOnPath(pathname: string) {
   return AUTO_HIDE_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
@@ -32,25 +35,35 @@ export default function MobileAutoHideHeader({ children }: { children: ReactNode
 function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactNode; autoHideEnabled: boolean }) {
   const headerRef = useRef<HTMLDivElement>(null)
   const lastScrollYRef = useRef(0)
+  const lastUpdateTimeRef = useRef(0)
   const directionRef = useRef<'up' | 'down' | null>(null)
   const directionTravelRef = useRef(0)
   const tickingRef = useRef(false)
-  const [isVisible, setIsVisible] = useState(true)
+  const modeRef = useRef<HeaderMode>('natural')
+  const [mode, setMode] = useState<HeaderMode>('natural')
 
   useEffect(() => {
     lastScrollYRef.current = Math.max(window.scrollY, 0)
+    lastUpdateTimeRef.current = performance.now()
     directionRef.current = null
     directionTravelRef.current = 0
 
     if (!autoHideEnabled) return
 
-    const updateHeader = () => {
+    const changeMode = (nextMode: HeaderMode) => {
+      if (modeRef.current === nextMode) return
+      modeRef.current = nextMode
+      setMode(nextMode)
+    }
+
+    const updateHeader = (now: number) => {
       const currentScrollY = Math.max(window.scrollY, 0)
       const delta = currentScrollY - lastScrollYRef.current
       const nextDirection = delta > 0 ? 'down' : delta < 0 ? 'up' : null
+      const elapsed = Math.max(now - lastUpdateTimeRef.current, 16)
 
-      if (currentScrollY <= 24) {
-        setIsVisible(true)
+      if (currentScrollY <= MOBILE_HEADER_HEIGHT) {
+        changeMode('natural')
         directionRef.current = null
         directionTravelRef.current = 0
       } else if (nextDirection) {
@@ -63,14 +76,23 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
 
         const hasOpenHeaderControl = Boolean(headerRef.current?.querySelector('[aria-expanded="true"]'))
         const hasOpenDialog = Boolean(document.querySelector('[role="dialog"]'))
-        if (nextDirection === 'down' && currentScrollY > HIDE_AFTER_Y && directionTravelRef.current >= HIDE_TRAVEL) {
-          if (!hasOpenHeaderControl && !hasOpenDialog) setIsVisible(false)
-        } else if (nextDirection === 'up' && directionTravelRef.current >= SHOW_TRAVEL) {
-          setIsVisible(true)
+
+        if (hasOpenHeaderControl || hasOpenDialog) {
+          changeMode('visible')
+        } else if (nextDirection === 'down') {
+          if (modeRef.current === 'natural' || directionTravelRef.current >= HIDE_TRAVEL) changeMode('hidden')
+        } else {
+          const upwardSpeed = Math.abs(delta) / elapsed
+          if (modeRef.current === 'hidden' && Math.abs(delta) >= REVEAL_MIN_DELTA && upwardSpeed >= REVEAL_MIN_SPEED) {
+            changeMode('visible')
+          }
         }
+      } else if (modeRef.current === 'natural') {
+        changeMode('hidden')
       }
 
       lastScrollYRef.current = currentScrollY
+      lastUpdateTimeRef.current = now
       tickingRef.current = false
     }
 
@@ -84,15 +106,26 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
     return () => window.removeEventListener('scroll', handleScroll)
   }, [autoHideEnabled])
 
+  if (!autoHideEnabled) {
+    return <div className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">{children}</div>
+  }
+
   return (
-    <div
-      ref={headerRef}
-      onFocusCapture={() => setIsVisible(true)}
-      className={`sticky top-0 z-20 bg-white shadow-xs transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none min-[744px]:hidden dark:bg-neutral-900 ${
-        autoHideEnabled && !isVisible ? '-translate-y-full' : 'translate-y-0'
-      }`}
-    >
-      {children}
+    <div className="relative z-20 h-16 min-[744px]:hidden">
+      <div
+        ref={headerRef}
+        onFocusCapture={() => {
+          modeRef.current = 'visible'
+          setMode('visible')
+        }}
+        className={`inset-x-0 top-0 bg-white shadow-xs will-change-transform dark:bg-neutral-900 ${
+          mode === 'natural'
+            ? 'relative transition-none'
+            : 'fixed z-20 transition-transform duration-100 ease-out motion-reduce:transition-none'
+        } ${mode === 'hidden' ? '-translate-y-full' : 'translate-y-0'}`}
+      >
+        {children}
+      </div>
     </div>
   )
 }
