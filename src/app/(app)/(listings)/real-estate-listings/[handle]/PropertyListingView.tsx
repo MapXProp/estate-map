@@ -88,7 +88,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
   const mapURL =
     listing.latitude && listing.longitude
-      ? `https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`
+      ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
       : ''
   const facts = [
     ...(listing.usable_area_sqm !== undefined
@@ -155,35 +155,49 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
-                {offerLabel(listing.offer_type, isThai)}
-              </span>
-              <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-                {propertyLabel}
-              </span>
-              {listing.is_verified ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
-                  <ShieldCheck className="size-4" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+            <div className="flex flex-col">
+              <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
+                <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
+                  {offerLabel(listing.offer_type, isThai)}
                 </span>
-              ) : null}
-            </div>
+                <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                  {propertyLabel}
+                </span>
+                {listing.is_verified ? (
+                  <span className="hidden items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50] min-[744px]:inline-flex">
+                    <ShieldCheck className="size-4" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+                  </span>
+                ) : null}
+              </div>
 
-            <div className="mt-4 flex items-start justify-between gap-4">
-              <h1 className="max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-                {listing.title}
-              </h1>
-              <BtnLikeIcon
-                listingIdentifier={listing.slug || listing.public_listing_id}
-                className="mt-0.5 shrink-0"
-                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
-                sizeClass="size-11"
-              />
+              <div className="order-1 flex items-start justify-between gap-4 min-[744px]:order-2 min-[744px]:mt-4">
+                <h1 className="max-w-4xl font-sarabun text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
+                  {listing.title}
+                </h1>
+                <BtnLikeIcon
+                  listingIdentifier={listing.slug || listing.public_listing_id}
+                  className="mt-0.5 shrink-0"
+                  colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
+                  sizeClass="size-11"
+                />
+              </div>
             </div>
             {fullAddress ? (
               <div className="mt-4 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 sm:text-base dark:text-neutral-300">
                 <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-                <span>{fullAddress}</span>
+                <div className="min-w-0">
+                  <span className="block">{fullAddress}</span>
+                  {mapURL ? (
+                    <a
+                      href={mapURL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1.5 inline-flex items-center gap-1.5 font-semibold text-[#176b50] hover:underline min-[744px]:hidden"
+                    >
+                      {isThai ? 'เปิดใน Google Maps' : 'Open in Google Maps'} <ExternalLink className="size-3.5" />
+                    </a>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 
@@ -309,27 +323,51 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
         </div>
       </main>
 
-      {(phoneURL || lineURL) && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
-          <div className="mx-auto flex max-w-md gap-2">
-            {lineURL ? (
-              <a
-                href={lineURL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#cddfd8] font-sarabun font-medium text-[#123f32] dark:text-white"
-              >
-                <MessageCircle className="size-4" /> LINE
-              </a>
-            ) : null}
-            {phoneURL ? (
-              <a
-                href={phoneURL}
-                className="flex h-12 flex-[1.35] items-center justify-center gap-2 rounded-full bg-[#123f32] font-sarabun font-medium text-white"
-              >
-                <Phone className="size-4" /> {isThai ? 'โทรหาผู้ติดต่อ' : 'Call contact'}
-              </a>
-            ) : null}
+      {(phoneURL || lineURL || mapURL) && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
+          <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-sarabun text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
+              <p className="mt-1 truncate font-sarabun text-sm leading-none font-semibold text-neutral-950 dark:text-white">
+                {price}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {!phoneURL && lineURL ? (
+                <a
+                  href={lineURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LINE"
+                  title="LINE"
+                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                >
+                  <MessageCircle className="size-[18px]" />
+                </a>
+              ) : null}
+              {phoneURL ? (
+                <a
+                  href={phoneURL}
+                  aria-label={isThai ? 'โทรติดต่อ' : 'Call'}
+                  title={isThai ? 'โทรติดต่อ' : 'Call'}
+                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+                >
+                  <Phone className="size-[18px]" />
+                </a>
+              ) : null}
+              {mapURL ? (
+                <a
+                  href={mapURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={isThai ? 'ตำแหน่งอสังหา' : 'Property location'}
+                  title={isThai ? 'ตำแหน่งอสังหา' : 'Property location'}
+                  className="grid size-10 place-items-center rounded-full border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition active:scale-95 dark:border-[#315f50] dark:bg-[#183d32] dark:text-[#8bd49c]"
+                >
+                  <MapPin className="size-[18px]" />
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
       )}

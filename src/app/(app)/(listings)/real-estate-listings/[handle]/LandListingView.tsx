@@ -83,7 +83,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
   const mapURL =
     listing.latitude && listing.longitude
-      ? `https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`
+      ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
       : ''
   const descriptionParagraphs = listing.description.split(/\n{2,}/).filter(Boolean)
   const factCards = [
@@ -110,51 +110,67 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              {listing.offer_type === 'sale' && (
-                <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">ขาย</span>
-              )}
-              {isVacantLand && (
-                <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-700">
-                  ที่ดินเปล่า
-                </span>
-              )}
-              {isSoldTogether && plotCount && (
-                <span className="rounded-full bg-[#fff7ed] px-3 py-1.5 text-sm font-medium text-[#c95a16]">
-                  ขายรวม {plotCount} แปลง
-                </span>
-              )}
-              {isOwnerDirect && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
-                  <UserRoundCheck className="size-4" /> เจ้าของขายเอง
-                </span>
-              )}
-              {contactRole && !isOwnerDirect && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700">
-                  <Building2 className="size-4" /> {contactRole}
-                </span>
-              )}
-              {isTrustedContact && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
-                  <ShieldCheck className="size-4" /> ผู้ติดต่อเชื่อถือได้
-                </span>
-              )}
-            </div>
+            <div className="flex flex-col">
+              <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
+                {listing.offer_type === 'sale' && (
+                  <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
+                    ขาย
+                  </span>
+                )}
+                {isVacantLand && (
+                  <span className="rounded-full bg-neutral-100 px-3 py-1.5 text-sm font-medium text-neutral-700">
+                    ที่ดินเปล่า
+                  </span>
+                )}
+                {isSoldTogether && plotCount && (
+                  <span className="hidden rounded-full bg-[#fff7ed] px-3 py-1.5 text-sm font-medium text-[#c95a16] min-[744px]:inline-flex">
+                    ขายรวม {plotCount} แปลง
+                  </span>
+                )}
+                {isOwnerDirect && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
+                    <UserRoundCheck className="size-4" /> เจ้าของขายเอง
+                  </span>
+                )}
+                {contactRole && !isOwnerDirect && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700">
+                    <Building2 className="size-4" /> {contactRole}
+                  </span>
+                )}
+                {isTrustedContact && (
+                  <span className="hidden items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50] min-[744px]:inline-flex">
+                    <ShieldCheck className="size-4" /> ผู้ติดต่อเชื่อถือได้
+                  </span>
+                )}
+              </div>
 
-            <div className="mt-4 flex items-start justify-between gap-4">
-              <h1 className="max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
-                {listing.title}
-              </h1>
-              <BtnLikeIcon
-                listingIdentifier={listing.slug || listing.public_listing_id}
-                className="mt-0.5 shrink-0"
-                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
-                sizeClass="size-11"
-              />
+              <div className="order-1 flex items-start justify-between gap-4 min-[744px]:order-2 min-[744px]:mt-4">
+                <h1 className="max-w-4xl text-3xl leading-tight font-semibold tracking-tight text-neutral-950 sm:text-4xl lg:text-[42px]">
+                  {listing.title}
+                </h1>
+                <BtnLikeIcon
+                  listingIdentifier={listing.slug || listing.public_listing_id}
+                  className="mt-0.5 shrink-0"
+                  colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                  sizeClass="size-11"
+                />
+              </div>
             </div>
             <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-              <span>{fullAddress}</span>
+              <div className="min-w-0">
+                <span className="block">{fullAddress}</span>
+                {mapURL && (
+                  <a
+                    href={mapURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1.5 font-semibold text-[#176b50] hover:underline min-[744px]:hidden"
+                  >
+                    เปิดใน Google Maps <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+              </div>
             </div>
 
             <section className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -166,6 +182,21 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 </div>
               ))}
             </section>
+
+            {isTrustedContact && (
+              <section className="mt-4 flex items-center gap-3 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-3 min-[744px]:hidden">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
+                  <UserRoundCheck className="size-4.5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-neutral-500">ผู้ลงประกาศ</p>
+                  <p className="truncate text-sm font-semibold text-neutral-950">{listing.contact_name}</p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#176b50]">
+                  <ShieldCheck className="size-4" /> เชื่อถือได้
+                </span>
+              </section>
+            )}
 
             <section className="mt-10 border-t border-neutral-200 pt-8">
               <h2 className="text-2xl font-semibold text-neutral-950">รายละเอียดที่ดิน</h2>
@@ -300,27 +331,52 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-xl gap-2">
-          {emailURL && (
-            <a
-              href={emailURL}
-              aria-label="ส่งอีเมล"
-              className="grid size-12 shrink-0 place-items-center rounded-full border border-[#cddfd8] text-[#176b50]"
-            >
-              <Mail className="size-5" />
-            </a>
-          )}
-          {phoneURL && (
-            <a
-              href={phoneURL}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-semibold text-white"
-            >
-              <Phone className="size-4" /> โทรนัดดูที่ดิน
-            </a>
-          )}
+      {(phoneURL || emailURL || mapURL) && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] leading-none text-neutral-500">ราคาขาย</p>
+              <p className="mt-1 truncate text-sm leading-none font-semibold text-neutral-950">
+                ฿{formatThaiNumber(offerAmount)}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {!phoneURL && emailURL && (
+                <a
+                  href={emailURL}
+                  aria-label="ส่งอีเมล"
+                  title="ส่งอีเมล"
+                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
+                >
+                  <Mail className="size-[18px]" />
+                </a>
+              )}
+              {phoneURL && (
+                <a
+                  href={phoneURL}
+                  aria-label={isOwnerDirect ? 'โทรหาเจ้าของ' : 'โทรติดต่อ'}
+                  title={isOwnerDirect ? 'โทรหาเจ้าของ' : 'โทรติดต่อ'}
+                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
+                >
+                  <Phone className="size-[18px]" />
+                </a>
+              )}
+              {mapURL && (
+                <a
+                  href={mapURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="ตำแหน่งอสังหา"
+                  title="ตำแหน่งอสังหา"
+                  className="grid size-10 place-items-center rounded-full border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition active:scale-95"
+                >
+                  <MapPin className="size-[18px]" />
+                </a>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

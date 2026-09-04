@@ -1350,7 +1350,7 @@ const HeaderGalleryGrid2 = ({
 
   return (
     <header className="relative">
-      <div className="relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden rounded-b-[20px] bg-neutral-100 min-[744px]:hidden">
+      <div className="relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden rounded-b-2xl bg-neutral-100 min-[744px]:hidden">
         {mobilePreviewImages.map((image, index) => {
           const isTopRow = index < 2
           const isLast = index === mobilePreviewImages.length - 1
