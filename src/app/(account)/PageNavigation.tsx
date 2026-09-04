@@ -1,8 +1,8 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
@@ -15,8 +15,8 @@ const navigation = [
     icon: UserRound,
   },
   {
-    titleTh: 'ทรัพย์ของฉัน',
-    titleEn: 'My properties',
+    titleTh: 'ประกาศของฉัน',
+    titleEn: 'My listings',
     href: '/account-listings',
     icon: Building2,
   },
@@ -59,7 +59,8 @@ export const PageNavigation = () => {
   const { locale } = usePreferences()
   const { user } = useAuth()
   const isThai = locale === 'th'
-  const visibleNavigation = user?.role_code === 'super_admin' ? [...navigation, approvalNavigation, adminNavigation] : navigation
+  const visibleNavigation =
+    user?.role_code === 'super_admin' ? [...navigation, approvalNavigation, adminNavigation] : navigation
   const activeMobileItemRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {

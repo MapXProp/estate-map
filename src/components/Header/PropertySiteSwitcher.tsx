@@ -2,11 +2,12 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, ChevronDown, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
+import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
 
 const sites = [
   {
@@ -80,6 +81,8 @@ const PropertySiteSwitcher = () => {
         </span>
         <ChevronDown className="hidden size-3.5 text-neutral-400 transition group-data-open:rotate-180 min-[900px]:block" />
       </PopoverButton>
+
+      <TopNavPopoverBackdrop />
 
       <PopoverPanel
         transition

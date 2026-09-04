@@ -6,6 +6,7 @@ import { CloseButton, Popover, PopoverButton, PopoverPanel, PopoverPanelProps } 
 import { BanknotesIcon, CheckIcon, GlobeAltIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import { FC } from 'react'
+import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
 
 type Language = Awaited<ReturnType<typeof getLanguages>>[number]
 type Currency = Awaited<ReturnType<typeof getCurrencies>>[number]
@@ -84,12 +85,14 @@ const CurrLangDropdown: FC<Props> = ({
             ? `ภาษา ${languageCode} สกุลเงิน ${selectedCurrency}`
             : `Language ${languageCode}, currency ${selectedCurrency}`
         }
-        className="flex size-10 appearance-none items-center justify-center border-0 bg-transparent p-0 text-neutral-400 shadow-none ring-0 outline-none transition duration-200 group-data-open:text-neutral-600 hover:text-neutral-600 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none data-focus:ring-0 data-focus:outline-none dark:text-neutral-500 dark:group-data-open:text-neutral-300 dark:hover:text-neutral-300"
+        className="flex size-10 appearance-none items-center justify-center border-0 bg-transparent p-0 text-neutral-400 shadow-none ring-0 transition duration-200 outline-none group-data-open:text-neutral-600 hover:text-neutral-600 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none data-focus:ring-0 data-focus:outline-none dark:text-neutral-500 dark:group-data-open:text-neutral-300 dark:hover:text-neutral-300"
       >
         <span className="grid size-9 shrink-0 place-items-center">
           <GlobeAltIcon className="size-5" />
         </span>
       </PopoverButton>
+
+      <TopNavPopoverBackdrop />
 
       <PopoverPanel
         anchor={panelAnchor}
@@ -237,7 +240,7 @@ const CurrLangDropdown: FC<Props> = ({
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-3 py-2.5 dark:bg-neutral-800/70">
-          <p className="font-sarabun text-[11px] font-light leading-4 text-neutral-400 dark:text-neutral-500">
+          <p className="font-sarabun text-[11px] leading-4 font-light text-neutral-400 dark:text-neutral-500">
             {locale === 'th' ? 'บันทึกตัวเลือกนี้ไว้ในอุปกรณ์' : 'Save these choices on this device'}
           </p>
           <CloseButton

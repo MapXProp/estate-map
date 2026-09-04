@@ -7,6 +7,7 @@ import { useNotificationCenter } from '@/hooks/useNotificationCenter'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BellIcon } from '@heroicons/react/24/outline'
 import { FC } from 'react'
+import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
 
 interface Props {
   className?: string
@@ -27,10 +28,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         <BellIcon className="h-6 w-6" />
       </PopoverButton>
 
+      <TopNavPopoverBackdrop />
+
       <PopoverPanel
         transition
         anchor={{ to: 'bottom end', gap: 16 }}
-        className="z-40 w-sm max-w-[calc(100vw-1rem)] overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0 dark:bg-neutral-900"
+        className="z-40 w-sm max-w-[calc(100vw-1rem)] overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-black/5 transition duration-200 ease-in-out dark:bg-neutral-900 data-closed:translate-y-1 data-closed:opacity-0"
       >
         <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-5 py-4 dark:border-neutral-800">
           <div>

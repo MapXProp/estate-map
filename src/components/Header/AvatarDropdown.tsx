@@ -21,6 +21,7 @@ import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon } from '@hugeicons/co
 import { HugeiconsIcon } from '@hugeicons/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
 
 interface Props {
   className?: string
@@ -92,6 +93,8 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             <FriendlyWinkIcon size={19} />
           </span>
         </PopoverButton>
+
+        <TopNavPopoverBackdrop />
 
         <PopoverPanel
           transition
@@ -175,7 +178,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-200">
                       <HugeiconsIcon icon={Task01Icon} size={21} strokeWidth={1.5} />
                     </span>
-                    <span className="ms-3 text-sm font-medium">{locale === 'th' ? 'ทรัพย์ของฉัน' : 'My listings'}</span>
+                    <span className="ms-3 text-sm font-medium">{locale === 'th' ? 'ประกาศของฉัน' : 'My listings'}</span>
                   </Link>
 
                   <Link
