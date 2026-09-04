@@ -1419,9 +1419,9 @@ const HeaderGalleryGrid2 = ({
         <BtnLikeIcon
           listingIdentifier={listingIdentifier}
           isLiked={initiallySaved}
-          className="absolute top-3 right-1 z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white [&>svg]:!size-[18px]"
+          className="absolute top-2.5 right-0.5 z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white [&>svg]:!size-[18px]"
           colorClass="bg-transparent text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] hover:bg-black/15 active:bg-black/20"
-          sizeClass="size-10"
+          sizeClass="size-11"
         />
       ) : null}
 
