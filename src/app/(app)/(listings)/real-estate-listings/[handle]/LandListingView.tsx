@@ -95,7 +95,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
   return (
     <div className="pb-24 min-[744px]:pb-0">
-      <main className="-mx-4 max-w-screen-xl px-3 py-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
+      <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
         {media.length ? (
           <HeaderGallery
             images={images}

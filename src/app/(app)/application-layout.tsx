@@ -4,6 +4,7 @@ import Footer2 from '@/components/Footer2'
 import FooterQuickNavigation from '@/components/FooterQuickNavigation'
 import AvatarDropdown from '@/components/Header/AvatarDropdown'
 import Header from '@/components/Header/Header'
+import MobileAutoHideHeader from '@/components/Header/MobileAutoHideHeader'
 import HeroSearchFormMobile from '@/components/HeroSearchFormMobile/HeroSearchFormMobile'
 import MobilePrimaryNavigation from '@/components/property-home/MobilePrimaryNavigation'
 import 'rc-slider/assets/index.css'
@@ -31,7 +32,7 @@ const ApplicationLayout: React.FC<Props> = ({
         {header ? header : <Header />}
       </div>
       {/* Keep the mobile search header for phones only. */}
-      <div className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">
+      <MobileAutoHideHeader>
         <div className={`container flex items-center ${compactMobileHeader ? 'h-14 gap-2 px-3' : 'h-16 gap-2.5'}`}>
           <div className="min-w-0 flex-1">
             <Suspense
@@ -48,7 +49,7 @@ const ApplicationLayout: React.FC<Props> = ({
             showMobileActions
           />
         </div>
-      </div>
+      </MobileAutoHideHeader>
       {/*  */}
       {children}
       {/*  */}
