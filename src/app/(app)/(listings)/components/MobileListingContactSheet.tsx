@@ -362,7 +362,6 @@ const MobileListingContactSheet = ({
               <div className="flex items-center justify-between gap-3 py-3">
                 <div>
                   <DialogTitle className="text-lg font-semibold text-neutral-950">ข้อมูลผู้ลงประกาศ</DialogTitle>
-                  <p className="mt-0.5 text-xs text-neutral-500">ตรวจสอบความเกี่ยวข้องก่อนตัดสินใจติดต่อ</p>
                 </div>
                 <button
                   type="button"
