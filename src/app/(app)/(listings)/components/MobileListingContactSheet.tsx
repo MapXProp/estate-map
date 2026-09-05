@@ -16,6 +16,7 @@ import {
 import {
   type PointerEvent as ReactPointerEvent,
   type TouchEvent as ReactTouchEvent,
+  useEffect,
   useRef,
   useState,
 } from 'react'
@@ -57,7 +58,9 @@ const MobileListingContactSheet = ({
   const [open, setOpen] = useState(false)
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+  const [isDismissing, setIsDismissing] = useState(false)
   const dragState = useRef({ startY: 0, lastY: 0, lastTime: 0, velocity: 0 })
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const touchStartYRef = useRef(0)
   const touchStartXRef = useRef(0)
@@ -93,16 +96,46 @@ const MobileListingContactSheet = ({
   const VerificationIcon = verification.icon
 
   const closeSheet = () => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current)
+      dismissTimerRef.current = null
+    }
     setOpen(false)
     setIsDragging(false)
+    setIsDismissing(false)
     setDragOffset(0)
     touchDragOffsetRef.current = 0
     canStartTouchDragRef.current = false
     touchDragLockedRef.current = false
   }
 
+  const dismissSheet = () => {
+    if (isDismissing) return
+
+    setIsDragging(false)
+    setIsDismissing(true)
+    setDragOffset(window.innerHeight)
+    touchDragOffsetRef.current = window.innerHeight
+    canStartTouchDragRef.current = false
+    touchDragLockedRef.current = false
+
+    dismissTimerRef.current = setTimeout(() => {
+      // Keep the panel translated below the viewport while Headless UI removes
+      // it. Resetting the transform here caused a one-frame white flash.
+      setOpen(false)
+      dismissTimerRef.current = null
+    }, 220)
+  }
+
+  useEffect(
+    () => () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
+    },
+    []
+  )
+
   const handleDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!event.isPrimary || event.pointerType !== 'mouse' || event.button !== 0) return
+    if (isDismissing || !event.isPrimary || event.pointerType !== 'mouse' || event.button !== 0) return
     if ((event.target as HTMLElement).closest('button')) return
     const now = performance.now()
     dragState.current = { startY: event.clientY, lastY: event.clientY, lastTime: now, velocity: 0 }
@@ -111,7 +144,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleDragMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
+    if (isDismissing || !isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
     const offset = Math.max(0, event.clientY - dragState.current.startY)
     const now = performance.now()
     const elapsed = Math.max(1, now - dragState.current.lastTime)
@@ -122,7 +155,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleDragEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
+    if (isDismissing || !isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
     const now = performance.now()
     const elapsed = Math.max(1, now - dragState.current.lastTime)
     const velocity = Math.max(
@@ -135,8 +168,8 @@ const MobileListingContactSheet = ({
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
     setIsDragging(false)
-    setDragOffset(0)
-    if (shouldClose) setOpen(false)
+    if (shouldClose) dismissSheet()
+    else setDragOffset(0)
   }
 
   const handleDragCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -157,7 +190,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
-    if (event.touches.length !== 1) return
+    if (isDismissing || event.touches.length !== 1) return
 
     const touch = event.touches[0]
     const target = event.target as HTMLElement
@@ -173,7 +206,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
-    if (!canStartTouchDragRef.current || event.touches.length !== 1) return
+    if (isDismissing || !canStartTouchDragRef.current || event.touches.length !== 1) return
 
     const touch = event.touches[0]
     const deltaY = touch.clientY - touchStartYRef.current
@@ -210,10 +243,7 @@ const MobileListingContactSheet = ({
     const velocity = offset / elapsed
     const shouldClose = offset > 110 || velocity > 0.55
 
-    if (shouldClose) {
-      closeSheet()
-      return
-    }
+    if (shouldClose) return dismissSheet()
 
     resetTouchDrag()
   }
@@ -282,7 +312,12 @@ const MobileListingContactSheet = ({
       <button
         type="button"
         onClick={() => {
+          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
+          dismissTimerRef.current = null
+          setIsDismissing(false)
+          setIsDragging(false)
           setDragOffset(0)
+          touchDragOffsetRef.current = 0
           setOpen(true)
         }}
         aria-label="ข้อมูลผู้ติดต่อ"
@@ -304,7 +339,11 @@ const MobileListingContactSheet = ({
             transition
             style={dragOffset > 0 ? { transform: `translate3d(0, ${dragOffset}px, 0)` } : undefined}
             className={`relative flex max-h-[86dvh] min-h-[68dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-18px_60px_rgba(15,23,42,0.20)] ease-out will-change-transform data-closed:translate-y-full ${
-              isDragging ? 'transition-none' : 'transition duration-300'
+              isDragging
+                ? 'transition-none'
+                : isDismissing
+                  ? 'transition-transform duration-[220ms] [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]'
+                  : 'transition duration-300'
             }`}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
