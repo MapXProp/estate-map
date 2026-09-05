@@ -13,7 +13,12 @@ import {
   ShieldQuestion,
   X,
 } from 'lucide-react'
-import { type PointerEvent as ReactPointerEvent, useRef, useState } from 'react'
+import {
+  type PointerEvent as ReactPointerEvent,
+  type TouchEvent as ReactTouchEvent,
+  useRef,
+  useState,
+} from 'react'
 
 type VerificationStatus = 'unverified' | 'identity_verified' | 'authority_verified' | ''
 
@@ -53,6 +58,13 @@ const MobileListingContactSheet = ({
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const dragState = useRef({ startY: 0, lastY: 0, lastTime: 0, velocity: 0 })
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const touchStartYRef = useRef(0)
+  const touchStartXRef = useRef(0)
+  const touchStartTimeRef = useRef(0)
+  const touchDragOffsetRef = useRef(0)
+  const canStartTouchDragRef = useRef(false)
+  const touchDragLockedRef = useRef(false)
   const lineHandle = lineId?.replace(/^@/, '') || ''
   const instagram = instagramHandle?.replace(/^@/, '') || ''
   const isAuthorityVerified = verificationStatus === 'authority_verified' || trusted
@@ -84,10 +96,13 @@ const MobileListingContactSheet = ({
     setOpen(false)
     setIsDragging(false)
     setDragOffset(0)
+    touchDragOffsetRef.current = 0
+    canStartTouchDragRef.current = false
+    touchDragLockedRef.current = false
   }
 
   const handleDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return
+    if (!event.isPrimary || event.pointerType !== 'mouse' || event.button !== 0) return
     if ((event.target as HTMLElement).closest('button')) return
     const now = performance.now()
     dragState.current = { startY: event.clientY, lastY: event.clientY, lastTime: now, velocity: 0 }
@@ -96,7 +111,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleDragMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !event.isPrimary) return
+    if (!isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
     const offset = Math.max(0, event.clientY - dragState.current.startY)
     const now = performance.now()
     const elapsed = Math.max(1, now - dragState.current.lastTime)
@@ -107,7 +122,7 @@ const MobileListingContactSheet = ({
   }
 
   const handleDragEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !event.isPrimary) return
+    if (!isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
     const now = performance.now()
     const elapsed = Math.max(1, now - dragState.current.lastTime)
     const velocity = Math.max(
@@ -125,11 +140,86 @@ const MobileListingContactSheet = ({
   }
 
   const handleDragCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse') return
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
     }
     setIsDragging(false)
     setDragOffset(0)
+  }
+
+  const resetTouchDrag = () => {
+    setIsDragging(false)
+    setDragOffset(0)
+    touchDragOffsetRef.current = 0
+    canStartTouchDragRef.current = false
+    touchDragLockedRef.current = false
+  }
+
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1) return
+
+    const touch = event.touches[0]
+    const target = event.target as HTMLElement
+    const startedOnDragHandle = Boolean(target.closest?.('[data-contact-drag-handle]'))
+
+    touchStartYRef.current = touch.clientY
+    touchStartXRef.current = touch.clientX
+    touchStartTimeRef.current = performance.now()
+    touchDragOffsetRef.current = 0
+    touchDragLockedRef.current = false
+    canStartTouchDragRef.current =
+      startedOnDragHandle || (scrollContainerRef.current?.scrollTop ?? 0) <= 1
+  }
+
+  const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (!canStartTouchDragRef.current || event.touches.length !== 1) return
+
+    const touch = event.touches[0]
+    const deltaY = touch.clientY - touchStartYRef.current
+    const deltaX = touch.clientX - touchStartXRef.current
+
+    if (!touchDragLockedRef.current) {
+      if (Math.abs(deltaY) < 6 && Math.abs(deltaX) < 6) return
+
+      // Keep normal vertical scrolling and horizontal gestures intact. Once a
+      // gesture chooses one path, it cannot change into a dismiss mid-swipe.
+      if (deltaY <= 0 || Math.abs(deltaX) > deltaY) {
+        canStartTouchDragRef.current = false
+        return
+      }
+
+      touchDragLockedRef.current = true
+      setIsDragging(true)
+    }
+
+    event.preventDefault()
+    const nextOffset = Math.min(Math.max(0, deltaY) * 0.88, window.innerHeight)
+    touchDragOffsetRef.current = nextOffset
+    setDragOffset(nextOffset)
+  }
+
+  const handleTouchEnd = () => {
+    if (!touchDragLockedRef.current) {
+      resetTouchDrag()
+      return
+    }
+
+    const elapsed = Math.max(performance.now() - touchStartTimeRef.current, 1)
+    const offset = touchDragOffsetRef.current
+    const velocity = offset / elapsed
+    const shouldClose = offset > 110 || velocity > 0.55
+
+    if (shouldClose) {
+      closeSheet()
+      return
+    }
+
+    resetTouchDrag()
+  }
+
+  const handleTouchCancel = () => {
+    resetTouchDrag()
   }
 
   const contactLinks = [
@@ -206,6 +296,7 @@ const MobileListingContactSheet = ({
       <Dialog open={open} onClose={closeSheet} className="relative z-[100] min-[744px]:hidden">
         <DialogBackdrop
           transition
+          style={dragOffset > 0 ? { opacity: Math.max(0, 1 - dragOffset / 360) } : undefined}
           className="fixed inset-0 bg-neutral-950/45 transition duration-200 ease-out data-closed:opacity-0"
         />
         <div className="fixed inset-0 flex items-end justify-center">
@@ -215,8 +306,13 @@ const MobileListingContactSheet = ({
             className={`relative flex max-h-[86dvh] min-h-[68dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-18px_60px_rgba(15,23,42,0.20)] ease-out will-change-transform data-closed:translate-y-full ${
               isDragging ? 'transition-none' : 'transition duration-300'
             }`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchCancel}
           >
             <div
+              data-contact-drag-handle
               className="shrink-0 cursor-grab touch-none px-4 pt-2.5 select-none active:cursor-grabbing"
               onPointerDown={handleDragStart}
               onPointerMove={handleDragMove}
@@ -240,7 +336,10 @@ const MobileListingContactSheet = ({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            >
               <section className="rounded-2xl border border-neutral-200 p-4">
                 <div className="flex items-start gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
