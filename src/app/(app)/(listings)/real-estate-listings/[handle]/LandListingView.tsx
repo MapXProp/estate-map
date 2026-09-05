@@ -373,13 +373,17 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)]">
-              <p className="text-sm text-neutral-500">
-                ราคาขายรวม
-                {pricePerSquareWah ? ` · ฿${formatThaiNumber(pricePerSquareWah)}/ตร.ว.` : ''}
-              </p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950">
-                ฿{formatThaiNumber(offerAmount)}
-              </p>
+              <p className="text-sm text-neutral-500">ราคาขายรวม</p>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <p className="text-3xl font-semibold tracking-tight text-neutral-950">
+                  ฿{formatThaiNumber(offerAmount)}
+                </p>
+                {pricePerSquareWah ? (
+                  <p className="text-sm font-medium text-[#71817b]">
+                    เฉลี่ย ฿{formatThaiNumber(pricePerSquareWah)}/ตร.ว.
+                  </p>
+                ) : null}
+              </div>
               <div className="my-5 border-t border-neutral-200" />
               <p className="font-semibold text-neutral-950">ติดต่อ {listing.contact_name}</p>
               {contactRole && <p className="mt-1 text-sm font-medium text-neutral-700">{contactRole}</p>}
@@ -418,13 +422,17 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden">
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] leading-none text-neutral-500">
-                ราคาขาย
-                {pricePerSquareWah ? ` · ฿${formatThaiNumber(pricePerSquareWah)}/ตร.ว.` : ''}
-              </p>
-              <p className="mt-1 truncate text-sm leading-none font-semibold text-neutral-950">
-                ฿{formatThaiNumber(offerAmount)}
-              </p>
+              <p className="text-[10px] leading-none text-neutral-500">ราคาขาย</p>
+              <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
+                <p className="shrink-0 text-sm leading-none font-semibold text-neutral-950">
+                  ฿{formatThaiNumber(offerAmount)}
+                </p>
+                {pricePerSquareWah ? (
+                  <p className="whitespace-nowrap text-[10px] leading-none font-medium text-[#71817b]">
+                    เฉลี่ย ฿{formatThaiNumber(pricePerSquareWah)}/ตร.ว.
+                  </p>
+                ) : null}
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || phoneURL || emailURL || lineURL) && (
