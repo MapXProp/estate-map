@@ -196,6 +196,7 @@ export type PropertyListingDetail = {
   offer_type: string
   offer_amount?: number
   price_unit: string
+  price_negotiable: boolean
   currency: string
   deposit_amount?: number
   advance_rent_amount?: number

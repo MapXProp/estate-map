@@ -288,7 +288,7 @@ const MobileListingContactSheet = ({
         aria-label="ข้อมูลผู้ติดต่อ"
         aria-expanded={open}
         title="ข้อมูลผู้ติดต่อ"
-        className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
+        className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 outline-none transition [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95"
       >
         <ContactRound className="size-[19px]" />
       </button>
