@@ -1,3 +1,4 @@
+import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
@@ -99,7 +100,22 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   return (
     <div className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
-        <div className="px-1 pt-4 pb-4 min-[744px]:hidden">
+        <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
+          <div className="mb-1.5 flex min-h-10 items-center justify-between gap-3">
+            <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium">
+              <span className="text-[#176b50]">{listing.offer_type === 'sale' ? 'ขาย' : 'ให้เช่า'}</span>
+              <span className="text-neutral-300" aria-hidden="true">
+                ·
+              </span>
+              <span className="truncate text-neutral-500">{isVacantLand ? 'ที่ดินเปล่า' : 'ที่ดิน'}</span>
+            </p>
+            <BtnLikeIcon
+              listingIdentifier={listing.slug || listing.public_listing_id}
+              className="shrink-0 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#176b50] [&>svg]:!size-[18px]"
+              colorClass="bg-transparent text-neutral-500 hover:bg-neutral-100 active:bg-neutral-100"
+              sizeClass="size-10"
+            />
+          </div>
           <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950">
             {listing.title}
           </h1>
@@ -118,6 +134,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             listingIdentifier={listing.slug || listing.public_listing_id}
             gridType="grid2"
             imageAlt={listing.title}
+            squareMobileCorners
+            hideMobileFavorite
           />
         ) : (
           <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />

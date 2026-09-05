@@ -1160,6 +1160,8 @@ interface Props {
   listingIdentifier?: string
   propertyDetails?: PropertyGalleryDetails
   imageAlt?: string
+  squareMobileCorners?: boolean
+  hideMobileFavorite?: boolean
 }
 
 interface PropertyGalleryDetails {
@@ -1181,6 +1183,8 @@ const HeaderGallery = ({
   listingIdentifier,
   propertyDetails,
   imageAlt,
+  squareMobileCorners = false,
+  hideMobileFavorite = false,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
@@ -1246,6 +1250,8 @@ const HeaderGallery = ({
           initiallySaved={initiallySaved}
           listingIdentifier={listingIdentifier}
           imageAlt={galleryImageAlt}
+          squareMobileCorners={squareMobileCorners}
+          hideMobileFavorite={hideMobileFavorite}
         />
       )}
       {gridType === 'grid3' && (
@@ -1364,6 +1370,8 @@ const HeaderGalleryGrid2 = ({
   initiallySaved,
   listingIdentifier,
   imageAlt,
+  squareMobileCorners,
+  hideMobileFavorite,
 }: {
   images: string[]
   handleOpenImage: (index: number) => void
@@ -1371,6 +1379,8 @@ const HeaderGalleryGrid2 = ({
   initiallySaved: boolean
   listingIdentifier?: string
   imageAlt: string
+  squareMobileCorners: boolean
+  hideMobileFavorite: boolean
 }) => {
   const mobilePreviewImages = images.slice(0, 5)
   const tabletSideImages = images.slice(1, 3)
@@ -1378,7 +1388,12 @@ const HeaderGalleryGrid2 = ({
 
   return (
     <header className="relative">
-      <div className="relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden rounded-b-xl bg-neutral-100 min-[744px]:hidden">
+      <div
+        className={clsx(
+          'relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden bg-neutral-100 min-[744px]:hidden',
+          !squareMobileCorners && 'rounded-b-xl'
+        )}
+      >
         {mobilePreviewImages.map((image, index) => {
           const isTopRow = index < 2
           const isAllMediaTile = index === 4
@@ -1419,7 +1434,10 @@ const HeaderGalleryGrid2 = ({
         <BtnLikeIcon
           listingIdentifier={listingIdentifier}
           isLiked={initiallySaved}
-          className="absolute top-2.5 right-0.5 z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white [&>svg]:!size-[18px]"
+          className={clsx(
+            'absolute top-2.5 right-0.5 z-20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white [&>svg]:!size-[18px]',
+            hideMobileFavorite && 'max-[743px]:hidden'
+          )}
           colorClass="bg-transparent text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)] hover:bg-black/15 active:bg-black/20"
           sizeClass="size-11"
         />
