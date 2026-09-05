@@ -99,6 +99,18 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   return (
     <div className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
+        <div className="px-1 pt-4 pb-4 min-[744px]:hidden">
+          <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950">
+            {listing.title}
+          </h1>
+          {fullAddress && (
+            <div className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
+              <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
+              <span className="min-w-0">{fullAddress}</span>
+            </div>
+          )}
+        </div>
+
         {media.length ? (
           <HeaderGallery
             images={images}
@@ -111,7 +123,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
         )}
 
-        <div className="mt-5 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
+        <div className="mt-0 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
           <div className="min-w-0">
             <div className="flex flex-col">
               <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
@@ -147,7 +159,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 )}
               </div>
 
-              <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
+              <div className="order-1 hidden min-[744px]:order-2 min-[744px]:mt-4 min-[744px]:block">
                 <h1 className="max-w-4xl text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
                   {listing.title}
                 </h1>
@@ -162,7 +174,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </div>
             </div>
 
-            <section className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <section className="mt-5 grid grid-cols-2 gap-3 min-[744px]:mt-7 sm:grid-cols-4">
               {factCards.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-neutral-200 bg-white p-4">
                   <item.icon className="size-5 text-[#176b50]" aria-hidden="true" />
