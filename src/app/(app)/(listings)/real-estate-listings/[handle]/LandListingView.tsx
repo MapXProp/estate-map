@@ -142,7 +142,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         )}
 
         <div className="mt-0 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
-          <div className="min-w-0">
+          <div className="flex min-w-0 flex-col">
             <div className="flex flex-col">
               <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
                 {listing.offer_type === 'sale' && (
@@ -192,7 +192,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </div>
             </div>
 
-            <section className="mt-5 grid grid-cols-2 gap-3 min-[744px]:mt-7 sm:grid-cols-4">
+            <section className="order-3 mt-5 grid grid-cols-2 gap-3 min-[744px]:order-none min-[744px]:mt-7 sm:grid-cols-4">
               {factCards.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-neutral-200 bg-white p-4">
                   <item.icon className="size-5 text-[#176b50]" aria-hidden="true" />
@@ -202,8 +202,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               ))}
             </section>
 
-            {(contactRole || isTrustedContact) && (
-              <details className="group mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden">
+            {(listing.contact_name || phoneURL || lineURL || emailURL) && (
+              <details className="group order-2 mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-3 p-3 select-none [&::-webkit-details-marker]:hidden">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
                     {isOwnerDirect ? <UserRoundCheck className="size-4.5" /> : <Building2 className="size-4.5" />}
@@ -278,8 +278,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </details>
             )}
 
-            <section className="mt-10 border-t border-neutral-200 pt-8">
-              <h2 className="text-2xl font-semibold text-neutral-950">รายละเอียดที่ดิน</h2>
+            <section className="order-1 mt-6 min-[744px]:order-none min-[744px]:mt-10 min-[744px]:border-t min-[744px]:border-neutral-200 min-[744px]:pt-8">
+              <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">รายละเอียดที่ดิน</h2>
               <div className="mt-5 space-y-4 text-[15px] leading-7 text-neutral-700 sm:text-base">
                 {descriptionParagraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
@@ -288,7 +288,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             </section>
 
             {featureCards.items.length > 0 && (
-              <section className="mt-10 border-t border-neutral-200 pt-8">
+              <section className="order-4 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
                 <h2 className="text-2xl font-semibold text-neutral-950">{featureCards.heading}</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {featureCards.items.map((item) => (
@@ -302,7 +302,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             )}
 
             {(listing.nearby_places.length > 0 || listing.transaction_terms.length > 0) && (
-              <section className="mt-10 border-t border-neutral-200 pt-8">
+              <section className="order-5 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
                 <div className="grid gap-6 sm:grid-cols-2">
                   {listing.nearby_places.length > 0 && (
                     <div>
@@ -337,7 +337,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </section>
             )}
 
-            <section className="mt-10 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 sm:p-6">
+            <section className="order-6 mt-10 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 min-[744px]:order-none sm:p-6">
               <div className="flex items-start gap-3">
                 <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
                   <Building2 className="size-5" />
