@@ -70,7 +70,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const landAreaSquareWah = numericDetail(listing, 'land_area_square_wah') ?? (listing.land_area_sqm || 0) / 4
   const plotCount = numericDetail(listing, 'plot_count')
   const frontage = numericDetail(listing, 'road_frontage_meters')
-  const pricePerSquareWah = numericDetail(listing, 'price_per_square_wah')
+  const storedPricePerSquareWah = numericDetail(listing, 'price_per_square_wah')
   const isVacantLand = booleanDetail(listing, 'vacant_land')
   const hasStructures = booleanDetail(listing, 'structures_present')
   const isSoldTogether = booleanDetail(listing, 'sale_together_only')
@@ -81,6 +81,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     : listing.is_verified || textDetail(listing, 'contact_trust_status') === 'verified'
   const featureCards = getFeatureCards(listing)
   const offerAmount = listing.offer_amount || 0
+  const pricePerSquareWah =
+    offerAmount > 0 && landAreaSquareWah > 0
+      ? Math.round(offerAmount / landAreaSquareWah)
+      : storedPricePerSquareWah
   const fullAddress = [listing.address, listing.province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
@@ -370,16 +374,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)]">
               <p className="text-sm text-neutral-500">
-                ราคาขายรวม{listing.price_negotiable ? ' · ต่อรองได้' : ''}
+                ราคาขายรวม
+                {pricePerSquareWah ? ` · ฿${formatThaiNumber(pricePerSquareWah)}/ตร.ว.` : ''}
               </p>
               <p className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950">
                 ฿{formatThaiNumber(offerAmount)}
               </p>
-              {pricePerSquareWah && (
-                <p className="mt-2 text-sm font-medium text-[#176b50]">
-                  ฿{formatThaiNumber(pricePerSquareWah)} / ตร.ว.
-                </p>
-              )}
               <div className="my-5 border-t border-neutral-200" />
               <p className="font-semibold text-neutral-950">ติดต่อ {listing.contact_name}</p>
               {contactRole && <p className="mt-1 text-sm font-medium text-neutral-700">{contactRole}</p>}
@@ -419,7 +419,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[10px] leading-none text-neutral-500">
-                ราคาขาย{listing.price_negotiable ? ' · ต่อรองได้' : ''}
+                ราคาขาย
+                {pricePerSquareWah ? ` · ฿${formatThaiNumber(pricePerSquareWah)}/ตร.ว.` : ''}
               </p>
               <p className="mt-1 truncate text-sm leading-none font-semibold text-neutral-950">
                 ฿{formatThaiNumber(offerAmount)}
