@@ -437,26 +437,6 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   instagramHandle={listing.instagram_handle}
                 />
               )}
-              {!phoneURL && emailURL && (
-                <a
-                  href={emailURL}
-                  aria-label="ส่งอีเมล"
-                  title="ส่งอีเมล"
-                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
-                >
-                  <Mail className="size-[18px]" />
-                </a>
-              )}
-              {phoneURL && (
-                <a
-                  href={phoneURL}
-                  aria-label={isOwnerDirect ? 'โทรหาเจ้าของ' : 'โทรติดต่อ'}
-                  title={isOwnerDirect ? 'โทรหาเจ้าของ' : 'โทรติดต่อ'}
-                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
-                >
-                  <Phone className="size-[18px]" />
-                </a>
-              )}
               {mapURL && (
                 <a
                   href={mapURL}

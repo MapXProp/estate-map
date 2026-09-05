@@ -4,16 +4,16 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import {
   CheckCircle2,
   ChevronRight,
+  ContactRound,
   Instagram,
   Mail,
   MessageCircle,
   Phone,
   ShieldCheck,
   ShieldQuestion,
-  UserRound,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { type PointerEvent as ReactPointerEvent, useRef, useState } from 'react'
 
 type VerificationStatus = 'unverified' | 'identity_verified' | 'authority_verified' | ''
 
@@ -50,6 +50,9 @@ const MobileListingContactSheet = ({
   instagramHandle,
 }: MobileListingContactSheetProps) => {
   const [open, setOpen] = useState(false)
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const dragState = useRef({ startY: 0, lastY: 0, lastTime: 0, velocity: 0 })
   const lineHandle = lineId?.replace(/^@/, '') || ''
   const instagram = instagramHandle?.replace(/^@/, '') || ''
   const isAuthorityVerified = verificationStatus === 'authority_verified' || trusted
@@ -76,6 +79,58 @@ const MobileListingContactSheet = ({
           className: 'border-neutral-200 bg-neutral-50 text-neutral-600',
         }
   const VerificationIcon = verification.icon
+
+  const closeSheet = () => {
+    setOpen(false)
+    setIsDragging(false)
+    setDragOffset(0)
+  }
+
+  const handleDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return
+    if ((event.target as HTMLElement).closest('button')) return
+    const now = performance.now()
+    dragState.current = { startY: event.clientY, lastY: event.clientY, lastTime: now, velocity: 0 }
+    setIsDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handleDragMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !event.isPrimary) return
+    const offset = Math.max(0, event.clientY - dragState.current.startY)
+    const now = performance.now()
+    const elapsed = Math.max(1, now - dragState.current.lastTime)
+    setDragOffset(offset)
+    dragState.current.velocity = Math.max(0, event.clientY - dragState.current.lastY) / elapsed
+    dragState.current.lastY = event.clientY
+    dragState.current.lastTime = now
+  }
+
+  const handleDragEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !event.isPrimary) return
+    const now = performance.now()
+    const elapsed = Math.max(1, now - dragState.current.lastTime)
+    const velocity = Math.max(
+      dragState.current.velocity,
+      Math.max(0, event.clientY - dragState.current.lastY) / elapsed
+    )
+    const shouldClose = dragOffset >= 96 || velocity >= 0.55
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    setIsDragging(false)
+    setDragOffset(0)
+    if (shouldClose) setOpen(false)
+  }
+
+  const handleDragCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    setIsDragging(false)
+    setDragOffset(0)
+  }
 
   const contactLinks = [
     ...(phone
@@ -136,15 +191,19 @@ const MobileListingContactSheet = ({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setDragOffset(0)
+          setOpen(true)
+        }}
         aria-label="ข้อมูลผู้ติดต่อ"
+        aria-expanded={open}
         title="ข้อมูลผู้ติดต่อ"
         className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95"
       >
-        <UserRound className="size-[18px]" />
+        <ContactRound className="size-[19px]" />
       </button>
 
-      <Dialog open={open} onClose={setOpen} className="relative z-[100] min-[744px]:hidden">
+      <Dialog open={open} onClose={closeSheet} className="relative z-[100] min-[744px]:hidden">
         <DialogBackdrop
           transition
           className="fixed inset-0 bg-neutral-950/45 transition duration-200 ease-out data-closed:opacity-0"
@@ -152,9 +211,18 @@ const MobileListingContactSheet = ({
         <div className="fixed inset-0 flex items-end justify-center">
           <DialogPanel
             transition
-            className="relative flex max-h-[86dvh] min-h-[68dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-18px_60px_rgba(15,23,42,0.20)] transition duration-300 ease-out data-closed:translate-y-full"
+            style={dragOffset > 0 ? { transform: `translate3d(0, ${dragOffset}px, 0)` } : undefined}
+            className={`relative flex max-h-[86dvh] min-h-[68dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-18px_60px_rgba(15,23,42,0.20)] ease-out will-change-transform data-closed:translate-y-full ${
+              isDragging ? 'transition-none' : 'transition duration-300'
+            }`}
           >
-            <div className="shrink-0 px-4 pt-2.5">
+            <div
+              className="shrink-0 cursor-grab touch-none px-4 pt-2.5 select-none active:cursor-grabbing"
+              onPointerDown={handleDragStart}
+              onPointerMove={handleDragMove}
+              onPointerUp={handleDragEnd}
+              onPointerCancel={handleDragCancel}
+            >
               <div className="mx-auto h-1.5 w-11 rounded-full bg-neutral-200" aria-hidden="true" />
               <div className="flex items-center justify-between gap-3 py-3">
                 <div>
@@ -163,7 +231,7 @@ const MobileListingContactSheet = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={closeSheet}
                   aria-label="ปิดข้อมูลผู้ติดต่อ"
                   className="grid size-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-600 transition active:scale-95"
                 >
@@ -176,7 +244,7 @@ const MobileListingContactSheet = ({
               <section className="rounded-2xl border border-neutral-200 p-4">
                 <div className="flex items-start gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
-                    <UserRound className="size-5" />
+                    <ContactRound className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <p className="text-xs text-neutral-500">ผู้ลงประกาศ</p>
