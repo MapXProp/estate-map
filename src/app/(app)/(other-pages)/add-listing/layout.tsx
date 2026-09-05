@@ -100,7 +100,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
               {isThai ? 'ลงประกาศฟรี' : 'List for free'}
             </p>
           </div>
-          <p className="mt-1.5 truncate font-sarabun text-[17px] font-semibold text-white min-[744px]:mt-2 min-[744px]:text-xl">
+          <p className="mt-0.5 truncate py-1 font-sarabun text-[17px] leading-[1.45] font-semibold text-white min-[744px]:mt-1 min-[744px]:text-xl">
             {isThai ? `ขั้นที่ ${index} จาก ${steps.length}` : `Step ${index} of ${steps.length}`} ·{' '}
             {isThai ? steps[index - 1].labelTh : steps[index - 1].labelEn}
           </p>
@@ -139,7 +139,7 @@ const ProgressHeader = ({ pathname }: { pathname: string }) => {
                 {step.number}
               </span>
               <span
-                className={`hidden truncate font-sarabun text-xs sm:block ${
+                className={`hidden truncate py-0.5 font-sarabun text-xs leading-5 sm:block ${
                   isCurrent ? 'font-medium text-white' : isNavigable ? 'text-white/75' : 'text-white/40'
                 }`}
               >
