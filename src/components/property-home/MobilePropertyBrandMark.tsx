@@ -1,5 +1,6 @@
 'use client'
 
+import TopNavPopoverBackdrop from '@/components/Header/TopNavPopoverBackdrop'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
@@ -79,6 +80,8 @@ const MobilePropertyBrandMark = () => {
           className={`absolute end-1 top-1 size-[7px] rounded-full shadow-sm ring-2 ring-[#F2EDE2] ${activeSite.dotTone}`}
         />
       </PopoverButton>
+
+      <TopNavPopoverBackdrop />
 
       <PopoverPanel
         transition
