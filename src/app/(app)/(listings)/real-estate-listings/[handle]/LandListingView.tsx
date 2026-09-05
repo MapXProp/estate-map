@@ -18,6 +18,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
+import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
 const numericDetail = (listing: PropertyListingDetail, key: string) => {
   const value = listing.category_details?.[key]
@@ -411,7 +412,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         </div>
       </main>
 
-      {(phoneURL || emailURL || mapURL) && (
+      {(listing.contact_name || phoneURL || emailURL || lineURL || mapURL) && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden">
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -421,6 +422,21 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
+              {(listing.contact_name || phoneURL || emailURL || lineURL) && (
+                <MobileListingContactSheet
+                  contactName={listing.contact_name}
+                  roleLabel={contactRole}
+                  authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}
+                  organizationName={listing.contact_organization_name}
+                  verificationStatus={listing.contact_verification_status}
+                  trusted={isTrustedContact}
+                  phone={listing.contact_phone}
+                  secondaryPhone={listing.contact_phone_secondary}
+                  email={listing.contact_email}
+                  lineId={listing.line_id}
+                  instagramHandle={listing.instagram_handle}
+                />
+              )}
               {!phoneURL && emailURL && (
                 <a
                   href={emailURL}
@@ -469,6 +485,19 @@ const contactRoleLabel = (value: string) => {
     agency_broker: 'นายหน้าสังกัดบริษัท',
     developer_investor_representative: 'ตัวแทนโครงการ / นักลงทุน',
     property_manager: 'ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร',
+  }
+  return labels[value] || ''
+}
+
+const contactAuthorityLabel = (value: string) => {
+  const labels: Record<string, string> = {
+    self: 'ตนเอง',
+    property_owner: 'เจ้าของทรัพย์โดยตรง',
+    brokerage_company: 'บริษัทนายหน้าหรือทีม',
+    developer_project: 'โครงการ / ผู้พัฒนา',
+    investor_asset_holder: 'นักลงทุน / ผู้ถือทรัพย์',
+    co_broker: 'นายหน้าร่วม (Co-broker)',
+    property_management_company: 'บริษัทบริหารทรัพย์',
   }
   return labels[value] || ''
 }
