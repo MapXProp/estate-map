@@ -7,6 +7,7 @@ import {
   getUseCase,
 } from '@/data/propertyTaxonomy'
 import { fetchWithAuthRetry, getAuthApiUrl, getStoredUser } from './auth'
+import { applyListingImageWatermark } from './listingImageWatermark'
 
 export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
 export const LISTING_SUBMISSION_RESULT_KEY = 'mapxprop_listing_submission_result'
@@ -623,7 +624,11 @@ export const publishListingDraft = async () => {
   return data
 }
 
-export const uploadListingMedia = async (files: File[], mediaType: ListingMediaType) => {
+export const uploadListingMedia = async (
+  files: File[],
+  mediaType: ListingMediaType,
+  options: { watermarkLabel?: string } = {}
+) => {
   const urls: string[] = []
   const limit = mediaType === 'image' ? 10 : 4
   const maxBytes = mediaType === 'video' ? 50 * 1024 * 1024 : mediaType === '360' ? 15 * 1024 * 1024 : 8 * 1024 * 1024
@@ -640,8 +645,24 @@ export const uploadListingMedia = async (files: File[], mediaType: ListingMediaT
       throw new ListingMediaUploadError('unsupported_format', file.name, 'Unsupported media file format')
     }
 
+    let preparedFile = file
+    if (mediaType === 'image') {
+      try {
+        preparedFile = await applyListingImageWatermark(file, options.watermarkLabel || '')
+      } catch (error) {
+        throw new ListingMediaUploadError(
+          'upload_failed',
+          file.name,
+          error instanceof Error ? error.message : 'Cannot prepare image watermark'
+        )
+      }
+    }
+    if (preparedFile.size <= 0 || preparedFile.size > maxBytes) {
+      throw new ListingMediaUploadError('file_too_large', file.name, 'Watermarked image is too large')
+    }
+
     const formData = new FormData()
-    formData.set('file', file)
+    formData.set('file', preparedFile)
     formData.set('media_type', mediaType)
     let response: Response
     try {

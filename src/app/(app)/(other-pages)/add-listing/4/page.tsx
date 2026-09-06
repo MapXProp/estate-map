@@ -118,6 +118,7 @@ const Page = () => {
     let videoUrls = readValues(startingDraft['listingVideoUrls[]'])
     let panoramaUrls = readValues(startingDraft['listingPanoramaUrls[]'])
     let floorPlanUrls = readText(startingDraft.eventFloorPlanUrl) ? [readText(startingDraft.eventFloorPlanUrl)] : []
+    const watermarkLabel = readText(startingDraft.contactName).trim() || (isThai ? 'ผู้ลงประกาศ' : 'Listing owner')
     const missingFileCount =
       Math.max(0, readCount(startingDraft.selectedPhotoCount) - photoUrls.length - pendingMedia.photos.length) +
       Math.max(0, readCount(startingDraft.selectedVideoCount) - videoUrls.length - pendingMedia.videos.length) +
@@ -180,7 +181,7 @@ const Page = () => {
           currentFileName: file.name,
         })
 
-        const uploaded = await uploadListingMedia([file], mediaType)
+        const uploaded = await uploadListingMedia([file], mediaType, { watermarkLabel })
         urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
         completedCount += 1
         uploadedCount += uploaded.length

@@ -684,6 +684,11 @@ const Page = () => {
                 ? `สูงสุด ${MAX_PHOTOS} รูป · ไม่เกิน 8 MB/รูป · รูปแรกเป็นภาพหน้าปก · ${photoCount}/${MAX_PHOTOS}`
                 : `Up to ${MAX_PHOTOS} photos · 8 MB each · first photo is the cover · ${photoCount}/${MAX_PHOTOS}`}
             </span>
+            <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 font-sarabun text-[11px] font-medium text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-300">
+              {isThai
+                ? 'ใส่ชื่อผู้ลงประกาศและโลโก้ MapxProp ให้อัตโนมัติ'
+                : 'Publisher name and MapxProp watermark added automatically'}
+            </span>
             <input
               name="listingPhotos"
               type="file"
@@ -709,6 +714,12 @@ const Page = () => {
                       {isThai ? 'ภาพหน้าปก' : 'Cover photo'}
                     </span>
                   ) : null}
+                  <span className="pointer-events-none absolute inset-x-2 bottom-2 flex h-5 items-center justify-between gap-1 rounded-md bg-[#073d32]/75 px-1.5 text-white backdrop-blur-[1px]">
+                    <span className="min-w-0 truncate font-sarabun text-[8px] font-semibold">
+                      {contactName.trim() || (isThai ? 'ชื่อผู้ลงประกาศ' : 'Publisher')}
+                    </span>
+                    <span className="shrink-0 font-serif text-[8px] font-semibold">MapxProp</span>
+                  </span>
                   <button
                     type="button"
                     onClick={() => removePhoto(index)}
