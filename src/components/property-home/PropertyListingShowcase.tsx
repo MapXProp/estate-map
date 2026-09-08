@@ -3,6 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
+import { getPropertyType } from '@/data/propertyTaxonomy'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
@@ -394,8 +395,9 @@ const formatEventSchedule = (startsOn?: string, endsOn?: string) => {
   return `${formatDate(startsOn)} – ${formatDate(endsOn)}`
 }
 
-const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => {
+const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): PrototypeListing => {
   const group = getListingGroup(listing)
+  const propertyType = getPropertyType(listing.property_type_code)
   const isRetailSpace = listing.property_type_code === 'retail_space'
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(
@@ -417,10 +419,20 @@ const toShowcaseListing = (listing: PropertySearchListing): PrototypeListing => 
     identifier: listing.slug || listing.public_listing_id,
     group,
     type: isEvent
-      ? 'พื้นที่ออกบูธ'
+      ? isThai
+        ? 'พื้นที่ออกบูธ'
+        : 'Event booth'
       : group === 'land'
-        ? 'ที่ดินเปล่า'
-        : listing.property_type_code || 'อสังหาริมทรัพย์',
+        ? isThai
+          ? 'ที่ดินเปล่า'
+          : 'Land'
+        : propertyType
+          ? isThai
+            ? propertyType.nameTh
+            : propertyType.nameEn
+          : isThai
+            ? 'อสังหาริมทรัพย์'
+            : 'Property',
     offer: isEvent ? (listing.price_on_request ? 'ติดต่อผู้จัดงาน' : 'เช่า') : isRental ? 'เช่า' : 'ขาย',
     title: listing.title,
     location: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
@@ -469,7 +481,7 @@ const PropertyListingShowcase = ({
     const discoveryChannel = mode === 'all' ? undefined : mode
     fetchPropertySearch('', undefined, { discoveryChannel, limit: 12 })
       .then((result) => {
-        if (isCurrent) setDatabaseListings(result.listings.map(toShowcaseListing))
+        if (isCurrent) setDatabaseListings(result.listings.map((listing) => toShowcaseListing(listing, isThai)))
       })
       .catch(() => {
         if (isCurrent) setDatabaseListings([])
@@ -477,7 +489,7 @@ const PropertyListingShowcase = ({
     return () => {
       isCurrent = false
     }
-  }, [mode])
+  }, [isThai, mode])
 
   const availableFilters = useMemo(() => {
     if (mode === 'homes') return filters.filter((filter) => ['all', 'residential', 'land'].includes(filter.value))

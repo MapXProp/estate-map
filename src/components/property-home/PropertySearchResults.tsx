@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { getPropertyType } from '@/data/propertyTaxonomy'
 import {
   fetchPropertySearch,
   getPropertySearchUrl,
@@ -149,6 +150,14 @@ const PropertySearchResults = ({ query }: { query: string }) => {
           <div className="grid gap-5 py-8 md:grid-cols-2 xl:grid-cols-3">
             {data.listings.map((listing) => {
               const price = listing.sale_price ?? listing.rent_price_monthly
+              const propertyType = getPropertyType(listing.property_type_code)
+              const propertyTypeLabel = propertyType
+                ? isThai
+                  ? propertyType.nameTh
+                  : propertyType.nameEn
+                : isThai
+                  ? 'อสังหาริมทรัพย์'
+                  : 'Property'
               return (
                 <Link
                   key={listing.id}
@@ -158,7 +167,7 @@ const PropertySearchResults = ({ query }: { query: string }) => {
                   <div className="relative grid aspect-[16/10] place-items-center overflow-hidden bg-gradient-to-br from-[#dcece5] via-[#edf4f0] to-[#d9e1ec] text-[#176b50] dark:from-emerald-950 dark:via-neutral-900 dark:to-slate-900">
                     <Building2 className="size-12 opacity-50 transition group-hover:scale-110" strokeWidth={1.3} />
                     <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-neutral-800 dark:bg-neutral-900/90 dark:text-white">
-                      {listing.property_type_code.replaceAll('_', ' ')}
+                      {propertyTypeLabel}
                     </span>
                   </div>
                   <div className="p-5">
