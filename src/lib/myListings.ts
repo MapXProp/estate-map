@@ -15,6 +15,14 @@ export type MyListing = {
   price_unit: string
   currency: string
   primary_image_url: string
+  organization_public_id?: string
+  organization_name?: string
+  organization_verification_status?: string
+  organization_role_code?: string
+  created_by_public_user_id?: string
+  created_by_name?: string
+  can_edit?: boolean
+  can_delete?: boolean
   created_at: string
   updated_at: string
   published_at?: string
@@ -49,14 +57,11 @@ export const deleteMyListing = async (publicListingId: string) => {
     throw new Error('Invalid listing ID')
   }
 
-  const response = await fetchWithAuthRetry(
-    getAuthApiUrl(`me/listings/${encodeURIComponent(listingId)}`),
-    {
-      method: 'DELETE',
-      cache: 'no-store',
-      credentials: 'include',
-    }
-  )
+  const response = await fetchWithAuthRetry(getAuthApiUrl(`me/listings/${encodeURIComponent(listingId)}`), {
+    method: 'DELETE',
+    cache: 'no-store',
+    credentials: 'include',
+  })
   const data = (await response.json().catch(() => ({}))) as DeleteMyListingResponse
   if (!response.ok || !data.success) {
     throw new Error(data.error || 'Cannot delete this listing right now')

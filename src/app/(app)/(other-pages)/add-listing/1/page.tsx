@@ -43,6 +43,7 @@ import {
 } from '@/lib/listingDraft'
 import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
 import { consumeListingPublishValidationIssue, listingValidationMessage } from '@/lib/listingPublishValidation'
+import { getMyOrganizations, type Organization } from '@/lib/organizations'
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import Textarea from '@/shared/Textarea'
@@ -159,6 +160,8 @@ const Page = () => {
   const [title, setTitle] = useState('')
   const [placeName, setPlaceName] = useState('')
   const [description, setDescription] = useState('')
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('')
   const [error, setError] = useState('')
   const [errorSection, setErrorSection] = useState<number | null>(null)
   const [authCheckpointOpen, setAuthCheckpointOpen] = useState(false)
@@ -336,6 +339,7 @@ const Page = () => {
         setTitle('')
         setPlaceName('')
         setDescription('')
+        setSelectedOrganizationId('')
         setError('')
         setErrorSection(null)
         clearListingFormErrors()
@@ -344,6 +348,7 @@ const Page = () => {
       }
 
       const draft = getListingDraft()
+      setSelectedOrganizationId(readDraftText(draft.organizationPublicId))
       const savedPropertyTypeCode = readDraftText(draft.property_type_code)
       const nextPropertyTypeCode = normalizeLegacyPropertyType(savedPropertyTypeCode)
       const nextPropertyType = savedPropertyTypeCode ? getPropertyType(nextPropertyTypeCode) : undefined
@@ -414,6 +419,25 @@ const Page = () => {
       cancelled = true
     }
   }, [router, setMediaProgress, setPendingMedia, setSubmittingStep])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setOrganizations([])
+      return
+    }
+    let cancelled = false
+    getMyOrganizations()
+      .then((items) => {
+        if (cancelled) return
+        setOrganizations(items.filter((item) => ['owner', 'admin', 'publisher'].includes(item.role_code || '')))
+      })
+      .catch(() => {
+        if (!cancelled) setOrganizations([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (!draftReady) return
@@ -570,6 +594,7 @@ const Page = () => {
     effectiveUseCases.forEach((code) => formData.append('useCaseCodes[]', code))
     formData.set('usage_type', mapUseCasesToLegacyUsage(effectiveUseCases))
     formData.set('listing_type', offersToLegacyListingType(selectedOffers))
+    formData.set('organizationPublicId', selectedOrganizationId)
     resetListingDetailsForCategoryChange(selectedChannel, selectedPropertyType)
     const savedDraft = saveListingStep(1, formData)
     const authenticated = isAuthenticated || Boolean(await refresh())
@@ -619,12 +644,46 @@ const Page = () => {
         ))}
         <input type="hidden" name="usage_type" value={mapUseCasesToLegacyUsage(selectedUseCases)} />
         <input type="hidden" name="listing_type" value={offersToLegacyListingType(selectedOffers)} />
+        <input type="hidden" name="organizationPublicId" value={selectedOrganizationId} />
         {selectedUseCases.map((code) => (
           <input key={code} type="hidden" name="useCaseCodes[]" value={code} />
         ))}
         {selectedOffers.map((code) => (
           <input key={code} type="hidden" name="offerTypes[]" value={code} />
         ))}
+
+        {organizations.length > 0 ? (
+          <section className="rounded-[22px] border border-emerald-200 bg-emerald-50/60 p-4 min-[744px]:p-5 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+            <label
+              className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-white"
+              htmlFor="organizationPublicIdSelect"
+            >
+              {isThai ? 'ลงประกาศในนามใคร' : 'Who is publishing this listing?'}
+            </label>
+            <select
+              id="organizationPublicIdSelect"
+              value={selectedOrganizationId}
+              onChange={(event) => setSelectedOrganizationId(event.target.value)}
+              className="mt-2 block h-11 w-full rounded-xl border border-neutral-300 bg-white px-3 font-sarabun text-sm outline-hidden focus:border-[#176b50] focus:ring-3 focus:ring-[#176b50]/15 dark:border-neutral-700 dark:bg-neutral-900"
+            >
+              <option value="">{isThai ? 'บัญชีส่วนตัวของฉัน' : 'My personal account'}</option>
+              {organizations.map((organization) => (
+                <option key={organization.public_organization_id} value={organization.public_organization_id}>
+                  {organization.display_name} · {isThai ? 'สิทธิ์' : 'role'} {organization.role_code}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 font-sarabun text-xs leading-5 text-neutral-600 dark:text-neutral-300">
+              {selectedOrganizationId
+                ? isThai
+                  ? 'ประกาศนี้จะอยู่กับองค์กร แม้ผู้ลงประกาศเปลี่ยนงานหรือถูกถอดออกจากทีม'
+                  : 'This listing will remain with the organization even if the publisher later leaves the team.'
+                : isThai
+                  ? 'ประกาศนี้จะเป็นประกาศส่วนตัวของบัญชีคุณ'
+                  : 'This listing will belong to your personal account.'}
+            </p>
+          </section>
+        ) : null}
 
         <WizardSection
           number="1"

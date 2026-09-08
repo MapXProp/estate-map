@@ -2,7 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
-import { Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
+import { Building, Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
@@ -19,6 +19,12 @@ const navigation = [
     titleEn: 'My listings',
     href: '/account-listings',
     icon: Building2,
+  },
+  {
+    titleTh: 'องค์กรและทีม',
+    titleEn: 'Organizations',
+    href: '/account-organizations',
+    icon: Building,
   },
   {
     titleTh: 'ที่บันทึกไว้',
@@ -72,7 +78,7 @@ export const PageNavigation = () => {
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
         className={`hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid dark:bg-neutral-800/80 dark:ring-neutral-700 ${
-          visibleNavigation.length === 7 ? 'xl:grid-cols-7' : 'xl:grid-cols-5'
+          visibleNavigation.length === 8 ? 'xl:grid-cols-8' : 'xl:grid-cols-6'
         }`}
       >
         {visibleNavigation.map((item) => {

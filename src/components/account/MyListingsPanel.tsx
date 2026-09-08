@@ -1,7 +1,7 @@
 'use client'
 
-import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
 import { clearListingDraft, getListingDraft, loadMyListingForEdit } from '@/lib/listingDraft'
 import { deleteMyListing, getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
@@ -269,6 +269,12 @@ const ListingRow = ({
         <h2 className="mt-3 line-clamp-2 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
           {listing.title}
         </h2>
+        {listing.organization_name ? (
+          <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 font-sarabun text-xs font-semibold text-[#176b50] dark:bg-emerald-950/40 dark:text-emerald-300">
+            {listing.organization_name}
+            {listing.organization_verification_status === 'verified' ? (isThai ? ' · ตรวจสอบแล้ว' : ' · Verified') : ''}
+          </p>
+        ) : null}
         <p className="mt-1 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
           {propertyLabel}
           {listing.address ? ` · ${listing.address}` : ''}
@@ -284,24 +290,28 @@ const ListingRow = ({
             </span>
           ) : null}
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onEdit}
-              disabled={editDisabled || !listing.public_listing_id}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#176b50]/30 bg-white px-4 font-sarabun text-sm font-semibold text-[#176b50] transition hover:border-[#176b50] hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60 dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-            >
-              {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
-              {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={actionDisabled || !listing.public_listing_id}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 font-sarabun text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30"
-            >
-              <TrashIcon className="size-4" />
-              {isThai ? 'ลบประกาศ' : 'Delete'}
-            </button>
+            {listing.can_edit !== false ? (
+              <button
+                type="button"
+                onClick={onEdit}
+                disabled={editDisabled || !listing.public_listing_id}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[#176b50]/30 bg-white px-4 font-sarabun text-sm font-semibold text-[#176b50] transition hover:border-[#176b50] hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60 dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+              >
+                {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
+                {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
+              </button>
+            ) : null}
+            {listing.can_delete !== false ? (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={actionDisabled || !listing.public_listing_id}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 font-sarabun text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30"
+              >
+                <TrashIcon className="size-4" />
+                {isThai ? 'ลบประกาศ' : 'Delete'}
+              </button>
+            ) : null}
             {listingIsLive ? (
               <>
                 <Link
@@ -344,7 +354,7 @@ const DeleteListingDialog = ({
     <DialogBackdrop className="fixed inset-0 bg-neutral-950/45 backdrop-blur-[1px]" />
     <div className="fixed inset-0 overflow-y-auto p-4">
       <div className="flex min-h-full items-center justify-center">
-        <DialogPanel className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-neutral-900 sm:p-7">
+        <DialogPanel className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-7 dark:bg-neutral-900">
           <div className="flex size-11 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
             <ExclamationTriangleIcon className="size-6" />
           </div>
@@ -377,13 +387,7 @@ const DeleteListingDialog = ({
               className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-red-600 px-5 font-sarabun text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
             >
               {deleting ? <ArrowPathIcon className="size-4 animate-spin" /> : <TrashIcon className="size-4" />}
-              {deleting
-                ? isThai
-                  ? 'กำลังลบ…'
-                  : 'Deleting…'
-                : isThai
-                  ? 'ยืนยันลบประกาศ'
-                  : 'Delete listing'}
+              {deleting ? (isThai ? 'กำลังลบ…' : 'Deleting…') : isThai ? 'ยืนยันลบประกาศ' : 'Delete listing'}
             </button>
           </div>
         </DialogPanel>
@@ -401,12 +405,7 @@ const ListingCardImage = ({ url }: { url: string }) => {
   }
 
   return (
-    <img
-      src={resolvedURL}
-      alt=""
-      className="h-full w-full object-cover"
-      onError={() => setFailedURL(resolvedURL)}
-    />
+    <img src={resolvedURL} alt="" className="h-full w-full object-cover" onError={() => setFailedURL(resolvedURL)} />
   )
 }
 

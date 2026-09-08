@@ -68,6 +68,7 @@ let listingDraftSaveQueue: Promise<SaveListingDraftResponse | null> = Promise.re
 export type CreateListingPayload = {
   submission_key?: string
   editing_public_listing_id?: string
+  organization_public_id?: string
   replace_media?: boolean
   discovery_channel_code?: string
   property_group_code?: string
@@ -196,6 +197,25 @@ export const clearListingDraft = () => {
     return
   }
   localStorage.removeItem(LISTING_DRAFT_KEY)
+}
+
+export const prepareOrganizationListingDraft = (publicOrganizationId: string, displayName: string) => {
+  if (typeof window === 'undefined') return {}
+
+  const updatedAt = new Date()
+  const ownerPublicUserId = getStoredUser()?.public_user_id || ''
+  const draft: ListingDraft = {
+    organizationPublicId: publicOrganizationId.trim(),
+    contactOrganizationName: displayName.trim(),
+    ...(ownerPublicUserId ? { draftOwnerPublicUserId: ownerPublicUserId } : {}),
+    lastStep: '1',
+    resumeStep: '1',
+    updatedAt: updatedAt.toISOString(),
+    draftExpiresAt: new Date(updatedAt.getTime() + LISTING_DRAFT_TTL_MS).toISOString(),
+  }
+  localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(draft))
+  sessionStorage.removeItem(LISTING_SUBMISSION_RESULT_KEY)
+  return draft
 }
 
 const CATEGORY_DETAIL_DRAFT_KEYS = [
@@ -756,6 +776,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   return {
     submission_key: text(draft.submissionKey),
     editing_public_listing_id: editingPublicListingId,
+    organization_public_id: text(draft.organizationPublicId),
     replace_media: mediaLoadedForEdit,
     discovery_channel_code: normalizeCode(text(draft.discovery_channel_code)),
     property_group_code: normalizeCode(text(draft.property_group_code)),

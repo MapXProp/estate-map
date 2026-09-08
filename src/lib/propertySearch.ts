@@ -193,6 +193,11 @@ export type PropertyListingDetail = {
   contact_authority_code: string
   contact_organization_name: string
   contact_verification_status: 'unverified' | 'identity_verified' | 'authority_verified' | ''
+  organization_public_id?: string
+  organization_name?: string
+  organization_verification_status?: 'unverified' | 'contact_checked' | 'verified' | 'rejected' | ''
+  organization_website_url?: string
+  organization_logo_url?: string
   offer_type: string
   offer_amount?: number
   price_unit: string

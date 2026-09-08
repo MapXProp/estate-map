@@ -82,9 +82,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const featureCards = getFeatureCards(listing)
   const offerAmount = listing.offer_amount || 0
   const pricePerSquareWah =
-    offerAmount > 0 && landAreaSquareWah > 0
-      ? Math.round(offerAmount / landAreaSquareWah)
-      : storedPricePerSquareWah
+    offerAmount > 0 && landAreaSquareWah > 0 ? Math.round(offerAmount / landAreaSquareWah) : storedPricePerSquareWah
   const fullAddress = [listing.address, listing.province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
@@ -387,9 +385,14 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <div className="my-5 border-t border-neutral-200" />
               <p className="font-semibold text-neutral-950">ติดต่อ {listing.contact_name}</p>
               {contactRole && <p className="mt-1 text-sm font-medium text-neutral-700">{contactRole}</p>}
-              {listing.contact_organization_name && (
+              {(listing.organization_name || listing.contact_organization_name) && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
-                  <Building2 className="size-4" /> {listing.contact_organization_name}
+                  <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
+                </p>
+              )}
+              {listing.organization_verification_status === 'verified' && (
+                <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-blue-600">
+                  <ShieldCheck className="size-3.5" /> องค์กรตรวจสอบแล้ว
                 </p>
               )}
               <p className="mt-2 text-xs text-neutral-500">
@@ -428,7 +431,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   ฿{formatThaiNumber(offerAmount)}
                 </p>
                 {pricePerSquareWah ? (
-                  <p className="whitespace-nowrap text-[10px] leading-none font-medium text-[#71817b]">
+                  <p className="text-[10px] leading-none font-medium whitespace-nowrap text-[#71817b]">
                     เฉลี่ย ฿{formatThaiNumber(pricePerSquareWah)}/ตร.ว.
                   </p>
                 ) : null}
@@ -440,7 +443,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   contactName={listing.contact_name}
                   roleLabel={contactRole}
                   authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}
-                  organizationName={listing.contact_organization_name}
+                  organizationName={listing.organization_name || listing.contact_organization_name}
                   verificationStatus={listing.contact_verification_status}
                   trusted={isTrustedContact}
                   phone={listing.contact_phone}

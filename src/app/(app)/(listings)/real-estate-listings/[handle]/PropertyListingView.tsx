@@ -270,8 +270,15 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <p className="font-sarabun font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'ติดต่อ' : 'Contact'} {listing.contact_name}
               </p>
-              {listing.contact_organization_name ? (
-                <p className="mt-1 font-sarabun text-sm text-neutral-500">{listing.contact_organization_name}</p>
+              {listing.organization_name || listing.contact_organization_name ? (
+                <p className="mt-1 font-sarabun text-sm text-neutral-500">
+                  {listing.organization_name || listing.contact_organization_name}
+                </p>
+              ) : null}
+              {listing.organization_verification_status === 'verified' ? (
+                <p className="mt-1 flex items-center gap-1 font-sarabun text-xs font-semibold text-blue-600 dark:text-blue-300">
+                  <ShieldCheck className="size-3.5" /> {isThai ? 'องค์กรตรวจสอบแล้ว' : 'Verified organization'}
+                </p>
               ) : null}
               <div className="mt-5 grid gap-2.5">
                 {phoneURL ? (
