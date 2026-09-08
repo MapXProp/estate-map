@@ -2,6 +2,18 @@ import { fetchWithAuthRetry, getAuthApiUrl } from './auth'
 
 export type OrganizationRoleCode = 'owner' | 'admin' | 'publisher' | 'editor' | 'viewer'
 export type OrganizationVerificationStatus = 'unverified' | 'contact_checked' | 'verified' | 'rejected'
+export type OrganizationSpecialtyCode =
+  | 'sale'
+  | 'rent'
+  | 'npa'
+  | 'condo'
+  | 'house'
+  | 'land'
+  | 'commercial'
+  | 'warehouse_factory'
+  | 'hotel_resort'
+  | 'beachfront'
+  | 'investment'
 
 export type Organization = {
   public_organization_id: string
@@ -15,6 +27,7 @@ export type Organization = {
   verification_status: OrganizationVerificationStatus
   verification_note?: string
   verified_at?: string
+  specialty_codes: OrganizationSpecialtyCode[]
   role_code?: OrganizationRoleCode
   is_primary_owner?: boolean
   member_count: number
@@ -60,6 +73,22 @@ export type OrganizationInvitationPreview = {
   expires_at: string
 }
 
+export type OrganizationListing = {
+  public_listing_id: string
+  slug: string
+  title: string
+  property_type_code: string
+  listing_type: string
+  address: string
+  province: string
+  district: string
+  offer_amount?: number
+  price_unit: string
+  currency: string
+  primary_image_url: string
+  published_at?: string
+}
+
 type APIError = { error?: string }
 
 const readResponse = async <T extends APIError>(response: Response, fallback: string) => {
@@ -80,11 +109,25 @@ export const getMyOrganizations = async () => {
   return data.organizations || []
 }
 
+export const listOrganizations = async (filters?: { organizationType?: string; specialty?: string }) => {
+  const params = new URLSearchParams()
+  if (filters?.organizationType) params.set('organization_type', filters.organizationType)
+  if (filters?.specialty) params.set('specialty', filters.specialty)
+  const suffix = params.size ? `?${params.toString()}` : ''
+  const response = await fetch(getAuthApiUrl(`organizations${suffix}`), { cache: 'no-store' })
+  const data = await readResponse<{ organizations?: Organization[]; error?: string }>(
+    response,
+    'Cannot load organizations'
+  )
+  return data.organizations || []
+}
+
 export const createOrganization = async (input: {
   display_name: string
   legal_name: string
   organization_type: string
   website_url: string
+  specialty_codes?: OrganizationSpecialtyCode[]
 }) => {
   const response = await fetchWithAuthRetry(getAuthApiUrl('organizations'), {
     method: 'POST',
@@ -112,7 +155,7 @@ export const updateOrganization = async (
   publicOrganizationId: string,
   input: Pick<
     Organization,
-    'display_name' | 'legal_name' | 'organization_type' | 'website_url' | 'logo_url' | 'description'
+    'display_name' | 'legal_name' | 'organization_type' | 'website_url' | 'logo_url' | 'description' | 'specialty_codes'
   >
 ) => {
   const response = await fetchWithAuthRetry(
@@ -228,6 +271,17 @@ export const getOrganizationInvitation = async (token: string) => {
     cache: 'no-store',
   })
   return readResponse<OrganizationInvitationPreview & APIError>(response, 'Cannot load invitation')
+}
+
+export const getOrganizationListings = async (identifier: string) => {
+  const response = await fetch(getAuthApiUrl(`organizations/${encodeURIComponent(identifier)}/listings`), {
+    cache: 'no-store',
+  })
+  const data = await readResponse<{ listings?: OrganizationListing[]; error?: string }>(
+    response,
+    'Cannot load organization listings'
+  )
+  return data.listings || []
 }
 
 export const acceptOrganizationInvitation = async (token: string) => {

@@ -2,6 +2,7 @@
 
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
+  Building2,
   CheckCircle2,
   ChevronRight,
   ContactRound,
@@ -13,6 +14,7 @@ import {
   ShieldQuestion,
   X,
 } from 'lucide-react'
+import Link from 'next/link'
 import {
   type PointerEvent as ReactPointerEvent,
   type TouchEvent as ReactTouchEvent,
@@ -28,6 +30,7 @@ interface MobileListingContactSheetProps {
   roleLabel: string
   authorityLabel?: string
   organizationName?: string
+  organizationPublicId?: string
   verificationStatus: VerificationStatus
   trusted?: boolean
   phone?: string
@@ -47,6 +50,7 @@ const MobileListingContactSheet = ({
   roleLabel,
   authorityLabel,
   organizationName,
+  organizationPublicId,
   verificationStatus,
   trusted = false,
   phone,
@@ -201,8 +205,7 @@ const MobileListingContactSheet = ({
     touchStartTimeRef.current = performance.now()
     touchDragOffsetRef.current = 0
     touchDragLockedRef.current = false
-    canStartTouchDragRef.current =
-      startedOnDragHandle || (scrollContainerRef.current?.scrollTop ?? 0) <= 1
+    canStartTouchDragRef.current = startedOnDragHandle || (scrollContainerRef.current?.scrollTop ?? 0) <= 1
   }
 
   const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
@@ -323,7 +326,7 @@ const MobileListingContactSheet = ({
         aria-label="ข้อมูลผู้ติดต่อ"
         aria-expanded={open}
         title="ข้อมูลผู้ติดต่อ"
-        className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 outline-none transition [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95"
+        className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95"
       >
         <ContactRound className="size-[19px]" />
       </button>
@@ -399,7 +402,19 @@ const MobileListingContactSheet = ({
                   )}
                   <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-3">
                     <dt className="text-neutral-500">บริษัท / สังกัด</dt>
-                    <dd className="font-medium text-neutral-800">{organizationName || 'ไม่ได้ระบุ'}</dd>
+                    <dd className="font-medium text-neutral-800">
+                      {organizationPublicId && organizationName ? (
+                        <Link
+                          href={`/organizations/${encodeURIComponent(organizationPublicId)}`}
+                          className="inline-flex items-center gap-1.5 text-[#176b50]"
+                        >
+                          <Building2 className="size-4 shrink-0" /> {organizationName}
+                          <ChevronRight className="size-4 shrink-0" />
+                        </Link>
+                      ) : (
+                        organizationName || 'ไม่ได้ระบุ'
+                      )}
+                    </dd>
                   </div>
                 </dl>
               </section>

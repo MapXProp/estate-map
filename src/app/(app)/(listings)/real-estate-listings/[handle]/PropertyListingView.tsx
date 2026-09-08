@@ -7,6 +7,7 @@ import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
   BedDouble,
+  Building2,
   CarFront,
   ExternalLink,
   Mail,
@@ -16,7 +17,9 @@ import {
   Phone,
   ShieldCheck,
 } from 'lucide-react'
+import Link from 'next/link'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
+import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
 const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const { locale } = usePreferences()
@@ -89,6 +92,9 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
       : ''
+  const isTrustedContact =
+    listing.organization_verification_status === 'verified' ||
+    listing.contact_verification_status === 'authority_verified'
   const facts = [
     ...(listing.usable_area_sqm !== undefined
       ? [
@@ -271,9 +277,18 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 {isThai ? 'ติดต่อ' : 'Contact'} {listing.contact_name}
               </p>
               {listing.organization_name || listing.contact_organization_name ? (
-                <p className="mt-1 font-sarabun text-sm text-neutral-500">
-                  {listing.organization_name || listing.contact_organization_name}
-                </p>
+                listing.organization_public_id ? (
+                  <Link
+                    href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
+                    className="mt-1 flex items-center gap-1.5 font-sarabun text-sm font-medium text-[#176b50] hover:underline dark:text-emerald-300"
+                  >
+                    <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
+                  </Link>
+                ) : (
+                  <p className="mt-1 font-sarabun text-sm text-neutral-500">
+                    {listing.organization_name || listing.contact_organization_name}
+                  </p>
+                )
               ) : null}
               {listing.organization_verification_status === 'verified' ? (
                 <p className="mt-1 flex items-center gap-1 font-sarabun text-xs font-semibold text-blue-600 dark:text-blue-300">
@@ -313,7 +328,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
         </div>
       </main>
 
-      {(phoneURL || lineURL || mapURL) && (
+      {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL || mapURL) && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -323,6 +338,21 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
+              {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL) && (
+                <MobileListingContactSheet
+                  contactName={listing.contact_name}
+                  roleLabel={contactRoleLabel(listing.contact_role_code)}
+                  organizationName={listing.organization_name || listing.contact_organization_name}
+                  organizationPublicId={listing.organization_public_id}
+                  verificationStatus={listing.contact_verification_status}
+                  trusted={isTrustedContact}
+                  phone={listing.contact_phone}
+                  secondaryPhone={listing.contact_phone_secondary}
+                  email={listing.contact_email}
+                  lineId={listing.line_id}
+                  instagramHandle={listing.instagram_handle}
+                />
+              )}
               {!phoneURL && lineURL ? (
                 <a
                   href={lineURL}
@@ -416,6 +446,18 @@ const offerLabel = (value: string, isThai: boolean) => {
     business_transfer: ['เซ้ง / โอนกิจการ', 'Business transfer'],
   }
   return labels[value]?.[isThai ? 0 : 1] || value
+}
+
+const contactRoleLabel = (value: string) => {
+  const labels: Record<string, string> = {
+    owner: 'เจ้าของทรัพย์',
+    owner_representative: 'ผู้รับมอบอำนาจจากเจ้าของ',
+    independent_broker: 'นายหน้าอิสระ',
+    agency_broker: 'นายหน้าสังกัดบริษัท',
+    developer_investor_representative: 'ตัวแทนโครงการ / นักลงทุน',
+    property_manager: 'ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร',
+  }
+  return labels[value] || 'ผู้ลงประกาศ'
 }
 
 const amenityLabel = (value: string, isThai: boolean) => {

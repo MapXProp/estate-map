@@ -2,6 +2,7 @@ import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
+  Building2,
   CalendarDays,
   CircleHelp,
   ExternalLink,
@@ -13,6 +14,8 @@ import {
   Users,
 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
 const formatThaiDate = (value: string) =>
   new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(
@@ -242,6 +245,15 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                   </a>
                 )}
               </div>
+              {listing.organization_public_id && (listing.organization_name || listing.contact_organization_name) && (
+                <Link
+                  href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-200 underline-offset-4 hover:text-white hover:underline"
+                >
+                  <Building2 className="size-4" /> ดูข้อมูลองค์กร{' '}
+                  {listing.organization_name || listing.contact_organization_name}
+                </Link>
+              )}
               <p className="mt-2 text-sm leading-6 text-white/75">{event.application_instructions}</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 {phoneURL && (
@@ -270,6 +282,25 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 p-3 backdrop-blur min-[744px]:hidden">
         <div className="mx-auto flex max-w-md gap-2">
+          {(listing.contact_name || listing.organization_name || phoneURL || lineURL) && (
+            <MobileListingContactSheet
+              contactName={listing.contact_name || event.organizer_name}
+              roleLabel="ผู้ประสานงานกิจกรรม"
+              organizationName={listing.organization_name || listing.contact_organization_name}
+              organizationPublicId={listing.organization_public_id}
+              verificationStatus={listing.contact_verification_status}
+              trusted={
+                isVerifiedOrganizer ||
+                listing.organization_verification_status === 'verified' ||
+                listing.contact_verification_status === 'authority_verified'
+              }
+              phone={listing.contact_phone}
+              secondaryPhone={listing.contact_phone_secondary}
+              email={listing.contact_email}
+              lineId={listing.line_id}
+              instagramHandle={listing.instagram_handle}
+            />
+          )}
           {lineURL && (
             <a
               href={lineURL}

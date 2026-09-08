@@ -17,6 +17,7 @@ import {
   UserRoundCheck,
   WalletCards,
 } from 'lucide-react'
+import Link from 'next/link'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
@@ -226,6 +227,23 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 </summary>
 
                 <div className="border-t border-[#dce9e4] px-3 py-2">
+                  {listing.organization_public_id &&
+                    (listing.organization_name || listing.contact_organization_name) && (
+                      <Link
+                        href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
+                        className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
+                      >
+                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
+                          <Building2 className="size-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs text-neutral-500">ข้อมูลองค์กร</span>
+                          <span className="block truncate text-sm font-semibold text-[#176b50]">
+                            {listing.organization_name || listing.contact_organization_name}
+                          </span>
+                        </span>
+                      </Link>
+                    )}
                   {phoneURL && (
                     <a
                       href={phoneURL}
@@ -386,9 +404,20 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <p className="font-semibold text-neutral-950">ติดต่อ {listing.contact_name}</p>
               {contactRole && <p className="mt-1 text-sm font-medium text-neutral-700">{contactRole}</p>}
               {(listing.organization_name || listing.contact_organization_name) && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
-                  <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
-                </p>
+                <>
+                  {listing.organization_public_id ? (
+                    <Link
+                      href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
+                      className="mt-1 flex items-center gap-1.5 text-sm font-medium text-[#176b50] hover:underline"
+                    >
+                      <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
+                    </Link>
+                  ) : (
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
+                      <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
+                    </p>
+                  )}
+                </>
               )}
               {listing.organization_verification_status === 'verified' && (
                 <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-blue-600">
@@ -444,6 +473,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   roleLabel={contactRole}
                   authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}
                   organizationName={listing.organization_name || listing.contact_organization_name}
+                  organizationPublicId={listing.organization_public_id}
                   verificationStatus={listing.contact_verification_status}
                   trusted={isTrustedContact}
                   phone={listing.contact_phone}

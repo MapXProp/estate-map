@@ -14,6 +14,7 @@ const staticPages: Array<{
   { path: '/rent', changeFrequency: 'daily', priority: 0.8 },
   { path: '/properties/map', changeFrequency: 'daily', priority: 0.8 },
   { path: '/real-estate-categories/all', changeFrequency: 'daily', priority: 0.8 },
+  { path: '/organizations', changeFrequency: 'weekly', priority: 0.6 },
   { path: '/about', changeFrequency: 'monthly', priority: 0.4 },
   { path: '/contact', changeFrequency: 'monthly', priority: 0.4 },
 ]

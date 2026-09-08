@@ -27,6 +27,7 @@ const footerNavigation = [
     titleEn: 'Property owners',
     links: [
       ['ลงประกาศฟรี', 'List for free', '/add-listing/1?new=1'],
+      ['องค์กรและบริษัทอสังหา', 'Property organizations', '/organizations'],
       ['จัดการบัญชี', 'Manage account', '/account'],
       ['ประกาศของฉัน', 'My listings', '/account-listings'],
       ['สอบถามการลงประกาศ', 'Listing support', '/contact?topic=listing'],

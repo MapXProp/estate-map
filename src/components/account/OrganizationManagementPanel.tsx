@@ -19,12 +19,15 @@ import {
   type OrganizationInvitation,
   type OrganizationMember,
   type OrganizationRoleCode,
+  type OrganizationSpecialtyCode,
 } from '@/lib/organizations'
+import { organizationSpecialties, organizationTypes } from '@/lib/organizationTaxonomy'
 import {
   BadgeCheck,
   Building2,
   Check,
   CircleAlert,
+  ExternalLink,
   MailPlus,
   Plus,
   RefreshCw,
@@ -33,6 +36,7 @@ import {
   Trash2,
   UserRoundCog,
 } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -43,17 +47,6 @@ const roleOptions: Array<{ code: Exclude<OrganizationRoleCode, 'owner'>; th: str
   { code: 'viewer', th: 'ผู้ดูข้อมูล', en: 'Viewer' },
 ]
 
-const organizationTypes = [
-  ['agency', 'บริษัทนายหน้า', 'Agency'],
-  ['developer', 'ผู้พัฒนาอสังหาริมทรัพย์', 'Developer'],
-  ['bank_npa', 'ธนาคาร / ทรัพย์ NPA', 'Bank / NPA'],
-  ['asset_manager', 'บริษัทบริหารสินทรัพย์', 'Asset manager'],
-  ['property_company', 'บริษัทอสังหาริมทรัพย์', 'Property company'],
-  ['corporate', 'บริษัททั่วไป', 'Corporate'],
-  ['team', 'ทีมงาน', 'Team'],
-  ['other', 'อื่น ๆ', 'Other'],
-] as const
-
 const emptyProfile = {
   display_name: '',
   legal_name: '',
@@ -61,6 +54,15 @@ const emptyProfile = {
   website_url: '',
   logo_url: '',
   description: '',
+  specialty_codes: [] as OrganizationSpecialtyCode[],
+}
+
+const emptyCreateForm = {
+  display_name: '',
+  legal_name: '',
+  organization_type: 'property_company',
+  website_url: '',
+  specialty_codes: [] as OrganizationSpecialtyCode[],
 }
 
 export default function OrganizationManagementPanel() {
@@ -80,12 +82,7 @@ export default function OrganizationManagementPanel() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [showCreate, setShowCreate] = useState(false)
-  const [createForm, setCreateForm] = useState({
-    display_name: '',
-    legal_name: '',
-    organization_type: 'property_company',
-    website_url: '',
-  })
+  const [createForm, setCreateForm] = useState(emptyCreateForm)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<Exclude<OrganizationRoleCode, 'owner'>>('publisher')
 
@@ -131,6 +128,7 @@ export default function OrganizationManagementPanel() {
         website_url: detail.organization.website_url || '',
         logo_url: detail.organization.logo_url || '',
         description: detail.organization.description || '',
+        specialty_codes: detail.organization.specialty_codes || [],
       })
       if (['owner', 'admin'].includes(memberData.my_role_code)) {
         setInvitations(await getOrganizationInvitations(selectedId))
@@ -165,7 +163,7 @@ export default function OrganizationManagementPanel() {
     try {
       const result = await createOrganization(createForm)
       setShowCreate(false)
-      setCreateForm({ display_name: '', legal_name: '', organization_type: 'property_company', website_url: '' })
+      setCreateForm(emptyCreateForm)
       await loadOrganizations(result.public_organization_id)
       setMessage(
         isThai ? 'สร้างองค์กรแล้ว คุณเป็นเจ้าขององค์กรคนแรก' : 'Organization created. You are its primary owner.'
@@ -327,9 +325,9 @@ export default function OrganizationManagementPanel() {
               value={createForm.organization_type}
               onChange={(event) => setCreateForm({ ...createForm, organization_type: event.target.value })}
             >
-              {organizationTypes.map(([code, th, en]) => (
-                <option key={code} value={code}>
-                  {isThai ? th : en}
+              {organizationTypes.map((type) => (
+                <option key={type.code} value={type.code}>
+                  {isThai ? type.nameTh : type.nameEn}
                 </option>
               ))}
             </select>
@@ -342,6 +340,13 @@ export default function OrganizationManagementPanel() {
               onChange={(event) => setCreateForm({ ...createForm, website_url: event.target.value })}
             />
           </Field>
+          <div className="sm:col-span-2">
+            <SpecialtyPicker
+              isThai={isThai}
+              value={createForm.specialty_codes}
+              onChange={(specialty_codes) => setCreateForm({ ...createForm, specialty_codes })}
+            />
+          </div>
           <div className="flex justify-end gap-2 sm:col-span-2">
             <button type="button" className="secondary-button" onClick={() => setShowCreate(false)}>
               {isThai ? 'ยกเลิก' : 'Cancel'}
@@ -412,12 +417,26 @@ export default function OrganizationManagementPanel() {
                         {isThai ? `สิทธิ์ของคุณ: ${roleLabel(myRole, true)}` : `Your role: ${roleLabel(myRole, false)}`}
                       </p>
                     </div>
-                    {canPublish ? (
-                      <button type="button" className="primary-button" onClick={() => void startOrganizationListing()}>
-                        <Send className="size-4" />
-                        {isThai ? 'ลงประกาศในนามองค์กร' : 'Create organization listing'}
-                      </button>
-                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/organizations/${encodeURIComponent(organization.slug || organization.public_organization_id)}`}
+                        className="secondary-button"
+                        target="_blank"
+                      >
+                        <ExternalLink className="size-4" />
+                        {isThai ? 'ดูหน้าสาธารณะ' : 'View public profile'}
+                      </Link>
+                      {canPublish ? (
+                        <button
+                          type="button"
+                          className="primary-button"
+                          onClick={() => void startOrganizationListing()}
+                        >
+                          <Send className="size-4" />
+                          {isThai ? 'ลงประกาศในนามองค์กร' : 'Create organization listing'}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 </section>
 
@@ -447,9 +466,9 @@ export default function OrganizationManagementPanel() {
                         value={profile.organization_type}
                         onChange={(event) => setProfile({ ...profile, organization_type: event.target.value })}
                       >
-                        {organizationTypes.map(([code, th, en]) => (
-                          <option key={code} value={code}>
-                            {isThai ? th : en}
+                        {organizationTypes.map((type) => (
+                          <option key={type.code} value={type.code}>
+                            {isThai ? type.nameTh : type.nameEn}
                           </option>
                         ))}
                       </select>
@@ -477,6 +496,13 @@ export default function OrganizationManagementPanel() {
                         onChange={(event) => setProfile({ ...profile, description: event.target.value })}
                       />
                     </Field>
+                    <div className="sm:col-span-2">
+                      <SpecialtyPicker
+                        isThai={isThai}
+                        value={profile.specialty_codes}
+                        onChange={(specialty_codes) => setProfile({ ...profile, specialty_codes })}
+                      />
+                    </div>
                     <div className="flex justify-end sm:col-span-2">
                       <button type="submit" className="primary-button" disabled={busy === 'profile'}>
                         {busy === 'profile' ? (
@@ -888,6 +914,46 @@ function RoleGuide({ isThai }: { isThai: boolean }) {
         </div>
       ))}
     </div>
+  )
+}
+
+function SpecialtyPicker({
+  isThai,
+  value,
+  onChange,
+}: {
+  isThai: boolean
+  value: OrganizationSpecialtyCode[]
+  onChange: (value: OrganizationSpecialtyCode[]) => void
+}) {
+  const toggle = (code: OrganizationSpecialtyCode) => {
+    onChange(value.includes(code) ? value.filter((item) => item !== code) : [...value, code])
+  }
+  return (
+    <fieldset>
+      <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+        {isThai ? 'ความเชี่ยวชาญและประเภททรัพย์' : 'Specialties & inventory'}
+      </legend>
+      <p className="mt-1 text-xs text-neutral-500">
+        {isThai ? 'เลือกได้หลายข้อ เพื่อให้ผู้ค้นหาเข้าใจว่าองค์กรนี้เน้นทรัพย์แบบใด' : 'Select all that apply.'}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {organizationSpecialties.map((specialty) => {
+          const selected = value.includes(specialty.code)
+          return (
+            <button
+              key={specialty.code}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => toggle(specialty.code)}
+              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${selected ? 'border-[#176b50] bg-[#176b50] text-white' : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'}`}
+            >
+              {isThai ? specialty.nameTh : specialty.nameEn}
+            </button>
+          )
+        })}
+      </div>
+    </fieldset>
   )
 }
 
