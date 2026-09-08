@@ -230,7 +230,7 @@ const SectionGridHasMap: FC<Props> = ({
     >
       <div
         id="heading"
-        className="flex w-full flex-col gap-y-4 pb-32 lg:w-[48%] lg:max-w-[760px] lg:flex-none lg:pb-10 xl:w-[46%] 2xl:w-[44%] 2xl:max-w-[820px]"
+        className="pointer-events-auto relative flex w-full flex-col gap-y-4 pb-32 lg:w-[48%] lg:max-w-[760px] lg:flex-none lg:pb-10 xl:w-[46%] 2xl:w-[44%] 2xl:max-w-[820px]"
       >
         <PropertyMapFilterBar
           value={filters}

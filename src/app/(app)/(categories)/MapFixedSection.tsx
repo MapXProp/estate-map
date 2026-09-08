@@ -233,7 +233,7 @@ const MapFixedSection = ({
         splitAtLg
           ? `fixed inset-x-0 bottom-0 h-[var(--mobile-map-sheet-height)] lg:static lg:z-0 lg:h-auto lg:min-w-0 lg:flex-1 ${
               mobileSheetState === 'open' ? 'z-50' : 'z-20'
-            } ${isDraggingSheet ? '' : 'transition-[height] duration-300 ease-out'}`
+            } pointer-events-auto ${isDraggingSheet ? '' : 'transition-[height] duration-300 ease-out'}`
           : 'fixed inset-0 top-0 z-40 flex-1/2 xl:static xl:z-0'
       }
       style={splitAtLg ? sheetStyle : undefined}

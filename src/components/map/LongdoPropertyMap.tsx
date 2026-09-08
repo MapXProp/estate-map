@@ -210,6 +210,7 @@ const LongdoPropertyMap = ({
   const viewportEventsEnabledRef = useRef(false)
   const declutterAnimationFrameRef = useRef<number | null>(null)
   const declutterMarkersRef = useRef<() => void>(() => undefined)
+  const currentHoverIDRef = useRef(currentHoverID)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -260,8 +261,8 @@ const LongdoPropertyMap = ({
       })
       .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate))
       .sort((first, second) => {
-        const firstActive = first.listing.id === currentHoverID ? 1 : 0
-        const secondActive = second.listing.id === currentHoverID ? 1 : 0
+        const firstActive = first.listing.id === currentHoverIDRef.current ? 1 : 0
+        const secondActive = second.listing.id === currentHoverIDRef.current ? 1 : 0
         if (firstActive !== secondActive) return secondActive - firstActive
 
         const tierDifference =
@@ -356,7 +357,7 @@ const LongdoPropertyMap = ({
       root.style.zIndex = String(900 - Math.min(priorityIndex, 850))
       if (!overlaps) acceptedRects.push(expandedRect)
     })
-  }, [currentHoverID, listingsById])
+  }, [listingsById])
 
   const scheduleMarkerDeclutter = useCallback(() => {
     if (declutterAnimationFrameRef.current !== null) {
@@ -371,6 +372,18 @@ const LongdoPropertyMap = ({
   useEffect(() => {
     declutterMarkersRef.current = scheduleMarkerDeclutter
   }, [scheduleMarkerDeclutter])
+
+  useEffect(() => {
+    currentHoverIDRef.current = currentHoverID
+
+    const mapContainer = placeholderRef.current
+    if (!mapContainer) return
+
+    mapContainer.querySelectorAll<HTMLElement>('[data-mapx-price-marker="true"]').forEach((root) => {
+      root.classList.toggle('is-active', root.dataset.mapxListingId === currentHoverID)
+    })
+    scheduleMarkerDeclutter()
+  }, [currentHoverID, scheduleMarkerDeclutter])
 
   useEffect(
     () => () => {
@@ -620,6 +633,29 @@ const LongdoPropertyMap = ({
   }, [mapReady, resizeRequestId])
 
   useEffect(() => {
+    if (!mapReady) return
+
+    const refreshMap = () => {
+      if (document.visibilityState === 'hidden') return
+      const map = mapRef.current
+      if (!map) return
+      map.resize()
+      map.repaint()
+      declutterMarkersRef.current()
+    }
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') refreshMap()
+    }
+
+    window.addEventListener('focus', refreshMap)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('focus', refreshMap)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [mapReady])
+
+  useEffect(() => {
     const map = mapRef.current
     const longdo = window.longdo
     if (!mapReady || !map || !longdo) return
@@ -627,7 +663,7 @@ const LongdoPropertyMap = ({
     listingMarkersRef.current.forEach((marker) => map.Overlays.remove(marker))
     const nextMarkers: LongdoOverlay[] = []
     listings.forEach((listing, index) => {
-      const active = listing.id === currentHoverID
+      const active = listing.id === currentHoverIDRef.current
       const marker = new longdo.Marker(locations[index], {
         clickable: true,
         icon: {
@@ -643,7 +679,7 @@ const LongdoPropertyMap = ({
     scheduleMarkerDeclutter()
     const settleTimers = [100, 500, 1500, 4000].map((delay) => window.setTimeout(scheduleMarkerDeclutter, delay))
     return () => settleTimers.forEach((timer) => window.clearTimeout(timer))
-  }, [currentHoverID, displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter])
+  }, [displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
@@ -721,6 +757,7 @@ const LongdoPropertyMap = ({
         .mapx-price-marker[data-mapx-fanned="true"] .mapx-fan-line {
           display: block;
         }
+        .mapx-price-marker.is-active,
         .mapx-price-marker:hover,
         .mapx-price-marker:focus-within {
           --mapx-marker-bg: #123f32 !important;
@@ -821,7 +858,15 @@ const LongdoPropertyMap = ({
       <div
         ref={placeholderRef}
         tabIndex={-1}
-        className="size-full touch-none overscroll-contain"
+        className="pointer-events-auto size-full touch-none overscroll-contain outline-none"
+        onPointerEnter={() => {
+          const map = mapRef.current
+          if (!map) return
+          map.resize()
+          map.repaint()
+          declutterMarkersRef.current()
+        }}
+        onPointerDownCapture={() => placeholderRef.current?.focus({ preventScroll: true })}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />
       {mapReady && (
