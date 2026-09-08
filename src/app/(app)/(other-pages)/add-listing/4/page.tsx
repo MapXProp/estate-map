@@ -23,6 +23,11 @@ import {
   type ListingDraftValue,
   type ListingMediaType,
 } from '@/lib/listingDraft'
+import {
+  listingPhotoURLsFromOrder,
+  normalizeListingPhotoOrder,
+  replaceListingPhotoFileWithURL,
+} from '@/lib/listingPhotoOrder'
 import { storeListingPublishValidationIssue, validateListingDraftForPublish } from '@/lib/listingPublishValidation'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
@@ -73,9 +78,17 @@ const Page = () => {
   const autoStartedRef = useRef(false)
 
   const persistMedia = useCallback(
-    (photoUrls: string[], videoUrls: string[], panoramaUrls: string[], floorPlanUrl: string, syncCloud = false) => {
+    (
+      photoUrls: string[],
+      photoOrder: string[],
+      videoUrls: string[],
+      panoramaUrls: string[],
+      floorPlanUrl: string,
+      syncCloud = false
+    ) => {
       const formData = new FormData()
       replaceFormDataValues(formData, 'listingPhotoUrls[]', photoUrls)
+      replaceFormDataValues(formData, 'listingPhotoOrder[]', photoOrder)
       replaceFormDataValues(formData, 'listingVideoUrls[]', videoUrls)
       replaceFormDataValues(formData, 'listingPanoramaUrls[]', panoramaUrls)
       formData.set('eventFloorPlanUrl', floorPlanUrl)
@@ -118,6 +131,12 @@ const Page = () => {
     let videoUrls = readValues(startingDraft['listingVideoUrls[]'])
     let panoramaUrls = readValues(startingDraft['listingPanoramaUrls[]'])
     let floorPlanUrls = readText(startingDraft.eventFloorPlanUrl) ? [readText(startingDraft.eventFloorPlanUrl)] : []
+    let photoOrder = normalizeListingPhotoOrder(
+      readValues(startingDraft['listingPhotoOrder[]']),
+      photoUrls,
+      pendingMedia.photos
+    )
+    photoUrls = listingPhotoURLsFromOrder(photoOrder)
     const watermarkLabel = readText(startingDraft.contactName).trim() || (isThai ? 'ผู้ลงประกาศ' : 'Listing owner')
     const missingFileCount =
       Math.max(0, readCount(startingDraft.selectedPhotoCount) - photoUrls.length - pendingMedia.photos.length) +
@@ -182,7 +201,12 @@ const Page = () => {
         })
 
         const uploaded = await uploadListingMedia([file], mediaType, { watermarkLabel })
-        urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
+        if (pendingKey === 'photos' && uploaded[0]) {
+          photoOrder = replaceListingPhotoFileWithURL(photoOrder, file, uploaded[0])
+          urls = listingPhotoURLsFromOrder(photoOrder).slice(0, limit)
+        } else {
+          urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
+        }
         completedCount += 1
         uploadedCount += uploaded.length
         setPendingMedia((current) => ({ ...current, [pendingKey]: files.slice(index + 1) }))
@@ -191,7 +215,7 @@ const Page = () => {
         if (pendingKey === 'videos') videoUrls = urls
         if (pendingKey === 'panoramas') panoramaUrls = urls
         if (pendingKey === 'floorPlans') floorPlanUrls = urls
-        await persistMedia(photoUrls, videoUrls, panoramaUrls, floorPlanUrls[0] || '')
+        await persistMedia(photoUrls, photoOrder, videoUrls, panoramaUrls, floorPlanUrls[0] || '')
 
         setMediaProgress({
           phase: 'uploading',
@@ -211,7 +235,7 @@ const Page = () => {
       panoramaUrls = await uploadQueue(pendingMedia.panoramas, '360', panoramaUrls, MAX_PANORAMAS, 'panoramas')
       floorPlanUrls = await uploadQueue(pendingMedia.floorPlans, 'image', floorPlanUrls, 1, 'floorPlans')
     } catch (error) {
-      await persistMedia(photoUrls, videoUrls, panoramaUrls, floorPlanUrls[0] || '', true)
+      await persistMedia(photoUrls, photoOrder, videoUrls, panoramaUrls, floorPlanUrls[0] || '', true)
       setFailure({
         stage: 'upload',
         message: getMediaUploadErrorMessage(error, isThai),

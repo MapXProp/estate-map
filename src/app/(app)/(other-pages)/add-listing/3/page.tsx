@@ -20,6 +20,13 @@ import {
 } from '@/lib/listingDraft'
 import { showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
 import {
+  listingPhotoFileToken,
+  listingPhotoURLFromToken,
+  listingPhotoURLsFromOrder,
+  moveListingPhoto,
+  normalizeListingPhotoOrder,
+} from '@/lib/listingPhotoOrder'
+import {
   consumeListingPublishValidationIssue,
   listingValidationMessage,
   storeListingPublishValidationIssue,
@@ -28,7 +35,9 @@ import {
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import {
+  ArrowLeftIcon,
   ArrowPathRoundedSquareIcon,
+  ArrowRightIcon,
   BanknotesIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
@@ -138,6 +147,7 @@ const Page = () => {
   const [panoramas, setPanoramas] = useState<File[]>(() => pendingMedia.panoramas)
   const [floorPlans, setFloorPlans] = useState<File[]>(() => pendingMedia.floorPlans)
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
+  const [photoOrder, setPhotoOrder] = useState<string[]>([])
   const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [uploadedFloorPlanUrl, setUploadedFloorPlanUrl] = useState('')
@@ -222,6 +232,7 @@ const Page = () => {
           : [{ id: 'event-round-0', startsOn: '', endsOn: '' }]
       )
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
+      setPhotoOrder(readValues(savedDraft['listingPhotoOrder[]']))
       setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
       setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
       setUploadedFloorPlanUrl(readText(savedDraft.eventFloorPlanUrl))
@@ -277,6 +288,21 @@ const Page = () => {
   const effectiveUploadedFloorPlanUrl = isTemporarySpace ? uploadedFloorPlanUrl : ''
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
+  const normalizedPhotoOrder = useMemo(
+    () => normalizeListingPhotoOrder(photoOrder, uploadedPhotoUrls, photos),
+    [photoOrder, photos, uploadedPhotoUrls]
+  )
+  const orderedPhotoPreviews = useMemo(
+    () =>
+      normalizedPhotoOrder.flatMap((token) => {
+        const uploadedURL = listingPhotoURLFromToken(token)
+        if (uploadedURL) return [{ token, url: resolveListingMediaUrl(uploadedURL) }]
+
+        const pendingIndex = photos.findIndex((photo) => listingPhotoFileToken(photo) === token)
+        return pendingIndex >= 0 && previewUrls[pendingIndex] ? [{ token, url: previewUrls[pendingIndex] }] : []
+      }),
+    [normalizedPhotoOrder, photos, previewUrls]
+  )
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
   const panoramaPreviewUrls = useMemo(() => panoramas.map((panorama) => URL.createObjectURL(panorama)), [panoramas])
   const pendingFloorPlanPreviewUrl = useMemo(
@@ -389,12 +415,20 @@ const Page = () => {
   }
 
   const removePhoto = (index: number) => {
-    if (index < uploadedPhotoUrls.length) {
-      setUploadedPhotoUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
-      return
+    const token = normalizedPhotoOrder[index]
+    if (!token) return
+
+    const uploadedURL = listingPhotoURLFromToken(token)
+    if (uploadedURL) {
+      setUploadedPhotoUrls((current) => current.filter((url) => url !== uploadedURL))
+    } else {
+      setPhotos((current) => current.filter((photo) => listingPhotoFileToken(photo) !== token))
     }
-    const pendingIndex = index - uploadedPhotoUrls.length
-    setPhotos((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
+    setPhotoOrder((current) => current.filter((item) => item !== token))
+  }
+
+  const movePhotoTo = (fromIndex: number, toIndex: number) => {
+    setPhotoOrder(moveListingPhoto(normalizedPhotoOrder, fromIndex, toIndex))
   }
 
   const removeVideo = (index: number) => {
@@ -490,7 +524,8 @@ const Page = () => {
     formData.set('selectedPhotoCount', String(uploadedPhotoUrls.length + photos.length))
     formData.set('selectedVideoCount', String(uploadedVideoUrls.length + videos.length))
     formData.set('selectedPanoramaCount', String(uploadedPanoramaUrls.length + panoramas.length))
-    replaceFormDataValues(formData, 'listingPhotoUrls[]', uploadedPhotoUrls)
+    replaceFormDataValues(formData, 'listingPhotoUrls[]', listingPhotoURLsFromOrder(normalizedPhotoOrder))
+    replaceFormDataValues(formData, 'listingPhotoOrder[]', normalizedPhotoOrder)
     replaceFormDataValues(formData, 'listingVideoUrls[]', uploadedVideoUrls)
     replaceFormDataValues(formData, 'listingPanoramaUrls[]', uploadedPanoramaUrls)
     formData.set('submissionKey', readText(draft?.submissionKey) || createListingSubmissionKey())
@@ -700,20 +735,30 @@ const Page = () => {
             />
           </label>
 
-          {uploadedPhotoUrls.length || previewUrls.length ? (
-            <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
-              {[...uploadedPhotoUrls.map(resolveListingMediaUrl), ...previewUrls].map((url, index) => (
+          {orderedPhotoPreviews.length ? (
+            <div className="mt-4">
+              <p className="mb-3 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                {isThai
+                  ? 'ใช้ลูกศรเพื่อจัดลำดับ หรือกด “ตั้งเป็นปก” · รูปที่ 1 จะแสดงเป็นภาพหน้าปก'
+                  : 'Use the arrows to reorder or choose “Make cover” · Photo 1 is the cover'}
+              </p>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
+              {orderedPhotoPreviews.map(({ token, url }, index) => (
                 <div
-                  key={url}
+                  key={token}
                   className="relative aspect-square overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
                   style={{ backgroundImage: `url(${url})` }}
                   aria-label={isThai ? `รูปที่ ${index + 1}` : `Photo ${index + 1}`}
                 >
-                  {index === 0 ? (
-                    <span className="m-2 inline-block rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] text-white">
-                      {isThai ? 'ภาพหน้าปก' : 'Cover photo'}
-                    </span>
-                  ) : null}
+                  <span className="m-2 inline-block rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] text-white">
+                    {index === 0
+                      ? isThai
+                        ? 'ภาพหน้าปก · 1'
+                        : 'Cover · 1'
+                      : isThai
+                        ? `รูป ${index + 1}`
+                        : `Photo ${index + 1}`}
+                  </span>
                   <span className="pointer-events-none absolute inset-x-2 bottom-2 flex h-5 items-center justify-between gap-1 rounded-md bg-[#073d32]/75 px-1.5 text-white backdrop-blur-[1px]">
                     <span className="min-w-0 truncate font-sarabun text-[8px] font-semibold">
                       {contactName.trim() || (isThai ? 'ชื่อผู้ลงประกาศ' : 'Publisher')}
@@ -729,8 +774,41 @@ const Page = () => {
                   >
                     <XMarkIcon className="size-5" />
                   </button>
+                  <span className="absolute bottom-7 left-1 flex items-center gap-1">
+                    {index > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => movePhotoTo(index, 0)}
+                        disabled={isUploading}
+                        className="flex size-8 items-center justify-center rounded-full bg-white/95 text-[#176b50] shadow-md ring-1 ring-black/10 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={isThai ? `ตั้งรูปที่ ${index + 1} เป็นภาพหน้าปก` : `Make photo ${index + 1} the cover`}
+                        title={isThai ? 'ตั้งเป็นภาพหน้าปก' : 'Make cover'}
+                      >
+                        <PhotoIcon className="size-4" />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => movePhotoTo(index, index - 1)}
+                      disabled={isUploading || index === 0}
+                      className="flex size-8 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={isThai ? `เลื่อนรูปที่ ${index + 1} ไปทางซ้าย` : `Move photo ${index + 1} left`}
+                    >
+                      <ArrowLeftIcon className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => movePhotoTo(index, index + 1)}
+                      disabled={isUploading || index === orderedPhotoPreviews.length - 1}
+                      className="flex size-8 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={isThai ? `เลื่อนรูปที่ ${index + 1} ไปทางขวา` : `Move photo ${index + 1} right`}
+                    >
+                      <ArrowRightIcon className="size-4" />
+                    </button>
+                  </span>
                 </div>
               ))}
+              </div>
             </div>
           ) : null}
         </SectionCard>
