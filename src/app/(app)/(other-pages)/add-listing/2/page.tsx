@@ -57,6 +57,7 @@ const Page = () => {
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
   const [marker, setMarker] = useState(THAILAND_CENTER)
+  const [coordinateInput, setCoordinateInput] = useState('')
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
   const [locationError, setLocationError] = useState('')
   const [locationValidationError, setLocationValidationError] = useState(false)
@@ -79,6 +80,7 @@ const Page = () => {
       const savedPosition = parseSavedLocation(savedLng, savedLat)
       setDraft(savedDraft)
       setMarker(savedPosition || THAILAND_CENTER)
+      setCoordinateInput(savedPosition ? formatCoordinatePair(savedPosition) : '')
       setHasConfirmedMarker(Boolean(savedPosition))
       setStreet(readText(savedDraft.Street))
       setSubdistrict(readText(savedDraft.subdistrict))
@@ -215,7 +217,9 @@ const Page = () => {
 
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        setMarker({ lng: coords.longitude, lat: coords.latitude })
+        const nextMarker = { lng: coords.longitude, lat: coords.latitude }
+        setMarker(nextMarker)
+        setCoordinateInput(formatCoordinatePair(nextMarker))
         setHasConfirmedMarker(true)
       },
       () => {
@@ -228,6 +232,26 @@ const Page = () => {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     )
+  }
+
+  const applyCoordinateInput = () => {
+    const nextMarker = parseCoordinatePair(coordinateInput)
+    if (!nextMarker) {
+      setHasConfirmedMarker(false)
+      setLocationValidationError(true)
+      setLocationError(
+        isThai
+          ? 'กรุณากรอกพิกัดในรูปแบบ ละติจูด, ลองจิจูด เช่น 13.75633000, 100.50177000'
+          : 'Enter coordinates as latitude, longitude, for example 13.75633000, 100.50177000.'
+      )
+      return
+    }
+
+    setMarker(nextMarker)
+    setCoordinateInput(formatCoordinatePair(nextMarker))
+    setHasConfirmedMarker(true)
+    setLocationValidationError(false)
+    setLocationError('')
   }
 
   const handleSubmitForm = async (formData: FormData) => {
@@ -360,6 +384,48 @@ const Page = () => {
               </button>
             </div>
 
+            <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
+              <label
+                htmlFor="coordinate-input"
+                className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100"
+              >
+                {isThai ? 'วางพิกัดจาก Google Maps' : 'Paste coordinates from Google Maps'}
+              </label>
+              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+                {isThai
+                  ? 'วางตามลำดับ ละติจูด, ลองจิจูด ระบบจะเก็บสูงสุด 8 ตำแหน่งทศนิยม'
+                  : 'Paste latitude, longitude in that order. Up to 8 decimal places are stored.'}
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Input
+                  id="coordinate-input"
+                  value={coordinateInput}
+                  onChange={(event) => {
+                    setCoordinateInput(event.target.value)
+                    setHasConfirmedMarker(false)
+                    setLocationValidationError(false)
+                    setLocationError('')
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return
+                    event.preventDefault()
+                    applyCoordinateInput()
+                  }}
+                  placeholder="13.73575135, 100.70620729"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={applyCoordinateInput}
+                  className="shrink-0 rounded-full bg-neutral-900 px-5 py-2.5 font-sarabun text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                >
+                  {isThai ? 'ใช้พิกัดนี้' : 'Use coordinates'}
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] shadow-sm dark:border-neutral-700">
               <div className="h-[22rem] lg:h-[28rem]">
                 <LongdoLocationPicker
@@ -370,6 +436,7 @@ const Page = () => {
                   locale={isThai ? 'th' : 'en'}
                   onChange={(location) => {
                     setMarker(location)
+                    setCoordinateInput(formatCoordinatePair(location))
                     setHasConfirmedMarker(true)
                     setLocationError('')
                     setLocationValidationError(false)
@@ -401,7 +468,7 @@ const Page = () => {
               </span>
               {hasConfirmedMarker ? (
                 <span className="font-mono text-xs opacity-75">
-                  {marker.lat.toFixed(6)}, {marker.lng.toFixed(6)}
+                  {formatCoordinatePair(marker)}
                 </span>
               ) : null}
             </div>
@@ -590,5 +657,17 @@ const parseSavedLocation = (lngValue: string, latValue: string) => {
 
   return { lng, lat }
 }
+
+const parseCoordinatePair = (value: string) => {
+  const match = value
+    .trim()
+    .match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))\s*(?:[,，]\s*|\s+)(-?(?:\d+(?:\.\d+)?|\.\d+))$/)
+  if (!match) return null
+
+  return parseSavedLocation(match[2], match[1])
+}
+
+const formatCoordinatePair = ({ lat, lng }: { lat: number; lng: number }) =>
+  `${lat.toFixed(8)}, ${lng.toFixed(8)}`
 
 export default Page
