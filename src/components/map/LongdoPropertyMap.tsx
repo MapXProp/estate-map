@@ -110,83 +110,43 @@ const getListingLocation = (listing: TRealEstateListing): LongdoLocation =>
     ? { lon: listing.map.lng, lat: listing.map.lat }
     : thailandDemoLocations[getDemoLocationIndex(listing.id)]
 
-const getMarkerHtml = (price: string, active: boolean) => {
+const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boolean, isThai: boolean) => {
   const background = active ? '#123f32' : '#ffffff'
   const color = active ? '#ffffff' : '#173f34'
-
-  return `
-  <div data-mapx-price-marker="true" style="position:relative;width:max-content;padding-bottom:10px;transform:translate(-50%,-100%);font-family:Sarabun,Arial,sans-serif;">
-    <div style="
-      min-width:72px;
-      height:34px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-sizing:border-box;
-      padding:0 12px;
-      border-radius:999px;
-      border:2px solid #ffffff;
-      background:${background};
-      color:${color};
-      font-size:13px;
-      font-weight:700;
-      white-space:nowrap;
-      box-shadow:0 5px 16px rgba(18,63,50,.22);
-      transform:${active ? 'scale(1.08)' : 'scale(1)'};
-      transform-origin:center bottom;
-      transition:transform .15s ease,background .15s ease,color .15s ease;
-    ">${escapeHtml(price)}</div>
-    <span aria-hidden="true" style="
-      position:absolute;
-      left:50%;
-      bottom:0;
-      width:0;
-      height:0;
-      border-left:8px solid transparent;
-      border-right:8px solid transparent;
-      border-top:11px solid #ffffff;
-      transform:translateX(-50%);
-      filter:drop-shadow(0 3px 2px rgba(18,63,50,.16));
-    "></span>
-    <span aria-hidden="true" style="
-      position:absolute;
-      left:50%;
-      bottom:3px;
-      width:0;
-      height:0;
-      border-left:5px solid transparent;
-      border-right:5px solid transparent;
-      border-top:7px solid ${background};
-      transform:translateX(-50%);
-    "></span>
-  </div>`
-}
-
-const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean, displayPrice: string, isThai: boolean) => {
   const listingPath = `/real-estate-listings/${encodeURIComponent(listing.handle)}`
-  const fullListingPath = openInNewTab ? listingPath : `${listingPath}?view=full`
   const title = isThai ? listing.title : listing.titleEn || listing.title
   const imageUrl = listing.featuredImage || listing.galleryImgs[0] || ''
   const categoryLabel = isThai ? 'อสังหาริมทรัพย์' : 'Property'
-  const openLabel = isThai ? 'เปิดประกาศ' : 'View listing'
   const imageHtml = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}" loading="lazy" style="width:104px;height:92px;flex:0 0 104px;border-radius:12px;object-fit:cover;background:#eef3f0;" />`
-    : `<div aria-hidden="true" style="width:104px;height:92px;flex:0 0 104px;border-radius:12px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:12px;font-weight:700;">MapxProp</div>`
+    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
+    : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
 
   return `
-  <article data-mapx-map-card="true" style="width:300px;box-sizing:border-box;padding:10px;border:1px solid rgba(18,63,50,.12);border-radius:18px;background:#ffffff;color:#171717;font-family:Sarabun,Arial,sans-serif;box-shadow:0 14px 36px rgba(18,63,50,.2);overflow:hidden;">
-    <a href="${listingPath}" data-mapx-quick-view="true" style="display:flex;gap:12px;color:inherit;text-decoration:none;">
-      ${imageHtml}
-      <span style="min-width:0;display:flex;flex:1;flex-direction:column;align-items:flex-start;">
-        <span style="margin:1px 0 4px;color:#176b50;font-size:11px;font-weight:700;">${categoryLabel}</span>
-        <strong style="display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;font-size:15px;line-height:1.35;font-weight:700;text-align:left;">${escapeHtml(title)}</strong>
-        <span style="margin-top:auto;font-size:14px;font-weight:700;white-space:nowrap;">${escapeHtml(displayPrice)}</span>
-      </span>
+  <div
+    data-mapx-price-marker="true"
+    class="mapx-price-marker${active ? ' is-active' : ''}"
+    style="--mapx-marker-bg:${background};--mapx-marker-color:${color};position:relative;width:max-content;padding-bottom:10px;transform:translate(-50%,-100%);font-family:Sarabun,Arial,sans-serif;"
+  >
+    <a
+      href="${listingPath}"
+      data-mapx-marker-link="true"
+      aria-label="${escapeHtml(title)}"
+      class="mapx-price-marker-link"
+      style="position:relative;display:block;color:inherit;text-decoration:none;outline:none;"
+    >
+      <span class="mapx-price-pill">${escapeHtml(price)}</span>
+      <span aria-hidden="true" class="mapx-price-pointer-outer"></span>
+      <span aria-hidden="true" class="mapx-price-pointer-inner"></span>
     </a>
-    <div style="margin-top:10px;padding-top:9px;border-top:1px solid #eeeeee;display:flex;justify-content:flex-end;">
-      <a href="${fullListingPath}" data-mapx-property-link="true" ${openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''} style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 13px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">${openLabel}</a>
-    </div>
-  </article>`
+    <article data-mapx-hover-card="true" aria-hidden="true" class="mapx-marker-hover-card">
+      ${imageHtml}
+      <span style="min-width:0;display:flex;min-height:82px;flex:1;flex-direction:column;align-items:flex-start;">
+        <span style="margin:1px 0 4px;color:#176b50;font-size:10px;font-weight:700;">${categoryLabel}</span>
+        <strong style="display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;line-height:1.35;font-weight:700;text-align:left;">${escapeHtml(title)}</strong>
+        <span style="margin-top:auto;font-size:13px;font-weight:700;white-space:nowrap;">${escapeHtml(price)}</span>
+      </span>
+    </article>
+  </div>`
 }
 
 interface Props {
@@ -295,7 +255,7 @@ const LongdoPropertyMap = ({
       const target = event.target
       if (!(target instanceof Element)) return
       const propertyLink = target.closest<HTMLAnchorElement>('a[data-mapx-property-link="true"]')
-      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"]')
+      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"]')
       if (!link && !propertyLink) return
 
       rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
@@ -499,18 +459,12 @@ const LongdoPropertyMap = ({
     const nextMarkers: LongdoOverlay[] = []
     listings.forEach((listing, index) => {
       const active = listing.id === currentHoverID
-      const title = isThai ? listing.title : listing.titleEn || listing.title
       const marker = new longdo.Marker(locations[index], {
-        title,
         clickable: true,
         icon: {
-          html: getMarkerHtml(displayPrices[index], active),
+          html: getMarkerHtml(listing, displayPrices[index], active, isThai),
           // The exact coordinate is the bottom tip of the marker, never the price label.
           offset: { x: 0, y: 0 },
-        },
-        popup: {
-          html: getPopupHtml(listing, true, displayPrices[index], isThai),
-          size: { width: 332, height: 190 },
         },
       })
       map.Overlays.add(marker)
@@ -552,6 +506,94 @@ const LongdoPropertyMap = ({
 
   return (
     <div className="relative size-full overflow-hidden bg-[#eef3f0]">
+      <style>{`
+        .mapx-price-marker {
+          cursor: pointer;
+          isolation: isolate;
+        }
+        .mapx-price-marker:hover,
+        .mapx-price-marker:focus-within {
+          --mapx-marker-bg: #123f32 !important;
+          --mapx-marker-color: #ffffff !important;
+          z-index: 1000;
+        }
+        .mapx-price-pill {
+          min-width: 72px;
+          height: 34px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
+          padding: 0 12px;
+          border: 2px solid #ffffff;
+          border-radius: 999px;
+          background: var(--mapx-marker-bg);
+          color: var(--mapx-marker-color);
+          font-size: 13px;
+          font-weight: 700;
+          white-space: nowrap;
+          box-shadow: 0 5px 16px rgba(18, 63, 50, 0.22);
+          transform: scale(1);
+          transform-origin: center bottom;
+          transition: transform 150ms ease, background 150ms ease, color 150ms ease;
+        }
+        .mapx-price-marker.is-active .mapx-price-pill,
+        .mapx-price-marker:hover .mapx-price-pill,
+        .mapx-price-marker:focus-within .mapx-price-pill {
+          transform: scale(1.08);
+        }
+        .mapx-price-pointer-outer,
+        .mapx-price-pointer-inner {
+          position: absolute;
+          left: 50%;
+          width: 0;
+          height: 0;
+          transform: translateX(-50%);
+        }
+        .mapx-price-pointer-outer {
+          bottom: -10px;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 11px solid #ffffff;
+          filter: drop-shadow(0 3px 2px rgba(18, 63, 50, 0.16));
+        }
+        .mapx-price-pointer-inner {
+          bottom: -7px;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid var(--mapx-marker-bg);
+          transition: border-top-color 150ms ease;
+        }
+        .mapx-marker-hover-card {
+          position: absolute;
+          top: calc(100% + 10px);
+          left: 50%;
+          width: 280px;
+          box-sizing: border-box;
+          display: flex;
+          gap: 10px;
+          padding: 9px;
+          border: 1px solid rgba(18, 63, 50, 0.14);
+          border-radius: 13px;
+          background: #ffffff;
+          color: #171717;
+          box-shadow: 0 14px 34px rgba(18, 63, 50, 0.22);
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transform: translate(-50%, -5px) scale(0.97);
+          transform-origin: top center;
+          transition: opacity 130ms ease, visibility 130ms ease, transform 130ms ease;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .mapx-price-marker:hover .mapx-marker-hover-card,
+          .mapx-price-marker:focus-within .mapx-marker-hover-card {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0) scale(1);
+          }
+        }
+      `}</style>
       <link rel="preconnect" href="https://api.longdo.com" />
       <link rel="preconnect" href="https://search.longdo.com" />
       <Script
