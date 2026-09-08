@@ -19,6 +19,8 @@ type ExchangeRateResponse = {
   date?: string
 }
 
+type CurrencyFormatOptions = { compact?: boolean; approximate?: boolean }
+
 type PreferencesContextValue = {
   locale: AppLocale
   currency: AppCurrency
@@ -28,7 +30,8 @@ type PreferencesContextValue = {
   setLocale: (locale: AppLocale) => void
   setCurrency: (currency: AppCurrency) => void
   setPropertyZone: (zone: PropertyZone) => void
-  formatCurrency: (amountInThb: number, options?: { compact?: boolean; approximate?: boolean }) => string
+  formatCurrency: (amountInThb: number, options?: CurrencyFormatOptions) => string
+  formatCurrencyFrom: (amount: number, sourceCurrency?: string, options?: CurrencyFormatOptions) => string
   convertFromThb: (amountInThb: number) => number
   convertToThb: (displayAmount: number) => number
 }
@@ -142,17 +145,24 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
     [currency, usdPerThb]
   )
 
-  const formatCurrency = useCallback(
-    (amountInThb: number, options?: { compact?: boolean; approximate?: boolean }) => {
+  const formatCurrencyFrom = useCallback(
+    (amount: number, sourceCurrency = 'THB', options?: CurrencyFormatOptions) => {
+      const normalizedSourceCurrency: AppCurrency = sourceCurrency.toUpperCase() === 'USD' ? 'USD' : 'THB'
+      const amountInThb = normalizedSourceCurrency === 'USD' ? amount / usdPerThb : amount
       const converted = currency === 'USD' ? amountInThb * usdPerThb : amountInThb
       return formatMoney(converted, {
         currency,
         locale,
         compact: options?.compact,
-        approximate: currency === 'USD' && options?.approximate !== false,
+        approximate: normalizedSourceCurrency !== currency && options?.approximate !== false,
       })
     },
     [currency, locale, usdPerThb]
+  )
+
+  const formatCurrency = useCallback(
+    (amountInThb: number, options?: CurrencyFormatOptions) => formatCurrencyFrom(amountInThb, 'THB', options),
+    [formatCurrencyFrom]
   )
 
   const value = useMemo<PreferencesContextValue>(
@@ -166,6 +176,7 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
       setCurrency,
       setPropertyZone,
       formatCurrency,
+      formatCurrencyFrom,
       convertFromThb,
       convertToThb,
     }),
@@ -174,6 +185,7 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
       convertToThb,
       currency,
       formatCurrency,
+      formatCurrencyFrom,
       locale,
       propertyZone,
       rateDate,

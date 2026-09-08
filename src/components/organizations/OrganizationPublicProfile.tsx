@@ -3,7 +3,6 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import { formatMoney } from '@/lib/currency'
 import { getListingMediaUrl } from '@/lib/myListings'
 import { organizationSpecialtyLabel, organizationTypeLabel } from '@/lib/organizationTaxonomy'
 import {
@@ -18,7 +17,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 export default function OrganizationPublicProfile({ identifier }: { identifier: string }) {
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [contacts, setContacts] = useState<OrganizationContact[]>([])
@@ -135,7 +134,12 @@ export default function OrganizationPublicProfile({ identifier }: { identifier: 
           {listings.length ? (
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {listings.map((listing) => (
-                <OrganizationListingCard key={listing.public_listing_id} listing={listing} isThai={isThai} />
+                <OrganizationListingCard
+                  key={listing.public_listing_id}
+                  listing={listing}
+                  isThai={isThai}
+                  formatAmount={formatCurrencyFrom}
+                />
               ))}
             </div>
           ) : (
@@ -204,7 +208,15 @@ export default function OrganizationPublicProfile({ identifier }: { identifier: 
   )
 }
 
-function OrganizationListingCard({ listing, isThai }: { listing: OrganizationListing; isThai: boolean }) {
+function OrganizationListingCard({
+  listing,
+  isThai,
+  formatAmount,
+}: {
+  listing: OrganizationListing
+  isThai: boolean
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+}) {
   const propertyType = getPropertyType(listing.property_type_code)
   const propertyLabel = isThai
     ? propertyType?.nameTh || listing.property_type_code
@@ -238,19 +250,20 @@ function OrganizationListingCard({ listing, isThai }: { listing: OrganizationLis
           </p>
         ) : null}
         <p className="mt-3 font-sarabun text-base font-semibold text-neutral-950 dark:text-white">
-          {formatListingPrice(listing, isThai)}
+          {formatListingPrice(listing, isThai, formatAmount)}
         </p>
       </div>
     </Link>
   )
 }
 
-function formatListingPrice(listing: OrganizationListing, isThai: boolean) {
+function formatListingPrice(
+  listing: OrganizationListing,
+  isThai: boolean,
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+) {
   if (listing.offer_amount === undefined) return isThai ? 'สอบถามราคา' : 'Price on request'
-  const amount = formatMoney(listing.offer_amount, {
-    currency: listing.currency,
-    locale: isThai ? 'th' : 'en',
-  })
+  const amount = formatAmount(listing.offer_amount, listing.currency)
   const unit = listing.price_unit === 'month' ? (isThai ? '/เดือน' : '/month') : ''
   return `${amount}${unit}`
 }

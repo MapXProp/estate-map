@@ -70,6 +70,7 @@ export type PropertySearchListing = {
   district: string
   sale_price?: number
   rent_price_monthly?: number
+  currency?: string
   bedroom_count?: number
   bathroom_count?: number
   usable_area_sqm?: number

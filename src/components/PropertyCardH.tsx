@@ -18,7 +18,7 @@ interface PropertyCardHProps {
 }
 
 const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
   const {
     galleryImgs,
@@ -37,13 +37,19 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     date,
   } = data
   const displayPrice =
-    price === 'สอบถามราคา'
-      ? isThai
-        ? 'สอบถามราคา'
-        : 'Price on request'
-      : isThai
-        ? price
-        : price.replace('/ เดือน', '/ month')
+    typeof data.priceAmount === 'number' && data.priceAmount > 0
+      ? `${formatCurrencyFrom(data.priceAmount, data.priceCurrency)}${formatPricePeriod(data.priceUnit, isThai)}`
+      : data.priceLabel
+        ? isThai
+          ? data.priceLabel
+          : data.priceLabel === 'ติดต่อผู้จัดงาน'
+            ? 'Contact organizer'
+            : 'Price on request'
+        : price === 'สอบถามราคา'
+          ? isThai
+            ? 'สอบถามราคา'
+            : 'Price on request'
+          : price
 
   const listingHref = `/real-estate-listings/${listingHandle}`
 
@@ -142,3 +148,11 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
 }
 
 export default PropertyCardH
+
+const formatPricePeriod = (unit: string | undefined, isThai: boolean) => {
+  if (unit === 'month') return isThai ? '/เดือน' : '/month'
+  if (unit === 'day') return isThai ? '/วัน' : '/day'
+  if (unit === 'week') return isThai ? '/สัปดาห์' : '/week'
+  if (unit === 'event_period') return isThai ? '/งาน' : '/event'
+  return ''
+}

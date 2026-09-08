@@ -1164,6 +1164,12 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
           : listing.offer_price_unit === 'event_period'
             ? ' / งาน'
             : ''
+  const priceAmount = isRetailSpace
+    ? listing.offer_amount
+    : isRental
+      ? listing.rent_price_monthly
+      : listing.sale_price
+  const priceUnit = isRetailSpace ? listing.offer_price_unit : isRental ? 'month' : ''
   const galleryImgs = [...new Set([listing.primary_image_url, ...(listing.image_urls || [])].filter(Boolean))].slice(
     0,
     4
@@ -1202,6 +1208,9 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
             : isRental
               ? formatListingPrice(listing.rent_price_monthly, ' / เดือน')
               : formatListingPrice(listing.sale_price),
+    priceAmount,
+    priceCurrency: listing.currency || 'THB',
+    priceUnit,
     maxGuests: 0,
     bedrooms: listing.bedroom_count || 0,
     bathrooms: listing.bathroom_count || 0,
@@ -1308,6 +1317,9 @@ export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings
   usableAreaSqm?: number
   landAreaSqm?: number
   petAllowed?: boolean
+  priceAmount?: number
+  priceCurrency?: string
+  priceUnit?: string
 }
 
 // FLIGHT LISTING //

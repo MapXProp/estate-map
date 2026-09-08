@@ -3,7 +3,6 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import { formatMoney } from '@/lib/currency'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
@@ -23,7 +22,7 @@ import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGa
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
 const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) => {
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
   const propertyType = getPropertyType(listing.property_type_code)
   const propertyLabel = isThai
@@ -44,9 +43,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     .join(' ')
   const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
   const projectAlternateName = isThai ? listing.project_name_en : listing.project_name
-  const price = formatPrice(listing, isThai)
-  const formatRetailAmount = (amount: number) =>
-    formatMoney(amount, { currency: listing.currency, locale })
+  const price = formatPrice(listing, isThai, formatCurrencyFrom)
+  const formatRetailAmount = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const retailTerms =
     listing.property_type_code === 'retail_space'
       ? [
@@ -438,12 +436,13 @@ const RetailTerms = ({ items }: { items: Array<{ label: string; value: string }>
 const formatNumber = (value: number, locale: 'th' | 'en') =>
   value.toLocaleString(locale === 'th' ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 })
 
-const formatPrice = (listing: PropertyListingDetail, isThai: boolean) => {
+const formatPrice = (
+  listing: PropertyListingDetail,
+  isThai: boolean,
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+) => {
   if (listing.offer_amount === undefined) return isThai ? 'สอบถามราคา' : 'Price on request'
-  const amount = formatMoney(listing.offer_amount, {
-    currency: listing.currency,
-    locale: isThai ? 'th' : 'en',
-  })
+  const amount = formatAmount(listing.offer_amount, listing.currency)
   const unit =
     listing.price_unit === 'month'
       ? isThai

@@ -2,6 +2,7 @@ import CarCard from '@/components/CarCard'
 import ExperiencesCard from '@/components/ExperiencesCard'
 import LongdoPropertyMap, { PropertyMapAreaSearch } from '@/components/map/LongdoPropertyMap'
 import PropertyCard from '@/components/PropertyCard'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import StayCard from '@/components/StayCard'
 import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup } from '@/components/ui/map'
 import { TCarListing, TExperienceListing, TRealEstateListing, TStayListing } from '@/data/listings'
@@ -18,6 +19,35 @@ type MobileMapSheetState = 'collapsed' | 'open'
 // Keep the first view light: only show a low sheet handle at the bottom.
 // The map SDK is requested only when the user expands the sheet.
 const MOBILE_SHEET_PEEK_HEIGHT = 62
+
+const formatRealEstateMapPrice = (
+  listing: TRealEstateListing,
+  isThai: boolean,
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+) => {
+  if (typeof listing.priceAmount === 'number' && listing.priceAmount > 0) {
+    const period =
+      listing.priceUnit === 'month'
+        ? isThai
+          ? '/เดือน'
+          : '/month'
+        : listing.priceUnit === 'day'
+          ? isThai
+            ? '/วัน'
+            : '/day'
+          : listing.priceUnit === 'week'
+            ? isThai
+              ? '/สัปดาห์'
+              : '/week'
+            : listing.priceUnit === 'event_period'
+              ? isThai
+                ? '/งาน'
+                : '/event'
+              : ''
+    return `${formatAmount(listing.priceAmount, listing.priceCurrency)}${period}`
+  }
+  return listing.price
+}
 
 const getMobileSheetHeights = () => {
   if (typeof window === 'undefined') {
@@ -56,6 +86,7 @@ const MapFixedSection = ({
   initialMapZoom,
   resultCount,
 }: Props) => {
+  const { locale, formatCurrencyFrom } = usePreferences()
   const [currentHoverID, setCurrentHoverID] = useState<string>('')
   const [mobileSheetState, setMobileSheetState] = useState<MobileMapSheetState>('collapsed')
   const [mobileSheetHeight, setMobileSheetHeight] = useState(MOBILE_SHEET_PEEK_HEIGHT)
@@ -290,7 +321,9 @@ const MapFixedSection = ({
                           : 'bg-white text-neutral-900 hover:scale-110 dark:bg-neutral-600 dark:text-white'
                       }`}
                     >
-                      {listing.price}
+                      {listingType === 'RealEstates'
+                        ? formatRealEstateMapPrice(listing as TRealEstateListing, locale === 'th', formatCurrencyFrom)
+                        : listing.price}
                     </p>
                   </MarkerContent>
                   <MarkerPopup className="rounded-2xl! p-0!">

@@ -240,6 +240,7 @@ const ListingRow = ({
   actionDisabled: boolean
   onDelete: () => void
 }) => {
+  const { formatCurrencyFrom } = usePreferences()
   const status = statusFor(listing, isThai)
   const propertyType = getPropertyType(listing.property_type_code)
   const propertyLabel = isThai
@@ -281,7 +282,7 @@ const ListingRow = ({
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">
-            {formatPrice(listing, isThai)}
+            {formatPrice(listing, isThai, formatCurrencyFrom)}
           </p>
           {!listingIsLive ? (
             <span className="inline-flex items-center gap-1.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
@@ -485,9 +486,13 @@ const statusFor = (listing: MyListing, isThai: boolean) => {
   }
 }
 
-const formatPrice = (listing: MyListing, isThai: boolean) => {
+const formatPrice = (
+  listing: MyListing,
+  isThai: boolean,
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+) => {
   if (typeof listing.price !== 'number') return isThai ? 'ยังไม่ระบุราคา' : 'Price on request'
-  const price = new Intl.NumberFormat(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 }).format(listing.price)
+  const price = formatAmount(listing.price, listing.currency)
   const unit =
     listing.price_unit === 'month'
       ? isThai
@@ -506,7 +511,7 @@ const formatPrice = (listing: MyListing, isThai: boolean) => {
               ? '/ งาน'
               : '/ event'
             : ''
-  return `${price} ${isThai ? 'บาท' : 'THB'}${unit}`
+  return `${price}${unit}`
 }
 
 const formatDate = (value: string, locale: string) => {

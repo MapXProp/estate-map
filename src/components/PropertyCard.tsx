@@ -3,6 +3,7 @@ import GallerySlider from '@/components/GallerySlider'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { Badge } from '@/shared/Badge'
@@ -19,6 +20,14 @@ const subscribeTabletNavigation = (callback: () => void) => {
 }
 const getTabletNavigationSnapshot = () => window.matchMedia(TABLET_NAVIGATION_QUERY).matches
 const getTabletNavigationServerSnapshot = () => false
+
+const formatPricePeriod = (unit: string | undefined, isThai: boolean) => {
+  if (unit === 'month') return isThai ? '/เดือน' : '/month'
+  if (unit === 'day') return isThai ? '/วัน' : '/day'
+  if (unit === 'week') return isThai ? '/สัปดาห์' : '/week'
+  if (unit === 'event_period') return isThai ? '/งาน' : '/event'
+  return ''
+}
 
 interface Props {
   className?: string
@@ -39,6 +48,8 @@ const PropertyCard: FC<Props> = ({
   openInNewTabOnMobile = false,
   showQuickView = false,
 }) => {
+  const { locale, formatCurrencyFrom } = usePreferences()
+  const isThai = locale === 'th'
   const {
     galleryImgs,
     listingCategory,
@@ -62,6 +73,16 @@ const PropertyCard: FC<Props> = ({
     group,
     offer,
   } = data
+  const displayPrice =
+    typeof data.priceAmount === 'number' && data.priceAmount > 0
+      ? `${formatCurrencyFrom(data.priceAmount, data.priceCurrency)}${formatPricePeriod(data.priceUnit, isThai)}`
+      : data.priceLabel
+        ? isThai
+          ? data.priceLabel
+          : data.priceLabel === 'ติดต่อผู้จัดงาน'
+            ? 'Contact organizer'
+            : 'Price on request'
+        : price
 
   const listingHref = `/real-estate-listings/${listingHandle}`
   const isTabletOrLarger = useSyncExternalStore(
@@ -212,7 +233,7 @@ const PropertyCard: FC<Props> = ({
           <div>
             <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}>
               {' '}
-              {price}
+              {displayPrice}
             </span>
           </div>
           {!!reviewStart && (

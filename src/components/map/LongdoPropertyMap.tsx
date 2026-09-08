@@ -1,6 +1,7 @@
 'use client'
 
 import { TRealEstateListing } from '@/data/listings'
+import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import Script from 'next/script'
@@ -130,7 +131,7 @@ const getMarkerHtml = (price: string, active: boolean) => `
     transition:transform .15s ease,background .15s ease,color .15s ease;
   ">${escapeHtml(price)}</div>`
 
-const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => {
+const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean, displayPrice: string) => {
   const listingPath = `/real-estate-listings/${encodeURIComponent(listing.handle)}`
   const fullListingPath = openInNewTab ? listingPath : `${listingPath}?view=full`
 
@@ -140,7 +141,7 @@ const getPopupHtml = (listing: TRealEstateListing, openInNewTab: boolean) => {
     <h3 style="margin:0;font-size:16px;line-height:1.35;font-weight:700;">${escapeHtml(listing.title)}</h3>
     <p style="margin:7px 0 0;color:#737373;font-size:13px;line-height:1.4;">${escapeHtml(listing.address)}</p>
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid #eeeeee;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-      <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(listing.price)}</strong>
+      <strong style="font-size:15px;white-space:nowrap;">${escapeHtml(displayPrice)}</strong>
       <span style="display:flex;align-items:center;gap:8px;">
         <a href="${listingPath}" data-mapx-quick-view="true" style="color:#31594e;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">ดูแบบไว</a>
         <a href="${fullListingPath}" data-mapx-property-link="true" ${openInNewTab ? 'target="_blank" rel="noopener noreferrer"' : ''} style="border-radius:999px;background:#123f32;color:#ffffff;padding:7px 12px;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap;">เปิดหน้า</a>
@@ -176,6 +177,8 @@ const LongdoPropertyMap = ({
   initialCenter,
   initialZoom = 12,
 }: Props) => {
+  const { locale, formatCurrencyFrom } = usePreferences()
+  const isThai = locale === 'th'
   const pathname = usePathname()
   const router = useRouter()
   const placeholderRef = useRef<HTMLDivElement>(null)
@@ -196,6 +199,18 @@ const LongdoPropertyMap = ({
   const [isSearching, setIsSearching] = useState(false)
   const [searchMessage, setSearchMessage] = useState('')
   const locations = useMemo(() => listings.map((listing) => getListingLocation(listing)), [listings])
+  const displayPrices = useMemo(
+    () =>
+      listings.map((listing) => {
+        if (typeof listing.priceAmount === 'number' && listing.priceAmount > 0) {
+          return `${formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)}${formatPricePeriod(listing.priceUnit, isThai)}`
+        }
+        if (!listing.priceLabel) return listing.price
+        if (isThai) return listing.priceLabel
+        return listing.priceLabel === 'ติดต่อผู้จัดงาน' ? 'Contact organizer' : 'Price on request'
+      }),
+    [formatCurrencyFrom, isThai, listings]
+  )
   const searchSourceLocations = useMemo(
     () => searchSourceListings.map((listing) => getListingLocation(listing)),
     [searchSourceListings]
@@ -449,11 +464,11 @@ const LongdoPropertyMap = ({
         title: listing.title,
         clickable: true,
         icon: {
-          html: getMarkerHtml(listing.price, active),
+          html: getMarkerHtml(displayPrices[index], active),
           offset: { x: 40, y: 17 },
         },
         popup: {
-          html: getPopupHtml(listing, true),
+          html: getPopupHtml(listing, true, displayPrices[index]),
           size: { width: 292, height: 210 },
         },
       })
@@ -461,7 +476,7 @@ const LongdoPropertyMap = ({
       nextMarkers.push(marker)
     })
     listingMarkersRef.current = nextMarkers
-  }, [currentHoverID, listings, locations, mapReady])
+  }, [currentHoverID, displayPrices, listings, locations, mapReady])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
@@ -651,3 +666,11 @@ const LongdoPropertyMap = ({
 }
 
 export default LongdoPropertyMap
+
+const formatPricePeriod = (unit: string | undefined, isThai: boolean) => {
+  if (unit === 'month') return isThai ? '/เดือน' : '/month'
+  if (unit === 'day') return isThai ? '/วัน' : '/day'
+  if (unit === 'week') return isThai ? '/สัปดาห์' : '/week'
+  if (unit === 'event_period') return isThai ? '/งาน' : '/event'
+  return ''
+}

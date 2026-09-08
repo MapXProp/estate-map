@@ -22,6 +22,8 @@ export type PrototypeListing = {
   location: string
   facts: string[]
   price: string
+  priceAmount?: number
+  priceCurrency?: string
   unit?: string
   image: string
   href?: string
@@ -395,6 +397,14 @@ const formatEventSchedule = (startsOn?: string, endsOn?: string) => {
   return `${formatDate(startsOn)} – ${formatDate(endsOn)}`
 }
 
+const pricePeriodLabel = (unit: string | undefined, isThai: boolean) => {
+  if (unit?.includes('/เดือน')) return isThai ? '/เดือน' : '/month'
+  if (unit?.includes('/วัน')) return isThai ? '/วัน' : '/day'
+  if (unit?.includes('/สัปดาห์')) return isThai ? '/สัปดาห์' : '/week'
+  if (unit?.includes('/งาน')) return isThai ? '/งาน' : '/event'
+  return ''
+}
+
 const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): PrototypeListing => {
   const group = getListingGroup(listing)
   const propertyType = getPropertyType(listing.property_type_code)
@@ -411,7 +421,7 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
         ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.`
         : ''
   const priceAmount = isRetailSpace ? listing.offer_amount : isRental ? listing.rent_price_monthly : listing.sale_price
-  const price = listing.price_on_request || !priceAmount ? '' : new Intl.NumberFormat('th-TH').format(priceAmount)
+  const price = listing.price_on_request || !priceAmount ? '' : String(priceAmount)
   const eventSchedule = isEvent ? formatEventSchedule(listing.event_starts_on, listing.event_ends_on) : ''
 
   return {
@@ -440,6 +450,8 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
       ? [eventSchedule, listing.event_round_count ? `${listing.event_round_count} รอบ` : ''].filter(Boolean)
       : [area, listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : ''].filter(Boolean),
     price,
+    priceAmount,
+    priceCurrency: listing.currency,
     unit: listing.price_on_request
       ? undefined
       : isRetailSpace
@@ -470,7 +482,7 @@ const PropertyListingShowcase = ({
   mode?: 'all' | 'homes' | 'rooms' | 'business'
   compact?: boolean
 }) => {
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const savedListings = useSavedListings()
   const isThai = locale === 'th'
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
@@ -562,6 +574,11 @@ const PropertyListingShowcase = ({
             {visibleListings.map((listing, index) => {
               const liked = savedListings.isSaved(listing.identifier)
               const displayListing = listing
+              const parsedPrice = listing.priceAmount ?? Number(listing.price.replace(/,/g, ''))
+              const formattedPrice = Number.isFinite(parsedPrice)
+                ? formatCurrencyFrom(parsedPrice, listing.priceCurrency)
+                : listing.price
+              const pricePeriod = pricePeriodLabel(listing.unit, isThai)
               return (
                 <article
                   key={listing.id}
@@ -648,10 +665,10 @@ const PropertyListingShowcase = ({
                         </span>
                       ) : (
                         <>
-                          <span className="text-lg font-bold text-neutral-950 dark:text-white">{listing.price}</span>{' '}
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {isThai ? listing.unit : listing.unit?.replace('บาท', 'THB')}
-                          </span>
+                          <span className="text-lg font-bold text-neutral-950 dark:text-white">{formattedPrice}</span>{' '}
+                          {pricePeriod ? (
+                            <span className="text-sm text-neutral-500 dark:text-neutral-400">{pricePeriod}</span>
+                          ) : null}
                         </>
                       )}
                     </div>

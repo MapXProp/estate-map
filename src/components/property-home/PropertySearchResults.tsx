@@ -22,7 +22,7 @@ const offerRefinements = [
 
 const PropertySearchResults = ({ query }: { query: string }) => {
   const router = useRouter()
-  const { locale, formatCurrency } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
   const [requestState, setRequestState] = useState<{
     query: string
@@ -183,7 +183,7 @@ const PropertySearchResults = ({ query }: { query: string }) => {
                     </div>
                     {price !== undefined && (
                       <p className="mt-5 border-t border-neutral-100 pt-4 text-lg font-semibold text-neutral-950 dark:border-neutral-800 dark:text-white">
-                        {formatCurrency(price)}
+                        {formatCurrencyFrom(price, listing.currency)}
                         {listing.rent_price_monthly !== undefined && listing.sale_price === undefined && (
                           <span className="ms-1 text-sm font-normal text-neutral-500">/{isThai ? 'เดือน' : 'month'}</span>
                         )}

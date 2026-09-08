@@ -11,7 +11,6 @@ import {
   type AdminReviewCounts,
   type AdminReviewListing,
 } from '@/lib/adminListings'
-import { formatMoney } from '@/lib/currency'
 import { getListingMediaUrl } from '@/lib/myListings'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
@@ -39,7 +38,7 @@ type ModerationDialogState = {
 }
 
 const AdminListingModeration = () => {
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
   const { isLoading: authLoading, user } = useAuth()
   const isSuperAdmin = user?.role_code === 'super_admin'
@@ -234,6 +233,7 @@ const AdminListingModeration = () => {
                 key={listing.public_listing_id}
                 listing={listing}
                 isThai={isThai}
+                formatAmount={formatCurrencyFrom}
                 onDetail={() => void openDetail(listing)}
                 onApprove={() => openModeration(listing, 'approve')}
                 onRequestChanges={() => openModeration(listing, 'unapprove')}
@@ -261,6 +261,7 @@ const AdminListingModeration = () => {
         listing={detail}
         loading={detailLoading}
         isThai={isThai}
+        formatAmount={formatCurrencyFrom}
         onClose={() => !detailLoading && setDetail(null)}
         onApprove={(listing) => openModeration(listing, 'approve')}
         onRequestChanges={(listing) => openModeration(listing, 'unapprove')}
@@ -278,9 +279,10 @@ const AdminListingModeration = () => {
   )
 }
 
-const ReviewCard = ({ listing, isThai, onDetail, onApprove, onRequestChanges }: {
+const ReviewCard = ({ listing, isThai, formatAmount, onDetail, onApprove, onRequestChanges }: {
   listing: AdminReviewListing
   isThai: boolean
+  formatAmount: (amount: number, sourceCurrency?: string) => string
   onDetail: () => void
   onApprove: () => void
   onRequestChanges: () => void
@@ -300,7 +302,7 @@ const ReviewCard = ({ listing, isThai, onDetail, onApprove, onRequestChanges }: 
       <p className="mt-1 line-clamp-1 font-sarabun text-sm text-neutral-500">{listing.address || (isThai ? 'ยังไม่ระบุที่อยู่' : 'No address')}</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-sarabun text-xs text-neutral-500">
         <span>{isThai ? listing.property_type_name_th : listing.property_type_name_en}</span>
-        <span>{formatPrice(listing.price, listing.currency, isThai)}</span>
+        <span>{formatPrice(listing.price, listing.currency, isThai, formatAmount)}</span>
         <span className="inline-flex items-center gap-1"><PhotoIcon className="size-4" />{listing.image_count}</span>
         <span className="inline-flex items-center gap-1"><VideoCameraIcon className="size-4" />{listing.video_count + listing.panorama_count}</span>
       </div>
@@ -324,10 +326,11 @@ const ReviewCard = ({ listing, isThai, onDetail, onApprove, onRequestChanges }: 
   </article>
 )
 
-const ReviewDetailDialog = ({ listing, loading, isThai, onClose, onApprove, onRequestChanges }: {
+const ReviewDetailDialog = ({ listing, loading, isThai, formatAmount, onClose, onApprove, onRequestChanges }: {
   listing: AdminReviewListing | null
   loading: boolean
   isThai: boolean
+  formatAmount: (amount: number, sourceCurrency?: string) => string
   onClose: () => void
   onApprove: (listing: AdminReviewListing) => void
   onRequestChanges: (listing: AdminReviewListing) => void
@@ -366,7 +369,7 @@ const ReviewDetailDialog = ({ listing, loading, isThai, onClose, onApprove, onRe
                       <StatusPill status={listing.moderation_status} isThai={isThai} />
                       <dl className="mt-4 space-y-3 font-sarabun text-sm">
                         <DetailRow label={isThai ? 'ประเภท' : 'Type'} value={isThai ? listing.property_type_name_th : listing.property_type_name_en} />
-                        <DetailRow label={isThai ? 'ราคา' : 'Price'} value={formatPrice(listing.price, listing.currency, isThai)} />
+                        <DetailRow label={isThai ? 'ราคา' : 'Price'} value={formatPrice(listing.price, listing.currency, isThai, formatAmount)} />
                         <DetailRow label={isThai ? 'พื้นที่ใช้สอย' : 'Usable area'} value={listing.usable_area_sqm ? `${listing.usable_area_sqm} ตร.ม.` : '-'} />
                         <DetailRow label={isThai ? 'ขนาดที่ดิน' : 'Land area'} value={listing.land_area_sqm ? `${listing.land_area_sqm} ตร.ม.` : '-'} />
                         <DetailRow label={isThai ? 'ห้องนอน / ห้องน้ำ' : 'Beds / Baths'} value={`${listing.bedroom_count ?? '-'} / ${listing.bathroom_count ?? '-'}`} />
@@ -478,7 +481,12 @@ const InfoBox = ({ icon, label, value }: { icon: React.ReactNode; label: string;
 const DetailRow = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-4"><dt className="text-neutral-500">{label}</dt><dd className="text-end font-semibold text-neutral-800 dark:text-neutral-100">{value}</dd></div>
 const CenteredLoading = ({ label }: { label: string }) => <div className="py-20 text-center font-sarabun text-sm text-neutral-500"><ArrowPathIcon className="mx-auto mb-3 size-6 animate-spin" />{label}</div>
 const reviewStatusLabel = (status: AdminListingReviewStatus, isThai: boolean) => status === 'approved' ? (isThai ? 'เผยแพร่แล้ว' : 'Published') : status === 'rejected' ? (isThai ? 'ไม่อนุมัติ / ซ่อนแล้ว' : 'Unapproved / hidden') : (isThai ? 'รอตรวจสอบ (เดิม)' : 'Legacy pending')
-const formatPrice = (price: number | undefined, currency: string, isThai: boolean) => typeof price === 'number' ? formatMoney(price, { currency, locale: isThai ? 'th' : 'en' }) : (isThai ? 'ไม่ระบุราคา' : 'Price not specified')
+const formatPrice = (
+  price: number | undefined,
+  currency: string,
+  isThai: boolean,
+  formatAmount: (amount: number, sourceCurrency?: string) => string
+) => typeof price === 'number' ? formatAmount(price, currency) : (isThai ? 'ไม่ระบุราคา' : 'Price not specified')
 const formatDate = (value: string, isThai: boolean) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat(isThai ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date) }
 
 export default AdminListingModeration

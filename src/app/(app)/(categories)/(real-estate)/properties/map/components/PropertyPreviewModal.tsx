@@ -17,10 +17,21 @@ type PropertyPreviewListing = TRealEstateListing & {
 
 const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) => {
   const router = useRouter()
-  const { locale } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
+  const isThai = locale === 'th'
   const images = listing.galleryImgs.length ? listing.galleryImgs : [listing.featuredImage]
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [activeImage, setActiveImage] = useState<number | null>(null)
+  const displayPrice =
+    typeof listing.priceAmount === 'number' && listing.priceAmount > 0
+      ? `${formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)}${formatPricePeriod(listing.priceUnit, isThai)}`
+      : listing.priceLabel
+        ? isThai
+          ? listing.priceLabel
+          : listing.priceLabel === 'ติดต่อผู้จัดงาน'
+            ? 'Contact organizer'
+            : 'Price on request'
+        : listing.price
 
   const shareProperty = async () => {
     const shareData = { title: listing.title, url: window.location.href }
@@ -135,7 +146,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                 <aside className="border-t border-neutral-200 bg-[#f7faf8] p-5 lg:border-t-0 lg:border-s lg:p-6 dark:border-neutral-800 dark:bg-neutral-950/40">
                   <div className="sticky top-5 rounded-2xl border border-[#dbe8e2] bg-white p-5 shadow-[0_12px_32px_rgba(18,63,50,.09)] dark:border-neutral-800 dark:bg-neutral-900">
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">ราคาประกาศ</p>
-                    <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">{listing.price}</p>
+                    <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">{displayPrice}</p>
                     <div className="my-5 h-px bg-neutral-200 dark:bg-neutral-800" />
                     <p className="font-semibold text-neutral-950 dark:text-white">สนใจอสังหานี้?</p>
                     <p className="mt-1 text-sm leading-6 text-neutral-500 dark:text-neutral-400">ติดต่อผู้ลงประกาศเพื่อนัดชม หรือสอบถามรายละเอียดเพิ่มเติม</p>
@@ -252,3 +263,11 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
 }
 
 export default PropertyPreviewModal
+
+const formatPricePeriod = (unit: string | undefined, isThai: boolean) => {
+  if (unit === 'month') return isThai ? '/เดือน' : '/month'
+  if (unit === 'day') return isThai ? '/วัน' : '/day'
+  if (unit === 'week') return isThai ? '/สัปดาห์' : '/week'
+  if (unit === 'event_period') return isThai ? '/งาน' : '/event'
+  return ''
+}
