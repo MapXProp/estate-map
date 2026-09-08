@@ -61,6 +61,10 @@ export type PropertySearchListing = {
   accommodation_model: string
   listing_type: string
   project_name: string
+  project_public_id?: string
+  project_slug?: string
+  project_name_en?: string
+  project_category?: string
   address: string
   province: string
   district: string
@@ -164,6 +168,10 @@ export type PropertyListingDetail = {
   space_type_code: string
   space_type_codes?: string[]
   project_name: string
+  project_public_id?: string
+  project_slug?: string
+  project_name_en?: string
+  project_category?: string
   building_name: string
   address: string
   province: string

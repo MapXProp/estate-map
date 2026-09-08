@@ -3,7 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import type { PropertyListingDetail } from '@/lib/propertySearch'
+import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
   BedDouble,
@@ -41,6 +41,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const fullAddress = [listing.address, listing.subdistrict, listing.district, listing.province, listing.postal_code]
     .filter(Boolean)
     .join(' ')
+  const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
+  const projectAlternateName = isThai ? listing.project_name_en : listing.project_name
   const price = formatPrice(listing, isThai)
   const currencySymbol = listing.currency === 'USD' ? 'US$' : '฿'
   const formatRetailAmount = (amount: number) =>
@@ -96,6 +98,15 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     listing.organization_verification_status === 'verified' ||
     listing.contact_verification_status === 'authority_verified'
   const facts = [
+    ...(listing.land_area_sqm !== undefined
+      ? [
+          {
+            icon: Maximize2,
+            value: `${formatNumber(listing.land_area_sqm / 4, locale)} ${isThai ? 'ตร.ว.' : 'sq.wah'}`,
+            label: isThai ? 'ขนาดที่ดิน' : 'Land area',
+          },
+        ]
+      : []),
     ...(listing.usable_area_sqm !== undefined
       ? [
           {
@@ -181,6 +192,20 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 </h1>
               </div>
             </div>
+            {listing.project_name ? (
+              <Link
+                href={getPropertyMapSearchUrl(listing.project_name_en || listing.project_name)}
+                className="mt-4 flex w-fit items-start gap-2 rounded-2xl bg-[#edf5f1] px-3.5 py-2.5 font-sarabun text-sm text-[#176b50] transition hover:bg-[#e2efe9] dark:bg-emerald-950 dark:text-emerald-200"
+              >
+                <Building2 className="mt-0.5 size-4.5 shrink-0" />
+                <span>
+                  <span className="font-semibold">{projectDisplayName}</span>
+                  {projectAlternateName && projectAlternateName !== projectDisplayName ? (
+                    <span className="ms-1.5 text-xs opacity-75">({projectAlternateName})</span>
+                  ) : null}
+                </span>
+              </Link>
+            ) : null}
             {fullAddress ? (
               <div className="mt-4 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 sm:text-base dark:text-neutral-300">
                 <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
@@ -470,6 +495,7 @@ const amenityLabel = (value: string, isThai: boolean) => {
     fitness: ['ฟิตเนส', 'Fitness'],
     wifi: ['อินเทอร์เน็ต / Wi-Fi', 'Internet / Wi-Fi'],
     pet_friendly: ['เลี้ยงสัตว์ได้', 'Pet friendly'],
+    pet_area: ['พื้นที่สำหรับสัตว์เลี้ยง', 'Pet area'],
   }
   return labels[value]?.[isThai ? 0 : 1] || value.replaceAll('_', ' ')
 }

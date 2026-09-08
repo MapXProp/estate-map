@@ -69,6 +69,7 @@ export type CreateListingPayload = {
   submission_key?: string
   editing_public_listing_id?: string
   organization_public_id?: string
+  project_public_id?: string
   replace_media?: boolean
   discovery_channel_code?: string
   property_group_code?: string
