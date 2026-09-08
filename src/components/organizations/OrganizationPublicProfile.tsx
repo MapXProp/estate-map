@@ -3,6 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
+import { formatMoney } from '@/lib/currency'
 import { getListingMediaUrl } from '@/lib/myListings'
 import { organizationSpecialtyLabel, organizationTypeLabel } from '@/lib/organizationTaxonomy'
 import {
@@ -246,10 +247,12 @@ function OrganizationListingCard({ listing, isThai }: { listing: OrganizationLis
 
 function formatListingPrice(listing: OrganizationListing, isThai: boolean) {
   if (listing.offer_amount === undefined) return isThai ? 'สอบถามราคา' : 'Price on request'
-  const symbol = listing.currency === 'USD' ? 'US$' : '฿'
-  const amount = listing.offer_amount.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 })
+  const amount = formatMoney(listing.offer_amount, {
+    currency: listing.currency,
+    locale: isThai ? 'th' : 'en',
+  })
   const unit = listing.price_unit === 'month' ? (isThai ? '/เดือน' : '/month') : ''
-  return `${symbol}${amount}${unit}`
+  return `${amount}${unit}`
 }
 
 function contactIcon(channel: OrganizationContact['channel_type']) {

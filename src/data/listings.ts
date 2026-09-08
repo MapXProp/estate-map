@@ -19,6 +19,7 @@ import airlineLogo2 from '@/images/flights/logo2.png'
 import airlineLogo3 from '@/images/flights/logo3.png'
 import airlineLogo4 from '@/images/flights/logo4.png'
 import { getAuthApiUrl } from '@/lib/auth'
+import { formatMoney } from '@/lib/currency'
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import { getPropertyType, normalizeLegacyPropertyType } from './propertyTaxonomy'
 
@@ -1121,7 +1122,7 @@ const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup
 }
 
 const formatListingPrice = (amount?: number, suffix = '') =>
-  amount && amount > 0 ? `฿${new Intl.NumberFormat('th-TH').format(amount)}${suffix}` : 'สอบถามราคา'
+  amount && amount > 0 ? `${formatMoney(amount)}${suffix}` : 'สอบถามราคา'
 
 const getListingOfferTypes = (listing: PropertySearchListing) => {
   const offers = new Set<string>()

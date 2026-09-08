@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { formatMoney } from '@/lib/currency'
 import T from '@/utils/getT'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { CurrencyDollarIcon } from '@heroicons/react/24/outline'
@@ -112,7 +113,7 @@ const BudgetInput = ({
   <label className="block min-w-0 flex-1">
     <span className="mb-1.5 block text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</span>
     <span className="flex min-h-12 items-center rounded-2xl border border-neutral-200 bg-white px-3 transition focus-within:border-[#176b50] focus-within:ring-2 focus-within:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-emerald-400">
-      <span className="text-sm font-semibold text-neutral-400">{symbol}</span>
+      {symbol !== 'บาท' ? <span className="text-sm font-semibold text-neutral-400">{symbol}</span> : null}
       <input
         inputMode="numeric"
         value={formatInputAmount(value)}
@@ -120,6 +121,7 @@ const BudgetInput = ({
         placeholder={placeholder}
         className="min-w-0 flex-1 border-0 bg-transparent px-2 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-300 focus:ring-0 dark:text-white dark:placeholder:text-neutral-600"
       />
+      {symbol === 'บาท' ? <span className="text-sm font-semibold whitespace-nowrap text-neutral-400">บาท</span> : null}
     </span>
   </label>
 )
@@ -192,7 +194,7 @@ export const PriceRangeInputField: FC<Props> = ({
   const hasInvalidRange = Boolean(
     selection.minPrice && selection.maxPrice && Number(selection.minPrice) > Number(selection.maxPrice)
   )
-  const currencySymbol = currency === 'USD' ? '$' : '฿'
+  const currencySymbol = currency === 'USD' ? '$' : 'บาท'
 
   const updateSelection = (next: Partial<PriceSelection>) => {
     if (offerType === 'all') return
@@ -212,13 +214,7 @@ export const PriceRangeInputField: FC<Props> = ({
     setShowCustomRange(false)
   }
   const formatPrice = (value: number, compact = false) => {
-    if (currency === 'USD') return compact ? `$${value.toLocaleString('en-US')}` : `$${value.toLocaleString('en-US')}`
-    if (compact && value >= 1_000_000) {
-      const millions = value / 1_000_000
-      return `฿${millions.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 1 })}${isThai ? ' ล้าน' : 'M'}`
-    }
-    if (compact && value >= 1_000) return `฿${(value / 1_000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
-    return `฿${value.toLocaleString(isThai ? 'th-TH' : 'en-US')}`
+    return formatMoney(value, { currency, locale: isThai ? 'th' : 'en', compact })
   }
   const summary = (() => {
     if (offerType === 'all') return isThai ? 'ไม่จำกัดราคา' : 'Any price'

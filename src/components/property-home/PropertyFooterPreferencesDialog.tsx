@@ -13,7 +13,7 @@ const languages = [
 
 const currencies = [
   { value: 'USD' as const, symbol: '$', name: 'USD', description: 'ดอลลาร์สหรัฐ' },
-  { value: 'THB' as const, symbol: '฿', name: 'THB', description: 'บาทไทย' },
+  { value: 'THB' as const, symbol: 'บาท', name: 'THB', description: 'บาทไทย' },
 ]
 
 const PropertyFooterPreferencesDialog = () => {

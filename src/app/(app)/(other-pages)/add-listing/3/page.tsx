@@ -1269,7 +1269,7 @@ const PricingPanel = ({
   minimumLeaseMonths,
   onMinimumLeaseMonthsChange,
 }: PricingPanelProps) => {
-  const symbol = currency === 'USD' ? '$' : '฿'
+  const symbol = currency === 'USD' ? '$' : ''
   const currencyUnit = currency === 'USD' ? 'USD' : isThai ? 'บาท' : 'THB'
   const monthlyUnit = `${currencyUnit}/${isThai ? 'เดือน' : 'month'}`
   const retailPriceOptions: Array<{
@@ -1356,7 +1356,7 @@ const PricingPanel = ({
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-md">
             {[
-              { code: 'THB' as const, symbol: '฿', label: isThai ? 'บาทไทย' : 'Thai baht' },
+              { code: 'THB' as const, symbol: 'บาท', label: isThai ? 'บาทไทย' : 'Thai baht' },
               { code: 'USD' as const, symbol: '$', label: isThai ? 'ดอลลาร์สหรัฐ' : 'US dollar' },
             ].map((option) => {
               const isSelected = currency === option.code

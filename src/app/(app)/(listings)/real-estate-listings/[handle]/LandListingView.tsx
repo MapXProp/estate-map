@@ -392,11 +392,11 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <p className="text-sm text-neutral-500">ราคาขายรวม</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <p className="text-3xl font-semibold tracking-tight text-neutral-950">
-                  ฿{formatThaiNumber(offerAmount)}
+                  {formatThaiNumber(offerAmount)} บาท
                 </p>
                 {pricePerSquareWah ? (
                   <p className="text-sm font-medium text-[#71817b]">
-                    เฉลี่ย ฿{formatThaiNumber(pricePerSquareWah)}/ตร.ว.
+                    เฉลี่ย {formatThaiNumber(pricePerSquareWah)} บาท/ตร.ว.
                   </p>
                 ) : null}
               </div>
@@ -457,11 +457,11 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <p className="text-[10px] leading-none text-neutral-500">ราคาขาย</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
                 <p className="shrink-0 text-sm leading-none font-semibold text-neutral-950">
-                  ฿{formatThaiNumber(offerAmount)}
+                  {formatThaiNumber(offerAmount)} บาท
                 </p>
                 {pricePerSquareWah ? (
                   <p className="text-[10px] leading-none font-medium whitespace-nowrap text-[#71817b]">
-                    เฉลี่ย ฿{formatThaiNumber(pricePerSquareWah)}/ตร.ว.
+                    เฉลี่ย {formatThaiNumber(pricePerSquareWah)} บาท/ตร.ว.
                   </p>
                 ) : null}
               </div>

@@ -8,6 +8,7 @@ import {
   PROPERTY_ZONE_STORAGE_KEY,
   PropertyZone,
 } from '@/lib/propertyZone'
+import { formatMoney } from '@/lib/currency'
 import { usePathname } from 'next/navigation'
 
 export type AppLocale = 'th' | 'en'
@@ -144,15 +145,12 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
   const formatCurrency = useCallback(
     (amountInThb: number, options?: { compact?: boolean; approximate?: boolean }) => {
       const converted = currency === 'USD' ? amountInThb * usdPerThb : amountInThb
-      const formatted = new Intl.NumberFormat(locale === 'th' ? 'th-TH' : 'en-US', {
-        style: 'currency',
+      return formatMoney(converted, {
         currency,
-        currencyDisplay: 'narrowSymbol',
-        notation: options?.compact ? 'compact' : 'standard',
-        maximumFractionDigits: currency === 'USD' && converted < 100 ? 2 : 0,
-      }).format(converted)
-
-      return currency === 'USD' && options?.approximate !== false ? `≈ ${formatted}` : formatted
+        locale,
+        compact: options?.compact,
+        approximate: currency === 'USD' && options?.approximate !== false,
+      })
     },
     [currency, locale, usdPerThb]
   )

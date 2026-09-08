@@ -1,5 +1,6 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import { formatMoney } from '@/lib/currency'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
@@ -34,12 +35,11 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
   const isVerifiedOrganizer = event.organizer_verification_status === 'verified'
   const isContactOrganizer = listing.offer_type === 'contact_organizer' || event.price_on_request
   const temporarySpaceDays = Number(listing.category_details.temporary_space_duration_days) || 0
-  const currencySymbol = listing.currency === 'USD' ? 'US$' : '฿'
   const fixedPrice = listing.offer_amount
-    ? `${currencySymbol}${listing.offer_amount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`
+    ? formatMoney(listing.offer_amount, { currency: listing.currency, locale: 'th' })
     : ''
   const formatCost = (amount: number) =>
-    `${currencySymbol}${amount.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`
+    formatMoney(amount, { currency: listing.currency, locale: 'th' })
   const rentalTerms = [
     ...(listing.deposit_amount !== undefined ? [{ label: 'ค่ามัดจำ', value: formatCost(listing.deposit_amount) }] : []),
     ...(listing.advance_rent_amount !== undefined

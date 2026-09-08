@@ -26,7 +26,7 @@ const languageMeta: Record<string, { code: string; nativeName: string; descripti
 
 const currencyMeta: Record<string, { symbol: string; description: string }> = {
   THB: {
-    symbol: '฿',
+    symbol: 'บาท',
     description: 'บาทไทย',
   },
   USD: {

@@ -3,6 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
+import { formatMoney } from '@/lib/currency'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
@@ -44,9 +45,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
   const projectAlternateName = isThai ? listing.project_name_en : listing.project_name
   const price = formatPrice(listing, isThai)
-  const currencySymbol = listing.currency === 'USD' ? 'US$' : '฿'
   const formatRetailAmount = (amount: number) =>
-    `${currencySymbol}${amount.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 })}`
+    formatMoney(amount, { currency: listing.currency, locale })
   const retailTerms =
     listing.property_type_code === 'retail_space'
       ? [
@@ -440,8 +440,10 @@ const formatNumber = (value: number, locale: 'th' | 'en') =>
 
 const formatPrice = (listing: PropertyListingDetail, isThai: boolean) => {
   if (listing.offer_amount === undefined) return isThai ? 'สอบถามราคา' : 'Price on request'
-  const amount = listing.offer_amount.toLocaleString(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 })
-  const currency = listing.currency === 'USD' ? 'US$' : '฿'
+  const amount = formatMoney(listing.offer_amount, {
+    currency: listing.currency,
+    locale: isThai ? 'th' : 'en',
+  })
   const unit =
     listing.price_unit === 'month'
       ? isThai
@@ -460,7 +462,7 @@ const formatPrice = (listing: PropertyListingDetail, isThai: boolean) => {
               ? '/งาน'
               : '/event'
             : ''
-  return `${currency}${amount}${unit}`
+  return `${amount}${unit}`
 }
 
 const offerLabel = (value: string, isThai: boolean) => {

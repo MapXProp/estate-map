@@ -640,7 +640,7 @@ const PropertyMapFilterBar = ({
                     <div key={key} className={index === 1 ? 'col-start-3' : ''}>
                       <label className="mb-1.5 block text-xs font-medium text-neutral-500">{label}</label>
                       <div className="flex h-12 items-center rounded-2xl border border-neutral-200 bg-white px-3 focus-within:border-[#176b50] focus-within:ring-2 focus-within:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-900">
-                        <span className="text-sm font-semibold text-neutral-400">{currency === 'USD' ? '$' : '฿'}</span>
+                        {currency === 'USD' ? <span className="text-sm font-semibold text-neutral-400">$</span> : null}
                         <input
                           inputMode="numeric"
                           value={
@@ -655,6 +655,7 @@ const PropertyMapFilterBar = ({
                           }
                           className="min-w-0 flex-1 border-0 bg-transparent px-2 py-0 text-base font-semibold text-neutral-900 placeholder:text-neutral-300 focus:ring-0 dark:text-white dark:placeholder:text-neutral-600"
                         />
+                        {currency === 'THB' ? <span className="text-sm font-semibold whitespace-nowrap text-neutral-400">บาท</span> : null}
                       </div>
                     </div>
                   ))}

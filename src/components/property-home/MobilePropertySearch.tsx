@@ -322,10 +322,10 @@ const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>
       max: 100_000_000,
       priceScale: saleHomePriceScale,
       presets: [
-        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to ฿3M', 0, 3_000_000),
-        createBudgetPreset('3–5 ล้าน', '฿3–5M', 3_000_000, 5_000_000),
-        createBudgetPreset('5–10 ล้าน', '฿5–10M', 5_000_000, 10_000_000),
-        createBudgetPreset('10 ล้านขึ้นไป', '฿10M+', 10_000_000, 100_000_000),
+        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to 3M THB', 0, 3_000_000),
+        createBudgetPreset('3–5 ล้าน', '3–5M THB', 3_000_000, 5_000_000),
+        createBudgetPreset('5–10 ล้าน', '5–10M THB', 5_000_000, 10_000_000),
+        createBudgetPreset('10 ล้านขึ้นไป', '10M THB+', 10_000_000, 100_000_000),
       ],
     },
     rent: {
@@ -333,10 +333,10 @@ const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>
       max: 500_000,
       priceScale: rentHomePriceScale,
       presets: [
-        createBudgetPreset('ไม่เกิน 10,000', 'Up to ฿10K', 0, 10_000),
-        createBudgetPreset('10,000–20,000', '฿10–20K', 10_000, 20_000),
-        createBudgetPreset('20,000–50,000', '฿20–50K', 20_000, 50_000),
-        createBudgetPreset('50,000 ขึ้นไป', '฿50K+', 50_000, 500_000),
+        createBudgetPreset('ไม่เกิน 10,000', 'Up to 10K THB', 0, 10_000),
+        createBudgetPreset('10,000–20,000', '10–20K THB', 10_000, 20_000),
+        createBudgetPreset('20,000–50,000', '20–50K THB', 20_000, 50_000),
+        createBudgetPreset('50,000 ขึ้นไป', '50K THB+', 50_000, 500_000),
       ],
     },
   },
@@ -352,10 +352,10 @@ const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>
       max: 200_000,
       priceScale: rentRoomPriceScale,
       presets: [
-        createBudgetPreset('ไม่เกิน 5,000', 'Up to ฿5K', 0, 5_000),
-        createBudgetPreset('5,000–10,000', '฿5–10K', 5_000, 10_000),
-        createBudgetPreset('10,000–20,000', '฿10–20K', 10_000, 20_000),
-        createBudgetPreset('20,000 ขึ้นไป', '฿20K+', 20_000, 200_000),
+        createBudgetPreset('ไม่เกิน 5,000', 'Up to 5K THB', 0, 5_000),
+        createBudgetPreset('5,000–10,000', '5–10K THB', 5_000, 10_000),
+        createBudgetPreset('10,000–20,000', '10–20K THB', 10_000, 20_000),
+        createBudgetPreset('20,000 ขึ้นไป', '20K THB+', 20_000, 200_000),
       ],
     },
   },
@@ -365,10 +365,10 @@ const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>
       max: 200_000_000,
       priceScale: saleLargePriceScale,
       presets: [
-        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to ฿3M', 0, 3_000_000),
-        createBudgetPreset('3–10 ล้าน', '฿3–10M', 3_000_000, 10_000_000),
-        createBudgetPreset('10–30 ล้าน', '฿10–30M', 10_000_000, 30_000_000),
-        createBudgetPreset('30 ล้านขึ้นไป', '฿30M+', 30_000_000, 200_000_000),
+        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to 3M THB', 0, 3_000_000),
+        createBudgetPreset('3–10 ล้าน', '3–10M THB', 3_000_000, 10_000_000),
+        createBudgetPreset('10–30 ล้าน', '10–30M THB', 10_000_000, 30_000_000),
+        createBudgetPreset('30 ล้านขึ้นไป', '30M THB+', 30_000_000, 200_000_000),
       ],
     },
     rent: {
@@ -376,10 +376,10 @@ const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>
       max: 1_000_000,
       priceScale: rentBusinessPriceScale,
       presets: [
-        createBudgetPreset('ไม่เกิน 20,000', 'Up to ฿20K', 0, 20_000),
-        createBudgetPreset('20,000–50,000', '฿20–50K', 20_000, 50_000),
-        createBudgetPreset('50,000–200,000', '฿50–200K', 50_000, 200_000),
-        createBudgetPreset('200,000 ขึ้นไป', '฿200K+', 200_000, 1_000_000),
+        createBudgetPreset('ไม่เกิน 20,000', 'Up to 20K THB', 0, 20_000),
+        createBudgetPreset('20,000–50,000', '20–50K THB', 20_000, 50_000),
+        createBudgetPreset('50,000–200,000', '50–200K THB', 50_000, 200_000),
+        createBudgetPreset('200,000 ขึ้นไป', '200K THB+', 200_000, 1_000_000),
       ],
     },
   },
@@ -390,10 +390,10 @@ const formatPrice = (value: number, isThai: boolean) => {
     const millions = value / 1_000_000
     return isThai
       ? `${millions.toLocaleString('th-TH', { maximumFractionDigits: 2 })} ล้าน`
-      : `฿${millions.toLocaleString('en-US', { maximumFractionDigits: 2 })}M`
+      : `${millions.toLocaleString('en-US', { maximumFractionDigits: 2 })}M THB`
   }
-  if (!isThai && value >= 1_000) return `฿${(value / 1_000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K`
-  return isThai ? `${value.toLocaleString('th-TH')} บาท` : `฿${value.toLocaleString('en-US')}`
+  if (!isThai && value >= 1_000) return `${(value / 1_000).toLocaleString('en-US', { maximumFractionDigits: 0 })}K THB`
+  return isThai ? `${value.toLocaleString('th-TH')} บาท` : `${value.toLocaleString('en-US')} THB`
 }
 
 const MobilePropertySearch = ({

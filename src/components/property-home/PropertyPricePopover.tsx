@@ -90,7 +90,7 @@ const formatInputAmount = (value: string) => {
 export const getPriceSummary = (
   offerType: PropertyOfferType,
   selection: PropertyPriceSelection,
-  formatAmount: (amount: number) => string = (amount) => `฿${amount.toLocaleString('en-US')}`,
+  formatAmount: (amount: number) => string = (amount) => `${amount.toLocaleString('en-US')} บาท`,
   locale: 'th' | 'en' = 'th'
 ) => {
   const { minPrice, maxPrice, monthlyRentMax } = selection
@@ -147,7 +147,7 @@ const PriceInput = ({
   <label className="block min-w-0 flex-1">
     <span className="mb-1.5 block text-xs font-medium text-neutral-500 dark:text-neutral-400">{label}</span>
     <span className="flex items-center rounded-2xl border border-neutral-200 bg-white px-3 transition focus-within:border-[#176b50] focus-within:ring-2 focus-within:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-emerald-400">
-      <span className="text-sm font-semibold text-neutral-400">{symbol}</span>
+      {symbol !== 'บาท' ? <span className="text-sm font-semibold text-neutral-400">{symbol}</span> : null}
       <input
         inputMode="numeric"
         value={formatInputAmount(displayValue(value))}
@@ -155,6 +155,7 @@ const PriceInput = ({
         placeholder={placeholder}
         className="min-w-0 flex-1 border-0 bg-transparent px-2 py-3 text-base font-medium text-neutral-900 placeholder:text-neutral-300 focus:ring-0 min-[744px]:text-sm dark:text-white dark:placeholder:text-neutral-600"
       />
+      {symbol === 'บาท' ? <span className="text-sm font-semibold whitespace-nowrap text-neutral-400">บาท</span> : null}
     </span>
   </label>
 )
@@ -185,7 +186,7 @@ const PropertyPricePopover = ({
     (rawValue: string) => (rawValue ? String(Math.round(convertToThb(Number(rawValue)))) : ''),
     [convertToThb]
   )
-  const currencySymbol = currency === 'USD' ? '$' : '฿'
+  const currencySymbol = currency === 'USD' ? '$' : 'บาท'
   const fieldLabel = isThai ? content.fieldLabel : content.fieldLabelEn
   const hasInvalidRange = Boolean(value.minPrice && value.maxPrice && Number(value.minPrice) > Number(value.maxPrice))
 

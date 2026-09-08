@@ -648,9 +648,9 @@ const PropertyListingShowcase = ({
                         </span>
                       ) : (
                         <>
-                          <span className="text-lg font-bold text-neutral-950 dark:text-white">฿{listing.price}</span>{' '}
+                          <span className="text-lg font-bold text-neutral-950 dark:text-white">{listing.price}</span>{' '}
                           <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                            {isThai ? listing.unit?.replace('บาท', '') : displayListing.unit}
+                            {isThai ? listing.unit : listing.unit?.replace('บาท', 'THB')}
                           </span>
                         </>
                       )}

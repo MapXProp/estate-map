@@ -40,9 +40,9 @@ export const PriceRangeSlider = ({
     if (currency === 'THB') {
       if (value >= 1_000_000) {
         const millions = value / 1_000_000
-        return `฿${Number.isInteger(millions) ? millions : millions.toFixed(1)} ล้าน`
+        return `${Number.isInteger(millions) ? millions : millions.toFixed(1)} ล้านบาท`
       }
-      return `฿${convertNumbThousand(value)}`
+      return `${convertNumbThousand(value)} บาท`
     }
 
     return value >= 1000 ? `$ ${convertNumbThousand(value / 1000)}k` : `$ ${value}`

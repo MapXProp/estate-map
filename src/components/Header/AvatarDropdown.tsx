@@ -428,7 +428,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                 </h3>
                 <div className="mt-2 grid gap-2">
                   {[
-                    { value: 'THB' as const, label: 'บาทไทย', symbol: '฿' },
+                    { value: 'THB' as const, label: 'บาทไทย', symbol: 'บาท' },
                     { value: 'USD' as const, label: 'US Dollar', symbol: '$' },
                   ].map((item) => {
                     const active = currency === item.value

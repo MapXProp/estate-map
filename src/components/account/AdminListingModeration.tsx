@@ -11,6 +11,7 @@ import {
   type AdminReviewCounts,
   type AdminReviewListing,
 } from '@/lib/adminListings'
+import { formatMoney } from '@/lib/currency'
 import { getListingMediaUrl } from '@/lib/myListings'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
@@ -477,7 +478,7 @@ const InfoBox = ({ icon, label, value }: { icon: React.ReactNode; label: string;
 const DetailRow = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-4"><dt className="text-neutral-500">{label}</dt><dd className="text-end font-semibold text-neutral-800 dark:text-neutral-100">{value}</dd></div>
 const CenteredLoading = ({ label }: { label: string }) => <div className="py-20 text-center font-sarabun text-sm text-neutral-500"><ArrowPathIcon className="mx-auto mb-3 size-6 animate-spin" />{label}</div>
 const reviewStatusLabel = (status: AdminListingReviewStatus, isThai: boolean) => status === 'approved' ? (isThai ? 'เผยแพร่แล้ว' : 'Published') : status === 'rejected' ? (isThai ? 'ไม่อนุมัติ / ซ่อนแล้ว' : 'Unapproved / hidden') : (isThai ? 'รอตรวจสอบ (เดิม)' : 'Legacy pending')
-const formatPrice = (price: number | undefined, currency: string, isThai: boolean) => typeof price === 'number' ? `${new Intl.NumberFormat(isThai ? 'th-TH' : 'en-US', { maximumFractionDigits: 0 }).format(price)} ${currency || 'THB'}` : (isThai ? 'ไม่ระบุราคา' : 'Price not specified')
+const formatPrice = (price: number | undefined, currency: string, isThai: boolean) => typeof price === 'number' ? formatMoney(price, { currency, locale: isThai ? 'th' : 'en' }) : (isThai ? 'ไม่ระบุราคา' : 'Price not specified')
 const formatDate = (value: string, isThai: boolean) => { const date = new Date(value); return Number.isNaN(date.getTime()) ? '-' : new Intl.DateTimeFormat(isThai ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date) }
 
 export default AdminListingModeration
