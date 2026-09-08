@@ -287,7 +287,8 @@ const LongdoPropertyMap = ({
 
     const zoom = map.zoom()
     const showEveryLabel = zoom >= 19
-    if (showEveryLabel) {
+    const fanSharedCoordinates = zoom >= 15
+    if (fanSharedCoordinates) {
       const coordinateGroups = new Map<string, typeof candidates>()
       candidates.forEach((candidate) => {
         const { lat, lng } = candidate.listing.map
@@ -318,6 +319,9 @@ const LongdoPropertyMap = ({
           root.style.setProperty('--mapx-fan-angle', `${lineAngle}deg`)
         })
       })
+    }
+
+    if (showEveryLabel) {
       return
     }
 
