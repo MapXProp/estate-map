@@ -287,7 +287,7 @@ const LongdoPropertyMap = ({
 
     const zoom = map.zoom()
     const showEveryLabel = zoom >= 19
-    const fanSharedCoordinates = zoom >= 15
+    const fanSharedCoordinates = zoom >= 16
     if (fanSharedCoordinates) {
       const coordinateGroups = new Map<string, typeof candidates>()
       candidates.forEach((candidate) => {
