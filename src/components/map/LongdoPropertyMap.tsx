@@ -725,7 +725,11 @@ const LongdoPropertyMap = ({
         .mapx-price-marker:focus-within {
           --mapx-marker-bg: #123f32 !important;
           --mapx-marker-color: #ffffff !important;
-          z-index: 1000;
+          z-index: 2147483000 !important;
+        }
+        div:has(> .mapx-price-marker:hover),
+        div:has(> .mapx-price-marker:focus-within) {
+          z-index: 2147483000 !important;
         }
         .mapx-price-pill {
           min-width: 72px;
@@ -776,8 +780,9 @@ const LongdoPropertyMap = ({
         }
         .mapx-marker-hover-card {
           position: absolute;
-          top: calc(100% + 10px);
+          bottom: 16px;
           left: 50%;
+          z-index: 10;
           width: 280px;
           box-sizing: border-box;
           display: flex;
@@ -791,8 +796,8 @@ const LongdoPropertyMap = ({
           opacity: 0;
           visibility: hidden;
           pointer-events: none;
-          transform: translate(-50%, -5px) scale(0.97);
-          transform-origin: top center;
+          transform: translate(-50%, 5px) scale(0.97);
+          transform-origin: bottom center;
           transition: opacity 130ms ease, visibility 130ms ease, transform 130ms ease;
         }
         @media (hover: hover) and (pointer: fine) {
