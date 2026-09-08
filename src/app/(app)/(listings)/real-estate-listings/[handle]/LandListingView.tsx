@@ -1,3 +1,5 @@
+'use client'
+
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
