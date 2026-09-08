@@ -7,7 +7,12 @@ export const isPropertyZone = (value: unknown): value is PropertyZone =>
   value === 'homes' || value === 'rooms' || value === 'business'
 
 export const getPropertyZoneFromPathname = (pathname: string): PropertyZone | null => {
-  if (pathname === '/rooms' || pathname.startsWith('/rooms/') || pathname === '/rent' || pathname.startsWith('/rent/')) {
+  if (
+    pathname === '/rooms' ||
+    pathname.startsWith('/rooms/') ||
+    pathname === '/rent' ||
+    pathname.startsWith('/rent/')
+  ) {
     return 'rooms'
   }
 
@@ -16,6 +21,8 @@ export const getPropertyZoneFromPathname = (pathname: string): PropertyZone | nu
   if (
     pathname === '/homes' ||
     pathname.startsWith('/homes/') ||
+    pathname === '/homes2' ||
+    pathname.startsWith('/homes2/') ||
     pathname === '/buy' ||
     pathname.startsWith('/buy/')
   ) {

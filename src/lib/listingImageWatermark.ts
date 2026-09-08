@@ -1,5 +1,10 @@
 const MAX_IMAGE_EDGE = 3840
 const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+const PUBLISHER_WATERMARK_OPACITY = 0.5
+const BRAND_WATERMARK_OPACITY = 0.68
+const WATERMARK_COLOR = 'rgb(243, 244, 246)'
+const WATERMARK_DOMAIN = 'mapxprop.com'
+const WATERMARK_FONT_FAMILY = 'Arial, "Noto Sans Thai", Tahoma, sans-serif'
 
 type LoadedImage = {
   source: CanvasImageSource
@@ -54,28 +59,6 @@ const loadImage = async (file: File): Promise<LoadedImage> => {
   }
 }
 
-const drawRoundedRectangle = (
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number
-) => {
-  const safeRadius = Math.min(radius, width / 2, height / 2)
-  context.beginPath()
-  context.moveTo(x + safeRadius, y)
-  context.lineTo(x + width - safeRadius, y)
-  context.quadraticCurveTo(x + width, y, x + width, y + safeRadius)
-  context.lineTo(x + width, y + height - safeRadius)
-  context.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height)
-  context.lineTo(x + safeRadius, y + height)
-  context.quadraticCurveTo(x, y + height, x, y + height - safeRadius)
-  context.lineTo(x, y + safeRadius)
-  context.quadraticCurveTo(x, y, x + safeRadius, y)
-  context.closePath()
-}
-
 const truncateText = (context: CanvasRenderingContext2D, value: string, maxWidth: number) => {
   if (context.measureText(value).width <= maxWidth) return value
 
@@ -90,6 +73,19 @@ const truncateText = (context: CanvasRenderingContext2D, value: string, maxWidth
   }
 
   return lower > 0 ? `${characters.slice(0, lower).join('')}…` : ''
+}
+
+const drawCenteredText = (
+  context: CanvasRenderingContext2D,
+  value: string,
+  centerX: number,
+  top: number,
+  maxWidth: number
+) => {
+  const displayValue = truncateText(context, value, maxWidth)
+  context.textAlign = 'center'
+  context.textBaseline = 'top'
+  context.fillText(displayValue, centerX, top)
 }
 
 const canvasToBlob = (canvas: HTMLCanvasElement, mimeType: string, quality?: number) =>
@@ -144,49 +140,57 @@ export const applyListingImageWatermark = async (file: File, rawPublisherName: s
     context.drawImage(loadedImage.source, 0, 0, width, height)
 
     const shortEdge = Math.min(width, height)
-    const barHeight = Math.max(34, Math.min(138, Math.round(shortEdge * 0.105)))
-    const horizontalMargin = Math.max(12, Math.round(width * 0.055))
-    const bottomMargin = Math.max(12, Math.round(height * 0.045))
-    const barX = horizontalMargin
-    const barY = height - bottomMargin - barHeight
-    const barWidth = width - horizontalMargin * 2
-    const cornerRadius = Math.max(8, Math.round(barHeight * 0.22))
-
-    const overlay = context.createLinearGradient(barX, barY, barX + barWidth, barY)
-    overlay.addColorStop(0, 'rgba(5, 45, 36, 0.76)')
-    overlay.addColorStop(1, 'rgba(9, 66, 52, 0.68)')
-    context.fillStyle = overlay
-    drawRoundedRectangle(context, barX, barY, barWidth, barHeight, cornerRadius)
-    context.fill()
-
-    const innerPadding = Math.max(12, Math.round(barHeight * 0.24))
     const logo = await loadBrandLogo()
-    const logoHeight = Math.max(14, Math.round(barHeight * 0.34))
-    const logoWidth = logo ? Math.round(logoHeight * (logo.naturalWidth / logo.naturalHeight)) : 0
-    const logoX = barX + barWidth - innerPadding - logoWidth
-    const logoY = barY + (barHeight - logoHeight) / 2
+    const publisherFontSize = Math.max(10, Math.round(shortEdge * 0.028))
+    const domainFontSize = Math.max(9, Math.round(shortEdge * 0.024))
+
+    context.save()
+    context.fillStyle = WATERMARK_COLOR
+
+    // Publisher mark: centered in the upper-left area, matching the supplied reference.
+    context.globalAlpha = PUBLISHER_WATERMARK_OPACITY
+    const publisherCenterX = width * 0.275
+    const publisherTop = height * 0.238
+    const publisherLogoWidth = Math.max(64, Math.round(shortEdge * 0.158))
+    const publisherLogoHeight = logo ? Math.round(publisherLogoWidth * (logo.naturalHeight / logo.naturalWidth)) : 0
+    const publisherLogoTop = publisherTop + publisherFontSize + shortEdge * 0.002
+
+    context.font = `400 ${publisherFontSize}px ${WATERMARK_FONT_FAMILY}`
+    drawCenteredText(
+      context,
+      publisherName,
+      publisherCenterX,
+      publisherTop,
+      Math.min(width * 0.36, publisherLogoWidth * 1.65)
+    )
+    if (logo) {
+      context.drawImage(
+        logo,
+        publisherCenterX - publisherLogoWidth / 2,
+        publisherLogoTop,
+        publisherLogoWidth,
+        publisherLogoHeight
+      )
+    }
+
+    // Brand mark: larger logo with the website address in the lower-right corner.
+    context.globalAlpha = BRAND_WATERMARK_OPACITY
+    const brandRight = width * 0.06
+    const brandBottom = height * 0.066
+    const brandLogoWidth = Math.max(88, Math.round(shortEdge * 0.223))
+    const brandLogoHeight = logo ? Math.round(brandLogoWidth * (logo.naturalHeight / logo.naturalWidth)) : 0
+    const brandGap = Math.max(3, Math.round(shortEdge * 0.009))
+    const brandGroupHeight = brandLogoHeight + brandGap + domainFontSize
+    const brandLeft = width - brandRight - brandLogoWidth
+    const brandTop = height - brandBottom - brandGroupHeight
+    const brandCenterX = brandLeft + brandLogoWidth / 2
 
     if (logo) {
-      context.globalAlpha = 0.96
-      context.drawImage(logo, logoX, logoY, logoWidth, logoHeight)
-      context.globalAlpha = 1
+      context.drawImage(logo, brandLeft, brandTop, brandLogoWidth, brandLogoHeight)
     }
-
-    const fontSize = Math.max(12, Math.round(barHeight * 0.29))
-    const sarabunFont = getComputedStyle(document.documentElement)
-      .getPropertyValue('--font-sarabun-next')
-      .trim()
-    const fontFamily = sarabunFont || 'Sarabun'
-    if (document.fonts) {
-      await document.fonts.load(`600 ${fontSize}px ${fontFamily}`).catch(() => undefined)
-    }
-    context.font = `600 ${fontSize}px ${fontFamily}, "Noto Sans Thai", Tahoma, sans-serif`
-    context.fillStyle = 'rgba(255, 255, 255, 0.96)'
-    context.textBaseline = 'middle'
-    const textX = barX + innerPadding
-    const textRight = logo ? logoX - innerPadding : barX + barWidth - innerPadding
-    const displayName = truncateText(context, publisherName, Math.max(0, textRight - textX))
-    context.fillText(displayName, textX, barY + barHeight / 2)
+    context.font = `400 ${domainFontSize}px ${WATERMARK_FONT_FAMILY}`
+    drawCenteredText(context, WATERMARK_DOMAIN, brandCenterX, brandTop + brandLogoHeight + brandGap, brandLogoWidth)
+    context.restore()
 
     const blob = await encodeWatermarkedImage(canvas, file.type.toLowerCase())
     if (blob.size > MAX_UPLOAD_BYTES) throw new Error('Watermarked image is too large')

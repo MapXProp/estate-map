@@ -1245,6 +1245,7 @@ const HeaderGallery = ({
       {gridType === 'grid2' && (
         <HeaderGalleryGrid2
           images={images}
+          mediaCount={mediaItems.length}
           handleOpenImage={handleOpenImage}
           handleOpenAllMedia={handleOpenAllMedia}
           initiallySaved={initiallySaved}
@@ -1363,8 +1364,19 @@ const HeaderGalleryGrid1 = ({
     </header>
   )
 }
+
+const getMobilePreviewLayoutClass = (imageCount: number, index: number) => {
+  if (imageCount === 1) return 'col-span-6 aspect-[4/3]'
+  if (imageCount === 2) return 'col-span-3 aspect-[4/3]'
+  if (imageCount === 3) return index === 0 ? 'col-span-6 aspect-video' : 'col-span-3 aspect-[4/3]'
+  if (imageCount === 4) return 'col-span-3 aspect-[4/3]'
+
+  return index < 2 ? 'col-span-3 aspect-[4/3]' : 'col-span-2 aspect-square'
+}
+
 const HeaderGalleryGrid2 = ({
   images,
+  mediaCount,
   handleOpenImage,
   handleOpenAllMedia,
   initiallySaved,
@@ -1374,6 +1386,7 @@ const HeaderGalleryGrid2 = ({
   hideMobileFavorite,
 }: {
   images: string[]
+  mediaCount: number
   handleOpenImage: (index: number) => void
   handleOpenAllMedia: () => void
   initiallySaved: boolean
@@ -1383,6 +1396,8 @@ const HeaderGalleryGrid2 = ({
   hideMobileFavorite: boolean
 }) => {
   const mobilePreviewImages = images.slice(0, 5)
+  const mobilePreviewImageCount = mobilePreviewImages.length
+  const hasAdditionalMedia = mediaCount > images.length
   const tabletSideImages = images.slice(1, 3)
   const tabletThumbnailImages = images.slice(3, 8)
 
@@ -1395,27 +1410,25 @@ const HeaderGalleryGrid2 = ({
         )}
       >
         {mobilePreviewImages.map((image, index) => {
-          const isTopRow = index < 2
-          const isAllMediaTile = index === 4
+          const isAllMediaTile = mobilePreviewImageCount >= 5 && index === 4
+          const isWideMobileTile = mobilePreviewImageCount === 1 || (mobilePreviewImageCount === 3 && index === 0)
 
           return (
             <button
               key={`${image}-${index}`}
               type="button"
               onClick={() => (isAllMediaTile ? handleOpenAllMedia() : handleOpenImage(index))}
-              aria-label={
-                isAllMediaTile ? `ดูสื่อทั้งหมด ${images.length} รายการ` : `เปิดรูปที่ ${index + 1} แบบเต็มจอ`
-              }
+              aria-label={isAllMediaTile ? `ดูสื่อทั้งหมด ${mediaCount} รายการ` : `เปิดรูปที่ ${index + 1} แบบเต็มจอ`}
               className={clsx(
                 'relative block min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
-                isTopRow ? 'col-span-3 aspect-[4/3]' : 'col-span-2 aspect-square'
+                getMobilePreviewLayoutClass(mobilePreviewImageCount, index)
               )}
             >
               <Image
                 alt={`${imageAlt} รูปที่ ${index + 1}`}
                 src={image}
                 fill
-                sizes={isTopRow ? '50vw' : '34vw'}
+                sizes={isWideMobileTile ? '100vw' : mobilePreviewImageCount >= 5 && index >= 2 ? '34vw' : '50vw'}
                 priority={index < 2}
                 className="object-cover transition duration-200 active:scale-[0.98]"
               />
@@ -1429,6 +1442,32 @@ const HeaderGalleryGrid2 = ({
           )
         })}
       </div>
+
+      {mobilePreviewImageCount > 0 && mobilePreviewImageCount < 5 ? (
+        <button
+          type="button"
+          onClick={() =>
+            mobilePreviewImageCount === 1 && !hasAdditionalMedia ? handleOpenImage(0) : handleOpenAllMedia()
+          }
+          aria-label={
+            hasAdditionalMedia
+              ? `ดูสื่อทั้งหมด ${mediaCount} รายการ`
+              : mobilePreviewImageCount === 1
+                ? 'เปิดรูปแบบเต็มจอ'
+                : `ดูรูปทั้งหมด ${mobilePreviewImageCount} รูป`
+          }
+          className="absolute right-3 bottom-3 z-10 flex min-h-10 items-center gap-1.5 rounded-full bg-neutral-950/68 px-3.5 text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition active:scale-[0.98] min-[744px]:hidden"
+        >
+          <Squares2X2Icon className="size-[18px]" />
+          <span>
+            {hasAdditionalMedia
+              ? `ดูสื่อทั้งหมด ${mediaCount}`
+              : mobilePreviewImageCount === 1
+                ? 'ดูรูป'
+                : `ดูทั้งหมด ${mobilePreviewImageCount} รูป`}
+          </span>
+        </button>
+      ) : null}
 
       {listingIdentifier ? (
         <BtnLikeIcon

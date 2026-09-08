@@ -759,11 +759,15 @@ const Page = () => {
                         ? `รูป ${index + 1}`
                         : `Photo ${index + 1}`}
                   </span>
-                  <span className="pointer-events-none absolute inset-x-2 bottom-2 flex h-5 items-center justify-between gap-1 rounded-md bg-[#073d32]/75 px-1.5 text-white backdrop-blur-[1px]">
-                    <span className="min-w-0 truncate font-sarabun text-[8px] font-semibold">
+                  <span className="pointer-events-none absolute top-[23.8%] left-[27.5%] flex w-[28%] -translate-x-1/2 flex-col items-center text-center text-[#f3f4f6] opacity-50">
+                    <span className="w-full truncate font-sans text-[6px] leading-none font-normal">
                       {contactName.trim() || (isThai ? 'ชื่อผู้ลงประกาศ' : 'Publisher')}
                     </span>
-                    <span className="shrink-0 font-serif text-[8px] font-semibold">MapxProp</span>
+                    <img src="/M5-dark-small.webp" alt="" className="mt-px w-[56.5%]" />
+                  </span>
+                  <span className="pointer-events-none absolute right-[6%] bottom-[6.6%] flex w-[22.3%] flex-col items-center text-center text-[#f3f4f6] opacity-[0.68]">
+                    <img src="/M5-dark-small.webp" alt="" className="w-full" />
+                    <span className="mt-0.5 font-sans text-[5px] leading-none font-normal">mapxprop.com</span>
                   </span>
                   <button
                     type="button"
