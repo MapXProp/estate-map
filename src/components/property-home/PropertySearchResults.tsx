@@ -150,6 +150,11 @@ const PropertySearchResults = ({ query }: { query: string }) => {
           <div className="grid gap-5 py-8 md:grid-cols-2 xl:grid-cols-3">
             {data.listings.map((listing) => {
               const price = listing.sale_price ?? listing.rent_price_monthly
+              const title = isThai ? listing.title : listing.title_en || listing.title
+              const projectName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
+              const address = isThai ? listing.address : listing.address_en || listing.address
+              const district = isThai ? listing.district : listing.district_en || listing.district
+              const province = isThai ? listing.province : listing.province_en || listing.province
               const propertyType = getPropertyType(listing.property_type_code)
               const propertyTypeLabel = propertyType
                 ? isThai
@@ -171,15 +176,15 @@ const PropertySearchResults = ({ query }: { query: string }) => {
                     </span>
                   </div>
                   <div className="p-5">
-                    <h2 className="line-clamp-2 text-lg font-semibold text-neutral-950 dark:text-white">{listing.title}</h2>
+                    <h2 className="line-clamp-2 text-lg font-semibold text-neutral-950 dark:text-white">{title}</h2>
                     <p className="mt-2 flex items-center gap-1.5 truncate text-sm text-neutral-500 dark:text-neutral-400">
                       <MapPin className="size-4 shrink-0" />
-                      {[listing.project_name, listing.district, listing.province, listing.address].filter(Boolean).join(', ')}
+                      {[projectName, district, province, address].filter(Boolean).join(', ')}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3 text-xs text-neutral-500 dark:text-neutral-400">
                       {listing.bedroom_count !== undefined && <span className="flex items-center gap-1"><BedDouble className="size-4" /> {listing.bedroom_count}</span>}
                       {listing.bathroom_count !== undefined && <span className="flex items-center gap-1"><Bath className="size-4" /> {listing.bathroom_count}</span>}
-                      {listing.usable_area_sqm !== undefined && <span className="flex items-center gap-1"><Ruler className="size-4" /> {listing.usable_area_sqm} ตร.ม.</span>}
+                      {listing.usable_area_sqm !== undefined && <span className="flex items-center gap-1"><Ruler className="size-4" /> {listing.usable_area_sqm} {isThai ? 'ตร.ม.' : 'sq.m.'}</span>}
                     </div>
                     {price !== undefined && (
                       <p className="mt-5 border-t border-neutral-100 pt-4 text-lg font-semibold text-neutral-950 dark:border-neutral-800 dark:text-white">

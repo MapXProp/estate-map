@@ -222,7 +222,11 @@ function OrganizationListingCard({
     ? propertyType?.nameTh || listing.property_type_code
     : propertyType?.nameEn || listing.property_type_code
   const imageURL = getListingMediaUrl(listing.primary_image_url)
-  const location = [listing.district, listing.province].filter(Boolean).join(', ') || listing.address
+  const title = isThai ? listing.title : listing.title_en || listing.title
+  const address = isThai ? listing.address : listing.address_en || listing.address
+  const district = isThai ? listing.district : listing.district_en || listing.district
+  const province = isThai ? listing.province : listing.province_en || listing.province
+  const location = [district, province].filter(Boolean).join(', ') || address
   return (
     <Link
       href={`/real-estate-listings/${encodeURIComponent(listing.slug || listing.public_listing_id)}`}
@@ -242,7 +246,7 @@ function OrganizationListingCard({
       <div className="p-4">
         <p className="font-sarabun text-xs font-semibold text-[#176b50] dark:text-emerald-300">{propertyLabel}</p>
         <h3 className="mt-1 line-clamp-2 font-sarabun text-lg font-semibold text-neutral-950 dark:text-white">
-          {listing.title}
+          {title}
         </h3>
         {location ? (
           <p className="mt-2 flex items-start gap-1.5 font-sarabun text-sm text-neutral-500">

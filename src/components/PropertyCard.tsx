@@ -53,8 +53,8 @@ const PropertyCard: FC<Props> = ({
   const {
     galleryImgs,
     listingCategory,
-    address,
-    title,
+    address: sourceAddress,
+    title: sourceTitle,
     handle: listingHandle,
     like,
     saleOff,
@@ -73,6 +73,9 @@ const PropertyCard: FC<Props> = ({
     group,
     offer,
   } = data
+  const title = isThai ? sourceTitle : data.titleEn || sourceTitle
+  const address = isThai ? sourceAddress : data.addressEn || sourceAddress
+  const localizedMetadataSummary = isThai ? metadataSummary : data.metadataSummaryEn || metadataSummary
   const displayPrice =
     typeof data.priceAmount === 'number' && data.priceAmount > 0
       ? `${formatCurrencyFrom(data.priceAmount, data.priceCurrency)}${formatPricePeriod(data.priceUnit, isThai)}`
@@ -103,8 +106,8 @@ const PropertyCard: FC<Props> = ({
             ? 'bg-[#eef3f8] text-[#385f7a] dark:bg-sky-950/45 dark:text-sky-200'
             : 'bg-[#edf6f1] text-[#176b50] dark:bg-emerald-950/45 dark:text-emerald-200'
 
-  const propertyFacts = metadataSummary
-    ? metadataSummary
+  const propertyFacts = localizedMetadataSummary
+    ? localizedMetadataSummary
     : group === 'land'
       ? acreage
         ? `${Math.round(acreage / 4).toLocaleString('th-TH')} ตร.ว.`

@@ -19,6 +19,9 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
   const router = useRouter()
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
+  const title = isThai ? listing.title : listing.titleEn || listing.title
+  const description = isThai ? listing.description : listing.descriptionEn || listing.description
+  const address = isThai ? listing.address : listing.addressEn || listing.address
   const images = listing.galleryImgs.length ? listing.galleryImgs : [listing.featuredImage]
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [activeImage, setActiveImage] = useState<number | null>(null)
@@ -34,7 +37,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
         : listing.price
 
   const shareProperty = async () => {
-    const shareData = { title: listing.title, url: window.location.href }
+    const shareData = { title, url: window.location.href }
     if (navigator.share) {
       await navigator.share(shareData).catch(() => undefined)
       return
@@ -94,7 +97,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                       aria-label={`ดูรูปทั้งหมด ${images.length} รูป`}
                       className="group relative col-span-3 row-span-2 overflow-hidden text-start"
                     >
-                      <Image src={images[0]} alt={listing.title} fill priority className="object-cover" sizes="(max-width: 1280px) 60vw, 800px" />
+                      <Image src={images[0]} alt={title} fill priority className="object-cover" sizes="(max-width: 1280px) 60vw, 800px" />
                       <span className="absolute inset-0 bg-black/0 transition group-hover:bg-black/5" />
                     </button>
                     {[images[1] || images[0], images[2] || images[0]].map((image, index) => (
@@ -105,7 +108,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                         aria-label={`ดูรูปทั้งหมด ${images.length} รูป`}
                         className="group relative overflow-hidden text-start"
                       >
-                        <Image src={image} alt={`${listing.title} ${index + 2}`} fill className="object-cover" sizes="240px" />
+                        <Image src={image} alt={`${title} ${index + 2}`} fill className="object-cover" sizes="240px" />
                         <span className="absolute inset-0 bg-black/0 transition group-hover:bg-black/5" />
                         {index === 1 && (
                           <span className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/45 via-transparent to-transparent p-3">
@@ -123,9 +126,9 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                       <span className="rounded-full bg-[#edf6f1] px-3 py-1.5">{listing.listingCategory}</span>
                       {listing.saleOff && <span className="rounded-full bg-orange-50 px-3 py-1.5 text-orange-700">{listing.saleOff}</span>}
                     </div>
-                    <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-white">{listing.title}</h1>
+                    <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-white">{title}</h1>
                     <p className="mt-2 flex items-start gap-2 text-neutral-500 dark:text-neutral-400">
-                      <MapPin className="mt-0.5 size-5 shrink-0" /> {listing.address}
+                      <MapPin className="mt-0.5 size-5 shrink-0" /> {address}
                     </p>
                     <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-y border-neutral-200 py-4 text-sm text-neutral-700 dark:border-neutral-800 dark:text-neutral-300">
                       <span className="flex items-center gap-2"><BedDouble className="size-5 text-[#176b50]" /> {listing.bedrooms} ห้องนอน</span>
@@ -133,7 +136,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                       <span>{listing.acreage} ตร.ม.</span>
                     </div>
                     <h2 className="mt-6 text-lg font-semibold text-neutral-950 dark:text-white">เกี่ยวกับอสังหานี้</h2>
-                    <p className="mt-2 line-clamp-4 leading-7 text-neutral-600 dark:text-neutral-300">{listing.description}</p>
+                    <p className="mt-2 line-clamp-4 leading-7 text-neutral-600 dark:text-neutral-300">{description}</p>
                     <a
                       href={`/real-estate-listings/${listing.handle}`}
                       className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-neutral-500 underline-offset-4 transition hover:text-neutral-800 hover:underline dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -195,7 +198,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
                   >
                     <Image
                       src={image}
-                      alt={`${listing.title} รูปที่ ${index + 1}`}
+                      alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${index + 1}`}
                       fill
                       sizes="(max-width: 1279px) 50vw, 33vw"
                       priority={index < 6}
@@ -220,7 +223,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyPreviewListing }) 
               <>
                 <Image
                   src={images[activeImage]}
-                  alt={`${listing.title} รูปที่ ${activeImage + 1}`}
+                  alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${activeImage + 1}`}
                   fill
                   priority
                   sizes="100vw"

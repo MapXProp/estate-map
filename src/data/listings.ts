@@ -1182,18 +1182,32 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : '',
     listing.event_round_count ? `${listing.event_round_count} รอบ` : '',
   ].filter(Boolean)
+  const factsEn = [
+    listing.land_area_sqm && group === 'land'
+      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('en-US')} sq.wah`
+      : '',
+    listing.usable_area_sqm ? `${Math.round(listing.usable_area_sqm).toLocaleString('en-US')} sq.m.` : '',
+    listing.bedroom_count
+      ? `${listing.bedroom_count} bedroom${listing.bedroom_count === 1 ? '' : 's'}`
+      : '',
+    listing.event_round_count ? `${listing.event_round_count} round${listing.event_round_count === 1 ? '' : 's'}` : '',
+  ].filter(Boolean)
+  const addressEn = [listing.address_en, listing.district_en, listing.province_en].filter(Boolean).join(', ')
 
   return {
     id: `real-estate-listing://${listing.id}`,
     title: listing.title,
+    titleEn: listing.title_en || listing.title,
     handle: listing.slug || listing.public_listing_id,
     description: listing.description || '',
+    descriptionEn: listing.description_en || listing.description || '',
     date: listing.published_at || '',
     listingCategory: isEvent ? 'พื้นที่ออกบูธ' : getPropertyTypeLabel(listing.property_type_code),
     featuredImage: galleryImgs[0] || '',
     galleryImgs,
     like: false,
     address: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
+    addressEn: addressEn || [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
     reviewStart: 0,
     reviewCount: 0,
     price:
@@ -1220,6 +1234,7 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     map: { lat: listing.latitude || 13.7563, lng: listing.longitude || 100.5018 },
     listingKind: isEvent ? ('event_booth' as const) : ('property' as const),
     metadataSummary: facts.join(' · '),
+    metadataSummaryEn: factsEn.join(' · '),
     isVerified: listing.is_verified,
     isOwnerDirect: listing.source_type === 'owner',
     propertyTypeCode: listing.property_type_code,

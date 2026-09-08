@@ -56,7 +56,9 @@ export type PropertySearchListing = {
   public_listing_id: string
   slug: string
   title: string
+  title_en?: string
   description: string
+  description_en?: string
   property_type_code: string
   accommodation_model: string
   listing_type: string
@@ -66,8 +68,13 @@ export type PropertySearchListing = {
   project_name_en?: string
   project_category?: string
   address: string
+  address_en?: string
   province: string
+  province_en?: string
   district: string
+  district_en?: string
+  subdistrict_en?: string
+  road_en?: string
   sale_price?: number
   rent_price_monthly?: number
   currency?: string
@@ -160,7 +167,9 @@ export type PropertyListingDetail = {
   public_listing_id: string
   slug: string
   title: string
+  title_en?: string
   description: string
+  description_en?: string
   property_type_code: string
   accommodation_model: string
   usage_type: string
@@ -175,11 +184,16 @@ export type PropertyListingDetail = {
   project_category?: string
   building_name: string
   address: string
+  address_en?: string
   province: string
+  province_en?: string
   district: string
+  district_en?: string
   subdistrict: string
+  subdistrict_en?: string
   postal_code: string
   road: string
+  road_en?: string
   usable_area_sqm?: number
   land_area_sqm?: number
   bedroom_count?: number

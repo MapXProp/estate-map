@@ -34,21 +34,27 @@ const textDetail = (listing: PropertyListingDetail, key: string) => {
   return typeof value === 'string' ? value : ''
 }
 
-type FeatureCard = { title_th?: unknown; body_th?: unknown }
+type FeatureCard = { title_th?: unknown; body_th?: unknown; title_en?: unknown; body_en?: unknown }
 
-const getFeatureCards = (listing: PropertyListingDetail) => {
+const getFeatureCards = (listing: PropertyListingDetail, isThai: boolean) => {
   const block = listing.content_blocks?.find((item) => item.code === 'land_highlights' && item.type === 'feature_cards')
   const items = Array.isArray(block?.content)
     ? block.content
         .filter((item): item is FeatureCard => Boolean(item) && typeof item === 'object')
         .map((item) => ({
-          title: typeof item.title_th === 'string' ? item.title_th : '',
-          body: typeof item.body_th === 'string' ? item.body_th : '',
+          title:
+            typeof (isThai ? item.title_th : item.title_en) === 'string'
+              ? String(isThai ? item.title_th : item.title_en)
+              : '',
+          body:
+            typeof (isThai ? item.body_th : item.body_en) === 'string'
+              ? String(isThai ? item.body_th : item.body_en)
+              : '',
         }))
         .filter((item) => item.title && item.body)
     : []
 
-  return { heading: block?.heading_th || '', items }
+  return { heading: (isThai ? block?.heading_th : block?.heading_en) || '', items }
 }
 
 const formatThaiNumber = (value: number) => value.toLocaleString('th-TH', { maximumFractionDigits: 0 })
@@ -59,7 +65,12 @@ const formatPhone = (value: string) => {
 }
 
 const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
-  const { formatCurrencyFrom } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
+  const isThai = locale === 'th'
+  const title = isThai ? listing.title : listing.title_en || listing.title
+  const description = isThai ? listing.description : listing.description_en || listing.description
+  const address = isThai ? listing.address : listing.address_en || listing.address
+  const province = isThai ? listing.province : listing.province_en || listing.province
   const images = listing.media.filter((item) => item.media_type === 'image').map((item) => item.url)
   const media: PropertyMediaItem[] = listing.media
     .filter((item) => ['image', 'video', '360', 'panorama'].includes(item.media_type))
@@ -82,7 +93,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const isTrustedContact = listing.contact_role_code
     ? listing.contact_verification_status === 'authority_verified'
     : listing.is_verified || textDetail(listing, 'contact_trust_status') === 'verified'
-  const featureCards = getFeatureCards(listing)
+  const featureCards = getFeatureCards(listing, isThai)
   const offerAmount = listing.offer_amount || 0
   const pricePerSquareWah =
     offerAmount > 0 && landAreaSquareWah > 0 ? Math.round(offerAmount / landAreaSquareWah) : storedPricePerSquareWah
@@ -90,7 +101,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const formattedPricePerSquareWah = pricePerSquareWah
     ? formatCurrencyFrom(pricePerSquareWah, listing.currency)
     : ''
-  const fullAddress = [listing.address, listing.province].filter(Boolean).join(' ')
+  const fullAddress = [address, province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
   const lineHandle = listing.line_id.replace(/^@/, '')
@@ -99,7 +110,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
       : ''
-  const descriptionParagraphs = listing.description.split(/\n{2,}/).filter(Boolean)
+  const descriptionParagraphs = description.split(/\n{2,}/).filter(Boolean)
   const factCards = [
     { icon: LandPlot, value: `${formatThaiNumber(landAreaSquareWah)} ตร.ว.`, label: 'เนื้อที่รวม' },
     ...(plotCount ? [{ icon: SplitSquareVertical, value: `${plotCount} แปลง`, label: 'แปลงติดกัน' }] : []),
@@ -127,7 +138,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             />
           </div>
           <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950">
-            {listing.title}
+            {title}
           </h1>
           {fullAddress && (
             <div className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
@@ -143,7 +154,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             media={media}
             listingIdentifier={listing.slug || listing.public_listing_id}
             gridType="grid2"
-            imageAlt={listing.title}
+            imageAlt={title}
             squareMobileCorners
             hideMobileFavorite
           />
@@ -189,7 +200,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
               <div className="order-1 hidden min-[744px]:order-2 min-[744px]:mt-4 min-[744px]:block">
                 <h1 className="max-w-4xl text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
-                  {listing.title}
+                  {title}
                 </h1>
                 {fullAddress && (
                   <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">

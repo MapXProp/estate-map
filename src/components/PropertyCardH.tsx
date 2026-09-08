@@ -22,7 +22,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
   const isThai = locale === 'th'
   const {
     galleryImgs,
-    title,
+    title: sourceTitle,
     handle: listingHandle,
     like,
     saleOff,
@@ -33,9 +33,8 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     acreage,
     bathrooms,
     bedrooms,
-    address,
-    date,
   } = data
+  const title = isThai ? sourceTitle : data.titleEn || sourceTitle
   const displayPrice =
     typeof data.priceAmount === 'number' && data.priceAmount > 0
       ? `${formatCurrencyFrom(data.priceAmount, data.priceCurrency)}${formatPricePeriod(data.priceUnit, isThai)}`

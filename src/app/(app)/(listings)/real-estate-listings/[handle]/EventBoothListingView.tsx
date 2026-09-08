@@ -24,10 +24,16 @@ const formatThaiDate = (value: string) =>
   )
 
 const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) => {
-  const { formatCurrencyFrom } = usePreferences()
+  const { locale, formatCurrencyFrom } = usePreferences()
+  const isThai = locale === 'th'
+  const title = isThai ? listing.title : listing.title_en || listing.title
+  const address = isThai ? listing.address : listing.address_en || listing.address
+  const subdistrict = isThai ? listing.subdistrict : listing.subdistrict_en || listing.subdistrict
+  const district = isThai ? listing.district : listing.district_en || listing.district
+  const province = isThai ? listing.province : listing.province_en || listing.province
   const event = listing.event!
   const image = listing.media.find((media) => media.is_primary) || listing.media[0]
-  const fullAddress = [listing.address, listing.subdistrict, listing.district, listing.province, listing.postal_code]
+  const fullAddress = [address, subdistrict, district, province, listing.postal_code]
     .filter(Boolean)
     .join(' ')
   const lineHandle = listing.line_id.replace(/^@/, '')
@@ -76,7 +82,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               {image ? (
                 <Image
                   src={image.url}
-                  alt={image.alt_text || listing.title}
+                  alt={image.alt_text || title}
                   width={image.width || 1024}
                   height={image.height || 1536}
                   priority
@@ -106,7 +112,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
             <div className="mt-2 flex items-start justify-between gap-4">
               <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
-                {listing.title}
+                {title}
               </h1>
               <BtnLikeIcon
                 listingIdentifier={listing.slug || listing.public_listing_id}

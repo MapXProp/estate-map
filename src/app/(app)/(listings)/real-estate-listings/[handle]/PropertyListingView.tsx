@@ -24,6 +24,12 @@ import MobileListingContactSheet from '../../components/MobileListingContactShee
 const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
+  const title = isThai ? listing.title : listing.title_en || listing.title
+  const description = isThai ? listing.description : listing.description_en || listing.description
+  const address = isThai ? listing.address : listing.address_en || listing.address
+  const subdistrict = isThai ? listing.subdistrict : listing.subdistrict_en || listing.subdistrict
+  const district = isThai ? listing.district : listing.district_en || listing.district
+  const province = isThai ? listing.province : listing.province_en || listing.province
   const propertyType = getPropertyType(listing.property_type_code)
   const propertyLabel = isThai
     ? propertyType?.nameTh || listing.property_type_code
@@ -38,7 +44,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
       thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,
     }))
-  const fullAddress = [listing.address, listing.subdistrict, listing.district, listing.province, listing.postal_code]
+  const fullAddress = [address, subdistrict, district, province, listing.postal_code]
     .filter(Boolean)
     .join(' ')
   const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
@@ -153,7 +159,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             listingIdentifier={listing.slug || listing.public_listing_id}
             gridType={images.length >= 3 ? 'grid2' : 'grid1'}
             propertyDetails={{
-              title: listing.title,
+              title,
               category: propertyLabel,
               price,
               address: fullAddress,
@@ -186,7 +192,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
 
               <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
                 <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
-                  {listing.title}
+                  {title}
                 </h1>
               </div>
             </div>
@@ -245,7 +251,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 {isThai ? 'รายละเอียดประกาศ' : 'Listing details'}
               </h2>
               <div className="mt-5 space-y-4 font-sarabun text-[15px] leading-7 whitespace-pre-line text-neutral-700 sm:text-base dark:text-neutral-300">
-                {listing.description}
+                {description}
               </div>
             </section>
 

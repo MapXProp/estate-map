@@ -389,10 +389,12 @@ const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
   return 'residential'
 }
 
-const formatEventSchedule = (startsOn?: string, endsOn?: string) => {
+const formatEventSchedule = (startsOn: string | undefined, endsOn: string | undefined, isThai: boolean) => {
   if (!startsOn) return ''
   const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+    new Intl.DateTimeFormat(isThai ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+      new Date(value)
+    )
   if (!endsOn || startsOn === endsOn) return formatDate(startsOn)
   return `${formatDate(startsOn)} – ${formatDate(endsOn)}`
 }
@@ -416,13 +418,16 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
   )
   const area =
     listing.land_area_sqm && group === 'land'
-      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('th-TH')} ตร.ว.`
+      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ว.' : 'sq.wah'}`
       : listing.usable_area_sqm
-        ? `${Math.round(listing.usable_area_sqm).toLocaleString('th-TH')} ตร.ม.`
+        ? `${Math.round(listing.usable_area_sqm).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
         : ''
   const priceAmount = isRetailSpace ? listing.offer_amount : isRental ? listing.rent_price_monthly : listing.sale_price
   const price = listing.price_on_request || !priceAmount ? '' : String(priceAmount)
-  const eventSchedule = isEvent ? formatEventSchedule(listing.event_starts_on, listing.event_ends_on) : ''
+  const eventSchedule = isEvent ? formatEventSchedule(listing.event_starts_on, listing.event_ends_on, isThai) : ''
+  const localizedAddress = isThai ? listing.address : listing.address_en || listing.address
+  const localizedDistrict = isThai ? listing.district : listing.district_en || listing.district
+  const localizedProvince = isThai ? listing.province : listing.province_en || listing.province
 
   return {
     id: listing.id,
@@ -444,11 +449,21 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
             ? 'อสังหาริมทรัพย์'
             : 'Property',
     offer: isEvent ? (listing.price_on_request ? 'ติดต่อผู้จัดงาน' : 'เช่า') : isRental ? 'เช่า' : 'ขาย',
-    title: listing.title,
-    location: [listing.address, listing.district, listing.province].filter(Boolean).join(', '),
+    title: isThai ? listing.title : listing.title_en || listing.title,
+    location: [localizedAddress, localizedDistrict, localizedProvince].filter(Boolean).join(', '),
     facts: isEvent
-      ? [eventSchedule, listing.event_round_count ? `${listing.event_round_count} รอบ` : ''].filter(Boolean)
-      : [area, listing.bedroom_count ? `${listing.bedroom_count} ห้องนอน` : ''].filter(Boolean),
+      ? [
+          eventSchedule,
+          listing.event_round_count
+            ? `${listing.event_round_count} ${isThai ? 'รอบ' : `round${listing.event_round_count === 1 ? '' : 's'}`}`
+            : '',
+        ].filter(Boolean)
+      : [
+          area,
+          listing.bedroom_count
+            ? `${listing.bedroom_count} ${isThai ? 'ห้องนอน' : `bedroom${listing.bedroom_count === 1 ? '' : 's'}`}`
+            : '',
+        ].filter(Boolean),
     price,
     priceAmount,
     priceCurrency: listing.currency,

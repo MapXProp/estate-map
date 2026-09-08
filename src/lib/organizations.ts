@@ -77,11 +77,15 @@ export type OrganizationListing = {
   public_listing_id: string
   slug: string
   title: string
+  title_en?: string
   property_type_code: string
   listing_type: string
   address: string
+  address_en?: string
   province: string
+  province_en?: string
   district: string
+  district_en?: string
   offer_amount?: number
   price_unit: string
   currency: string
