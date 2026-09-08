@@ -228,7 +228,10 @@ const SectionGridHasMap: FC<Props> = ({
         className
       )}
     >
-      <div id="heading" className="flex w-full flex-col gap-y-4 pb-32 lg:flex-[58_1_0%] lg:pb-10 xl:flex-[60_1_0%]">
+      <div
+        id="heading"
+        className="flex w-full flex-col gap-y-4 pb-32 lg:w-[48%] lg:max-w-[760px] lg:flex-none lg:pb-10 xl:w-[46%] 2xl:w-[44%] 2xl:max-w-[820px]"
+      >
         <PropertyMapFilterBar
           value={filters}
           onChange={setFilters}
@@ -239,7 +242,7 @@ const SectionGridHasMap: FC<Props> = ({
           query={query}
           loading={isQueryLoading}
         />
-        <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[744px]:grid-cols-3 min-[744px]:gap-x-3 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-7 lg:pe-5 xl:grid-cols-3 xl:pe-0">
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-6 min-[744px]:grid-cols-3 min-[744px]:gap-x-3 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-7 lg:pe-4 xl:grid-cols-2 xl:pe-0">
           {filteredListings.map((listing) => (
             <div
               key={listing.id}
