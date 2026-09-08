@@ -210,7 +210,7 @@ const PropertyCard: FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-x-2">
-            {isAds && <Badge color="green">ADS</Badge>}
+            {isAds && <Badge color="green">{isThai ? 'โปรโมต' : 'Promoted'}</Badge>}
             <h2
               className={clsx(
                 'font-semibold text-neutral-900 capitalize dark:text-white',

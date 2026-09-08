@@ -142,7 +142,15 @@ const SectionGridHasMap: FC<Props> = ({
       if (sort === 'price_low') return getSortPrice(first) - getSortPrice(second)
       if (sort === 'price_high') return getSortPrice(second) - getSortPrice(first)
       if (sort === 'area_large') return getArea(second) - getArea(first)
-      return Number(second.isVerified) - Number(first.isVerified)
+      const tierRank = { free: 0, boosted: 1, premium: 2 }
+      const promotionDifference =
+        tierRank[second.mapPromotionTier || 'free'] - tierRank[first.mapPromotionTier || 'free']
+      if (promotionDifference) return promotionDifference
+      const promotionWeightDifference = (second.mapPriorityWeight || 0) - (first.mapPriorityWeight || 0)
+      if (promotionWeightDifference) return promotionWeightDifference
+      const verificationDifference = Number(second.isVerified) - Number(first.isVerified)
+      if (verificationDifference) return verificationDifference
+      return new Date(second.date || 0).getTime() - new Date(first.date || 0).getTime()
     })
   }, [filters, resultSourceListings, sort])
 

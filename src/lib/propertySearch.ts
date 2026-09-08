@@ -103,6 +103,9 @@ export type PropertySearchListing = {
   temporary_space_duration_days?: number
   is_verified: boolean
   source_type: string
+  map_promotion_tier: 'premium' | 'boosted' | 'free'
+  map_priority_weight: number
+  is_map_promoted: boolean
 }
 
 export type PropertyListingMedia = {

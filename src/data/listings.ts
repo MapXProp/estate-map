@@ -1230,7 +1230,10 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     bathrooms: listing.bathroom_count || 0,
     acreage: listing.usable_area_sqm || listing.land_area_sqm || 0,
     saleOff: null,
-    isAds: null,
+    isAds: listing.is_map_promoted || null,
+    mapPromotionTier: listing.map_promotion_tier || 'free',
+    mapPriorityWeight: listing.map_priority_weight || 0,
+    isMapPromoted: Boolean(listing.is_map_promoted),
     map: { lat: listing.latitude || 13.7563, lng: listing.longitude || 100.5018 },
     listingKind: isEvent ? ('event_booth' as const) : ('property' as const),
     metadataSummary: facts.join(' · '),
@@ -1335,6 +1338,9 @@ export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings
   priceAmount?: number
   priceCurrency?: string
   priceUnit?: string
+  mapPromotionTier?: 'premium' | 'boosted' | 'free'
+  mapPriorityWeight?: number
+  isMapPromoted?: boolean
 }
 
 // FLIGHT LISTING //

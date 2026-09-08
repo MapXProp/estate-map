@@ -110,6 +110,21 @@ const getListingLocation = (listing: TRealEstateListing): LongdoLocation =>
     ? { lon: listing.map.lng, lat: listing.map.lat }
     : thailandDemoLocations[getDemoLocationIndex(listing.id)]
 
+const getPromotionTierRank = (tier: TRealEstateListing['mapPromotionTier']) => {
+  if (tier === 'premium') return 2
+  if (tier === 'boosted') return 1
+  return 0
+}
+
+const getListingQualityScore = (listing: TRealEstateListing) =>
+  [
+    Boolean(listing.featuredImage || listing.galleryImgs?.length),
+    Boolean(listing.title),
+    Boolean(listing.address),
+    Boolean(listing.priceAmount || listing.priceLabel || listing.price),
+    Boolean(listing.metadataSummary),
+  ].filter(Boolean).length
+
 const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boolean, isThai: boolean) => {
   const background = active ? '#123f32' : '#ffffff'
   const color = active ? '#ffffff' : '#173f34'
@@ -117,6 +132,7 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
   const title = isThai ? listing.title : listing.titleEn || listing.title
   const imageUrl = listing.featuredImage || listing.galleryImgs[0] || ''
   const categoryLabel = isThai ? 'อสังหาริมทรัพย์' : 'Property'
+  const promotedLabel = listing.isMapPromoted ? (isThai ? 'โปรโมต' : 'Promoted') : ''
   const imageHtml = imageUrl
     ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
@@ -124,8 +140,10 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
   return `
   <div
     data-mapx-price-marker="true"
+    data-mapx-listing-id="${escapeHtml(listing.id)}"
+    data-mapx-label-visible="true"
     class="mapx-price-marker${active ? ' is-active' : ''}"
-    style="--mapx-marker-bg:${background};--mapx-marker-color:${color};position:relative;width:max-content;padding-bottom:10px;transform:translate(-50%,-100%);font-family:Sarabun,Arial,sans-serif;"
+    style="--mapx-marker-bg:${background};--mapx-marker-color:${color};--mapx-fan-x:0px;--mapx-fan-y:0px;--mapx-fan-length:0px;--mapx-fan-angle:0deg;position:relative;width:max-content;padding-bottom:10px;transform:translate(calc(-50% + var(--mapx-fan-x)),calc(-100% + var(--mapx-fan-y)));font-family:Sarabun,Arial,sans-serif;"
   >
     <a
       href="${listingPath}"
@@ -134,14 +152,16 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
       class="mapx-price-marker-link"
       style="position:relative;display:block;color:inherit;text-decoration:none;outline:none;"
     >
+      <span aria-hidden="true" class="mapx-compact-pin"></span>
       <span class="mapx-price-pill">${escapeHtml(price)}</span>
       <span aria-hidden="true" class="mapx-price-pointer-outer"></span>
       <span aria-hidden="true" class="mapx-price-pointer-inner"></span>
     </a>
+    <span aria-hidden="true" class="mapx-fan-line"></span>
     <article data-mapx-hover-card="true" aria-hidden="true" class="mapx-marker-hover-card">
       ${imageHtml}
       <span style="min-width:0;display:flex;min-height:82px;flex:1;flex-direction:column;align-items:flex-start;">
-        <span style="margin:1px 0 4px;color:#176b50;font-size:10px;font-weight:700;">${categoryLabel}</span>
+        <span style="margin:1px 0 4px;color:#176b50;font-size:10px;font-weight:700;">${categoryLabel}${promotedLabel ? ` · ${promotedLabel}` : ''}</span>
         <strong style="display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;line-height:1.35;font-weight:700;text-align:left;">${escapeHtml(title)}</strong>
         <span style="margin-top:auto;font-size:13px;font-weight:700;white-space:nowrap;">${escapeHtml(price)}</span>
       </span>
@@ -188,6 +208,8 @@ const LongdoPropertyMap = ({
   const searchMarkerRef = useRef<LongdoOverlay | null>(null)
   const onViewportChangeRef = useRef(onViewportChange)
   const viewportEventsEnabledRef = useRef(false)
+  const declutterAnimationFrameRef = useRef<number | null>(null)
+  const declutterMarkersRef = useRef<() => void>(() => undefined)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -213,6 +235,146 @@ const LongdoPropertyMap = ({
   const searchSourceLocations = useMemo(
     () => searchSourceListings.map((listing) => getListingLocation(listing)),
     [searchSourceListings]
+  )
+  const listingsById = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings])
+
+  const applyMarkerDeclutter = useCallback(() => {
+    const map = mapRef.current
+    const mapContainer = placeholderRef.current
+    if (!map || !mapContainer) return
+
+    const roots = Array.from(mapContainer.querySelectorAll<HTMLElement>('[data-mapx-price-marker="true"]'))
+    const candidates = roots
+      .map((root) => {
+        const listing = listingsById.get(root.dataset.mapxListingId || '')
+        const pill = root.querySelector<HTMLElement>('.mapx-price-pill')
+        if (!listing || !pill) return null
+
+        root.dataset.mapxLabelVisible = 'true'
+        root.dataset.mapxFanned = 'false'
+        root.style.setProperty('--mapx-fan-x', '0px')
+        root.style.setProperty('--mapx-fan-y', '0px')
+        root.style.setProperty('--mapx-fan-length', '0px')
+        root.style.setProperty('--mapx-fan-angle', '0deg')
+        return { root, pill, listing }
+      })
+      .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate))
+      .sort((first, second) => {
+        const firstActive = first.listing.id === currentHoverID ? 1 : 0
+        const secondActive = second.listing.id === currentHoverID ? 1 : 0
+        if (firstActive !== secondActive) return secondActive - firstActive
+
+        const tierDifference =
+          getPromotionTierRank(second.listing.mapPromotionTier) - getPromotionTierRank(first.listing.mapPromotionTier)
+        if (tierDifference) return tierDifference
+
+        const weightDifference = (second.listing.mapPriorityWeight || 0) - (first.listing.mapPriorityWeight || 0)
+        if (weightDifference) return weightDifference
+
+        const verificationDifference = Number(second.listing.isVerified) - Number(first.listing.isVerified)
+        if (verificationDifference) return verificationDifference
+
+        const qualityDifference = getListingQualityScore(second.listing) - getListingQualityScore(first.listing)
+        if (qualityDifference) return qualityDifference
+
+        const freshnessDifference =
+          new Date(second.listing.date || 0).getTime() - new Date(first.listing.date || 0).getTime()
+        if (freshnessDifference) return freshnessDifference
+        return first.listing.id.localeCompare(second.listing.id)
+      })
+
+    if (!candidates.length) return
+
+    const zoom = map.zoom()
+    const showEveryLabel = zoom >= 19
+    if (showEveryLabel) {
+      const coordinateGroups = new Map<string, typeof candidates>()
+      candidates.forEach((candidate) => {
+        const { lat, lng } = candidate.listing.map
+        const key = `${lat.toFixed(7)}:${lng.toFixed(7)}`
+        coordinateGroups.set(key, [...(coordinateGroups.get(key) || []), candidate])
+      })
+
+      coordinateGroups.forEach((group) => {
+        if (group.length < 2) return
+        const horizontalSpacing = Math.max(
+          105,
+          Math.min(190, Math.max(...group.map(({ pill }) => pill.offsetWidth)) + 18)
+        )
+        group.forEach(({ root }, index) => {
+          if (index === 0) return
+          const row = Math.ceil(index / 3)
+          const column = ((index - 1) % 3) - 1
+          const fanX = column * horizontalSpacing
+          const fanY = row * -50
+          const lineX = -fanX
+          const lineY = -fanY
+          const lineLength = Math.hypot(lineX, lineY)
+          const lineAngle = (Math.atan2(lineY, lineX) * 180) / Math.PI
+          root.dataset.mapxFanned = 'true'
+          root.style.setProperty('--mapx-fan-x', `${fanX}px`)
+          root.style.setProperty('--mapx-fan-y', `${fanY}px`)
+          root.style.setProperty('--mapx-fan-length', `${lineLength}px`)
+          root.style.setProperty('--mapx-fan-angle', `${lineAngle}deg`)
+        })
+      })
+      return
+    }
+
+    const mapRect = mapContainer.getBoundingClientRect()
+    const collisionGap = zoom <= 10 ? 14 : zoom <= 13 ? 10 : zoom <= 16 ? 7 : 4
+    const acceptedRects: Array<{ left: number; top: number; right: number; bottom: number }> = []
+
+    candidates.forEach(({ root, pill }, priorityIndex) => {
+      const rect = pill.getBoundingClientRect()
+      const outsideViewport =
+        rect.right < mapRect.left || rect.left > mapRect.right || rect.bottom < mapRect.top || rect.top > mapRect.bottom
+      if (outsideViewport) {
+        root.dataset.mapxLabelVisible = 'false'
+        return
+      }
+
+      const expandedRect = {
+        left: rect.left - collisionGap,
+        top: rect.top - collisionGap,
+        right: rect.right + collisionGap,
+        bottom: rect.bottom + collisionGap,
+      }
+      const overlaps = acceptedRects.some(
+        (accepted) =>
+          expandedRect.left < accepted.right &&
+          expandedRect.right > accepted.left &&
+          expandedRect.top < accepted.bottom &&
+          expandedRect.bottom > accepted.top
+      )
+
+      root.dataset.mapxLabelVisible = overlaps ? 'false' : 'true'
+      root.style.zIndex = String(900 - Math.min(priorityIndex, 850))
+      if (!overlaps) acceptedRects.push(expandedRect)
+    })
+  }, [currentHoverID, listingsById])
+
+  const scheduleMarkerDeclutter = useCallback(() => {
+    if (declutterAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(declutterAnimationFrameRef.current)
+    }
+    declutterAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      declutterAnimationFrameRef.current = null
+      applyMarkerDeclutter()
+    })
+  }, [applyMarkerDeclutter])
+
+  useEffect(() => {
+    declutterMarkersRef.current = scheduleMarkerDeclutter
+  }, [scheduleMarkerDeclutter])
+
+  useEffect(
+    () => () => {
+      if (declutterAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(declutterAnimationFrameRef.current)
+      }
+    },
+    []
   )
 
   useEffect(() => {
@@ -401,6 +563,8 @@ const LongdoPropertyMap = ({
 
     let enableViewportEventsTimer: ReturnType<typeof setTimeout> | undefined
     const notifyViewportChange = () => {
+      declutterMarkersRef.current()
+      window.setTimeout(() => declutterMarkersRef.current(), 180)
       if (viewportEventsEnabledRef.current) onViewportChangeRef.current?.()
     }
 
@@ -439,6 +603,7 @@ const LongdoPropertyMap = ({
     const refreshMap = () => {
       map.resize()
       map.repaint()
+      declutterMarkersRef.current()
       placeholderRef.current?.focus({ preventScroll: true })
     }
     const animationFrame = window.requestAnimationFrame(refreshMap)
@@ -471,7 +636,10 @@ const LongdoPropertyMap = ({
       nextMarkers.push(marker)
     })
     listingMarkersRef.current = nextMarkers
-  }, [currentHoverID, displayPrices, isThai, listings, locations, mapReady])
+    scheduleMarkerDeclutter()
+    const settleTimers = [100, 500, 1500, 4000].map((delay) => window.setTimeout(scheduleMarkerDeclutter, delay))
+    return () => settleTimers.forEach((timer) => window.clearTimeout(timer))
+  }, [currentHoverID, displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
@@ -510,6 +678,44 @@ const LongdoPropertyMap = ({
         .mapx-price-marker {
           cursor: pointer;
           isolation: isolate;
+        }
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pill,
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pointer-outer,
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pointer-inner {
+          display: none;
+        }
+        .mapx-compact-pin {
+          display: none;
+          width: 14px;
+          height: 14px;
+          box-sizing: border-box;
+          border: 2px solid #ffffff;
+          border-radius: 50% 50% 50% 0;
+          background: #176b50;
+          box-shadow: 0 3px 8px rgba(18, 63, 50, 0.28);
+          transform: rotate(-45deg);
+        }
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-compact-pin {
+          display: block;
+        }
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-marker-link {
+          padding: 2px;
+        }
+        .mapx-fan-line {
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          z-index: -1;
+          display: none;
+          width: var(--mapx-fan-length);
+          height: 1px;
+          background: rgba(23, 107, 80, 0.62);
+          pointer-events: none;
+          transform: rotate(var(--mapx-fan-angle));
+          transform-origin: 0 50%;
+        }
+        .mapx-price-marker[data-mapx-fanned="true"] .mapx-fan-line {
+          display: block;
         }
         .mapx-price-marker:hover,
         .mapx-price-marker:focus-within {
