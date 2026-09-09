@@ -5,6 +5,9 @@ import {
   getPropertyGroup,
   getPropertyType,
   getUseCase,
+  mapUseCasesToLegacyUsage,
+  normalizeLegacyUsageType,
+  normalizeUseCasesForUsage,
 } from '@/data/propertyTaxonomy'
 import { fetchWithAuthRetry, getAuthApiUrl, getStoredUser } from './auth'
 import { applyListingImageWatermark } from './listingImageWatermark'
@@ -722,9 +725,13 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
   const title = text(draft.listingTitle) || text(draft.placeName) || 'New property listing'
   const descriptionParts = [text(draft.listingDescription), text(draft['place-description'])].filter(Boolean)
   const rawListingType = text(draft.listing_type) || 'rent'
-  const useCaseCodes = values(draft['useCaseCodes[]']).length
-    ? values(draft['useCaseCodes[]'])
-    : mapLegacyUsageToUseCases(text(draft.usage_type))
+  const requestedUsageType = normalizeLegacyUsageType(text(draft.usage_type) || inferUsageType(draft))
+  const savedUseCaseCodes = values(draft['useCaseCodes[]'])
+  const useCaseCodes = savedUseCaseCodes.length
+    ? requestedUsageType === 'mixed'
+      ? normalizeUseCasesForUsage(savedUseCaseCodes, requestedUsageType)
+      : savedUseCaseCodes
+    : mapLegacyUsageToUseCases(requestedUsageType)
   const rawOfferTypeCodes = values(draft['offerTypes[]']).length
     ? values(draft['offerTypes[]'])
     : offersFromLegacy(rawListingType)
@@ -786,7 +793,7 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     listing_scope: normalizeCode(text(draft.listing_scope)) || 'whole_property',
     use_case_codes: useCaseCodes.map(normalizeCode),
     offer_types: offerTypeCodes,
-    usage_type: normalizeCode(text(draft.usage_type) || inferUsageType(draft)),
+    usage_type: mapUseCasesToLegacyUsage(useCaseCodes),
     listing_type: normalizeCode(listingType),
     title,
     description: descriptionParts.join('\n\n'),
@@ -1182,9 +1189,7 @@ const offersFromLegacy = (listingType: string) => {
 }
 
 const mapLegacyUsageToUseCases = (usageType: string) => {
-  if (usageType === 'business') return ['office']
-  if (usageType === 'mixed') return ['residential', 'office']
-  return ['residential']
+  return normalizeUseCasesForUsage([], usageType)
 }
 
 const priceSummary = (payload: CreateListingPayload, locale: 'th' | 'en') => {

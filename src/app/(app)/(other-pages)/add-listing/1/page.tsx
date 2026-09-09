@@ -17,6 +17,7 @@ import {
   listingScopes,
   mapUseCasesToLegacyUsage,
   normalizeLegacyPropertyType,
+  normalizeUseCasesForUsage,
   offersToLegacyListingType,
   offerTypes,
   primaryBusinessSpaceTypeCodes,
@@ -394,9 +395,10 @@ const Page = () => {
       )
       setSelectedScope(nextPropertyType.allowedScopes.includes(savedScope) ? savedScope : nextPropertyType.defaultScope)
       setSelectedUseCases(
-        savedUseCases.length
-          ? savedUseCases
-          : mapLegacyUsageToUseCases(draft.usage_type, nextPropertyType.defaultUseCases)
+        normalizeUseCasesForUsage(
+          savedUseCases.length ? savedUseCases : nextPropertyType.defaultUseCases,
+          readDraftText(draft.usage_type)
+        )
       )
       const savedPrimarySpaceType = getBusinessSpaceType(readDraftText(draft.space_type_code))?.code
       const savedBusinessSpaceTypes = [
@@ -1592,13 +1594,6 @@ const UnitInput = ({
 const readDraftText = (value: ListingDraftValue | undefined) => (Array.isArray(value) ? value[0] || '' : value || '')
 const readDraftValues = (value: ListingDraftValue | undefined) =>
   value ? (Array.isArray(value) ? value : [value]) : []
-
-const mapLegacyUsageToUseCases = (value: ListingDraftValue | undefined, fallback: UseCaseCode[]) => {
-  const usage = readDraftText(value)
-  if (usage === 'residence') return ['residential'] as UseCaseCode[]
-  if (usage === 'business') return fallback.filter((code) => code !== 'residential')
-  return fallback
-}
 
 const offersFromLegacy = (value: ListingDraftValue | undefined): OfferTypeCode[] => {
   const listingType = readDraftText(value)

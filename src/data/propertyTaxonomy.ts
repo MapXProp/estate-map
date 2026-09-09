@@ -564,7 +564,42 @@ export const normalizeLegacyPropertyType = (code: string): PropertyTypeCode => {
   return 'detached_house'
 }
 
-export const mapUseCasesToLegacyUsage = (codes: UseCaseCode[]) => {
+export type LegacyUsageType = 'residence' | 'business' | 'mixed'
+
+export const normalizeLegacyUsageType = (value: string): LegacyUsageType | '' => {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+
+  if (normalized === 'residence' || normalized === 'residential') return 'residence'
+  if (normalized === 'business') return 'business'
+  if (['mixed', 'mixed_use', 'mixed_used', 'mix_use', 'mix_used'].includes(normalized)) return 'mixed'
+  return ''
+}
+
+export const normalizeUseCasesForUsage = (codes: readonly string[], value: string): UseCaseCode[] => {
+  const normalizedCodes = codes
+    .filter((code): code is UseCaseCode => useCases.some((useCase) => useCase.code === code))
+    .filter((code, index, all) => all.indexOf(code) === index)
+  const usageType = normalizeLegacyUsageType(value)
+
+  if (usageType === 'residence') return ['residential']
+  if (usageType === 'business') {
+    const businessCodes = normalizedCodes.filter((code) => code !== 'residential')
+    return businessCodes.length ? businessCodes : ['office']
+  }
+  if (usageType === 'mixed') {
+    const mixedCodes: UseCaseCode[] = normalizedCodes.includes('residential')
+      ? [...normalizedCodes]
+      : ['residential', ...normalizedCodes]
+    if (!mixedCodes.some((code) => code !== 'residential')) mixedCodes.push('office')
+    return mixedCodes
+  }
+  return normalizedCodes
+}
+
+export const mapUseCasesToLegacyUsage = (codes: readonly string[]): LegacyUsageType => {
   const hasResidential = codes.includes('residential')
   const hasBusiness = codes.some((code) => code !== 'residential')
   if (hasResidential && hasBusiness) return 'mixed'
