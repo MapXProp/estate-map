@@ -4,9 +4,11 @@ import { getRealEstateCategoryByHandle } from '@/data/categories'
 import { getRealEstateListings } from '@/data/listings'
 import {
   businessSpaceTypes,
+  discoveryChannels,
   offerTypes,
   propertyTypes,
   type BusinessSpaceTypeCode,
+  type DiscoveryChannelCode,
   type OfferTypeCode,
   type PropertyTypeCode,
 } from '@/data/propertyTaxonomy'
@@ -21,6 +23,7 @@ type PageSearchParams = Promise<{
   lat?: string | string[]
   lon?: string | string[]
   zoom?: string | string[]
+  channel?: string | string[]
   offer_type?: string | string[]
   property_type?: string | string[]
   space_type?: string | string[]
@@ -35,8 +38,12 @@ const getSearchParamValues = (value?: string | string[]) =>
 const propertyTypeCodes = new Set(propertyTypes.map((item) => item.code))
 const spaceTypeCodes = new Set(businessSpaceTypes.map((item) => item.code))
 const offerTypeCodes = new Set(offerTypes.map((item) => item.code))
+const discoveryChannelCodes = new Set(discoveryChannels.map((item) => item.code))
 
 const getInitialFilters = (search: Awaited<PageSearchParams>): Partial<PropertyMapFilterState> => ({
+  discoveryChannels: getSearchParamValues(search.channel).filter((code): code is DiscoveryChannelCode =>
+    discoveryChannelCodes.has(code as DiscoveryChannelCode)
+  ),
   propertyTypes: getSearchParamValues(search.property_type).filter((code): code is PropertyTypeCode =>
     propertyTypeCodes.has(code as PropertyTypeCode)
   ),

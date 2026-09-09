@@ -1,7 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import ChannelHomeSearch from '@/components/property-home/ChannelHomeSearch'
+import ChannelLocationExplorer from '@/components/property-home/ChannelLocationExplorer'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
@@ -540,7 +540,7 @@ const PropertyHomePrototype = () => {
         </section>
       ) : null}
 
-      {!isMainLanding && <ChannelHomeSearch mode={mode} />}
+      {!isMainLanding && <ChannelLocationExplorer mode={mode} />}
 
       <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 
@@ -566,7 +566,7 @@ const PropertyHomePrototype = () => {
           {locations.map((location) => (
             <Link
               key={location.name}
-              href={getPropertyMapLocationHref(location.slug)}
+              href={getPropertyMapLocationHref(location.slug, mode === 'all' ? undefined : mode)}
               className="group relative w-[78vw] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-3xl bg-neutral-200 sm:w-auto sm:max-w-none"
             >
               <div className="relative aspect-[4/3]">
