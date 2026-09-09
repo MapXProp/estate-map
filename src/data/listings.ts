@@ -1115,9 +1115,11 @@ const getListingGroup = (listing: PropertySearchListing): RealEstateListingGroup
     commercialPropertyTypes.has(listing.property_type_code)
   )
     return 'commercial'
+  if (listing.property_type_code === 'land') return 'land'
+  if (listing.usage_type === 'mixed') return 'mixed_use'
+  if (listing.usage_type === 'business') return 'commercial'
   if (roomPropertyTypes.has(listing.property_type_code)) return 'rooms'
   if (mixedUsePropertyTypes.has(listing.property_type_code)) return 'mixed_use'
-  if (listing.property_type_code === 'land') return 'land'
   return 'residential'
 }
 

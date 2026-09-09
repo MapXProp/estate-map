@@ -63,6 +63,7 @@ const getListingImages = (listing: PropertyListingDetail) =>
 
 const getListingSection = (listing: PropertyListingDetail) => {
   if (
+    listing.usage_type === 'business' ||
     listing.event ||
     ['shophouse', 'home_office', 'office', 'retail_space', 'warehouse', 'factory', 'hotel_resort'].includes(
       listing.property_type_code

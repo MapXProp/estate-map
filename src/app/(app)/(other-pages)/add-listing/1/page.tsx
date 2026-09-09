@@ -17,6 +17,7 @@ import {
   listingScopes,
   mapUseCasesToLegacyUsage,
   normalizeLegacyPropertyType,
+  normalizeLegacyUsageType,
   normalizeUseCasesForUsage,
   offersToLegacyListingType,
   offerTypes,
@@ -116,7 +117,7 @@ const primaryBusinessSpaceTypes = primaryBusinessSpaceTypeCodes.flatMap((code) =
 const discoveryChannelDescriptionsEn: Record<DiscoveryChannelCode, string> = {
   homes: 'Houses, condos, townhomes, shophouses and land',
   rooms: 'Rooms in shared properties, apartments, dorms, condos and long-term stays',
-  business: 'Shophouses, retail spaces, offices, warehouses, factories, hotels and land',
+  business: 'Shophouses, apartment buildings for sale, retail spaces, offices, warehouses, factories, hotels and land',
 }
 
 const discoveryChannelVisuals = {
@@ -236,20 +237,23 @@ const Page = () => {
   const hasCompleteListingOption = Boolean(hasCompletePropertySelection && propertyType && listingOptionLabel)
   const showsRooms = selectedGroup === 'residential' || selectedGroup === 'mixed_use'
   const isLand = selectedPropertyType === 'land' || selectedGroup === 'land'
-  const needsLandArea = [
-    'detached_house',
-    'semi_detached_house',
-    'townhouse',
-    'shophouse',
-    'home_office',
-    'warehouse',
-    'factory',
-    'hotel_resort',
-  ].includes(selectedPropertyType)
+  const needsLandArea =
+    [
+      'detached_house',
+      'semi_detached_house',
+      'townhouse',
+      'shophouse',
+      'home_office',
+      'warehouse',
+      'factory',
+      'hotel_resort',
+    ].includes(selectedPropertyType) ||
+    (selectedChannel === 'business' && selectedPropertyType === 'apartment')
   const isIndustrialBusiness = selectedChannel === 'business' && ['warehouse', 'factory'].includes(selectedPropertyType)
-  const isHospitalityBusiness = selectedChannel === 'business' && selectedPropertyType === 'hotel_resort'
+  const isHospitalityBusiness =
+    selectedChannel === 'business' && ['apartment', 'hotel_resort'].includes(selectedPropertyType)
   const isMonthlyPortfolio = selectedChannel === 'rooms' && selectedScope === 'multi_unit'
-  const showsBedrooms = showsRooms && !isMonthlyPortfolio
+  const showsBedrooms = showsRooms && !isMonthlyPortfolio && !isHospitalityBusiness
   const showsBathrooms = !isLand && !isHospitalityBusiness && !isMonthlyPortfolio
   const showsFloorNumber = !isLand && ['single_unit', 'space_slot'].includes(selectedScope)
   const showsTotalFloors = !isLand
@@ -493,8 +497,9 @@ const Page = () => {
 
     resetListingDetailsForCategoryChange(selectedChannel, propertyTypeCode)
     setSelectedPropertyType(propertyTypeCode)
-    setSelectedScope(nextPropertyType.defaultScope)
-    setSelectedUseCases(nextPropertyType.defaultUseCases)
+    const isBusinessApartment = selectedChannel === 'business' && propertyTypeCode === 'apartment'
+    setSelectedScope(isBusinessApartment ? 'whole_property' : nextPropertyType.defaultScope)
+    setSelectedUseCases(isBusinessApartment ? ['hospitality'] : nextPropertyType.defaultUseCases)
     setSelectedOffers(selectedChannel === 'rooms' ? ['rent'] : [])
     setBusinessSpaceTypes([])
     setAccommodationModel('')
@@ -853,7 +858,7 @@ const Page = () => {
                 })}
               </div>
 
-              {selectedChannel === 'rooms' && selectedPropertyType === 'apartment' ? (
+              {selectedPropertyType === 'apartment' ? (
                 <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-3.5 dark:border-sky-900/60 dark:bg-sky-950/20">
                   <div className="font-sarabun text-sm font-semibold text-neutral-800 dark:text-neutral-100">
                     {isThai ? 'อพาร์ตเมนต์นี้ให้บริการแบบไหน' : 'How is this apartment serviced?'}
@@ -1620,6 +1625,13 @@ const resolveDiscoveryChannel = (
     getDiscoveryChannel(savedChannel)?.propertyTypeCodes.includes(propertyTypeCode)
   ) {
     return savedChannel
+  }
+
+  if (
+    normalizeLegacyUsageType(usageType) === 'business' &&
+    getDiscoveryChannel('business')?.propertyTypeCodes.includes(propertyTypeCode)
+  ) {
+    return 'business'
   }
 
   if (
