@@ -61,6 +61,7 @@ export type PropertySearchListing = {
   description_en?: string
   property_type_code: string
   accommodation_model: string
+  usage_type: string
   listing_type: string
   project_name: string
   project_public_id?: string

@@ -3,7 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
-import { getPropertyType } from '@/data/propertyTaxonomy'
+import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
@@ -92,7 +92,7 @@ const DeferredListingImage = ({
 const filters: { value: 'all' | ListingGroup; label: string; labelEn: string }[] = [
   { value: 'all', label: 'แนะนำ', labelEn: 'Featured' },
   { value: 'residential', label: 'ที่อยู่อาศัย', labelEn: 'Residential' },
-  { value: 'mixed_use', label: 'อยู่ + ธุรกิจ', labelEn: 'Live + work' },
+  { value: 'mixed_use', label: 'อยู่อาศัย + ธุรกิจ', labelEn: 'Mixed use · live + work' },
   { value: 'commercial', label: 'ธุรกิจ', labelEn: 'Business' },
   { value: 'land', label: 'ที่ดิน', labelEn: 'Land' },
 ]
@@ -365,11 +365,20 @@ const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
   if (listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth'))
     return 'commercial'
   if (
-    ['apartment', 'dormitory', 'hotel', 'hostel', 'room_rental', 'serviced_apartment'].includes(
-      listing.property_type_code
-    )
+    [
+      'apartment',
+      'dormitory',
+      'hotel',
+      'hostel',
+      'rental_room',
+      'room_rental',
+      'serviced_apartment',
+      'monthly_hotel',
+    ].includes(listing.property_type_code)
   )
     return 'rooms'
+  if (listing.property_type_code === 'land') return 'land'
+  if (listing.usage_type === 'mixed') return 'mixed_use'
   if (['shophouse', 'home_office', 'mixed_use'].includes(listing.property_type_code)) return 'mixed_use'
   if (
     [
@@ -385,7 +394,6 @@ const getListingGroup = (listing: PropertySearchListing): ListingGroup => {
     ].includes(listing.property_type_code)
   )
     return 'commercial'
-  if (listing.property_type_code === 'land') return 'land'
   return 'residential'
 }
 
@@ -409,19 +417,20 @@ const pricePeriodLabel = (unit: string | undefined, isThai: boolean) => {
 
 const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): PrototypeListing => {
   const group = getListingGroup(listing)
-  const propertyType = getPropertyType(listing.property_type_code)
+  const propertyType = getPropertyType(normalizeLegacyPropertyType(listing.property_type_code))
   const isRetailSpace = listing.property_type_code === 'retail_space'
   const isEvent = listing.space_type_code === 'event_booth' || listing.space_type_codes?.includes('event_booth')
   const isRental = Boolean(
     (listing.offer_type === 'rent' || listing.offer_type === 'sublease' || listing.rent_price_monthly) &&
     !listing.sale_price
   )
-  const area =
-    listing.land_area_sqm && group === 'land'
-      ? `${Math.round(listing.land_area_sqm / 4).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ว.' : 'sq.wah'}`
-      : listing.usable_area_sqm
-        ? `${Math.round(listing.usable_area_sqm).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
-        : ''
+  const landArea = listing.land_area_sqm
+    ? `${Math.round(listing.land_area_sqm / 4).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ว.' : 'sq.wah'}`
+    : ''
+  const usableArea = listing.usable_area_sqm
+    ? `${Math.round(listing.usable_area_sqm).toLocaleString(isThai ? 'th-TH' : 'en-US')} ${isThai ? 'ตร.ม.' : 'sq.m.'}`
+    : ''
+  const area = group === 'land' && landArea ? landArea : usableArea ? usableArea : landArea
   const priceAmount = isRetailSpace ? listing.offer_amount : isRental ? listing.rent_price_monthly : listing.sale_price
   const price = listing.price_on_request || !priceAmount ? '' : String(priceAmount)
   const eventSchedule = isEvent ? formatEventSchedule(listing.event_starts_on, listing.event_ends_on, isThai) : ''
@@ -482,7 +491,19 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
           : 'บาท',
     image: listing.primary_image_url || '',
     href: `/real-estate-listings/${listing.slug || listing.public_listing_id}`,
-    badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
+    badge: isEvent
+      ? isThai
+        ? 'พื้นที่ออกบูธ'
+        : 'Event booth'
+      : group === 'mixed_use'
+        ? isThai
+          ? 'อยู่อาศัย + ธุรกิจ'
+          : 'Mixed use · live + work'
+        : listing.source_type === 'owner'
+          ? isThai
+            ? 'เจ้าของขายเอง'
+            : 'Listed by owner'
+          : undefined,
     verified: listing.is_verified,
     verificationLabel: listing.is_verified ? 'ตรวจสอบแล้ว' : undefined,
     priceLabel: listing.price_on_request ? (isEvent ? 'ติดต่อผู้จัดงาน' : 'สอบถามราคา') : undefined,
@@ -506,7 +527,11 @@ const PropertyListingShowcase = ({
   useEffect(() => {
     let isCurrent = true
     const discoveryChannel = mode === 'all' ? undefined : mode
-    fetchPropertySearch('', undefined, { discoveryChannel, limit: 12 })
+    // Fetch enough inventory before applying presentation groups locally. A
+    // channel can contain more than one group (for example mixed-use listings
+    // belong to both Homes and Business), so filtering a 12-item response can
+    // otherwise leave recent cards missing from the homepage.
+    fetchPropertySearch('', undefined, { discoveryChannel, limit: 48 })
       .then((result) => {
         if (isCurrent) setDatabaseListings(result.listings.map((listing) => toShowcaseListing(listing, isThai)))
       })
@@ -519,7 +544,8 @@ const PropertyListingShowcase = ({
   }, [isThai, mode])
 
   const availableFilters = useMemo(() => {
-    if (mode === 'homes') return filters.filter((filter) => ['all', 'residential', 'land'].includes(filter.value))
+    if (mode === 'homes')
+      return filters.filter((filter) => ['all', 'residential', 'mixed_use', 'land'].includes(filter.value))
     if (mode === 'rooms') return filters.filter((filter) => filter.value === 'all')
     if (mode === 'business')
       return filters.filter((filter) => ['all', 'mixed_use', 'commercial', 'land'].includes(filter.value))
@@ -528,7 +554,9 @@ const PropertyListingShowcase = ({
 
   const availableListings = useMemo(() => {
     if (mode === 'homes')
-      return databaseListings.filter((listing) => listing.group === 'residential' || listing.group === 'land')
+      return databaseListings.filter(
+        (listing) => listing.group === 'residential' || listing.group === 'mixed_use' || listing.group === 'land'
+      )
     if (mode === 'rooms') return databaseListings.filter((listing) => listing.group === 'rooms')
     // Land can be suitable for a residence or future commercial development.
     // The database assigns those listings to both discovery channels, so the
@@ -540,9 +568,9 @@ const PropertyListingShowcase = ({
     return databaseListings
   }, [databaseListings, mode])
   const visibleListings = useMemo(() => {
-    return activeFilter === 'all'
-      ? availableListings
-      : availableListings.filter((listing) => listing.group === activeFilter)
+    const filteredListings =
+      activeFilter === 'all' ? availableListings : availableListings.filter((listing) => listing.group === activeFilter)
+    return filteredListings.slice(0, 12)
   }, [activeFilter, availableListings])
 
   return (

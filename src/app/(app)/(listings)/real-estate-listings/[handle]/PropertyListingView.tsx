@@ -2,7 +2,7 @@
 
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { getPropertyType } from '@/data/propertyTaxonomy'
+import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
@@ -30,7 +30,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const subdistrict = isThai ? listing.subdistrict : listing.subdistrict_en || listing.subdistrict
   const district = isThai ? listing.district : listing.district_en || listing.district
   const province = isThai ? listing.province : listing.province_en || listing.province
-  const propertyType = getPropertyType(listing.property_type_code)
+  const propertyType = getPropertyType(normalizeLegacyPropertyType(listing.property_type_code))
   const propertyLabel = isThai
     ? propertyType?.nameTh || listing.property_type_code
     : propertyType?.nameEn || listing.property_type_code
@@ -44,9 +44,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
       thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,
     }))
-  const fullAddress = [address, subdistrict, district, province, listing.postal_code]
-    .filter(Boolean)
-    .join(' ')
+  const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
   const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
   const projectAlternateName = isThai ? listing.project_name_en : listing.project_name
   const price = formatPrice(listing, isThai, formatCurrencyFrom)
@@ -183,6 +181,11 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                   {propertyLabel}
                 </span>
+                {listing.usage_type === 'mixed' ? (
+                  <span className="rounded-full bg-[#eef3f8] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#385f7a] dark:bg-sky-950/45 dark:text-sky-200">
+                    {isThai ? 'อยู่อาศัย + ธุรกิจ' : 'Mixed use · live + work'}
+                  </span>
+                ) : null}
                 {listing.is_verified ? (
                   <span className="hidden items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50] min-[744px]:inline-flex">
                     <ShieldCheck className="size-4" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
