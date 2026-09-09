@@ -1291,7 +1291,11 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
 
 export async function getRealEstateListings() {
   try {
-    const response = await fetch(`${getAuthApiUrl('properties/search')}?limit=24`, {
+    // Keep the public catalogue large enough to include older published
+    // listings. Detail-page fallbacks and browse surfaces both consume this
+    // collection, so limiting it to the newest 24 made valid older listings
+    // appear to have disappeared as inventory grew.
+    const response = await fetch(`${getAuthApiUrl('properties/search')}?limit=60`, {
       cache: 'no-store',
     })
     if (!response.ok) return []

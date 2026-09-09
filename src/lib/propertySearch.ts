@@ -422,16 +422,23 @@ export const fetchPropertySearch = async (
 }
 
 export const fetchPropertyListingDetail = async (slug: string): Promise<PropertyListingDetail | null> => {
-  try {
-    const response = await fetch(`${getAuthApiUrl('listings')}/${encodeURIComponent(slug)}`, {
-      cache: 'no-store',
-    })
-    if (response.status === 404) return null
-    if (!response.ok) throw new Error('property listing detail failed')
-    return response.json() as Promise<PropertyListingDetail>
-  } catch {
-    return null
+  const url = `${getAuthApiUrl('listings')}/${encodeURIComponent(slug)}`
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url, { cache: 'no-store' })
+      if (response.status === 404) return null
+      if (!response.ok) throw new Error('property listing detail failed')
+      return response.json() as Promise<PropertyListingDetail>
+    } catch {
+      // A deployment or brief API restart should not turn an existing listing
+      // into a 404. Retry once before letting the page use its catalogue fallback.
+      if (attempt === 1) return null
+      await new Promise((resolve) => setTimeout(resolve, 250))
+    }
   }
+
+  return null
 }
 
 export const fetchPropertyMapArea = async ({
