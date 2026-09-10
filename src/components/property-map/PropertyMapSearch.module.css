@@ -86,7 +86,7 @@
 }
 .logo {
   display: flex;
-  width: 96px;
+  width: 88px;
   min-height: 44px;
   flex-shrink: 0;
   align-items: center;
@@ -284,10 +284,10 @@
   align-items: center;
   gap: 2px;
   padding: 4px;
-  border: 1px solid #eae5e1;
+  border: 1px solid #e6e9e6;
   border-radius: 999px;
-  background: #f6f4f2;
-  box-shadow: inset 0 1px 2px #392b2004;
+  background: #f5f6f5;
+  box-shadow: inset 0 1px 2px #283b3004;
 }
 .offers button {
   position: relative;
@@ -310,21 +310,19 @@
     background 180ms ease;
 }
 .offers button:hover {
-  background: #ebe6e1;
-  color: #353e37;
+  background: #edf0ed;
+  color: #435248;
 }
 .offers button:focus-visible {
-  outline: 2px solid #a7473e;
+  outline: 2px solid #687e6d;
   outline-offset: 1px;
 }
 .offerFill {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: #b65045;
-  box-shadow:
-    0 2px 5px #76302724,
-    inset 0 1px 0 #ffffff1f;
+  background: #e2e9e3;
+  box-shadow: inset 0 0 0 1px #cbd6cd;
   opacity: 0;
   transform: scale(0.94);
   transition:
@@ -347,7 +345,7 @@
 }
 .offers .selectedOffer,
 .offers .selectedOffer:hover {
-  color: #fff;
+  color: #3e5547;
 }
 .selectedOffer .offerFill,
 .selectedOffer .offerCheck {
@@ -646,7 +644,7 @@
     gap: 5px 8px;
   }
   .logo {
-    width: 80px;
+    width: 76px;
   }
   .headerActions {
     gap: 4px;
@@ -704,18 +702,19 @@
   border-color: #324037;
 }
 :global(.dark) .offers {
-  border-color: #45413c;
-  background: #282723;
+  border-color: #3c443d;
+  background: #252b26;
 }
 :global(.dark) .offers button {
   color: #c1c7c1;
 }
 :global(.dark) .offers button:hover {
-  background: #3c3731;
-  color: #f2eee8;
+  background: #303c33;
+  color: #e1e9e3;
 }
 :global(.dark) .offerFill {
-  background: #ac4a40;
+  background: #39493e;
+  box-shadow: inset 0 0 0 1px #5b6c5e;
 }
 :global(.dark) .detailsButton {
   color: #c1cfc5;
@@ -730,7 +729,7 @@
 }
 :global(.dark) .offers .selectedOffer,
 :global(.dark) .offers .selectedOffer:hover {
-  color: #fff;
+  color: #e1e9e3;
 }
 :global(.dark) .activeDetailsButton {
   color: #a0dab9;
