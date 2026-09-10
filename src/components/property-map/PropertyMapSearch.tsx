@@ -311,20 +311,28 @@ export default function PropertyMapSearch({
             )}
           </div>
           <div className={styles.toolbar} data-map-search-controls>
-            <div className={styles.offers} role="group" aria-label={th ? 'ซื้อหรือเช่า' : 'Buy or rent'}>
+            <div
+              className={styles.offers}
+              role="group"
+              aria-label={th ? 'รูปแบบประกาศ เลือกได้หลายแบบ' : 'Listing offers, select one or more'}
+            >
               <button
                 type="button"
                 aria-pressed={!filters.offerTypes.length}
                 onClick={() => setFilters({ ...filters, offerTypes: [] })}
                 className={!filters.offerTypes.length ? styles.selectedOffer : ''}
               >
-                {th ? 'ทุกแบบ' : 'Any offer'}
+                <span className={styles.offerFill} aria-hidden="true" />
+                <Check className={styles.offerCheck} aria-hidden="true" strokeWidth={2.5} />
+                <span className={styles.offerLabel}>{th ? 'ทุกแบบ' : 'All'}</span>
               </button>
               {offerOptions.map((offer) => (
                 <button
                   type="button"
                   key={offer.value}
                   data-map-offer={offer.value}
+                  aria-label={th ? offer.th : offer.en}
+                  title={th ? offer.th : offer.en}
                   aria-pressed={filters.offerTypes.includes(offer.value)}
                   onClick={() =>
                     setFilters({
@@ -336,7 +344,11 @@ export default function PropertyMapSearch({
                   }
                   className={filters.offerTypes.includes(offer.value) ? styles.selectedOffer : ''}
                 >
-                  {th ? offer.th : offer.en}
+                  <span className={styles.offerFill} aria-hidden="true" />
+                  <Check className={styles.offerCheck} aria-hidden="true" strokeWidth={2.5} />
+                  <span className={styles.offerLabel}>
+                    {offer.value === 'business_transfer' ? (th ? 'เซ้ง' : 'Transfer') : th ? offer.th : offer.en}
+                  </span>
                 </button>
               ))}
             </div>
@@ -352,17 +364,19 @@ export default function PropertyMapSearch({
                 <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{detailsCount}</span>
               )}
             </button>
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={reset}
-                className={styles.resetButton}
-                aria-label={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
-                title={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
-              >
-                <RotateCcw className="size-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={reset}
+              className={styles.resetButton}
+              data-map-reset
+              data-inactive={!hasFilters || undefined}
+              disabled={!hasFilters}
+              aria-hidden={!hasFilters || undefined}
+              aria-label={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
+              title={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
+            >
+              <RotateCcw className="size-3.5" />
+            </button>
           </div>
           <div className={styles.headerActions}>
             <button
