@@ -1,18 +1,65 @@
 .section {
+  --hero-ink: #332e2a;
+  --hero-accent: #a64630;
+  --hero-border: #eee3db;
+  --hero-background: #faf5ef;
+  --hero-description: #72665c;
+  --hero-button: #b24c34;
+  --hero-button-hover: #963d29;
+  --hero-secondary: #675c53;
+  --hero-locations: #665e57;
+  --hero-label: #84766a;
+  --hero-link-background: #faf1ea;
+  --hero-link-ink: #a64630;
+  --hero-city-background: #fff;
+  --hero-photo-position: 50% 48%;
+  --hero-photo-mobile-position: 58% center;
   padding-top: 20px;
 }
 
+.section[data-property-hero='homes'] {
+  --hero-ink: #243d33;
+  --hero-accent: #176b50;
+  --hero-border: #dcebe4;
+  --hero-background: #f3f8f4;
+  --hero-description: #61776b;
+  --hero-button: #1e7355;
+  --hero-button-hover: #185e46;
+  --hero-secondary: #52695d;
+  --hero-locations: #53695c;
+  --hero-label: #728477;
+  --hero-link-background: #e9f3eb;
+  --hero-link-ink: #176b50;
+  --hero-photo-position: center;
+  --hero-photo-mobile-position: 55% center;
+}
+
+.section[data-property-hero='rooms'] {
+  --hero-ink: #273e4b;
+  --hero-accent: #216a8c;
+  --hero-border: #d9e7ee;
+  --hero-background: #f2f7fa;
+  --hero-description: #617887;
+  --hero-button: #267598;
+  --hero-button-hover: #1d5f7e;
+  --hero-secondary: #536d7c;
+  --hero-locations: #587080;
+  --hero-label: #728793;
+  --hero-link-background: #e8f1f7;
+  --hero-link-ink: #216a8c;
+  --hero-photo-position: 60% center;
+  --hero-photo-mobile-position: 70% center;
+}
+
 .hero {
-  --hero-ink: #332e2a;
-  --hero-accent: #a64630;
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   grid-template-areas: 'copy photo' 'actions photo';
   max-width: 1180px;
   margin-inline: auto;
-  border: 1px solid #eee3db;
+  border: 1px solid var(--hero-border);
   border-radius: 26px;
-  background: #faf5ef;
+  background: var(--hero-background);
   color: var(--hero-ink);
   overflow: hidden;
 }
@@ -54,7 +101,7 @@
   margin-top: 12px;
   font-size: 14px;
   line-height: 1.75;
-  color: #72665c;
+  color: var(--hero-description);
   text-wrap: pretty;
 }
 
@@ -84,16 +131,16 @@
 .primary {
   padding: 11px 17px;
   border-radius: 13px;
-  background: #b24c34;
+  background: var(--hero-button);
   color: #fff;
 }
 
 .primary:hover {
-  background: #963d29;
+  background: var(--hero-button-hover);
 }
 
 .secondary {
-  color: #675c53;
+  color: var(--hero-secondary);
 }
 
 .secondary:hover {
@@ -102,7 +149,7 @@
 
 .section a:focus-visible,
 .moreCities summary:focus-visible {
-  outline: 2px solid #a64630;
+  outline: 2px solid var(--hero-accent);
   outline-offset: 4px;
   border-radius: 8px;
 }
@@ -119,7 +166,7 @@
 
 .photo {
   object-fit: cover;
-  object-position: 50% 48%;
+  object-position: var(--hero-photo-position);
 }
 
 .photoCredit {
@@ -147,7 +194,7 @@
   max-width: 1180px;
   margin: 8px auto 0;
   padding-inline: 12px;
-  color: #665e57;
+  color: var(--hero-locations);
 }
 
 .locationBar {
@@ -162,7 +209,7 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
-  color: #84766a;
+  color: var(--hero-label);
   font-size: 12px;
 }
 
@@ -189,8 +236,8 @@
 .featuredCities a:hover,
 .moreCities summary:hover,
 .cityGrid a:hover {
-  background: #faf1ea;
-  color: #a64630;
+  background: var(--hero-link-background);
+  color: var(--hero-link-ink);
 }
 
 .moreCities {
@@ -224,9 +271,9 @@
   width: min(100%, 380px);
   gap: 4px 8px;
   padding: 12px;
-  border: 1px solid #eee3db;
+  border: 1px solid var(--hero-border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--hero-city-background);
   box-shadow: 0 12px 36px rgb(51 46 42 / 10%);
 }
 
@@ -235,38 +282,46 @@
   white-space: normal;
 }
 
-:global(.dark) .hero {
+:global(.dark) .section {
   --hero-ink: #f4eee7;
   --hero-accent: #e5a18c;
-  border-color: #493a30;
-  background: #27221e;
+  --hero-border: #493a30;
+  --hero-background: #27221e;
+  --hero-description: #c4b8ac;
+  --hero-secondary: #c4b8ac;
+  --hero-locations: #c4b8ac;
+  --hero-label: #baaa9c;
+  --hero-city-background: #27221e;
+  --hero-link-background: #3b2e26;
+  --hero-link-ink: #efb39e;
 }
 
-:global(.dark) .description,
-:global(.dark) .secondary,
-:global(.dark) .locations {
-  color: #c4b8ac;
+:global(.dark) .section[data-property-hero='homes'] {
+  --hero-ink: #eaf4ed;
+  --hero-accent: #9dd5b4;
+  --hero-border: #334c3e;
+  --hero-background: #1b2922;
+  --hero-description: #b2c6b9;
+  --hero-secondary: #b2c6b9;
+  --hero-locations: #b2c6b9;
+  --hero-label: #9ab4a5;
+  --hero-city-background: #1b2922;
+  --hero-link-background: #293e32;
+  --hero-link-ink: #b3e3c6;
 }
 
-:global(.dark) .locationLabel {
-  color: #baaa9c;
-}
-
-:global(.dark) .cityGrid {
-  border-color: #493a30;
-  background: #27221e;
-}
-
-:global(.dark) .featuredCities a:hover,
-:global(.dark) .moreCities summary:hover,
-:global(.dark) .cityGrid a:hover {
-  background: #3b2e26;
-  color: #efb39e;
-}
-
-:global(.dark) .section a:focus-visible,
-:global(.dark) .moreCities summary:focus-visible {
-  outline-color: #e5a18c;
+:global(.dark) .section[data-property-hero='rooms'] {
+  --hero-ink: #edf5fa;
+  --hero-accent: #9bcfe6;
+  --hero-border: #334b59;
+  --hero-background: #1b2932;
+  --hero-description: #b4c8d3;
+  --hero-secondary: #b4c8d3;
+  --hero-locations: #b4c8d3;
+  --hero-label: #9bb4c3;
+  --hero-city-background: #1b2932;
+  --hero-link-background: #273d49;
+  --hero-link-ink: #b6e1f2;
 }
 
 @media (max-width: 767px) {
@@ -321,7 +376,7 @@
   }
 
   .photo {
-    object-position: 58% center;
+    object-position: var(--hero-photo-mobile-position);
   }
 
   .photoCredit {
