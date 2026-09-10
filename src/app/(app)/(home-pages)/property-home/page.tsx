@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import BusinessDiscoveryHero from '@/components/property-home/BusinessDiscoveryHero'
 import ChannelLocationExplorer from '@/components/property-home/ChannelLocationExplorer'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
@@ -540,7 +541,7 @@ const PropertyHomePrototype = () => {
         </section>
       ) : null}
 
-      {!isMainLanding && <ChannelLocationExplorer mode={mode} />}
+      {!isMainLanding && (mode === 'business' ? <BusinessDiscoveryHero /> : <ChannelLocationExplorer mode={mode} />)}
 
       <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
 

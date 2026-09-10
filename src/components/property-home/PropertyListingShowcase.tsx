@@ -576,6 +576,8 @@ const PropertyListingShowcase = ({
 
   return (
     <section
+      id="latest-listings"
+      style={{ scrollMarginTop: 100 }}
       className={
         compact ? 'pt-5 pb-5 sm:pt-7 sm:pb-8 lg:pt-8 lg:pb-10' : 'pt-14 pb-10 sm:pt-18 sm:pb-14 lg:pt-24 lg:pb-16'
       }

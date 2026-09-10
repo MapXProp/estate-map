@@ -1,0 +1,375 @@
+.section {
+  padding-top: 20px;
+}
+
+.hero {
+  --hero-ink: #332e2a;
+  --hero-accent: #a64630;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-areas: 'copy photo' 'actions photo';
+  max-width: 1180px;
+  margin-inline: auto;
+  border: 1px solid #eee3db;
+  border-radius: 26px;
+  background: #faf5ef;
+  color: var(--hero-ink);
+  overflow: hidden;
+}
+
+.copy {
+  grid-area: copy;
+  padding: 30px 30px 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--hero-accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.eyebrow svg {
+  flex-shrink: 0;
+}
+
+.title {
+  margin-top: 13px;
+  font-size: clamp(32px, 3.4vw, 44px);
+  line-height: 1.27;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.title span {
+  display: block;
+  color: var(--hero-accent);
+}
+
+.description {
+  max-width: 370px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #72665c;
+  text-wrap: pretty;
+}
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 22px 30px 30px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    background-color 160ms,
+    color 160ms;
+}
+
+.primary {
+  padding: 11px 17px;
+  border-radius: 13px;
+  background: #b24c34;
+  color: #fff;
+}
+
+.primary:hover {
+  background: #963d29;
+}
+
+.secondary {
+  color: #675c53;
+}
+
+.secondary:hover {
+  color: var(--hero-accent);
+}
+
+.section a:focus-visible,
+.moreCities summary:focus-visible {
+  outline: 2px solid #a64630;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.visual {
+  grid-area: photo;
+  position: relative;
+  min-height: 260px;
+  margin: 10px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #a89b89;
+}
+
+.photo {
+  object-fit: cover;
+  object-position: 50% 48%;
+}
+
+.photoCredit {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #fff;
+}
+
+.photoCredit a {
+  display: inline-block;
+  padding: 4px 7px;
+  border-radius: 5px;
+  background: rgb(30 25 21 / 72%);
+}
+
+.locations {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  max-width: 1180px;
+  margin: 8px auto 0;
+  padding-inline: 12px;
+  color: #665e57;
+}
+
+.locationBar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.locationLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  color: #84766a;
+  font-size: 12px;
+}
+
+.featuredCities {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.featuredCities a,
+.moreCities summary,
+.cityGrid a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.featuredCities a:hover,
+.moreCities summary:hover,
+.cityGrid a:hover {
+  background: #faf1ea;
+  color: #a64630;
+}
+
+.moreCities {
+  flex-shrink: 0;
+}
+
+.moreCities summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.moreCities summary::-webkit-details-marker {
+  display: none;
+}
+
+.moreCities summary svg {
+  transition: transform 160ms;
+}
+
+.moreCities[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.cityGrid {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 380px);
+  gap: 4px 8px;
+  padding: 12px;
+  border: 1px solid #eee3db;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgb(51 46 42 / 10%);
+}
+
+.cityGrid a {
+  justify-content: space-between;
+  white-space: normal;
+}
+
+:global(.dark) .hero {
+  --hero-ink: #f4eee7;
+  --hero-accent: #e5a18c;
+  border-color: #493a30;
+  background: #27221e;
+}
+
+:global(.dark) .description,
+:global(.dark) .secondary,
+:global(.dark) .locations {
+  color: #c4b8ac;
+}
+
+:global(.dark) .locationLabel {
+  color: #baaa9c;
+}
+
+:global(.dark) .cityGrid {
+  border-color: #493a30;
+  background: #27221e;
+}
+
+:global(.dark) .featuredCities a:hover,
+:global(.dark) .moreCities summary:hover,
+:global(.dark) .cityGrid a:hover {
+  background: #3b2e26;
+  color: #efb39e;
+}
+
+:global(.dark) .section a:focus-visible,
+:global(.dark) .moreCities summary:focus-visible {
+  outline-color: #e5a18c;
+}
+
+@media (max-width: 767px) {
+  .copy {
+    padding: 24px 22px 0;
+  }
+
+  .actions {
+    padding: 18px 22px 24px;
+  }
+
+  .locationLabel {
+    display: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .section {
+    padding-top: 12px;
+  }
+
+  .hero {
+    grid-template-columns: minmax(0, 1fr) 31%;
+    grid-template-areas: 'copy photo' 'actions actions';
+    border-radius: 21px;
+  }
+
+  .copy {
+    padding: 20px 12px 0 18px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+  }
+
+  .title {
+    margin-top: 9px;
+    font-size: clamp(24px, 6vw, 32px);
+    line-height: 1.35;
+  }
+
+  .description {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .visual {
+    min-height: 158px;
+    margin: 12px 12px 0 0;
+    border-radius: 13px;
+  }
+
+  .photo {
+    object-position: 58% center;
+  }
+
+  .photoCredit {
+    right: 4px;
+    bottom: 4px;
+    font-size: 8px;
+  }
+
+  .photoCredit span {
+    display: none;
+  }
+
+  .actions {
+    gap: 8px 14px;
+    padding: 16px 18px 18px;
+  }
+
+  .primary,
+  .secondary {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .primary {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .locations {
+    gap: 0;
+    margin-top: 4px;
+    padding-inline: 0;
+  }
+
+  .featuredCities {
+    gap: 0;
+  }
+
+  .featuredCities a,
+  .moreCities summary {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section *,
+  .moreCities summary svg {
+    transition: none;
+  }
+}
