@@ -494,6 +494,26 @@
   font-size: 13px;
   font-weight: 600;
 }
+@media (min-width: 1280px) {
+  .groups {
+    /* Aim for 22 / 18 / 60 while leaving room for each group heading. */
+    grid-template-columns: minmax(250px, 1.1fr) minmax(230px, 0.9fr) minmax(0, 3fr);
+    gap: 10px;
+  }
+  .group {
+    padding: 8px 10px 10px;
+  }
+  .businessSections {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr);
+    gap: 8px 10px;
+  }
+  .businessSections > section {
+    min-width: 0;
+  }
+  .businessSections > section:nth-child(2) {
+    padding-left: 10px;
+  }
+}
 @media (min-width: 1500px) {
   .selectionSummary {
     display: inline;
@@ -503,8 +523,8 @@
     min-height: 34px;
     padding-inline: 10px;
   }
-  .groups {
-    grid-template-columns: 1fr 1fr 1.85fr;
+  .business .chip {
+    padding-inline: 8px;
   }
 }
 @media (max-width: 1279px) {
