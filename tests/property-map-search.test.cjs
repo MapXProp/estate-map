@@ -74,12 +74,11 @@ test('existing channel/type links select the corresponding visible chips', () =>
   assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land'])
 })
 
-test('business sections expose every option once, separating retail from buildings and land', () => {
+test('business sections keep land with buildings and expose all 19 choices once', () => {
   const business = model().mapCategoryGroups.find((group) => group.code === 'business')
   assert.deepEqual(plain(business.sections.map((section) => [section.id, section.options.length])), [
-    ['buildings', 7],
+    ['buildings', 8],
     ['retail', 11],
-    ['land', 1],
   ])
   const ids = business.sections.flatMap((section) => section.options.map((option) => option.id))
   assert.equal(new Set(ids).size, 19)

@@ -486,7 +486,7 @@ export default function PropertyMapSearch({
                       {group.sections.map((section) => (
                         <section
                           key={section.id}
-                          className={section.id === 'land' ? styles.landSection : ''}
+                          data-map-section={section.id}
                           aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
                         >
                           {section.nameTh && (

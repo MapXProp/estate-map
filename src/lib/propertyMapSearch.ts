@@ -35,12 +35,11 @@ export const mapCategoryGroups = (['homes', 'rooms', 'business'] as const).map((
       ? [
           {
             id: 'buildings',
-            nameTh: 'อาคารและกิจการ',
-            nameEn: 'Buildings & businesses',
-            options: properties.filter((item) => item.propertyType !== 'land'),
+            nameTh: 'อาคาร ที่ดิน และกิจการ',
+            nameEn: 'Buildings, land & businesses',
+            options: properties,
           },
           { id: 'retail', nameTh: 'พื้นที่ขายของ', nameEn: 'Retail & selling spaces', options: spaces },
-          { id: 'land', nameTh: '', nameEn: '', options: properties.filter((item) => item.propertyType === 'land') },
         ]
       : [{ id: code, nameTh: '', nameEn: '', options }]
   return { ...channel, options, sections }
