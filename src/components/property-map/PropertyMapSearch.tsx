@@ -11,6 +11,8 @@ import {
   fetchCompleteMapSearch,
   hasMapCoordinates,
   initialMapCategories,
+  isLandOnlyMapSelection,
+  landMapCategoryIds,
   mapCategoryGroups,
   mapListingPrice,
   matchesMapDetails,
@@ -23,15 +25,18 @@ import {
   ChevronUp,
   House,
   KeyRound,
+  LandPlot,
   List,
   LoaderCircle,
   MapPin,
   PanelLeftClose,
   RotateCcw,
   SlidersHorizontal,
+  Store,
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { MapNavigationToggle } from './MapNavigation'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
 import { emptyPropertyMapFilters, type PropertyMapFilterState, type PropertyMapSort } from './PropertyMapFilterBar'
@@ -290,18 +295,49 @@ export default function PropertyMapSearch({
       <section className={styles.categories} aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}>
         <div className={styles.categoryHeading}>
           <div className="flex min-w-0 items-center gap-2">
-            <h1 className="shrink-0 text-sm font-semibold">{th ? 'กำลังมองหาอะไร?' : 'What are you looking for?'}</h1>
-            <span className="truncate text-xs text-neutral-500">
-              {categories.length
+            <MapNavigationToggle />
+            <h1 className="sr-only shrink-0 text-sm font-semibold sm:not-sr-only">
+              {th ? 'กำลังมองหาอะไร?' : 'What are you looking for?'}
+            </h1>
+            {!categoriesOpen && categories.length > 0 && (
+              <span className="truncate text-xs text-neutral-500 sm:hidden">
+                {isLandOnlyMapSelection(categories)
+                  ? th
+                    ? 'เฉพาะที่ดิน'
+                    : 'Land only'
+                  : th
+                    ? `${categories.length} หมวด`
+                    : `${categories.length} types`}
+              </span>
+            )}
+            <span className="hidden truncate text-xs text-neutral-500 lg:block">
+              {isLandOnlyMapSelection(categories)
                 ? th
-                  ? `เลือก ${categories.length} หมวด`
-                  : `${categories.length} selected`
-                : th
-                  ? 'เลือกได้หลายหมวด'
-                  : 'Select multiple categories'}
+                  ? 'เฉพาะที่ดิน'
+                  : 'Land only'
+                : categories.length
+                  ? th
+                    ? `เลือก ${categories.length} หมวด`
+                    : `${categories.length} selected`
+                  : th
+                    ? 'เลือกได้หลายหมวด'
+                    : 'Select multiple categories'}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              data-map-land-shortcut
+              aria-pressed={isLandOnlyMapSelection(categories)}
+              onClick={() => {
+                setCategories(isLandOnlyMapSelection(categories) ? [] : [...landMapCategoryIds])
+                setMobileGroup('homes')
+              }}
+              className={`${styles.landShortcut} ${isLandOnlyMapSelection(categories) ? styles.activeLandShortcut : ''}`}
+            >
+              <LandPlot className="size-4" />
+              {th ? 'ที่ดิน' : 'Land'}
+            </button>
             <button
               type="button"
               aria-pressed={!categories.length}
@@ -343,18 +379,17 @@ export default function PropertyMapSearch({
                   <button
                     type="button"
                     key={group.code}
+                    data-map-group={group.code}
                     aria-pressed={mobileGroup === group.code}
                     onClick={() => {
                       setMobileGroup(group.code)
                       setResizeId(resizeId + 1)
                     }}
-                    className={mobileGroup === group.code ? styles.activeTab : ''}
+                    className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
                   >
                     <Icon className="size-4" />
                     <span>{groupNames[group.code][th ? 0 : 1]}</span>
-                    {count > 0 && (
-                      <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{count}</span>
-                    )}
+                    {count > 0 && <span className={styles.groupCount}>{count}</span>}
                   </button>
                 )
               })}
@@ -366,7 +401,8 @@ export default function PropertyMapSearch({
                 return (
                   <fieldset
                     key={group.code}
-                    className={`${styles.group} ${mobileGroup === group.code ? styles.mobileActive : ''}`}
+                    data-map-category-group={group.code}
+                    className={`${styles.group} ${styles[group.code]} ${mobileGroup === group.code ? styles.mobileActive : ''}`}
                   >
                     <legend className="sr-only">{groupNames[group.code][th ? 0 : 1]}</legend>
                     <div className={styles.groupHeading}>
@@ -384,30 +420,54 @@ export default function PropertyMapSearch({
                             ...(allSelected ? [] : group.options.map((item) => item.id)),
                           ])
                         }
-                        className="min-h-8 shrink-0 px-1 text-[11px] text-[#176b50] underline-offset-4 hover:underline dark:text-emerald-400"
+                        className={styles.selectGroup}
                       >
                         {allSelected ? (th ? 'ล้างกลุ่มนี้' : 'Clear group') : th ? 'เลือกทั้งกลุ่ม' : 'Select group'}
                       </button>
                     </div>
-                    <div className={styles.chips}>
-                      {group.options.map((option) => {
-                        const selected = categories.includes(option.id)
-                        const label = th ? option.nameTh : option.nameEn
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            aria-pressed={selected}
-                            onClick={() => toggleCategory(option.id)}
-                            className={`${styles.chip} ${selected ? styles.selectedChip : ''}`}
-                          >
-                            <span className={styles.checkbox}>
-                              {selected && <Check className="size-3" strokeWidth={3} />}
-                            </span>
-                            {label}
-                          </button>
-                        )
-                      })}
+                    <div
+                      className={`${styles.categorySections} ${group.code === 'business' ? styles.businessSections : ''}`}
+                    >
+                      {group.sections.map((section) => (
+                        <section
+                          key={section.id}
+                          className={section.id === 'land' ? styles.landSection : ''}
+                          aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
+                        >
+                          {section.nameTh && (
+                            <h2 className={styles.subgroupHeading}>
+                              {section.id === 'retail' ? (
+                                <Store className="size-3.5" />
+                              ) : (
+                                <Building2 className="size-3.5" />
+                              )}
+                              {th ? section.nameTh : section.nameEn}
+                              <span>{section.options.length}</span>
+                            </h2>
+                          )}
+                          <div className={styles.chips}>
+                            {section.options.map((option) => {
+                              const selected = categories.includes(option.id)
+                              const label = th ? option.nameTh : option.nameEn
+                              return (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  data-map-category={option.id}
+                                  aria-pressed={selected}
+                                  onClick={() => toggleCategory(option.id)}
+                                  className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${selected ? styles.selectedChip : ''}`}
+                                >
+                                  <span className={styles.checkbox}>
+                                    {selected && <Check className="size-3" strokeWidth={3} />}
+                                  </span>
+                                  {label}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </section>
+                      ))}
                     </div>
                   </fieldset>
                 )

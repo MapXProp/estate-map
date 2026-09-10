@@ -45,8 +45,8 @@ test('all 32 posting choices remain reachable across three groups', () => {
   const groups = model().mapCategoryGroups
   assert.deepEqual(plain(groups.map((group) => [group.code, group.options.length])), [
     ['homes', 7],
-    ['business', 19],
     ['rooms', 6],
+    ['business', 19],
   ])
   assert.equal(new Set(groups.flatMap((group) => group.options.map((item) => item.id))).size, 32)
 })
@@ -57,8 +57,8 @@ test('mixed category selections keep each channel tied to its own types', () => 
   )
   assert.deepEqual(queries, [
     { discoveryChannel: 'homes', propertyTypes: ['condo'], spaceTypes: [] },
-    { discoveryChannel: 'business', propertyTypes: ['office'], spaceTypes: ['market_stall'] },
     { discoveryChannel: 'rooms', propertyTypes: ['apartment'], spaceTypes: [] },
+    { discoveryChannel: 'business', propertyTypes: ['office'], spaceTypes: ['market_stall'] },
   ])
   assert.deepEqual(plain(model().mapCategoryQueries([])), [{}])
 })
@@ -72,6 +72,45 @@ test('existing channel/type links select the corresponding visible chips', () =>
     11
   )
   assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land'])
+})
+
+test('business sections expose every option once, separating retail from buildings and land', () => {
+  const business = model().mapCategoryGroups.find((group) => group.code === 'business')
+  assert.deepEqual(plain(business.sections.map((section) => [section.id, section.options.length])), [
+    ['buildings', 7],
+    ['retail', 11],
+    ['land', 1],
+  ])
+  const ids = business.sections.flatMap((section) => section.options.map((option) => option.id))
+  assert.equal(new Set(ids).size, 19)
+  assert.deepEqual(plain(ids).sort(), plain(business.options.map((option) => option.id)).sort())
+})
+
+test('the land shortcut searches land across all channels and keeps offer filters', async () => {
+  const requests = []
+  const api = model(async (_query, _signal, options) => {
+    requests.push(options)
+    return { listings: [makeListing(6)], total: 1 }
+  })
+  assert.equal(api.isLandOnlyMapSelection([]), false)
+  assert.equal(api.isLandOnlyMapSelection(['homes:land']), false)
+  assert.equal(api.isLandOnlyMapSelection(api.landMapCategoryIds), true)
+  assert.equal(api.isLandOnlyMapSelection([...api.landMapCategoryIds, 'homes:condo']), false)
+  const results = await api.fetchCompleteMapSearch(
+    '',
+    api.landMapCategoryIds,
+    { offerTypes: ['sale'] },
+    new AbortController().signal
+  )
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].discoveryChannel, undefined)
+  assert.ok(
+    requests.every(
+      (request) =>
+        request.propertyTypes.length === 1 && request.propertyTypes[0] === 'land' && request.offerTypes[0] === 'sale'
+    )
+  )
+  assert.equal(results.length, 1)
 })
 
 test('pagination includes all 137 matches and preserves exact coordinates', async () => {

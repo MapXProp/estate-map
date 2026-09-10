@@ -8,7 +8,7 @@ import {
 } from '@/data/propertyTaxonomy'
 import { fetchPropertySearch, type PropertySearchListing, type PropertySearchOptions } from './propertySearch'
 
-export const mapCategoryGroups = (['homes', 'business', 'rooms'] as const).map((code) => {
+export const mapCategoryGroups = (['homes', 'rooms', 'business'] as const).map((code) => {
   const channel = discoveryChannels.find((item) => item.code === code)!
   const properties = channel.propertyTypeCodes
     .filter((type) => type !== 'retail_space')
@@ -29,8 +29,29 @@ export const mapCategoryGroups = (['homes', 'business', 'rooms'] as const).map((
           nameEn: getBusinessSpaceType(type)!.nameEn,
         }))
       : []
-  return { ...channel, options: [...properties, ...spaces] }
+  const options = [...properties, ...spaces]
+  const sections =
+    code === 'business'
+      ? [
+          {
+            id: 'buildings',
+            nameTh: 'อาคารและกิจการ',
+            nameEn: 'Buildings & businesses',
+            options: properties.filter((item) => item.propertyType !== 'land'),
+          },
+          { id: 'retail', nameTh: 'พื้นที่ขายของ', nameEn: 'Retail & selling spaces', options: spaces },
+          { id: 'land', nameTh: '', nameEn: '', options: properties.filter((item) => item.propertyType === 'land') },
+        ]
+      : [{ id: code, nameTh: '', nameEn: '', options }]
+  return { ...channel, options, sections }
 })
+
+export const landMapCategoryIds = mapCategoryGroups.flatMap((group) =>
+  group.options.filter((option) => option.propertyType === 'land').map((option) => option.id)
+)
+
+export const isLandOnlyMapSelection = (categories: string[]) =>
+  new Set(categories).size === landMapCategoryIds.length && landMapCategoryIds.every((id) => categories.includes(id))
 
 export const validMapCategoryIds = new Set(mapCategoryGroups.flatMap((group) => group.options.map((item) => item.id)))
 
@@ -58,6 +79,8 @@ export function initialMapCategories(filters: Partial<PropertyMapFilterState>, c
 export function mapCategoryQueries(categories: string[]): PropertySearchOptions[] {
   const selected = new Set(categories.filter((id) => validMapCategoryIds.has(id)))
   if (!selected.size) return [{}]
+  // Include land even when it has not been assigned to a discovery channel.
+  if (isLandOnlyMapSelection([...selected])) return [{ propertyTypes: ['land'] }]
   return mapCategoryGroups.flatMap((group) => {
     const options = group.options.filter((item) => selected.has(item.id))
     if (!options.length) return []
