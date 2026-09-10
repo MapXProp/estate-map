@@ -1,7 +1,5 @@
-import SectionGridHasMap from '@/app/(app)/(categories)/(real-estate)/real-estate-categories-map/[[...handle]]/SectionGridHasMap'
-import type { PropertyMapFilterState } from '@/components/property-map/PropertyMapFilterBar'
-import { getRealEstateCategoryByHandle } from '@/data/categories'
-import { getRealEstateListings } from '@/data/listings'
+import type { PropertyMapFeature, PropertyMapFilterState } from '@/components/property-map/PropertyMapFilterBar'
+import PropertyMapSearch from '@/components/property-map/PropertyMapSearch'
 import {
   businessSpaceTypes,
   discoveryChannels,
@@ -15,7 +13,6 @@ import {
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import { createPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
 
 type PageSearchParams = Promise<{
   q?: string | string[]
@@ -29,6 +26,11 @@ type PageSearchParams = Promise<{
   space_type?: string | string[]
   price_min?: string | string[]
   price_max?: string | string[]
+  category?: string | string[]
+  bedrooms?: string | string[]
+  bathrooms?: string | string[]
+  area_min?: string | string[]
+  feature?: string | string[]
 }>
 
 const getFirstSearchParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value)?.trim() || ''
@@ -55,6 +57,12 @@ const getInitialFilters = (search: Awaited<PageSearchParams>): Partial<PropertyM
   ),
   minPrice: /^\d+$/.test(getFirstSearchParam(search.price_min)) ? getFirstSearchParam(search.price_min) : '',
   maxPrice: /^\d+$/.test(getFirstSearchParam(search.price_max)) ? getFirstSearchParam(search.price_max) : '',
+  bedrooms: Math.min(4, Math.max(0, parseInt(getFirstSearchParam(search.bedrooms), 10) || 0)),
+  bathrooms: Math.min(4, Math.max(0, parseInt(getFirstSearchParam(search.bathrooms), 10) || 0)),
+  minArea: /^\d+$/.test(getFirstSearchParam(search.area_min)) ? getFirstSearchParam(search.area_min) : '',
+  features: getSearchParamValues(search.feature).filter((code): code is PropertyMapFeature =>
+    ['owner_direct', 'verified', 'pets_allowed'].includes(code)
+  ),
 })
 
 const getMapCoordinates = (search: Awaited<PageSearchParams>) => {
@@ -76,6 +84,7 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
     mapCenter: coordinates || (location ? { lat: location.latitude, lon: location.longitude } : undefined),
     mapZoom: zoom || location?.zoom,
     initialFilters: getInitialFilters(search),
+    initialCategories: getSearchParamValues(search.category),
   }
 }
 
@@ -100,25 +109,17 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
 }
 
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
-  const { query, mapCenter, mapZoom, initialFilters } = await getMapSearch(searchParams)
-  const category = await getRealEstateCategoryByHandle('all')
-  const listings = await getRealEstateListings()
-
-  if (!category?.id) {
-    return redirect('/real-estate-categories/all')
-  }
+  const { query, mapCenter, mapZoom, initialFilters, initialCategories } = await getMapSearch(searchParams)
 
   return (
-    <div className="container lg:max-w-none lg:ps-5 lg:pe-0 xl:ps-8 2xl:ps-10">
-      <SectionGridHasMap
-        listings={listings}
-        category={category}
-        query={query}
-        initialMapCenter={mapCenter}
-        initialMapZoom={mapZoom}
-        initialFilters={initialFilters}
-      />
-    </div>
+    <PropertyMapSearch
+      key={JSON.stringify({ query, mapCenter, mapZoom, initialFilters, initialCategories })}
+      query={query}
+      initialMapCenter={mapCenter}
+      initialMapZoom={mapZoom}
+      initialFilters={initialFilters}
+      initialCategories={initialCategories}
+    />
   )
 }
 

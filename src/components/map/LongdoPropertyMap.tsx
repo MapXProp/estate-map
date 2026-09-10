@@ -78,18 +78,8 @@ declare global {
   }
 }
 
-const thailandDemoLocations: LongdoLocation[] = [
-  { lon: 100.5018, lat: 13.7563 },
-  { lon: 100.5324, lat: 13.7452 },
-  { lon: 100.5683, lat: 13.7349 },
-  { lon: 100.5418, lat: 13.7798 },
-  { lon: 100.4762, lat: 13.7281 },
-  { lon: 100.5914, lat: 13.7527 },
-  { lon: 100.517, lat: 13.8006 },
-  { lon: 100.4931, lat: 13.7862 },
-]
-
-const isInThailand = ({ lat, lng }: TRealEstateListing['map']) => lat >= 5 && lat <= 21 && lng >= 97 && lng <= 106
+const isValidLocation = ({ lat, lon }: LongdoLocation) =>
+  Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
 
 const escapeHtml = (value: string | number) =>
   String(value)
@@ -99,16 +89,8 @@ const escapeHtml = (value: string | number) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 
-const getDemoLocationIndex = (id: string) => {
-  let hash = 0
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0
-  return hash % thailandDemoLocations.length
-}
-
 const getListingLocation = (listing: TRealEstateListing): LongdoLocation =>
-  isInThailand(listing.map)
-    ? { lon: listing.map.lng, lat: listing.map.lat }
-    : thailandDemoLocations[getDemoLocationIndex(listing.id)]
+  ({ lon: listing.map.lng, lat: listing.map.lat })
 
 const getPromotionTierRank = (tier: TRealEstateListing['mapPromotionTier']) => {
   if (tier === 'premium') return 2
@@ -134,7 +116,7 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
   const categoryLabel = isThai ? 'อสังหาริมทรัพย์' : 'Property'
   const promotedLabel = listing.isMapPromoted ? (isThai ? 'โปรโมต' : 'Promoted') : ''
   const imageHtml = imageUrl
-    ? `<img src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
+    ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
 
   return `
@@ -181,6 +163,10 @@ interface Props {
   resizeRequestId?: number
   initialCenter?: LongdoLocation
   initialZoom?: number
+  exactCoordinates?: boolean
+  searchContainerClassName?: string
+  zoomControlsClassName?: string
+  onLocationSearch?: (location: LongdoLocation, label: string) => void
 }
 
 const LongdoPropertyMap = ({
@@ -195,6 +181,10 @@ const LongdoPropertyMap = ({
   resizeRequestId = 0,
   initialCenter,
   initialZoom = 12,
+  exactCoordinates = false,
+  searchContainerClassName,
+  zoomControlsClassName,
+  onLocationSearch,
 }: Props) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
@@ -207,6 +197,7 @@ const LongdoPropertyMap = ({
   const listingMarkersRef = useRef<LongdoOverlay[]>([])
   const searchMarkerRef = useRef<LongdoOverlay | null>(null)
   const onViewportChangeRef = useRef(onViewportChange)
+  const onLocationSearchRef = useRef(onLocationSearch)
   const viewportEventsEnabledRef = useRef(false)
   const declutterAnimationFrameRef = useRef<number | null>(null)
   const declutterMarkersRef = useRef<() => void>(() => undefined)
@@ -287,8 +278,16 @@ const LongdoPropertyMap = ({
     if (!candidates.length) return
 
     const zoom = map.zoom()
-    const showEveryLabel = zoom >= 19
-    const fanSharedCoordinates = zoom >= 16
+    // In the map search workspace, every dot stays at the stored coordinate.
+    // Only price labels change visibility; markers are never grouped or fanned.
+    if (exactCoordinates && zoom <= 12) {
+      candidates.forEach(({ root, listing }) => {
+        root.dataset.mapxLabelVisible = listing.id === currentHoverIDRef.current ? 'true' : 'false'
+      })
+      return
+    }
+    const showEveryLabel = !exactCoordinates && zoom >= 19
+    const fanSharedCoordinates = !exactCoordinates && zoom >= 16
     if (fanSharedCoordinates) {
       const coordinateGroups = new Map<string, typeof candidates>()
       candidates.forEach((candidate) => {
@@ -357,7 +356,7 @@ const LongdoPropertyMap = ({
       root.style.zIndex = String(900 - Math.min(priorityIndex, 850))
       if (!overlaps) acceptedRects.push(expandedRect)
     })
-  }, [listingsById])
+  }, [exactCoordinates, listingsById])
 
   const scheduleMarkerDeclutter = useCallback(() => {
     if (declutterAnimationFrameRef.current !== null) {
@@ -396,7 +395,8 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     onViewportChangeRef.current = onViewportChange
-  }, [onViewportChange])
+    onLocationSearchRef.current = onLocationSearch
+  }, [onViewportChange, onLocationSearch])
 
   useEffect(() => {
     const touchSurface = placeholderRef.current
@@ -419,7 +419,7 @@ const LongdoPropertyMap = ({
   }, [])
 
   const center = useMemo(
-    () => initialCenter || locations[0] || { lon: 100.5018, lat: 13.7563 },
+    () => initialCenter || locations.find(isValidLocation) || { lon: 100.5018, lat: 13.7563 },
     [initialCenter, locations]
   )
   const initialCenterRef = useRef<LongdoLocation>(center)
@@ -449,6 +449,26 @@ const LongdoPropertyMap = ({
     document.addEventListener('click', handleListingLink, true)
     return () => document.removeEventListener('click', handleListingLink, true)
   }, [router])
+
+  useEffect(() => {
+    const container = placeholderRef.current
+    if (!container) return
+    // A hidden hover card must not download a full image for every map pin.
+    const loadPreviewImage = (event: Event) => {
+      if (!(event.target instanceof Element)) return
+      const root = event.target.closest('[data-mapx-price-marker="true"]')
+      const preview = root?.querySelector<HTMLImageElement>('img[data-mapx-preview-src]')
+      if (!preview?.dataset.mapxPreviewSrc) return
+      preview.src = preview.dataset.mapxPreviewSrc
+      delete preview.dataset.mapxPreviewSrc
+    }
+    container.addEventListener('pointerover', loadPreviewImage)
+    container.addEventListener('focusin', loadPreviewImage)
+    return () => {
+      container.removeEventListener('pointerover', loadPreviewImage)
+      container.removeEventListener('focusin', loadPreviewImage)
+    }
+  }, [])
 
   useEffect(() => {
     const keyword = searchText.trim()
@@ -522,8 +542,9 @@ const LongdoPropertyMap = ({
         })
         searchMarkerRef.current = marker
         map.Overlays.add(marker)
-        map.location(location, true)
-        map.zoom(15, true)
+        map.location(location, false)
+        map.zoom(15, false)
+        onLocationSearchRef.current?.(location, place.name || keyword)
         setSearchText(place.name || keyword)
         setIsSearchFocused(false)
         searchInputRef.current?.blur()
@@ -633,6 +654,23 @@ const LongdoPropertyMap = ({
   }, [mapReady, resizeRequestId])
 
   useEffect(() => {
+    const container = placeholderRef.current
+    const map = mapRef.current
+    if (!mapReady || !container || !map) return
+    let frame = 0
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => {
+        map.resize()
+        map.repaint()
+        declutterMarkersRef.current()
+      })
+    })
+    observer.observe(container)
+    return () => { observer.disconnect(); window.cancelAnimationFrame(frame) }
+  }, [mapReady])
+
+  useEffect(() => {
     if (!mapReady) return
 
     const refreshMap = () => {
@@ -663,6 +701,7 @@ const LongdoPropertyMap = ({
     listingMarkersRef.current.forEach((marker) => map.Overlays.remove(marker))
     const nextMarkers: LongdoOverlay[] = []
     listings.forEach((listing, index) => {
+      if (!isValidLocation(locations[index])) return
       const active = listing.id === currentHoverIDRef.current
       const marker = new longdo.Marker(locations[index], {
         clickable: true,
@@ -713,7 +752,7 @@ const LongdoPropertyMap = ({
   }, [areaSearchRequestId, mapReady, onSearchArea, searchSourceListings, searchSourceLocations])
 
   return (
-    <div className="relative size-full overflow-hidden bg-[#eef3f0]">
+    <div className={`relative size-full overflow-hidden bg-[#eef3f0] ${exactCoordinates ? 'mapx-exact-coordinates' : ''}`}>
       <style>{`
         .mapx-price-marker {
           cursor: pointer;
@@ -845,6 +884,56 @@ const LongdoPropertyMap = ({
             transform: translate(-50%, 0) scale(1);
           }
         }
+        .mapx-exact-coordinates .mapx-price-marker {
+          width: 0 !important;
+          height: 0;
+          padding: 0 !important;
+          transform: none !important;
+        }
+        .mapx-exact-coordinates .mapx-price-marker-link {
+          position: absolute !important;
+          width: 32px;
+          height: 32px;
+          padding: 0 !important;
+          transform: translate(-50%, -50%);
+        }
+        .mapx-exact-coordinates .mapx-compact-pin {
+          position: absolute;
+          display: block !important;
+          left: 50%;
+          top: 50%;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          border-width: 1.5px;
+          transform: translate(-50%, -50%);
+          box-shadow: 0 1px 4px rgba(18,63,50,.28);
+        }
+        .mapx-exact-coordinates .mapx-price-marker.is-active .mapx-compact-pin,
+        .mapx-exact-coordinates .mapx-price-marker:focus-within .mapx-compact-pin {
+          width: 16px;
+          height: 16px;
+          box-shadow: 0 0 0 5px rgba(23,107,80,.18);
+        }
+        .mapx-exact-coordinates .mapx-price-pill {
+          position: absolute;
+          bottom: 27px;
+          left: 50%;
+          height: 30px;
+          min-width: 64px;
+          padding: 0 9px;
+          font-size: 12px;
+          transform: translateX(-50%);
+        }
+        .mapx-exact-coordinates .mapx-price-marker.is-active .mapx-price-pill,
+        .mapx-exact-coordinates .mapx-price-marker:hover .mapx-price-pill,
+        .mapx-exact-coordinates .mapx-price-marker:focus-within .mapx-price-pill {
+          transform: translateX(-50%) scale(1.06);
+        }
+        .mapx-exact-coordinates .mapx-price-pointer-outer,
+        .mapx-exact-coordinates .mapx-price-pointer-inner,
+        .mapx-exact-coordinates .mapx-fan-line { display: none !important; }
+        .mapx-exact-coordinates .mapx-marker-hover-card { bottom: 40px; }
       `}</style>
       <link rel="preconnect" href="https://api.longdo.com" />
       <link rel="preconnect" href="https://search.longdo.com" />
@@ -873,7 +962,7 @@ const LongdoPropertyMap = ({
         <>
           <div
             ref={searchContainerRef}
-            className={`absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2 ${
+            className={`${searchContainerClassName || 'absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2'} ${
               mobileControlsVisible ? '' : 'max-lg:hidden'
             }`}
             onBlur={(event) => {
@@ -967,7 +1056,7 @@ const LongdoPropertyMap = ({
           </div>
 
           <div
-            className={`absolute end-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)] ${
+            className={`${zoomControlsClassName || 'absolute end-3 bottom-3 z-20'} flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)] ${
               mobileControlsVisible ? '' : 'max-lg:hidden'
             }`}
             aria-label="ควบคุมระดับการซูมแผนที่"
