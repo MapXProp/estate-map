@@ -82,6 +82,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
     <div className={className}>
       <Popover>
         <PopoverButton
+          aria-label={locale === 'th' ? 'บัญชีและการตั้งค่า' : 'Account and settings'}
           className={
             buttonClassName ??
             '-m-1.5 flex cursor-pointer items-center justify-center rounded-full p-1.5 hover:bg-neutral-100 focus-visible:outline-hidden dark:hover:bg-neutral-800'

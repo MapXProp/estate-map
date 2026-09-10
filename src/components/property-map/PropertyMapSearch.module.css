@@ -72,11 +72,73 @@
   box-shadow: 0 3px 14px #183b2905;
 }
 .categoryHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+}
+.brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+.logo {
+  display: flex;
+  width: 144px;
+  min-height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  border-radius: 8px;
+}
+.selectionSummary {
+  display: none;
+  overflow: hidden;
+  color: #687d71;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.headerActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 36px;
+  justify-content: flex-end;
+  gap: 8px;
+  white-space: nowrap;
+}
+.allCategoriesButton {
+  min-height: 40px;
+  flex-shrink: 0;
+  padding: 0 13px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.collapseCategoriesButton,
+.accountButton,
+.resetButton {
+  display: grid;
+  width: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.collapseCategoriesButton:hover,
+.accountButton:hover,
+.resetButton:hover,
+.detailsButton:hover {
+  background: #edf6f1;
+}
+.logo:focus-visible,
+.headerActions button:focus-visible,
+.detailsButton:focus-visible,
+.resetButton:focus-visible {
+  outline: 2px solid #176b50;
+  outline-offset: 2px;
 }
 .groups {
   display: grid;
@@ -213,16 +275,11 @@
   display: none;
 }
 .toolbar {
-  position: relative;
-  z-index: 30;
   display: flex;
+  min-width: 0;
   align-items: center;
-  flex-shrink: 0;
-  gap: 10px;
-  min-height: 58px;
-  padding: 8px 24px;
-  border-bottom: 1px solid #dfe8e2;
-  background: #fff;
+  justify-content: center;
+  gap: 8px;
 }
 .offers {
   display: flex;
@@ -234,13 +291,16 @@
   background: #f4f7f5;
 }
 .offers button {
-  min-height: 34px;
+  min-height: 36px;
   flex-shrink: 0;
   padding: 0 14px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+}
+.offers button:hover {
+  background: #e5efe8;
 }
 .offers .selectedOffer {
   background: #176b50;
@@ -249,7 +309,7 @@
 }
 .detailsButton {
   display: flex;
-  min-height: 40px;
+  min-height: 44px;
   flex-shrink: 0;
   align-items: center;
   gap: 7px;
@@ -259,6 +319,14 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+}
+.activeDetailsButton {
+  border-color: #96b8a5;
+  background: #edf6f1;
+  color: #176b50;
+}
+.resetButton {
+  color: #687d71;
 }
 .canvas {
   position: relative;
@@ -344,6 +412,9 @@
   font-weight: 600;
 }
 @media (min-width: 1500px) {
+  .selectionSummary {
+    display: inline;
+  }
   .chip {
     font-size: 12px;
     min-height: 34px;
@@ -353,12 +424,23 @@
     grid-template-columns: 1fr 1fr 1.85fr;
   }
 }
+@media (max-width: 1279px) {
+  .categoryHeading {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+  }
+  .headerActions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .toolbar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
 @media (max-width: 1023px) {
   .categories {
     padding: 5px 12px 8px;
-  }
-  .categoryHeading {
-    gap: 4px;
   }
   .groups {
     display: block;
@@ -430,22 +512,14 @@
   }
   .toolbar {
     gap: 7px;
-    min-height: 54px;
-    padding: 6px 12px;
-  }
-  .offers {
-    min-width: 0;
-    flex: 1;
-    overflow-x: auto;
-    scrollbar-width: none;
   }
   .offers button {
-    min-height: 36px;
+    min-height: 40px;
     padding-inline: 12px;
     font-size: 12px;
   }
   .detailsButton {
-    min-height: 42px;
+    min-height: 46px;
     padding-inline: 10px;
     font-size: 12px;
   }
@@ -505,6 +579,35 @@
     display: none;
   }
 }
+@media (max-width: 639px) {
+  .categoryHeading {
+    gap: 5px 8px;
+  }
+  .logo {
+    width: 88px;
+  }
+  .headerActions {
+    gap: 4px;
+  }
+  .landShortcut,
+  .allCategoriesButton {
+    gap: 4px;
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+  .collapseCategoriesButton,
+  .accountButton,
+  .resetButton {
+    width: 32px;
+  }
+  .offers {
+    min-width: 0;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #b9cfc1 transparent;
+  }
+}
 @media (max-height: 600px) {
   .categorySections {
     max-height: 110px;
@@ -512,13 +615,11 @@
   }
 }
 :global(.dark) .search,
-:global(.dark) .toolbar,
 :global(.dark) .results {
   color: #e4ede7;
   background: #171c19;
 }
 :global(.dark) .categories,
-:global(.dark) .toolbar,
 :global(.dark) .results,
 :global(.dark) .detailsButton {
   border-color: #324037;
@@ -527,6 +628,25 @@
   color: #d4e0d8;
   border-color: #3b4a40;
   background: #222c26;
+}
+:global(.dark) .offers button:hover,
+:global(.dark) .collapseCategoriesButton:hover,
+:global(.dark) .accountButton:hover,
+:global(.dark) .resetButton:hover,
+:global(.dark) .detailsButton:hover,
+:global(.dark) .activeDetailsButton {
+  background: #2b4435;
+}
+:global(.dark) .offers .selectedOffer {
+  background: #176b50;
+}
+:global(.dark) .activeDetailsButton {
+  color: #a0dab9;
+  border-color: #68b98a;
+}
+:global(.dark) .selectionSummary,
+:global(.dark) .resetButton {
+  color: #a6b9ad;
 }
 :global(.dark) .homes {
   --category-ink: #a0dab9;

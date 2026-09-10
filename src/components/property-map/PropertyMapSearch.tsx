@@ -1,5 +1,6 @@
 'use client'
 
+import AvatarDropdown from '@/components/Header/AvatarDropdown'
 import LongdoPropertyMap, {
   type PropertyMapAreaSearch,
   type PropertyMapBounds,
@@ -18,6 +19,7 @@ import {
   matchesMapDetails,
 } from '@/lib/propertyMapSearch'
 import type { PropertySearchListing } from '@/lib/propertySearch'
+import Logo from '@/shared/Logo'
 import {
   Building2,
   Check,
@@ -36,7 +38,6 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { MapNavigationToggle } from './MapNavigation'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
 import { emptyPropertyMapFilters, type PropertyMapFilterState, type PropertyMapSort } from './PropertyMapFilterBar'
@@ -293,38 +294,77 @@ export default function PropertyMapSearch({
   return (
     <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
       <section className={styles.categories} aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}>
-        <div className={styles.categoryHeading}>
-          <div className="flex min-w-0 items-center gap-2">
-            <MapNavigationToggle />
-            <h1 className="sr-only shrink-0 text-sm font-semibold sm:not-sr-only">
-              {th ? 'กำลังมองหาอะไร?' : 'What are you looking for?'}
-            </h1>
-            {!categoriesOpen && categories.length > 0 && (
-              <span className="truncate text-xs text-neutral-500 sm:hidden">
+        <header className={styles.categoryHeading} data-map-topbar>
+          <div className={styles.brand} data-map-brand>
+            <Logo className={styles.logo} />
+            <h1 className="sr-only">{th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}</h1>
+            {categories.length > 0 && (
+              <span className={styles.selectionSummary}>
                 {isLandOnlyMapSelection(categories)
                   ? th
                     ? 'เฉพาะที่ดิน'
                     : 'Land only'
                   : th
-                    ? `${categories.length} หมวด`
-                    : `${categories.length} types`}
+                    ? `เลือก ${categories.length} หมวด`
+                    : `${categories.length} selected`}
               </span>
             )}
-            <span className="hidden truncate text-xs text-neutral-500 lg:block">
-              {isLandOnlyMapSelection(categories)
-                ? th
-                  ? 'เฉพาะที่ดิน'
-                  : 'Land only'
-                : categories.length
-                  ? th
-                    ? `เลือก ${categories.length} หมวด`
-                    : `${categories.length} selected`
-                  : th
-                    ? 'เลือกได้หลายหมวด'
-                    : 'Select multiple categories'}
-            </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className={styles.toolbar} data-map-search-controls>
+            <div className={styles.offers} role="group" aria-label={th ? 'ซื้อหรือเช่า' : 'Buy or rent'}>
+              <button
+                type="button"
+                aria-pressed={!filters.offerTypes.length}
+                onClick={() => setFilters({ ...filters, offerTypes: [] })}
+                className={!filters.offerTypes.length ? styles.selectedOffer : ''}
+              >
+                {th ? 'ทุกแบบ' : 'Any offer'}
+              </button>
+              {offerOptions.map((offer) => (
+                <button
+                  type="button"
+                  key={offer.value}
+                  data-map-offer={offer.value}
+                  aria-pressed={filters.offerTypes.includes(offer.value)}
+                  onClick={() =>
+                    setFilters({
+                      ...filters,
+                      offerTypes: filters.offerTypes.includes(offer.value)
+                        ? filters.offerTypes.filter((value) => value !== offer.value)
+                        : [...filters.offerTypes, offer.value],
+                    })
+                  }
+                  className={filters.offerTypes.includes(offer.value) ? styles.selectedOffer : ''}
+                >
+                  {th ? offer.th : offer.en}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              data-map-details-toggle
+              onClick={() => setDetailsOpen(true)}
+              className={`${styles.detailsButton} ${detailsCount > 0 ? styles.activeDetailsButton : ''}`}
+            >
+              <SlidersHorizontal className="size-4" />
+              <span>{th ? 'ตัวกรอง' : 'Filters'}</span>
+              {detailsCount > 0 && (
+                <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{detailsCount}</span>
+              )}
+            </button>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={reset}
+                className={styles.resetButton}
+                aria-label={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
+                title={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
+              >
+                <RotateCcw className="size-4" />
+              </button>
+            )}
+          </div>
+          <div className={styles.headerActions}>
             <button
               type="button"
               data-map-land-shortcut
@@ -342,7 +382,7 @@ export default function PropertyMapSearch({
               type="button"
               aria-pressed={!categories.length}
               onClick={() => setCategories([])}
-              className={`min-h-9 rounded-full px-3 text-xs font-semibold ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
+              className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
             >
               {th ? 'ทุกหมวด' : 'All types'}
             </button>
@@ -354,7 +394,7 @@ export default function PropertyMapSearch({
                 setCategoriesOpen(!categoriesOpen)
                 setResizeId(resizeId + 1)
               }}
-              className="grid size-9 place-items-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className={styles.collapseCategoriesButton}
               aria-label={
                 categoriesOpen
                   ? th
@@ -367,8 +407,9 @@ export default function PropertyMapSearch({
             >
               {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
             </button>
+            <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
           </div>
-        </div>
+        </header>
         {categoriesOpen && (
           <div id="map-category-options">
             <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
@@ -476,58 +517,6 @@ export default function PropertyMapSearch({
           </div>
         )}
       </section>
-
-      <div className={styles.toolbar}>
-        <div className={styles.offers} aria-label={th ? 'ซื้อหรือเช่า' : 'Buy or rent'}>
-          <button
-            type="button"
-            aria-pressed={!filters.offerTypes.length}
-            onClick={() => setFilters({ ...filters, offerTypes: [] })}
-            className={!filters.offerTypes.length ? styles.selectedOffer : ''}
-          >
-            {th ? 'ทุกแบบ' : 'Any offer'}
-          </button>
-          {offerOptions.map((offer) => (
-            <button
-              type="button"
-              key={offer.value}
-              aria-pressed={filters.offerTypes.includes(offer.value)}
-              onClick={() =>
-                setFilters({
-                  ...filters,
-                  offerTypes: filters.offerTypes.includes(offer.value)
-                    ? filters.offerTypes.filter((value) => value !== offer.value)
-                    : [...filters.offerTypes, offer.value],
-                })
-              }
-              className={filters.offerTypes.includes(offer.value) ? styles.selectedOffer : ''}
-            >
-              {th ? offer.th : offer.en}
-            </button>
-          ))}
-        </div>
-        <button type="button" onClick={() => setDetailsOpen(true)} className={styles.detailsButton}>
-          <SlidersHorizontal className="size-4" />
-          <span>{th ? 'ตัวกรอง' : 'Filters'}</span>
-          {detailsCount > 0 && (
-            <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{detailsCount}</span>
-          )}
-        </button>
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={reset}
-            className="hidden min-h-10 shrink-0 items-center gap-1 px-2 text-xs text-neutral-500 sm:flex"
-          >
-            <RotateCcw className="size-3.5" />
-            {th ? 'ล้างทั้งหมด' : 'Reset'}
-          </button>
-        )}
-        <span className="ms-auto hidden items-center gap-1.5 text-xs whitespace-nowrap text-neutral-500 xl:flex">
-          <span className="size-2 rounded-full bg-[#176b50]" />
-          {th ? 'หมุดแสดงตำแหน่งประกาศ' : 'Pins mark listing locations'}
-        </span>
-      </div>
 
       <div
         className={`${styles.canvas} ${panelOpen ? styles.panelVisible : ''} ${mobilePanelOpen ? styles.mobilePanelVisible : ''}`}
