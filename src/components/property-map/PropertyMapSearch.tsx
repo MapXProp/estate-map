@@ -41,6 +41,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import MapPinPreview from './MapPinPreview'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
 import { emptyPropertyMapFilters, type PropertyMapFilterState, type PropertyMapSort } from './PropertyMapFilterBar'
@@ -98,6 +99,7 @@ export default function PropertyMapSearch({
   const [panelOpen, setPanelOpen] = useState(true)
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false)
   const [hoveredId, setHoveredId] = useState('')
+  const [previewSelection, setPreviewSelection] = useState<{ id: string; requestKey: string } | null>(null)
   const [sort, setSort] = useState<PropertyMapSort>('recommended')
   const [pagination, setPagination] = useState({ key: '', count: 20 })
   const [area, setArea] = useState<PropertyMapBounds | null>(null)
@@ -108,6 +110,7 @@ export default function PropertyMapSearch({
   const [zoom, setZoom] = useState(initialMapZoom || 12)
   const [resizeId, setResizeId] = useState(0)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null)
   const [load, setLoad] = useState<{
     key: string
     rows: PropertySearchListing[]
@@ -121,6 +124,8 @@ export default function PropertyMapSearch({
     max: filters.maxPrice,
     retry,
   })
+  // A new search closes the old property preview, including when returning to a previous filter combination.
+  if (previewSelection && previewSelection.requestKey !== requestKey) setPreviewSelection(null)
   const rows = load.key === requestKey ? load.rows : emptyRows
   const loading = load.key !== requestKey || load.status === 'loading'
   const failed = load.key === requestKey && load.status === 'error'
@@ -268,6 +273,31 @@ export default function PropertyMapSearch({
       return new Date(b.date).getTime() - new Date(a.date).getTime() || a.id.localeCompare(b.id)
     })
   }, [mapListings, area, sort])
+  const previewListing =
+    previewSelection?.requestKey === requestKey
+      ? mapListings.find((listing) => listing.id === previewSelection.id)
+      : undefined
+  const selectMapMarker = useCallback(
+    (id: string) => {
+      setPreviewSelection({ id, requestKey })
+      setHoveredId('')
+      setPanelOpen(true)
+      setMobilePanelOpen(true)
+      if (window.matchMedia('(max-width: 1023px)').matches) setCategoriesOpen(false)
+    },
+    [requestKey]
+  )
+  const closeMapPreview = () => {
+    const id = previewSelection?.id
+    setPreviewSelection(null)
+    setMobilePanelOpen(false)
+    if (id)
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector<HTMLAnchorElement>(`[data-mapx-listing-id="${CSS.escape(id)}"] a[data-mapx-marker-link]`)
+          ?.focus({ preventScroll: true })
+      })
+  }
   const detailsCount =
     Number(Boolean(filters.minPrice || filters.maxPrice)) +
     Number(filters.bedrooms > 0) +
@@ -298,6 +328,7 @@ export default function PropertyMapSearch({
   }
   const prepareMobileLocationSearch = () => {
     if (!window.matchMedia('(max-width: 1023px)').matches) return
+    setPreviewSelection(null)
     setMobilePanelOpen(false)
     setCategoriesOpen(false)
   }
@@ -416,7 +447,10 @@ export default function PropertyMapSearch({
               aria-expanded={categoriesOpen}
               aria-controls="map-category-options"
               onClick={() => {
-                if (!categoriesOpen) setMobilePanelOpen(false)
+                if (!categoriesOpen) {
+                  setMobilePanelOpen(false)
+                  if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
+                }
                 setCategoriesOpen(!categoriesOpen)
                 setResizeId(resizeId + 1)
               }}
@@ -542,6 +576,7 @@ export default function PropertyMapSearch({
       <div
         data-map-canvas
         data-mobile-results-open={mobilePanelOpen}
+        data-map-preview-open={Boolean(previewListing)}
         className={`${styles.canvas} ${panelOpen ? styles.panelVisible : ''} ${mobilePanelOpen ? styles.mobilePanelVisible : ''}`}
       >
         <div className={styles.map}>
@@ -549,7 +584,9 @@ export default function PropertyMapSearch({
             <LongdoPropertyMap
               apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
               listings={mapListings}
-              currentHoverID={hoveredId}
+              currentHoverID={previewListing?.id || hoveredId}
+              previewListingId={previewListing?.id}
+              onMarkerSelect={selectMapMarker}
               initialCenter={center}
               initialZoom={zoom}
               exactCoordinates
@@ -560,6 +597,7 @@ export default function PropertyMapSearch({
               areaSearchRequestId={areaRequestId}
               onSearchArea={searchArea}
               onLocationSearch={(location) => {
+                setPreviewSelection(null)
                 setCenter(location)
                 setZoom(15)
                 setKeyword('')
@@ -596,200 +634,232 @@ export default function PropertyMapSearch({
         <aside
           data-map-results-panel
           className={styles.results}
-          aria-label={th ? 'ประกาศที่ค้นพบ' : 'Property results'}
+          aria-label={
+            previewListing
+              ? th
+                ? 'ตัวอย่างประกาศที่เลือก'
+                : 'Selected property preview'
+              : th
+                ? 'ประกาศที่ค้นพบ'
+                : 'Property results'
+          }
         >
-          <button
-            type="button"
-            data-map-mobile-panel-toggle
-            className={styles.mobilePanelToggle}
-            aria-expanded={mobilePanelOpen}
-            aria-controls="map-results-content"
-            aria-label={
-              mobilePanelOpen
-                ? th
-                  ? 'ย่อรายการเพื่อดูแผนที่'
-                  : 'Collapse listings to view map'
-                : th
-                  ? `เปิดรายการ ${displayed.length} ประกาศ`
-                  : `Open ${displayed.length} listings`
-            }
-            onClick={toggleMobilePanel}
-          >
-            <span className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-neutral-300" aria-hidden="true" />
-            <span className="flex items-center justify-between text-sm font-semibold">
-              <span className="flex items-center gap-2">
-                <List className="size-4 text-[#176b50]" />
-                {th ? `${displayed.length} ประกาศ` : `${displayed.length} listings`}
-                {loading && <LoaderCircle className="size-3.5 animate-spin" />}
-              </span>
-              <span className={styles.mobilePanelAction}>
-                {mobilePanelOpen ? (th ? 'ดูแผนที่' : 'View map') : th ? 'ดูประกาศ' : 'View listings'}
-                {mobilePanelOpen ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
-              </span>
-            </span>
-          </button>
-          <div id="map-results-content" className={styles.resultsContent}>
-            <div className={styles.resultsHeader}>
-              <div className={styles.resultsHeading}>
-                <div className="min-w-0">
-                  <h2 className={`${styles.resultsTitle} text-base font-semibold`}>
-                    {area ? (th ? 'ประกาศในบริเวณนี้' : 'In this area') : th ? 'ประกาศที่ค้นพบ' : 'Your search results'}
-                  </h2>
-                  <p aria-live="polite" className={`${styles.resultsMeta} mt-1 text-xs text-neutral-500`}>
-                    {loading
-                      ? th
-                        ? `กำลังโหลด · พบแล้ว ${mapListings.length} รายการ`
-                        : `Loading · ${mapListings.length} found`
-                      : failed
-                        ? th
-                          ? 'โหลดข้อมูลยังไม่ครบ'
-                          : 'Results are incomplete'
-                        : th
-                          ? `${displayed.length} รายการ${area ? ` · ทั้งหมด ${mapListings.length} บนแผนที่` : ''}`
-                          : `${displayed.length} listings${area ? ` · ${mapListings.length} on map` : ''}`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={togglePanel}
-                  aria-label={th ? 'ย่อแผงประกาศ' : 'Collapse listings'}
-                  className="hidden size-9 shrink-0 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 lg:grid dark:hover:bg-neutral-800"
-                >
-                  <PanelLeftClose className="size-4" />
-                </button>
-              </div>
-              {(keyword || area) && (
-                <div className={`${styles.resultsTags} mt-2 flex flex-wrap gap-1.5`}>
-                  {keyword && (
-                    <button
-                      type="button"
-                      onClick={() => setKeyword('')}
-                      className="flex max-w-full items-center gap-1 rounded-lg bg-[#edf6f1] px-2 py-1 text-xs text-[#176b50]"
-                    >
-                      <span className="truncate">{keyword}</span>
-                      <X className="size-3 shrink-0" />
-                    </button>
-                  )}
-                  {area && (
-                    <button
-                      type="button"
-                      onClick={() => setArea(null)}
-                      className="flex items-center gap-1 rounded-lg bg-[#edf6f1] px-2 py-1 text-xs text-[#176b50]"
-                    >
-                      {th ? 'จำกัดบริเวณ' : 'Area filter'}
-                      <X className="size-3" />
-                    </button>
-                  )}
-                </div>
-              )}
-              <label
-                className={`${styles.resultsSort} mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500`}
-              >
-                <span>{th ? 'เรียงตาม' : 'Sort by'}</span>
-                <select
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value as PropertyMapSort)}
-                  className="h-9 max-w-[70%] rounded-lg border-neutral-200 bg-transparent py-0 text-xs font-medium text-neutral-700 focus:border-[#176b50] focus:ring-[#176b50] dark:border-neutral-700 dark:text-neutral-200"
-                >
-                  <option value="recommended">{th ? 'แนะนำ' : 'Recommended'}</option>
-                  <option value="newest">{th ? 'ใหม่ล่าสุด' : 'Newest'}</option>
-                  <option value="price_low">{th ? 'ราคาต่ำก่อน' : 'Lowest price'}</option>
-                  <option value="price_high">{th ? 'ราคาสูงก่อน' : 'Highest price'}</option>
-                  <option value="area_large">{th ? 'พื้นที่มากก่อน' : 'Largest area'}</option>
-                </select>
-              </label>
-            </div>
-            <div
-              ref={resultsRef}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
-              aria-busy={loading}
+          {previewListing && (
+            <MapPinPreview
+              key={previewListing.id}
+              listing={previewListing}
+              onClose={closeMapPreview}
+              onBack={() => {
+                setPreviewSelection(null)
+                setMobilePanelOpen(true)
+                window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
+              }}
+            />
+          )}
+          <div className={styles.resultsList} hidden={Boolean(previewListing)}>
+            <button
+              type="button"
+              data-map-mobile-panel-toggle
+              className={styles.mobilePanelToggle}
+              aria-expanded={mobilePanelOpen}
+              aria-controls="map-results-content"
+              aria-label={
+                mobilePanelOpen
+                  ? th
+                    ? 'ย่อรายการเพื่อดูแผนที่'
+                    : 'Collapse listings to view map'
+                  : th
+                    ? `เปิดรายการ ${displayed.length} ประกาศ`
+                    : `Open ${displayed.length} listings`
+              }
+              onClick={toggleMobilePanel}
             >
-              {failed && (
-                <div role="alert" className="m-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-                  <p>{th ? 'โหลดประกาศไม่ครบ กรุณาลองอีกครั้ง' : 'Some listings could not load. Please retry.'}</p>
+              <span className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-neutral-300" aria-hidden="true" />
+              <span className="flex items-center justify-between text-sm font-semibold">
+                <span className="flex items-center gap-2">
+                  <List className="size-4 text-[#176b50]" />
+                  {th ? `${displayed.length} ประกาศ` : `${displayed.length} listings`}
+                  {loading && <LoaderCircle className="size-3.5 animate-spin" />}
+                </span>
+                <span className={styles.mobilePanelAction}>
+                  {mobilePanelOpen ? (th ? 'ดูแผนที่' : 'View map') : th ? 'ดูประกาศ' : 'View listings'}
+                  {mobilePanelOpen ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+                </span>
+              </span>
+            </button>
+            <div id="map-results-content" className={styles.resultsContent}>
+              <div className={styles.resultsHeader}>
+                <div className={styles.resultsHeading}>
+                  <div className="min-w-0">
+                    <h2
+                      ref={resultsHeadingRef}
+                      tabIndex={-1}
+                      className={`${styles.resultsTitle} text-base font-semibold outline-none`}
+                    >
+                      {area
+                        ? th
+                          ? 'ประกาศในบริเวณนี้'
+                          : 'In this area'
+                        : th
+                          ? 'ประกาศที่ค้นพบ'
+                          : 'Your search results'}
+                    </h2>
+                    <p aria-live="polite" className={`${styles.resultsMeta} mt-1 text-xs text-neutral-500`}>
+                      {loading
+                        ? th
+                          ? `กำลังโหลด · พบแล้ว ${mapListings.length} รายการ`
+                          : `Loading · ${mapListings.length} found`
+                        : failed
+                          ? th
+                            ? 'โหลดข้อมูลยังไม่ครบ'
+                            : 'Results are incomplete'
+                          : th
+                            ? `${displayed.length} รายการ${area ? ` · ทั้งหมด ${mapListings.length} บนแผนที่` : ''}`
+                            : `${displayed.length} listings${area ? ` · ${mapListings.length} on map` : ''}`}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setRetry(retry + 1)}
-                    className="mt-2 min-h-9 font-semibold underline"
+                    onClick={togglePanel}
+                    aria-label={th ? 'ย่อแผงประกาศ' : 'Collapse listings'}
+                    className="hidden size-9 shrink-0 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 lg:grid dark:hover:bg-neutral-800"
                   >
-                    {th ? 'ลองอีกครั้ง' : 'Retry'}
+                    <PanelLeftClose className="size-4" />
                   </button>
                 </div>
-              )}
-              {invalidPrice && (
-                <p role="alert" className="p-5 text-sm text-red-600">
-                  {th ? 'กรุณาปรับราคาต่ำสุดให้ไม่เกินราคาสูงสุด' : 'Minimum price must not exceed maximum price.'}
-                </p>
-              )}
-              {loading && !displayed.length && (
-                <div className="space-y-4 p-3" role="status">
-                  <span className="sr-only">{th ? 'กำลังโหลดประกาศ' : 'Loading listings'}</span>
-                  {[0, 1, 2].map((item) => (
-                    <div key={item} className="flex animate-pulse gap-3">
-                      <div className="h-28 w-28 shrink-0 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
-                      <div className="flex-1 space-y-3 py-2">
-                        <div className="h-3 w-2/3 rounded bg-neutral-100 dark:bg-neutral-800" />
-                        <div className="h-4 rounded bg-neutral-100 dark:bg-neutral-800" />
-                        <div className="h-3 rounded bg-neutral-100 dark:bg-neutral-800" />
-                        <div className="h-5 w-1/2 rounded bg-neutral-100 dark:bg-neutral-800" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {displayed.slice(0, visibleCount).map((listing) => (
-                <MapResultCard
-                  key={listing.id}
-                  listing={listing}
-                  onHover={setHoveredId}
-                  onLocate={() => {
-                    setCenter({ lat: listing.map.lat, lon: listing.map.lng })
-                    setZoom(17)
-                    setHoveredId(listing.id)
-                    setMobilePanelOpen(false)
-                  }}
-                />
-              ))}
-              {!loading && !failed && !invalidPrice && !displayed.length && (
-                <div className="px-5 py-10 text-center">
-                  <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#edf6f1] text-[#176b50]">
-                    <MapPin className="size-6" />
-                  </span>
-                  <h3 className="mt-4 text-base font-semibold">
-                    {th ? 'ยังไม่พบประกาศที่ตรงกัน' : 'No matching listings yet'}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-neutral-500">
-                    {th
-                      ? 'ลองขยายบริเวณค้นหา หรือเลือกหมวดและช่วงราคาเพิ่มเติม'
-                      : 'Try a wider area, more categories or a different budget.'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={area ? () => setArea(null) : reset}
-                    className="mt-5 min-h-11 rounded-xl bg-[#176b50] px-5 text-sm font-semibold text-white"
-                  >
-                    {area ? (th ? 'ดูทุกบริเวณ' : 'Show all areas') : th ? 'ล้างตัวกรอง' : 'Clear filters'}
-                  </button>
-                </div>
-              )}
-              {matchingRows.length > mapRows.length && (
-                <p className="px-4 py-3 text-xs text-neutral-500">
-                  {th
-                    ? `${matchingRows.length - mapRows.length} ประกาศยังไม่มีพิกัด`
-                    : `${matchingRows.length - mapRows.length} listings have no coordinates`}
-                </p>
-              )}
-              {displayed.length > visibleCount && (
-                <button
-                  type="button"
-                  onClick={() => setPagination({ key: resultsKey, count: visibleCount + 20 })}
-                  className="my-3 min-h-11 w-full rounded-xl border border-[#d4e7dd] text-sm font-semibold text-[#176b50] hover:bg-[#edf6f1]"
+                {(keyword || area) && (
+                  <div className={`${styles.resultsTags} mt-2 flex flex-wrap gap-1.5`}>
+                    {keyword && (
+                      <button
+                        type="button"
+                        onClick={() => setKeyword('')}
+                        className="flex max-w-full items-center gap-1 rounded-lg bg-[#edf6f1] px-2 py-1 text-xs text-[#176b50]"
+                      >
+                        <span className="truncate">{keyword}</span>
+                        <X className="size-3 shrink-0" />
+                      </button>
+                    )}
+                    {area && (
+                      <button
+                        type="button"
+                        onClick={() => setArea(null)}
+                        className="flex items-center gap-1 rounded-lg bg-[#edf6f1] px-2 py-1 text-xs text-[#176b50]"
+                      >
+                        {th ? 'จำกัดบริเวณ' : 'Area filter'}
+                        <X className="size-3" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <label
+                  className={`${styles.resultsSort} mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500`}
                 >
-                  {th
-                    ? `ดูประกาศเพิ่มเติม (${displayed.length - visibleCount})`
-                    : `Show more (${displayed.length - visibleCount})`}
-                </button>
-              )}
+                  <span>{th ? 'เรียงตาม' : 'Sort by'}</span>
+                  <select
+                    value={sort}
+                    onChange={(event) => setSort(event.target.value as PropertyMapSort)}
+                    className="h-9 max-w-[70%] rounded-lg border-neutral-200 bg-transparent py-0 text-xs font-medium text-neutral-700 focus:border-[#176b50] focus:ring-[#176b50] dark:border-neutral-700 dark:text-neutral-200"
+                  >
+                    <option value="recommended">{th ? 'แนะนำ' : 'Recommended'}</option>
+                    <option value="newest">{th ? 'ใหม่ล่าสุด' : 'Newest'}</option>
+                    <option value="price_low">{th ? 'ราคาต่ำก่อน' : 'Lowest price'}</option>
+                    <option value="price_high">{th ? 'ราคาสูงก่อน' : 'Highest price'}</option>
+                    <option value="area_large">{th ? 'พื้นที่มากก่อน' : 'Largest area'}</option>
+                  </select>
+                </label>
+              </div>
+              <div
+                ref={resultsRef}
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
+                aria-busy={loading}
+              >
+                {failed && (
+                  <div role="alert" className="m-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                    <p>{th ? 'โหลดประกาศไม่ครบ กรุณาลองอีกครั้ง' : 'Some listings could not load. Please retry.'}</p>
+                    <button
+                      type="button"
+                      onClick={() => setRetry(retry + 1)}
+                      className="mt-2 min-h-9 font-semibold underline"
+                    >
+                      {th ? 'ลองอีกครั้ง' : 'Retry'}
+                    </button>
+                  </div>
+                )}
+                {invalidPrice && (
+                  <p role="alert" className="p-5 text-sm text-red-600">
+                    {th ? 'กรุณาปรับราคาต่ำสุดให้ไม่เกินราคาสูงสุด' : 'Minimum price must not exceed maximum price.'}
+                  </p>
+                )}
+                {loading && !displayed.length && (
+                  <div className="space-y-4 p-3" role="status">
+                    <span className="sr-only">{th ? 'กำลังโหลดประกาศ' : 'Loading listings'}</span>
+                    {[0, 1, 2].map((item) => (
+                      <div key={item} className="flex animate-pulse gap-3">
+                        <div className="h-28 w-28 shrink-0 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+                        <div className="flex-1 space-y-3 py-2">
+                          <div className="h-3 w-2/3 rounded bg-neutral-100 dark:bg-neutral-800" />
+                          <div className="h-4 rounded bg-neutral-100 dark:bg-neutral-800" />
+                          <div className="h-3 rounded bg-neutral-100 dark:bg-neutral-800" />
+                          <div className="h-5 w-1/2 rounded bg-neutral-100 dark:bg-neutral-800" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {displayed.slice(0, visibleCount).map((listing) => (
+                  <MapResultCard
+                    key={listing.id}
+                    listing={listing}
+                    onHover={setHoveredId}
+                    onLocate={() => {
+                      setCenter({ lat: listing.map.lat, lon: listing.map.lng })
+                      setZoom(17)
+                      setHoveredId(listing.id)
+                      setMobilePanelOpen(false)
+                    }}
+                  />
+                ))}
+                {!loading && !failed && !invalidPrice && !displayed.length && (
+                  <div className="px-5 py-10 text-center">
+                    <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#edf6f1] text-[#176b50]">
+                      <MapPin className="size-6" />
+                    </span>
+                    <h3 className="mt-4 text-base font-semibold">
+                      {th ? 'ยังไม่พบประกาศที่ตรงกัน' : 'No matching listings yet'}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-neutral-500">
+                      {th
+                        ? 'ลองขยายบริเวณค้นหา หรือเลือกหมวดและช่วงราคาเพิ่มเติม'
+                        : 'Try a wider area, more categories or a different budget.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={area ? () => setArea(null) : reset}
+                      className="mt-5 min-h-11 rounded-xl bg-[#176b50] px-5 text-sm font-semibold text-white"
+                    >
+                      {area ? (th ? 'ดูทุกบริเวณ' : 'Show all areas') : th ? 'ล้างตัวกรอง' : 'Clear filters'}
+                    </button>
+                  </div>
+                )}
+                {matchingRows.length > mapRows.length && (
+                  <p className="px-4 py-3 text-xs text-neutral-500">
+                    {th
+                      ? `${matchingRows.length - mapRows.length} ประกาศยังไม่มีพิกัด`
+                      : `${matchingRows.length - mapRows.length} listings have no coordinates`}
+                  </p>
+                )}
+                {displayed.length > visibleCount && (
+                  <button
+                    type="button"
+                    onClick={() => setPagination({ key: resultsKey, count: visibleCount + 20 })}
+                    className="my-3 min-h-11 w-full rounded-xl border border-[#d4e7dd] text-sm font-semibold text-[#176b50] hover:bg-[#edf6f1]"
+                  >
+                    {th
+                      ? `ดูประกาศเพิ่มเติม (${displayed.length - visibleCount})`
+                      : `Show more (${displayed.length - visibleCount})`}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </aside>

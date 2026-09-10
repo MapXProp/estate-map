@@ -8,12 +8,15 @@ const ts = require('typescript')
 // Exercise the actual API client without browser state or a running backend.
 function client(response, status = 200) {
   const requests = []
+  const signals = []
   const context = {
     exports: {},
     URLSearchParams,
     setTimeout,
     require: () => ({ getAuthApiUrl: (route) => `https://example.invalid/apix/${route}` }),
-    fetch: async (url) => {
+    fetch: async (url, options) => {
+      signals.push(options.signal)
+      options.signal?.throwIfAborted()
       requests.push(new URL(url))
       return { ok: status === 200, status, json: async () => response }
     },
@@ -23,7 +26,12 @@ function client(response, status = 200) {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
   }).outputText
   vm.runInNewContext(compiled, context, { filename })
-  return { fetchSummary: context.exports.fetchPropertyListingSummary, requests }
+  return {
+    fetchSummary: context.exports.fetchPropertyListingSummary,
+    fetchDetail: context.exports.fetchPropertyListingDetail,
+    requests,
+    signals,
+  }
 }
 
 const oldListing = {
@@ -55,4 +63,14 @@ test('missing links and stale API responses never display another property', asy
 
 test('an API outage remains an error rather than a missing listing', async () => {
   await assert.rejects(client({}, 503).fetchSummary(oldListing.slug), /property search failed/)
+})
+
+test('selected property photo requests support cancellation without retrying an aborted request', async () => {
+  const controller = new AbortController()
+  const api = client(oldListing)
+  assert.equal((await api.fetchDetail(oldListing.slug, controller.signal)).id, 6)
+  assert.equal(api.signals[0], controller.signal)
+  controller.abort()
+  await assert.rejects(api.fetchDetail(oldListing.slug, controller.signal), { name: 'AbortError' })
+  assert.equal(api.signals.length, 2)
 })

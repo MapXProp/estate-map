@@ -439,16 +439,20 @@ export const fetchPropertyListingSummary = async (handle: string): Promise<Prope
   )
 }
 
-export const fetchPropertyListingDetail = async (slug: string): Promise<PropertyListingDetail | null> => {
+export const fetchPropertyListingDetail = async (
+  slug: string,
+  signal?: AbortSignal
+): Promise<PropertyListingDetail | null> => {
   const url = `${getAuthApiUrl('listings')}/${encodeURIComponent(slug)}`
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const response = await fetch(url, { cache: 'no-store' })
+      const response = await fetch(url, { cache: 'no-store', signal })
       if (response.status === 404) return null
       if (!response.ok) throw new Error('property listing detail failed')
       return response.json() as Promise<PropertyListingDetail>
-    } catch {
+    } catch (error) {
+      if (signal?.aborted) throw error
       // A deployment or brief API restart should not turn an existing listing
       // into a 404. Retry once before letting the page use its catalogue fallback.
       if (attempt === 1) return null

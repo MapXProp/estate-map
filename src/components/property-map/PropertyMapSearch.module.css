@@ -418,6 +418,15 @@
   flex: 1;
   flex-direction: column;
 }
+.resultsList {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.resultsList[hidden] {
+  display: none;
+}
 .resultsHeader {
   flex-shrink: 0;
   border-bottom: 1px solid #eef2ef;
@@ -674,6 +683,10 @@
   }
   .mobilePanelVisible .resultsContent {
     display: flex;
+  }
+  .canvas[data-map-preview-open='true'] .results {
+    height: min(470px, 70%, calc(100% - var(--mobile-panel-ceiling)));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mobilePanelVisible .mobilePanelToggle {
     min-height: 48px;

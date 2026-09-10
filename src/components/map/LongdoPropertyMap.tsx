@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
+import { getMapPreviewTarget } from '@/lib/propertyMapPreview'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -30,7 +31,7 @@ type LongdoMapInstance = {
     clear: () => void
     remove: (overlay: LongdoOverlay) => void
   }
-  location: (location?: LongdoLocation, animate?: boolean) => LongdoLocation
+  location: (location?: LongdoLocation | { x: number; y: number }, animate?: boolean) => LongdoLocation
   zoom: (level?: number, animate?: boolean) => number
   bound: (bounds?: PropertyMapBounds) => PropertyMapBounds
   resize: () => LongdoMapInstance
@@ -110,7 +111,14 @@ const getListingQualityScore = (listing: TRealEstateListing) =>
     Boolean(listing.metadataSummary),
   ].filter(Boolean).length
 
-const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boolean, isThai: boolean) => {
+const getMarkerHtml = (
+  listing: TRealEstateListing,
+  price: string,
+  active: boolean,
+  isThai: boolean,
+  dockedPreview: boolean,
+  previewSelected: boolean
+) => {
   const background = active ? '#123f32' : '#ffffff'
   const color = active ? '#ffffff' : '#173f34'
   const listingPath = `/real-estate-listings/${encodeURIComponent(listing.handle)}`
@@ -133,7 +141,8 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
     <a
       href="${listingPath}"
       data-mapx-marker-link="true"
-      aria-label="${escapeHtml(title)}"
+      aria-label="${dockedPreview ? (isThai ? 'ดูรูปและราคา ' : 'Preview photos and price ') : ''}${escapeHtml(title)}"
+      ${dockedPreview ? `aria-controls="map-property-preview" aria-expanded="${previewSelected}"` : ''}
       class="mapx-price-marker-link"
       style="position:relative;display:block;color:inherit;text-decoration:none;outline:none;"
     >
@@ -143,14 +152,18 @@ const getMarkerHtml = (listing: TRealEstateListing, price: string, active: boole
       <span aria-hidden="true" class="mapx-price-pointer-inner"></span>
     </a>
     <span aria-hidden="true" class="mapx-fan-line"></span>
-    <article data-mapx-hover-card="true" aria-hidden="true" class="mapx-marker-hover-card">
+    ${
+      dockedPreview
+        ? ''
+        : `<article data-mapx-hover-card="true" aria-hidden="true" class="mapx-marker-hover-card">
       ${imageHtml}
       <span style="min-width:0;display:flex;min-height:82px;flex:1;flex-direction:column;align-items:flex-start;">
         <span style="margin:1px 0 4px;color:#176b50;font-size:10px;font-weight:700;">${categoryLabel}${promotedLabel ? ` · ${promotedLabel}` : ''}</span>
         <strong style="display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;line-height:1.35;font-weight:700;text-align:left;">${escapeHtml(title)}</strong>
         <span style="margin-top:auto;font-size:13px;font-weight:700;white-space:nowrap;">${escapeHtml(price)}</span>
       </span>
-    </article>
+    </article>`
+    }
   </div>`
 }
 
@@ -171,6 +184,8 @@ interface Props {
   zoomControlsClassName?: string
   onLocationSearchFocus?: () => void
   onLocationSearch?: (location: LongdoLocation, label: string) => void
+  onMarkerSelect?: (id: string) => void
+  previewListingId?: string
 }
 
 const LongdoPropertyMap = ({
@@ -190,6 +205,8 @@ const LongdoPropertyMap = ({
   zoomControlsClassName,
   onLocationSearchFocus,
   onLocationSearch,
+  onMarkerSelect,
+  previewListingId = '',
 }: Props) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
@@ -207,6 +224,7 @@ const LongdoPropertyMap = ({
   const declutterAnimationFrameRef = useRef<number | null>(null)
   const declutterMarkersRef = useRef<() => void>(() => undefined)
   const currentHoverIDRef = useRef(currentHoverID)
+  const previewListingIdRef = useRef(previewListingId)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -234,6 +252,33 @@ const LongdoPropertyMap = ({
     [searchSourceListings]
   )
   const listingsById = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings])
+
+  useEffect(() => {
+    const map = mapRef.current
+    const container = placeholderRef.current
+    const listing = listingsById.get(previewListingId)
+    if (!mapReady || !map || !container || !listing) return
+    const frame = window.requestAnimationFrame(() => {
+      const canvas = container.closest('[data-map-canvas]')
+      const panel = canvas?.querySelector<HTMLElement>('[data-map-results-panel]')
+      if (!panel) return
+      map.resize()
+      const rect = container.getBoundingClientRect()
+      const search = searchContainerRef.current?.getBoundingClientRect()
+      const target = getMapPreviewTarget(
+        rect,
+        panel.getBoundingClientRect(),
+        window.matchMedia('(max-width: 1023px)').matches,
+        search?.bottom || rect.top
+      )
+      map.location(getListingLocation(listing), false)
+      // Longdo can resolve any screen point to a location. Offset the camera,
+      // while every property marker keeps its stored latitude and longitude.
+      const camera = map.location({ x: rect.width - target.x, y: rect.height - target.y })
+      map.location(camera, false)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [listingsById, mapReady, previewListingId])
 
   const applyMarkerDeclutter = useCallback(() => {
     const map = mapRef.current
@@ -379,15 +424,19 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     currentHoverIDRef.current = currentHoverID
+    previewListingIdRef.current = previewListingId
 
     const mapContainer = placeholderRef.current
     if (!mapContainer) return
 
     mapContainer.querySelectorAll<HTMLElement>('[data-mapx-price-marker="true"]').forEach((root) => {
       root.classList.toggle('is-active', root.dataset.mapxListingId === currentHoverID)
+      root
+        .querySelector('[aria-controls="map-property-preview"]')
+        ?.setAttribute('aria-expanded', String(root.dataset.mapxListingId === previewListingId))
     })
     scheduleMarkerDeclutter()
-  }, [currentHoverID, scheduleMarkerDeclutter])
+  }, [currentHoverID, previewListingId, scheduleMarkerDeclutter])
 
   useEffect(
     () => () => {
@@ -442,6 +491,14 @@ const LongdoPropertyMap = ({
       const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"]')
       if (!link && !propertyLink) return
 
+      const markerId = link?.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
+      if (markerId && onMarkerSelect && placeholderRef.current?.contains(link)) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        onMarkerSelect(markerId)
+        return
+      }
+
       rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
 
       if (!link) return
@@ -453,7 +510,7 @@ const LongdoPropertyMap = ({
 
     document.addEventListener('click', handleListingLink, true)
     return () => document.removeEventListener('click', handleListingLink, true)
-  }, [router])
+  }, [onMarkerSelect, router])
 
   useEffect(() => {
     const container = placeholderRef.current
@@ -729,7 +786,14 @@ const LongdoPropertyMap = ({
       const marker = new longdo.Marker(locations[index], {
         clickable: true,
         icon: {
-          html: getMarkerHtml(listing, displayPrices[index], active, isThai),
+          html: getMarkerHtml(
+            listing,
+            displayPrices[index],
+            active,
+            isThai,
+            Boolean(onMarkerSelect),
+            listing.id === previewListingIdRef.current
+          ),
           // The exact coordinate is the bottom tip of the marker, never the price label.
           offset: { x: 0, y: 0 },
         },
@@ -741,7 +805,7 @@ const LongdoPropertyMap = ({
     scheduleMarkerDeclutter()
     const settleTimers = [100, 500, 1500, 4000].map((delay) => window.setTimeout(scheduleMarkerDeclutter, delay))
     return () => settleTimers.forEach((timer) => window.clearTimeout(timer))
-  }, [displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter])
+  }, [displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter, onMarkerSelect])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
