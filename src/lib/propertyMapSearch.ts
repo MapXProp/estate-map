@@ -49,41 +49,71 @@ export const landMapCategoryIds = mapCategoryGroups.flatMap((group) =>
   group.options.filter((option) => option.propertyType === 'land').map((option) => option.id)
 )
 
-export const isLandOnlyMapSelection = (categories: string[]) =>
-  new Set(categories).size === landMapCategoryIds.length && landMapCategoryIds.every((id) => categories.includes(id))
-
 export const validMapCategoryIds = new Set(mapCategoryGroups.flatMap((group) => group.options.map((item) => item.id)))
+const landCategoryIds = new Set(landMapCategoryIds)
 
-export function initialMapCategories(filters: Partial<PropertyMapFilterState>, categories: string[] = []) {
-  if (categories.some((id) => validMapCategoryIds.has(id)))
-    return categories.filter((id) => validMapCategoryIds.has(id))
-  const { discoveryChannels: channels = [], propertyTypes = [], spaceTypes = [] } = filters
-  if (!channels.length && !propertyTypes.length && !spaceTypes.length) return []
-  return mapCategoryGroups
-    .filter((group) => !channels.length || channels.includes(group.code))
-    .flatMap((group) =>
-      group.options
-        .filter(
-          (item) =>
-            (!propertyTypes.length && !spaceTypes.length) ||
-            propertyTypes.some((type) => type === item.propertyType || (type === 'retail_space' && !!item.spaceType)) ||
-            spaceTypes.some((type) => type === item.spaceType)
-        )
-        .map((item) => item.id)
-    )
+export const hasMapLandSelection = (categories: string[]) => categories.some((id) => landCategoryIds.has(id))
+
+// Both land buttons represent the same filter, including links saved with just one ID.
+export function normalizeMapCategories(categories: string[]) {
+  const selected = new Set(categories.filter((id) => validMapCategoryIds.has(id)))
+  if (hasMapLandSelection([...selected])) landMapCategoryIds.forEach((id) => selected.add(id))
+  return [...selected]
 }
 
-// Each channel keeps its own property/space selection. Combining all channels
-// and types into independent arrays would incorrectly broaden a mixed selection.
+export const isLandOnlyMapSelection = (categories: string[]) => {
+  const selected = normalizeMapCategories(categories)
+  return selected.length === landMapCategoryIds.length && hasMapLandSelection(selected)
+}
+
+export function toggleMapCategory(categories: string[], id: string) {
+  const selected = normalizeMapCategories(categories)
+  if (!validMapCategoryIds.has(id)) return selected
+  if (!selected.includes(id)) return normalizeMapCategories([...selected, id])
+  return selected.filter((item) => (landCategoryIds.has(id) ? !landCategoryIds.has(item) : item !== id))
+}
+
+export function toggleMapCategoryGroup(categories: string[], code: DiscoveryChannelCode) {
+  const selected = normalizeMapCategories(categories)
+  const group = mapCategoryGroups.find((item) => item.code === code)
+  if (!group) return selected
+  const ids = new Set(group.options.map((item) => item.id))
+  if (!group.options.every((item) => selected.includes(item.id))) return normalizeMapCategories([...selected, ...ids])
+  const clearsLand = hasMapLandSelection([...ids])
+  return selected.filter((id) => !ids.has(id) && !(clearsLand && landCategoryIds.has(id)))
+}
+
+export function initialMapCategories(filters: Partial<PropertyMapFilterState>, categories: string[] = []) {
+  if (categories.some((id) => validMapCategoryIds.has(id))) return normalizeMapCategories(categories)
+  const { discoveryChannels: channels = [], propertyTypes = [], spaceTypes = [] } = filters
+  if (!channels.length && !propertyTypes.length && !spaceTypes.length) return []
+  return normalizeMapCategories(
+    mapCategoryGroups
+      .filter((group) => !channels.length || channels.includes(group.code))
+      .flatMap((group) =>
+        group.options
+          .filter(
+            (item) =>
+              (!propertyTypes.length && !spaceTypes.length) ||
+              propertyTypes.some(
+                (type) => type === item.propertyType || (type === 'retail_space' && !!item.spaceType)
+              ) ||
+              spaceTypes.some((type) => type === item.spaceType)
+          )
+          .map((item) => item.id)
+      )
+  )
+}
+
+// Keep other types tied to their channel; land is one shared filter across channels.
 export function mapCategoryQueries(categories: string[]): PropertySearchOptions[] {
-  const selected = new Set(categories.filter((id) => validMapCategoryIds.has(id)))
+  const selected = new Set(normalizeMapCategories(categories))
   if (!selected.size) return [{}]
-  // Include land even when it has not been assigned to a discovery channel.
-  if (isLandOnlyMapSelection([...selected])) return [{ propertyTypes: ['land'] }]
-  return mapCategoryGroups.flatMap((group) => {
-    const options = group.options.filter((item) => selected.has(item.id))
+  const landSelected = hasMapLandSelection([...selected])
+  const queries: PropertySearchOptions[] = mapCategoryGroups.flatMap((group) => {
+    const options = group.options.filter((item) => selected.has(item.id) && !landCategoryIds.has(item.id))
     if (!options.length) return []
-    const wholeGroup = options.length === group.options.length
+    const wholeGroup = group.options.every((item) => selected.has(item.id))
     return [
       {
         discoveryChannel: group.code as DiscoveryChannelCode,
@@ -92,6 +122,9 @@ export function mapCategoryQueries(categories: string[]): PropertySearchOptions[
       },
     ]
   })
+  // Include unassigned land too, without fetching it separately for each button.
+  if (landSelected) queries.push({ propertyTypes: ['land'] })
+  return queries
 }
 
 export async function fetchCompleteMapSearch(

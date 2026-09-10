@@ -11,12 +11,15 @@ import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/d
 import {
   fetchCompleteMapSearch,
   hasMapCoordinates,
+  hasMapLandSelection,
   initialMapCategories,
   isLandOnlyMapSelection,
   landMapCategoryIds,
   mapCategoryGroups,
   mapListingPrice,
   matchesMapDetails,
+  toggleMapCategory,
+  toggleMapCategoryGroup,
 } from '@/lib/propertyMapSearch'
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import Logo from '@/shared/Logo'
@@ -284,8 +287,7 @@ export default function PropertyMapSearch({
     setKeyword('')
     setArea(null)
   }
-  const toggleCategory = (id: string) =>
-    setCategories((previous) => (previous.includes(id) ? previous.filter((item) => item !== id) : [...previous, id]))
+  const toggleCategory = (id: string) => setCategories((previous) => toggleMapCategory(previous, id))
   const togglePanel = () => {
     setPanelOpen((previous) => !previous)
     setResizeId((previous) => previous + 1)
@@ -391,12 +393,12 @@ export default function PropertyMapSearch({
             <button
               type="button"
               data-map-land-shortcut
-              aria-pressed={isLandOnlyMapSelection(categories)}
+              aria-pressed={hasMapLandSelection(categories)}
               onClick={() => {
-                setCategories(isLandOnlyMapSelection(categories) ? [] : [...landMapCategoryIds])
+                toggleCategory(landMapCategoryIds[0])
                 setMobileGroup('homes')
               }}
-              className={`${styles.landShortcut} ${isLandOnlyMapSelection(categories) ? styles.activeLandShortcut : ''}`}
+              className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
             >
               <LandPlot className="size-4" />
               {th ? 'ที่ดิน' : 'Land'}
@@ -479,12 +481,7 @@ export default function PropertyMapSearch({
                       <button
                         type="button"
                         aria-pressed={allSelected}
-                        onClick={() =>
-                          setCategories((previous) => [
-                            ...previous.filter((id) => !id.startsWith(`${group.code}:`)),
-                            ...(allSelected ? [] : group.options.map((item) => item.id)),
-                          ])
-                        }
+                        onClick={() => setCategories((previous) => toggleMapCategoryGroup(previous, group.code))}
                         className={styles.selectGroup}
                       >
                         {allSelected ? (th ? 'ล้างกลุ่มนี้' : 'Clear group') : th ? 'เลือกทั้งกลุ่ม' : 'Select group'}

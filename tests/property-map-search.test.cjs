@@ -71,7 +71,7 @@ test('existing channel/type links select the corresponding visible chips', () =>
     model().initialMapCategories({ discoveryChannels: ['business'], propertyTypes: ['retail_space'] }).length,
     11
   )
-  assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land'])
+  assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land', 'business:land'])
 })
 
 test('business sections keep land with buildings and expose all 19 choices once', () => {
@@ -92,7 +92,7 @@ test('the land shortcut searches land across all channels and keeps offer filter
     return { listings: [makeListing(6)], total: 1 }
   })
   assert.equal(api.isLandOnlyMapSelection([]), false)
-  assert.equal(api.isLandOnlyMapSelection(['homes:land']), false)
+  assert.equal(api.isLandOnlyMapSelection(['homes:land']), true)
   assert.equal(api.isLandOnlyMapSelection(api.landMapCategoryIds), true)
   assert.equal(api.isLandOnlyMapSelection([...api.landMapCategoryIds, 'homes:condo']), false)
   const results = await api.fetchCompleteMapSearch(
@@ -110,6 +110,117 @@ test('the land shortcut searches land across all channels and keeps offer filter
     )
   )
   assert.equal(results.length, 1)
+})
+
+test('either land button selects and clears both copies while retaining other categories', () => {
+  const api = model()
+  for (const id of api.landMapCategoryIds) {
+    const selected = api.toggleMapCategory(['homes:condo'], id)
+    assert.deepEqual(plain(selected).sort(), ['business:land', 'homes:condo', 'homes:land'])
+    assert.equal(api.hasMapLandSelection(selected), true)
+    for (const clearId of api.landMapCategoryIds) {
+      const cleared = api.toggleMapCategory(selected, clearId)
+      assert.deepEqual(plain(cleared), ['homes:condo'])
+      assert.equal(api.hasMapLandSelection(cleared), false)
+    }
+    assert.deepEqual(plain(api.toggleMapCategory(selected, 'homes:condo')).sort(), plain(api.landMapCategoryIds).sort())
+    assert.deepEqual(plain(api.toggleMapCategory([id], id)), [])
+  }
+  assert.deepEqual(plain(api.normalizeMapCategories(['unknown', 'homes:land', 'homes:land'])), [
+    'homes:land',
+    'business:land',
+  ])
+  assert.deepEqual(plain(api.toggleMapCategory(['homes:condo'], 'unknown')), ['homes:condo'])
+})
+
+test('selecting and clearing whole groups keeps the shared land choice consistent', () => {
+  const api = model()
+  for (const code of ['homes', 'business']) {
+    const selected = api.toggleMapCategoryGroup(['rooms:condo'], code)
+    const group = api.mapCategoryGroups.find((item) => item.code === code)
+    assert.ok(group.options.every((item) => selected.includes(item.id)))
+    assert.ok(api.landMapCategoryIds.every((id) => selected.includes(id)))
+    assert.deepEqual(plain(api.toggleMapCategoryGroup(selected, code)), ['rooms:condo'])
+  }
+  const homesThenBusiness = api.toggleMapCategoryGroup(api.toggleMapCategoryGroup([], 'homes'), 'business')
+  const clearedBusiness = api.toggleMapCategoryGroup(homesThenBusiness, 'business')
+  assert.deepEqual(
+    plain(clearedBusiness).sort(),
+    plain(api.mapCategoryGroups.find((group) => group.code === 'homes').options.map((item) => item.id))
+      .filter((id) => id !== 'homes:land')
+      .sort()
+  )
+  const roomsSelected = api.toggleMapCategoryGroup(['homes:land'], 'rooms')
+  assert.deepEqual(
+    plain(api.toggleMapCategoryGroup(roomsSelected, 'rooms')).sort(),
+    plain(api.landMapCategoryIds).sort()
+  )
+})
+
+test('saved single-land links and legacy links initialize both land buttons', () => {
+  const api = model()
+  for (const id of api.landMapCategoryIds) {
+    assert.deepEqual(plain(api.initialMapCategories({}, [id])).sort(), plain(api.landMapCategoryIds).sort())
+  }
+  for (const discoveryChannel of ['homes', 'business']) {
+    assert.deepEqual(
+      plain(api.initialMapCategories({ discoveryChannels: [discoveryChannel], propertyTypes: ['land'] })).sort(),
+      plain(api.landMapCategoryIds).sort()
+    )
+  }
+  const restored = api.initialMapCategories({}, ['business:land', 'homes:condo'])
+  assert.deepEqual(plain(restored).sort(), ['business:land', 'homes:condo', 'homes:land'])
+  assert.equal(api.hasMapLandSelection(restored), true)
+  assert.equal(api.isLandOnlyMapSelection(restored), false)
+})
+
+test('mixed land and other categories query land globally once and preserve search filters', async () => {
+  const requests = []
+  const land = { ...makeListing(6), property_type_code: 'land', discovery_channels: [] }
+  const condo = { ...makeListing(7), property_type_code: 'condo' }
+  const api = model(async (query, _signal, options) => {
+    requests.push({ query, options })
+    return { listings: options.discoveryChannel ? [condo] : [land], total: 1 }
+  })
+  const categories = ['homes:condo', 'homes:land', 'business:land', 'business:office']
+  assert.deepEqual(plain(api.mapCategoryQueries(categories)), [
+    { discoveryChannel: 'homes', propertyTypes: ['condo'], spaceTypes: [] },
+    { discoveryChannel: 'business', propertyTypes: ['office'], spaceTypes: [] },
+    { propertyTypes: ['land'] },
+  ])
+  const filters = { offerTypes: ['sale', 'rent'], minPrice: '100000', maxPrice: '9000000' }
+  const result = await api.fetchCompleteMapSearch('สุทธิสาร', categories, filters, new AbortController().signal)
+  assert.equal(requests.length, 3)
+  assert.equal(requests.filter(({ options }) => !options.discoveryChannel).length, 1)
+  for (const { query, options } of requests) {
+    assert.equal(query, 'สุทธิสาร')
+    assert.deepEqual(plain(options.offerTypes), filters.offerTypes)
+    assert.equal(options.minPrice, filters.minPrice)
+    assert.equal(options.maxPrice, filters.maxPrice)
+  }
+  assert.deepEqual(plain(result.map((item) => item.id)).sort(), [6, 7])
+})
+
+test('whole business group still includes legacy listings without a retail subtype and deduplicates land', async () => {
+  const legacyRetail = { ...makeListing(8), property_type_code: 'retail_space' }
+  const land = { ...makeListing(6), property_type_code: 'land' }
+  const api = model(async (_query, _signal, options) => {
+    if (options.discoveryChannel === 'business') {
+      assert.deepEqual(plain(options.propertyTypes), [])
+      assert.deepEqual(plain(options.spaceTypes), [])
+      return { listings: [legacyRetail, land], total: 2 }
+    }
+    assert.equal(options.discoveryChannel, undefined)
+    assert.deepEqual(plain(options.propertyTypes), ['land'])
+    return { listings: [land], total: 1 }
+  })
+  const result = await api.fetchCompleteMapSearch(
+    '',
+    api.toggleMapCategoryGroup([], 'business'),
+    {},
+    new AbortController().signal
+  )
+  assert.deepEqual(plain(result.map((item) => item.id)).sort(), [6, 8])
 })
 
 test('pagination includes all 137 matches and preserves exact coordinates', async () => {

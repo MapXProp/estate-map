@@ -23,6 +23,7 @@ export type PropertyMapAreaSearch = {
 }
 type LongdoOverlay = object
 type LongdoMapInstance = {
+  Ui: { Crosshair: { visible: (state: boolean) => unknown } }
   Event: { bind: (event: string, callback: () => void) => void }
   Overlays: {
     add: (overlay: LongdoOverlay) => void
@@ -616,6 +617,7 @@ const LongdoPropertyMap = ({
       autoResize: true,
       ui: window.longdo.UiComponent.None,
     })
+    map.Ui.Crosshair.visible(false)
 
     let enableViewportEventsTimer: ReturnType<typeof setTimeout> | undefined
     const notifyViewportChange = () => {
