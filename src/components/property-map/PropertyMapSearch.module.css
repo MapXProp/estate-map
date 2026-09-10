@@ -418,8 +418,27 @@
   flex: 1;
   flex-direction: column;
 }
+.resultsHeader {
+  flex-shrink: 0;
+  border-bottom: 1px solid #eef2ef;
+  padding: 16px;
+}
+.resultsHeading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
 .mobilePanelToggle {
   display: none;
+}
+.mobilePanelAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #176b50;
+  font-size: 12px;
 }
 .locationSearch {
   position: absolute;
@@ -495,7 +514,17 @@
 }
 @media (max-width: 1023px) {
   .categories {
+    max-height: calc(100% - 180px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 5px 12px 8px;
+  }
+  .canvas {
+    --mobile-search-top: 10px;
+    --mobile-search-height: 44px;
+    --mobile-panel-ceiling: 68px;
+    --mobile-panel-height: min(65%, calc(100% - var(--mobile-panel-ceiling)));
+    --mobile-panel-peek: calc(56px + env(safe-area-inset-bottom, 0px));
   }
   .groups {
     display: block;
@@ -580,21 +609,34 @@
   }
   .locationSearch,
   .panelVisible .locationSearch {
-    top: 12px;
+    top: var(--mobile-search-top);
     left: 12px;
     width: calc(100% - 24px);
     max-width: none;
     transform: none;
   }
+  .locationSearch [data-map-location-field] {
+    height: var(--mobile-search-height);
+    box-shadow: 0 3px 12px #123f3214;
+  }
+  .locationSearch [role='listbox'] {
+    max-height: min(260px, 35dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .areaControl,
   .panelVisible .areaControl {
-    top: 74px;
+    top: calc(var(--mobile-search-top) + var(--mobile-search-height) + 12px);
     left: 50%;
     white-space: nowrap;
   }
   .zoomControls {
     right: 12px;
-    bottom: 88px;
+    bottom: calc(var(--mobile-panel-peek) + 12px);
+  }
+  .mobilePanelVisible .zoomControls,
+  .mobilePanelVisible .areaControl {
+    display: none;
   }
   .results,
   .panelVisible .results {
@@ -605,30 +647,69 @@
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: calc(100% - 12px);
+    height: var(--mobile-panel-peek);
+    max-height: calc(100% - var(--mobile-panel-ceiling));
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -4px 24px #153b2520;
   }
   .mobilePanelToggle {
     display: block;
     width: 100%;
-    min-height: 64px;
+    min-height: var(--mobile-panel-peek);
     flex-shrink: 0;
-    padding: 8px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
     text-align: left;
+    cursor: pointer;
+  }
+  .mobilePanelToggle:focus-visible {
+    outline: 2px solid #176b50;
+    outline-offset: -3px;
   }
   .resultsContent {
     display: none;
   }
   .mobilePanelVisible .results {
-    height: calc(100% - 12px);
+    height: var(--mobile-panel-height);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .mobilePanelVisible .resultsContent {
     display: flex;
   }
   .mobilePanelVisible .mobilePanelToggle {
-    min-height: 50px;
+    min-height: 48px;
     padding-bottom: 8px;
+  }
+  .resultsHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 8px;
+    padding: 8px 12px;
+  }
+  .resultsHeading {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .resultsTitle {
+    display: none;
+  }
+  .resultsMeta {
+    margin-top: 0;
+  }
+  .resultsSort {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 6px;
+    margin-top: 0;
+  }
+  .resultsSort select {
+    width: 124px;
+    max-width: 124px;
+  }
+  .resultsTags {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 0;
   }
   .openPanel {
     display: none;
@@ -693,6 +774,7 @@
 }
 :global(.dark) .categories,
 :global(.dark) .results,
+:global(.dark) .resultsHeader,
 :global(.dark) .detailsButton {
   border-color: #324037;
 }
@@ -733,6 +815,9 @@
 :global(.dark) .selectionSummary,
 :global(.dark) .resetButton {
   color: #a6b9ad;
+}
+:global(.dark) .mobilePanelAction {
+  color: #a0dab9;
 }
 :global(.dark) .homes {
   --category-ink: #a0dab9;

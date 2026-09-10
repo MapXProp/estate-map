@@ -89,8 +89,10 @@ const escapeHtml = (value: string | number) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 
-const getListingLocation = (listing: TRealEstateListing): LongdoLocation =>
-  ({ lon: listing.map.lng, lat: listing.map.lat })
+const getListingLocation = (listing: TRealEstateListing): LongdoLocation => ({
+  lon: listing.map.lng,
+  lat: listing.map.lat,
+})
 
 const getPromotionTierRank = (tier: TRealEstateListing['mapPromotionTier']) => {
   if (tier === 'premium') return 2
@@ -166,6 +168,7 @@ interface Props {
   exactCoordinates?: boolean
   searchContainerClassName?: string
   zoomControlsClassName?: string
+  onLocationSearchFocus?: () => void
   onLocationSearch?: (location: LongdoLocation, label: string) => void
 }
 
@@ -184,6 +187,7 @@ const LongdoPropertyMap = ({
   exactCoordinates = false,
   searchContainerClassName,
   zoomControlsClassName,
+  onLocationSearchFocus,
   onLocationSearch,
 }: Props) => {
   const { locale, formatCurrencyFrom } = usePreferences()
@@ -549,9 +553,12 @@ const LongdoPropertyMap = ({
         setIsSearchFocused(false)
         searchInputRef.current?.blur()
 
-        const nextSearchParams = new URLSearchParams(window.location.search)
-        nextSearchParams.set('q', place.name || keyword)
-        router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false })
+        // The dedicated map page owns its viewport URL and local panel state.
+        if (!onLocationSearchRef.current) {
+          const nextSearchParams = new URLSearchParams(window.location.search)
+          nextSearchParams.set('q', place.name || keyword)
+          router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false })
+        }
       } catch {
         setSearchMessage('ค้นหาสถานที่ไม่สำเร็จ กรุณาลองอีกครั้ง')
         setIsSearchFocused(true)
@@ -585,6 +592,17 @@ const LongdoPropertyMap = ({
       searchInputRef.current?.blur()
     }
   }
+
+  useEffect(() => {
+    if (!isSearchFocused || activeSuggestionIndex < 0) return
+    const listbox = searchContainerRef.current?.querySelector<HTMLElement>('[role="listbox"]')
+    const active = listbox?.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!listbox || !active) return
+    const bounds = listbox.getBoundingClientRect()
+    const option = active.getBoundingClientRect()
+    if (option.bottom > bounds.bottom) listbox.scrollTop += option.bottom - bounds.bottom
+    else if (option.top < bounds.top) listbox.scrollTop -= bounds.top - option.top
+  }, [activeSuggestionIndex, isSearchFocused])
 
   useEffect(() => {
     if (!sdkReady || !placeholderRef.current || !window.longdo || mapRef.current) return
@@ -667,7 +685,10 @@ const LongdoPropertyMap = ({
       })
     })
     observer.observe(container)
-    return () => { observer.disconnect(); window.cancelAnimationFrame(frame) }
+    return () => {
+      observer.disconnect()
+      window.cancelAnimationFrame(frame)
+    }
   }, [mapReady])
 
   useEffect(() => {
@@ -752,7 +773,9 @@ const LongdoPropertyMap = ({
   }, [areaSearchRequestId, mapReady, onSearchArea, searchSourceListings, searchSourceLocations])
 
   return (
-    <div className={`relative size-full overflow-hidden bg-[#eef3f0] ${exactCoordinates ? 'mapx-exact-coordinates' : ''}`}>
+    <div
+      className={`relative size-full overflow-hidden bg-[#eef3f0] ${exactCoordinates ? 'mapx-exact-coordinates' : ''}`}
+    >
       <style>{`
         .mapx-price-marker {
           cursor: pointer;
@@ -962,6 +985,7 @@ const LongdoPropertyMap = ({
         <>
           <div
             ref={searchContainerRef}
+            data-map-location-search
             className={`${searchContainerClassName || 'absolute top-3 left-1/2 z-20 w-[min(92%,26rem)] -translate-x-1/2'} ${
               mobileControlsVisible ? '' : 'max-lg:hidden'
             }`}
@@ -975,7 +999,10 @@ const LongdoPropertyMap = ({
               }, 150)
             }}
           >
-            <div className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35">
+            <div
+              data-map-location-field
+              className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35"
+            >
               <Search className="me-2.5 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
               <input
                 ref={searchInputRef}
@@ -992,12 +1019,15 @@ const LongdoPropertyMap = ({
                   activeSuggestionIndex >= 0 ? `longdo-location-suggestion-${activeSuggestionIndex}` : undefined
                 }
                 placeholder="ค้นหาเขต ย่าน ถนน หรือสถานที่"
-                className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none placeholder:text-neutral-400"
+                className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0"
                 onChange={(event) => {
                   setSearchText(event.target.value)
                   setSearchMessage('')
                 }}
-                onFocus={() => setIsSearchFocused(true)}
+                onFocus={() => {
+                  setIsSearchFocused(true)
+                  onLocationSearchFocus?.()
+                }}
                 onKeyDown={handleSearchKeyDown}
               />
               {(isSuggesting || isSearching) && (

@@ -290,6 +290,15 @@ export default function PropertyMapSearch({
     setPanelOpen((previous) => !previous)
     setResizeId((previous) => previous + 1)
   }
+  const toggleMobilePanel = () => {
+    if (!mobilePanelOpen) setCategoriesOpen(false)
+    setMobilePanelOpen(!mobilePanelOpen)
+  }
+  const prepareMobileLocationSearch = () => {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    setMobilePanelOpen(false)
+    setCategoriesOpen(false)
+  }
 
   return (
     <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
@@ -405,6 +414,7 @@ export default function PropertyMapSearch({
               aria-expanded={categoriesOpen}
               aria-controls="map-category-options"
               onClick={() => {
+                if (!categoriesOpen) setMobilePanelOpen(false)
                 setCategoriesOpen(!categoriesOpen)
                 setResizeId(resizeId + 1)
               }}
@@ -533,6 +543,8 @@ export default function PropertyMapSearch({
       </section>
 
       <div
+        data-map-canvas
+        data-mobile-results-open={mobilePanelOpen}
         className={`${styles.canvas} ${panelOpen ? styles.panelVisible : ''} ${mobilePanelOpen ? styles.mobilePanelVisible : ''}`}
       >
         <div className={styles.map}>
@@ -546,6 +558,7 @@ export default function PropertyMapSearch({
               exactCoordinates
               searchContainerClassName={styles.locationSearch}
               zoomControlsClassName={styles.zoomControls}
+              onLocationSearchFocus={prepareMobileLocationSearch}
               onViewportChange={() => setViewportDirty(true)}
               areaSearchRequestId={areaRequestId}
               onSearchArea={searchArea}
@@ -556,6 +569,7 @@ export default function PropertyMapSearch({
                 setArea(null)
                 setViewportDirty(true)
                 setAreaRequestId((value) => value + 1)
+                setMobilePanelOpen(false)
               }}
               resizeRequestId={resizeId}
             />
@@ -582,32 +596,49 @@ export default function PropertyMapSearch({
           </button>
         )}
 
-        <aside className={styles.results} aria-label={th ? 'ประกาศที่ค้นพบ' : 'Property results'}>
+        <aside
+          data-map-results-panel
+          className={styles.results}
+          aria-label={th ? 'ประกาศที่ค้นพบ' : 'Property results'}
+        >
           <button
             type="button"
+            data-map-mobile-panel-toggle
             className={styles.mobilePanelToggle}
             aria-expanded={mobilePanelOpen}
             aria-controls="map-results-content"
-            onClick={() => setMobilePanelOpen(!mobilePanelOpen)}
+            aria-label={
+              mobilePanelOpen
+                ? th
+                  ? 'ย่อรายการเพื่อดูแผนที่'
+                  : 'Collapse listings to view map'
+                : th
+                  ? `เปิดรายการ ${displayed.length} ประกาศ`
+                  : `Open ${displayed.length} listings`
+            }
+            onClick={toggleMobilePanel}
           >
-            <span className="mx-auto mb-2 block h-1 w-9 rounded-full bg-neutral-300" />
+            <span className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-neutral-300" aria-hidden="true" />
             <span className="flex items-center justify-between text-sm font-semibold">
               <span className="flex items-center gap-2">
                 <List className="size-4 text-[#176b50]" />
-                {th ? `ดู ${displayed.length} ประกาศ` : `${displayed.length} listings`}
+                {th ? `${displayed.length} ประกาศ` : `${displayed.length} listings`}
                 {loading && <LoaderCircle className="size-3.5 animate-spin" />}
               </span>
-              {mobilePanelOpen ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              <span className={styles.mobilePanelAction}>
+                {mobilePanelOpen ? (th ? 'ดูแผนที่' : 'View map') : th ? 'ดูประกาศ' : 'View listings'}
+                {mobilePanelOpen ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              </span>
             </span>
           </button>
           <div id="map-results-content" className={styles.resultsContent}>
-            <div className="shrink-0 border-b border-neutral-100 p-4 dark:border-neutral-800">
-              <div className="flex items-start justify-between gap-2">
+            <div className={styles.resultsHeader}>
+              <div className={styles.resultsHeading}>
                 <div className="min-w-0">
-                  <h2 className="text-base font-semibold">
+                  <h2 className={`${styles.resultsTitle} text-base font-semibold`}>
                     {area ? (th ? 'ประกาศในบริเวณนี้' : 'In this area') : th ? 'ประกาศที่ค้นพบ' : 'Your search results'}
                   </h2>
-                  <p aria-live="polite" className="mt-1 text-xs text-neutral-500">
+                  <p aria-live="polite" className={`${styles.resultsMeta} mt-1 text-xs text-neutral-500`}>
                     {loading
                       ? th
                         ? `กำลังโหลด · พบแล้ว ${mapListings.length} รายการ`
@@ -631,7 +662,7 @@ export default function PropertyMapSearch({
                 </button>
               </div>
               {(keyword || area) && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className={`${styles.resultsTags} mt-2 flex flex-wrap gap-1.5`}>
                   {keyword && (
                     <button
                       type="button"
@@ -654,7 +685,9 @@ export default function PropertyMapSearch({
                   )}
                 </div>
               )}
-              <label className="mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500">
+              <label
+                className={`${styles.resultsSort} mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500`}
+              >
                 <span>{th ? 'เรียงตาม' : 'Sort by'}</span>
                 <select
                   value={sort}
