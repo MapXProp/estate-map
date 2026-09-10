@@ -719,7 +719,6 @@ const LongdoPropertyMap = ({
       map.resize()
       map.repaint()
       declutterMarkersRef.current()
-      placeholderRef.current?.focus({ preventScroll: true })
     }
     const animationFrame = window.requestAnimationFrame(refreshMap)
     const transitionTimer = window.setTimeout(refreshMap, 340)

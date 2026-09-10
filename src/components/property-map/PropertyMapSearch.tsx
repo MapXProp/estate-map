@@ -92,6 +92,7 @@ export default function PropertyMapSearch({
   const [mobileGroup, setMobileGroup] = useState<DiscoveryChannelCode>(
     () => initialFilters.discoveryChannels?.[0] || 'homes'
   )
+  const [mobileGroupOpen, setMobileGroupOpen] = useState(true)
   const shortViewport = useSyncExternalStore(subscribeShortViewport, getShortViewport, getServerShortViewport)
   const [categoriesOverride, setCategoriesOpen] = useState<boolean>()
   const categoriesOpen = categoriesOverride ?? !shortViewport
@@ -428,6 +429,7 @@ export default function PropertyMapSearch({
               onClick={() => {
                 toggleCategory(landMapCategoryIds[0])
                 setMobileGroup('homes')
+                setMobileGroupOpen(true)
               }}
               className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
             >
@@ -482,15 +484,19 @@ export default function PropertyMapSearch({
                     key={group.code}
                     data-map-group={group.code}
                     aria-pressed={mobileGroup === group.code}
+                    aria-expanded={mobileGroup === group.code && mobileGroupOpen}
+                    aria-controls={`map-category-group-${group.code}`}
                     onClick={() => {
+                      setMobileGroupOpen(mobileGroup !== group.code || !mobileGroupOpen)
                       setMobileGroup(group.code)
-                      setResizeId(resizeId + 1)
+                      setResizeId((value) => value + 1)
                     }}
                     className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
                   >
-                    <Icon className="size-4" />
+                    <Icon className="size-4 shrink-0" />
                     <span>{groupNames[group.code][th ? 0 : 1]}</span>
                     {count > 0 && <span className={styles.groupCount}>{count}</span>}
+                    {mobileGroup === group.code && <ChevronDown className={styles.groupChevron} aria-hidden="true" />}
                   </button>
                 )
               })}
@@ -502,8 +508,9 @@ export default function PropertyMapSearch({
                 return (
                   <fieldset
                     key={group.code}
+                    id={`map-category-group-${group.code}`}
                     data-map-category-group={group.code}
-                    className={`${styles.group} ${styles[group.code]} ${mobileGroup === group.code ? styles.mobileActive : ''}`}
+                    className={`${styles.group} ${styles[group.code]} ${mobileGroup === group.code && mobileGroupOpen ? styles.mobileActive : ''}`}
                   >
                     <legend className="sr-only">{groupNames[group.code][th ? 0 : 1]}</legend>
                     <div className={styles.groupHeading}>
