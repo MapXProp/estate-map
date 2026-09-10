@@ -20,7 +20,7 @@ import airlineLogo3 from '@/images/flights/logo3.png'
 import airlineLogo4 from '@/images/flights/logo4.png'
 import { getAuthApiUrl } from '@/lib/auth'
 import { formatMoney } from '@/lib/currency'
-import type { PropertySearchListing } from '@/lib/propertySearch'
+import { fetchPropertyListingSummary, type PropertySearchListing } from '@/lib/propertySearch'
 import { getPropertyType, normalizeLegacyPropertyType } from './propertyTaxonomy'
 
 //  STAY LISTING  //
@@ -1321,8 +1321,8 @@ export async function getRealEstateListingCount() {
 }
 
 export const getRealEstateListingByHandle = async (handle: string) => {
-  const listings = await getRealEstateListings()
-  return listings.find((listing) => listing.handle === handle) || null
+  const listing = await fetchPropertyListingSummary(handle)
+  return listing ? toRealEstateListing(listing) : null
 }
 
 export type TRealEstateListing = Awaited<ReturnType<typeof getRealEstateListings>>[number] & {

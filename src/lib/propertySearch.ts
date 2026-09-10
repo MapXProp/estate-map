@@ -279,6 +279,7 @@ export type PropertySearchResponse = {
 export type PropertyDiscoveryChannel = 'homes' | 'rooms' | 'business'
 
 export type PropertySearchOptions = {
+  identifier?: string
   discoveryChannel?: PropertyDiscoveryChannel
   propertyTypes?: string[]
   spaceTypes?: string[]
@@ -306,6 +307,7 @@ export type PropertyMapAreaSearchRequest = {
 }
 
 const appendPropertySearchFilters = (params: URLSearchParams, options: PropertySearchOptions) => {
+  if (options.identifier !== undefined) params.set('identifier', options.identifier)
   if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
   options.propertyTypes?.forEach((value) => params.append('property_type', value))
   options.spaceTypes?.forEach((value) => params.append('space_type', value))
@@ -419,6 +421,20 @@ export const fetchPropertySearch = async (
   })
   if (!response.ok) throw new Error('property search failed')
   return response.json() as Promise<PropertySearchResponse>
+}
+
+export const fetchPropertyListingSummary = async (handle: string): Promise<PropertySearchListing | null> => {
+  const identifier = handle.trim()
+  if (!identifier) return null
+
+  const response = await fetchPropertySearch('', undefined, { identifier, limit: 1 })
+  // Also validate the identity so a stale API that ignores the filter cannot
+  // display an unrelated recent listing under this permalink.
+  return (
+    response.listings.find(
+      (listing) => listing.slug === identifier || listing.public_listing_id.toLowerCase() === identifier.toLowerCase()
+    ) || null
+  )
 }
 
 export const fetchPropertyListingDetail = async (slug: string): Promise<PropertyListingDetail | null> => {
