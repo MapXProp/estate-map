@@ -3,14 +3,13 @@ import PropertyMapSearch from '@/components/property-map/PropertyMapSearch'
 import {
   businessSpaceTypes,
   discoveryChannels,
-  offerTypes,
   propertyTypes,
   type BusinessSpaceTypeCode,
   type DiscoveryChannelCode,
-  type OfferTypeCode,
   type PropertyTypeCode,
 } from '@/data/propertyTaxonomy'
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
+import { initialMapOfferTypes } from '@/lib/propertyMapSearch'
 import { createPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
@@ -22,6 +21,7 @@ type PageSearchParams = Promise<{
   zoom?: string | string[]
   channel?: string | string[]
   offer_type?: string | string[]
+  offer_ui?: string | string[]
   property_type?: string | string[]
   space_type?: string | string[]
   price_min?: string | string[]
@@ -39,7 +39,6 @@ const getSearchParamValues = (value?: string | string[]) =>
 
 const propertyTypeCodes = new Set(propertyTypes.map((item) => item.code))
 const spaceTypeCodes = new Set(businessSpaceTypes.map((item) => item.code))
-const offerTypeCodes = new Set(offerTypes.map((item) => item.code))
 const discoveryChannelCodes = new Set(discoveryChannels.map((item) => item.code))
 
 const getInitialFilters = (search: Awaited<PageSearchParams>): Partial<PropertyMapFilterState> => ({
@@ -52,9 +51,7 @@ const getInitialFilters = (search: Awaited<PageSearchParams>): Partial<PropertyM
   spaceTypes: getSearchParamValues(search.space_type).filter((code): code is BusinessSpaceTypeCode =>
     spaceTypeCodes.has(code as BusinessSpaceTypeCode)
   ),
-  offerTypes: getSearchParamValues(search.offer_type).filter((code): code is OfferTypeCode =>
-    offerTypeCodes.has(code as OfferTypeCode)
-  ),
+  offerTypes: initialMapOfferTypes(search.offer_type),
   minPrice: /^\d+$/.test(getFirstSearchParam(search.price_min)) ? getFirstSearchParam(search.price_min) : '',
   maxPrice: /^\d+$/.test(getFirstSearchParam(search.price_max)) ? getFirstSearchParam(search.price_max) : '',
   bedrooms: Math.min(4, Math.max(0, parseInt(getFirstSearchParam(search.bedrooms), 10) || 0)),
@@ -85,6 +82,7 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
     mapZoom: zoom || location?.zoom,
     initialFilters: getInitialFilters(search),
     initialCategories: getSearchParamValues(search.category),
+    offerLayout: getFirstSearchParam(search.offer_ui) === 'classic' ? ('classic' as const) : ('compact' as const),
   }
 }
 
@@ -109,16 +107,17 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
 }
 
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
-  const { query, mapCenter, mapZoom, initialFilters, initialCategories } = await getMapSearch(searchParams)
+  const { query, mapCenter, mapZoom, initialFilters, initialCategories, offerLayout } = await getMapSearch(searchParams)
 
   return (
     <PropertyMapSearch
-      key={JSON.stringify({ query, mapCenter, mapZoom, initialFilters, initialCategories })}
+      key={JSON.stringify({ query, mapCenter, mapZoom, initialFilters, initialCategories, offerLayout })}
       query={query}
       initialMapCenter={mapCenter}
       initialMapZoom={mapZoom}
       initialFilters={initialFilters}
       initialCategories={initialCategories}
+      offerLayout={offerLayout}
     />
   )
 }

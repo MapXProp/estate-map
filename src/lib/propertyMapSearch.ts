@@ -3,8 +3,10 @@ import {
   discoveryChannels,
   getBusinessSpaceType,
   getPropertyType,
+  offerTypes,
   primaryBusinessSpaceTypeCodes,
   type DiscoveryChannelCode,
+  type OfferTypeCode,
 } from '@/data/propertyTaxonomy'
 import { fetchPropertySearch, type PropertySearchListing, type PropertySearchOptions } from './propertySearch'
 
@@ -51,13 +53,24 @@ export const landMapCategoryIds = mapCategoryGroups.flatMap((group) =>
 
 export const validMapCategoryIds = new Set(mapCategoryGroups.flatMap((group) => group.options.map((item) => item.id)))
 const landCategoryIds = new Set(landMapCategoryIds)
+const sharedMapTypes = ['land', 'shophouse', 'home_office']
+const sharedCategorySets = sharedMapTypes.map((type) =>
+  mapCategoryGroups.flatMap((group) =>
+    group.options.filter((option) => option.propertyType === type).map((option) => option.id)
+  )
+)
+const sharedCategoryIds = new Set(sharedCategorySets.flat())
+const relatedMapCategories = (id: string) => sharedCategorySets.find((ids) => ids.includes(id)) || [id]
+export const isMixedUseMapCategory = (id: string) => sharedCategoryIds.has(id) && !landCategoryIds.has(id)
+export const countMapCategories = (categories: string[]) =>
+  new Set(categories.map((id) => relatedMapCategories(id)[0])).size
 
 export const hasMapLandSelection = (categories: string[]) => categories.some((id) => landCategoryIds.has(id))
 
-// Both land buttons represent the same filter, including links saved with just one ID.
+// Shared property types are one filter, including links saved with just one channel's ID.
 export function normalizeMapCategories(categories: string[]) {
   const selected = new Set(categories.filter((id) => validMapCategoryIds.has(id)))
-  if (hasMapLandSelection([...selected])) landMapCategoryIds.forEach((id) => selected.add(id))
+  for (const id of selected) relatedMapCategories(id).forEach((related) => selected.add(related))
   return [...selected]
 }
 
@@ -70,7 +83,8 @@ export function toggleMapCategory(categories: string[], id: string) {
   const selected = normalizeMapCategories(categories)
   if (!validMapCategoryIds.has(id)) return selected
   if (!selected.includes(id)) return normalizeMapCategories([...selected, id])
-  return selected.filter((item) => (landCategoryIds.has(id) ? !landCategoryIds.has(item) : item !== id))
+  const removed = new Set(relatedMapCategories(id))
+  return selected.filter((item) => !removed.has(item))
 }
 
 export function toggleMapCategoryGroup(categories: string[], code: DiscoveryChannelCode) {
@@ -79,8 +93,8 @@ export function toggleMapCategoryGroup(categories: string[], code: DiscoveryChan
   if (!group) return selected
   const ids = new Set(group.options.map((item) => item.id))
   if (!group.options.every((item) => selected.includes(item.id))) return normalizeMapCategories([...selected, ...ids])
-  const clearsLand = hasMapLandSelection([...ids])
-  return selected.filter((id) => !ids.has(id) && !(clearsLand && landCategoryIds.has(id)))
+  const removed = new Set([...ids].flatMap(relatedMapCategories))
+  return selected.filter((id) => !removed.has(id))
 }
 
 export function setMapCategorySection(
@@ -94,8 +108,8 @@ export function setMapCategorySection(
   if (!section) return selected
   const ids = new Set(section.options.map((item) => item.id))
   if (enabled) return normalizeMapCategories([...selected, ...ids])
-  const clearsLand = hasMapLandSelection([...ids])
-  return selected.filter((id) => !ids.has(id) && !(clearsLand && landCategoryIds.has(id)))
+  const removed = new Set([...ids].flatMap(relatedMapCategories))
+  return selected.filter((id) => !removed.has(id))
 }
 
 export function initialMapCategories(filters: Partial<PropertyMapFilterState>, categories: string[] = []) {
@@ -120,13 +134,13 @@ export function initialMapCategories(filters: Partial<PropertyMapFilterState>, c
   )
 }
 
-// Keep other types tied to their channel; land is one shared filter across channels.
+// Keep other types tied to their channel; shared property types search across channels.
 export function mapCategoryQueries(categories: string[]): PropertySearchOptions[] {
   const selected = new Set(normalizeMapCategories(categories))
   if (!selected.size) return [{}]
-  const landSelected = hasMapLandSelection([...selected])
+  const sharedTypes = sharedMapTypes.filter((_, index) => sharedCategorySets[index].some((id) => selected.has(id)))
   const queries: PropertySearchOptions[] = mapCategoryGroups.flatMap((group) => {
-    const options = group.options.filter((item) => selected.has(item.id) && !landCategoryIds.has(item.id))
+    const options = group.options.filter((item) => selected.has(item.id) && !sharedCategoryIds.has(item.id))
     if (!options.length) return []
     const wholeGroup = group.options.every((item) => selected.has(item.id))
     const allRetail =
@@ -142,10 +156,25 @@ export function mapCategoryQueries(categories: string[]): PropertySearchOptions[
       },
     ]
   })
-  // Include unassigned land too, without fetching it separately for each button.
-  if (landSelected) queries.push({ propertyTypes: ['land'] })
+  // Include listings without a channel, without fetching each shared button separately.
+  if (sharedTypes.length) queries.push({ propertyTypes: sharedTypes })
   return queries
 }
+
+export const defaultMapOfferTypes: OfferTypeCode[] = ['sale', 'rent']
+export function initialMapOfferTypes(value?: string | string[]): OfferTypeCode[] {
+  const values = (Array.isArray(value) ? value : value ? [value] : []).map((item) => item.trim())
+  if (values.includes('all')) return []
+  const selected = [...new Set(values)].filter((code): code is OfferTypeCode =>
+    offerTypes.some((offer) => offer.code === code)
+  )
+  return selected.length ? selected : [...defaultMapOfferTypes]
+}
+export const mapOfferSearchValues = (offers: OfferTypeCode[]) => (offers.length ? offers : ['all'])
+export const isDefaultMapOffers = (offers: OfferTypeCode[]) =>
+  offers.length === 2 && defaultMapOfferTypes.every((offer) => offers.includes(offer))
+export const toggleMapOffer = (offers: OfferTypeCode[], value: OfferTypeCode) =>
+  offers.includes(value) ? offers.filter((offer) => offer !== value) : [...offers, value]
 
 export async function fetchCompleteMapSearch(
   query: string,

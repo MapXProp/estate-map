@@ -9,14 +9,19 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { toRealEstateListing } from '@/data/listings'
 import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/data/propertyTaxonomy'
 import {
+  countMapCategories,
+  defaultMapOfferTypes,
   fetchCompleteMapSearch,
   hasMapCoordinates,
   hasMapLandSelection,
   initialMapCategories,
+  isDefaultMapOffers,
   isLandOnlyMapSelection,
+  isMixedUseMapCategory,
   landMapCategoryIds,
   mapCategoryGroups,
   mapListingPrice,
+  mapOfferSearchValues,
   matchesMapDetails,
   setMapCategorySection,
   toggleMapCategory,
@@ -32,6 +37,7 @@ import {
   House,
   KeyRound,
   LandPlot,
+  Link2,
   List,
   LoaderCircle,
   MapPin,
@@ -42,6 +48,7 @@ import {
   X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import MapOfferControls from './MapOfferControls'
 import MapPinPreview from './MapPinPreview'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
@@ -62,25 +69,20 @@ const groupNames = {
   business: ['พื้นที่ธุรกิจ', 'Business'],
   rooms: ['ห้องเช่ารายเดือน', 'Monthly stays'],
 }
-const offerOptions: Array<{ value: OfferTypeCode; th: string; en: string }> = [
-  { value: 'sale', th: 'ซื้อ', en: 'Buy' },
-  { value: 'rent', th: 'เช่า', en: 'Rent' },
-  { value: 'business_transfer', th: 'เซ้งกิจการ', en: 'Business transfer' },
-  { value: 'sublease', th: 'เช่าช่วง', en: 'Sublease' },
-]
-
 export default function PropertyMapSearch({
   query = '',
   initialMapCenter,
   initialMapZoom,
   initialFilters = {},
   initialCategories = [],
+  offerLayout = 'compact',
 }: {
   query?: string
   initialMapCenter?: { lat: number; lon: number }
   initialMapZoom?: number
   initialFilters?: Partial<PropertyMapFilterState>
   initialCategories?: string[]
+  offerLayout?: 'compact' | 'classic'
 }) {
   const { locale } = usePreferences()
   const th = locale === 'th'
@@ -88,6 +90,7 @@ export default function PropertyMapSearch({
   const [filters, setFilters] = useState<PropertyMapFilterState>(() => ({
     ...emptyPropertyMapFilters,
     ...initialFilters,
+    offerTypes: initialFilters.offerTypes ?? [...defaultMapOfferTypes],
   }))
   const [keyword, setKeyword] = useState(query)
   const [mobileGroup, setMobileGroup] = useState<DiscoveryChannelCode>(
@@ -208,7 +211,7 @@ export default function PropertyMapSearch({
     ].forEach((key) => params.delete(key))
     if (keyword) params.set('q', keyword)
     categories.forEach((id) => params.append('category', id))
-    filters.offerTypes.forEach((offer) => params.append('offer_type', offer))
+    mapOfferSearchValues(filters.offerTypes).forEach((offer) => params.append('offer_type', offer))
     if (filters.minPrice) params.set('price_min', filters.minPrice)
     if (filters.maxPrice) params.set('price_max', filters.maxPrice)
     if (filters.bedrooms) params.set('bedrooms', String(filters.bedrooms))
@@ -306,7 +309,8 @@ export default function PropertyMapSearch({
     Number(filters.bathrooms > 0) +
     Number(Boolean(filters.minArea)) +
     filters.features.length
-  const hasFilters = categories.length > 0 || filters.offerTypes.length > 0 || detailsCount > 0 || !!keyword || !!area
+  const hasFilters =
+    categories.length > 0 || !isDefaultMapOffers(filters.offerTypes) || detailsCount > 0 || !!keyword || !!area
 
   const searchArea = useCallback((search: PropertyMapAreaSearch) => {
     setArea(search.bounds)
@@ -315,7 +319,7 @@ export default function PropertyMapSearch({
   }, [])
   const reset = () => {
     setCategories([])
-    setFilters(emptyPropertyMapFilters)
+    setFilters({ ...emptyPropertyMapFilters, offerTypes: [...defaultMapOfferTypes] })
     setKeyword('')
     setArea(null)
   }
@@ -349,53 +353,18 @@ export default function PropertyMapSearch({
                     ? 'เฉพาะที่ดิน'
                     : 'Land only'
                   : th
-                    ? `เลือก ${categories.length} หมวด`
-                    : `${categories.length} selected`}
+                    ? `เลือก ${countMapCategories(categories)} หมวด`
+                    : `${countMapCategories(categories)} selected`}
               </span>
             )}
           </div>
           <div className={styles.toolbar} data-map-search-controls>
-            <div
-              className={styles.offers}
-              role="group"
-              aria-label={th ? 'รูปแบบประกาศ เลือกได้หลายแบบ' : 'Listing offers, select one or more'}
-            >
-              <button
-                type="button"
-                aria-pressed={!filters.offerTypes.length}
-                onClick={() => setFilters({ ...filters, offerTypes: [] })}
-                className={!filters.offerTypes.length ? styles.selectedOffer : ''}
-              >
-                <span className={styles.offerFill} aria-hidden="true" />
-                <Check className={styles.offerCheck} aria-hidden="true" strokeWidth={2.5} />
-                <span className={styles.offerLabel}>{th ? 'ทุกแบบ' : 'All'}</span>
-              </button>
-              {offerOptions.map((offer) => (
-                <button
-                  type="button"
-                  key={offer.value}
-                  data-map-offer={offer.value}
-                  aria-label={th ? offer.th : offer.en}
-                  title={th ? offer.th : offer.en}
-                  aria-pressed={filters.offerTypes.includes(offer.value)}
-                  onClick={() =>
-                    setFilters({
-                      ...filters,
-                      offerTypes: filters.offerTypes.includes(offer.value)
-                        ? filters.offerTypes.filter((value) => value !== offer.value)
-                        : [...filters.offerTypes, offer.value],
-                    })
-                  }
-                  className={filters.offerTypes.includes(offer.value) ? styles.selectedOffer : ''}
-                >
-                  <span className={styles.offerFill} aria-hidden="true" />
-                  <Check className={styles.offerCheck} aria-hidden="true" strokeWidth={2.5} />
-                  <span className={styles.offerLabel}>
-                    {offer.value === 'business_transfer' ? (th ? 'เซ้ง' : 'Transfer') : th ? offer.th : offer.en}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <MapOfferControls
+              value={filters.offerTypes}
+              onChange={(offerTypes) => setFilters((previous) => ({ ...previous, offerTypes }))}
+              th={th}
+              layout={offerLayout}
+            />
             <button
               type="button"
               data-map-details-toggle
@@ -416,8 +385,8 @@ export default function PropertyMapSearch({
               data-inactive={!hasFilters || undefined}
               disabled={!hasFilters}
               aria-hidden={!hasFilters || undefined}
-              aria-label={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
-              title={th ? 'ล้างตัวกรองทั้งหมด' : 'Reset all filters'}
+              aria-label={th ? 'คืนค่าเริ่มต้น' : 'Restore default filters'}
+              title={th ? 'คืนค่าเริ่มต้น' : 'Restore default filters'}
             >
               <RotateCcw className="size-3.5" />
             </button>
@@ -588,19 +557,27 @@ export default function PropertyMapSearch({
                             {section.options.map((option) => {
                               const selected = categories.includes(option.id)
                               const label = th ? option.nameTh : option.nameEn
+                              const mixedUse = isMixedUseMapCategory(option.id)
+                              const sharedHint = th
+                                ? 'เลือกพร้อมกันในที่อยู่อาศัยและพื้นที่ธุรกิจ'
+                                : 'Selected together in Homes and Business'
                               return (
                                 <button
                                   key={option.id}
                                   type="button"
                                   data-map-category={option.id}
+                                  data-map-mixed-use={mixedUse || undefined}
+                                  title={mixedUse ? sharedHint : undefined}
+                                  aria-label={mixedUse ? `${label} — ${sharedHint}` : undefined}
                                   aria-pressed={selected}
                                   onClick={() => toggleCategory(option.id)}
-                                  className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${selected ? styles.selectedChip : ''}`}
+                                  className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${mixedUse ? styles.mixedUse : ''} ${selected ? styles.selectedChip : ''}`}
                                 >
                                   <span className={styles.checkbox}>
                                     {selected && <Check className="size-3" strokeWidth={3} />}
                                   </span>
                                   {label}
+                                  {mixedUse && <Link2 className={styles.sharedIcon} aria-hidden="true" />}
                                 </button>
                               )
                             })}

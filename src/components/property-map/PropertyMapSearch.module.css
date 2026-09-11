@@ -34,6 +34,19 @@
   --category-border: #e1c995;
   --category-wash: #fff9e9;
 }
+.mixedUse {
+  --category-ink: #53645f;
+  --category-accent: #80928a;
+  --category-soft: #e9efeb;
+  --category-border: #c8d3cc;
+  --category-wash: #f5f7f5;
+}
+.sharedIcon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
 .landShortcut {
   display: flex;
   min-height: 40px;
@@ -957,6 +970,13 @@
   --category-soft: #4b3c21;
   --category-border: #685435;
   --category-wash: #302819;
+}
+:global(.dark) .mixedUse {
+  --category-ink: #c3d1c8;
+  --category-accent: #97b0a1;
+  --category-soft: #34483d;
+  --category-border: #536b5b;
+  --category-wash: #27362d;
 }
 :global(.dark) .checkbox {
   background: #18221c;

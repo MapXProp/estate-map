@@ -202,7 +202,7 @@ test('selecting and clearing whole groups keeps the shared land choice consisten
   assert.deepEqual(
     plain(clearedBusiness).sort(),
     plain(api.mapCategoryGroups.find((group) => group.code === 'homes').options.map((item) => item.id))
-      .filter((id) => id !== 'homes:land')
+      .filter((id) => !['homes:land', 'homes:shophouse', 'homes:home_office'].includes(id))
       .sort()
   )
   const roomsSelected = api.toggleMapCategoryGroup(['homes:land'], 'rooms')
@@ -266,7 +266,7 @@ test('whole business group still includes legacy listings without a retail subty
       return { listings: [legacyRetail, land], total: 2 }
     }
     assert.equal(options.discoveryChannel, undefined)
-    assert.deepEqual(plain(options.propertyTypes), ['land'])
+    assert.deepEqual(plain(options.propertyTypes), ['land', 'shophouse', 'home_office'])
     return { listings: [land], total: 1 }
   })
   const result = await api.fetchCompleteMapSearch(
@@ -276,6 +276,91 @@ test('whole business group still includes legacy listings without a retail subty
     new AbortController().signal
   )
   assert.deepEqual(plain(result.map((item) => item.id)).sort(), [6, 8])
+})
+
+test('each mixed-use type synchronizes its own two buttons without selecting the other type', () => {
+  const api = model()
+  for (const type of ['shophouse', 'home_office']) {
+    for (const channel of ['homes', 'business']) {
+      const selected = api.toggleMapCategory(['rooms:condo'], `${channel}:${type}`)
+      assert.deepEqual(plain(selected).sort(), [`business:${type}`, `homes:${type}`, 'rooms:condo'].sort())
+      assert.equal(api.countMapCategories(selected), 2)
+      for (const otherChannel of ['homes', 'business']) {
+        assert.deepEqual(plain(api.toggleMapCategory(selected, `${otherChannel}:${type}`)), ['rooms:condo'])
+      }
+      assert.deepEqual(
+        plain(api.initialMapCategories({ discoveryChannels: [channel], propertyTypes: [type] })).sort(),
+        [`business:${type}`, `homes:${type}`].sort()
+      )
+      assert.deepEqual(
+        plain(api.initialMapCategories({}, [`${channel}:${type}`])).sort(),
+        [`business:${type}`, `homes:${type}`].sort()
+      )
+    }
+  }
+  const selected = api.normalizeMapCategories(['homes:shophouse', 'business:home_office', 'homes:land'])
+  assert.equal(selected.length, 6)
+  assert.equal(api.countMapCategories(selected), 3)
+  assert.deepEqual(
+    plain(api.setMapCategorySection([...selected, 'business:market_stall'], 'business', 'buildings', false)),
+    ['business:market_stall']
+  )
+})
+
+test('shared mixed-use listings search globally once and deduplicate across channels without moving coordinates', async () => {
+  const requests = []
+  const property = { ...makeListing(8), property_type_code: 'shophouse', discovery_channels: [] }
+  const api = model(async (_query, _signal, options) => {
+    requests.push(options)
+    return { listings: [property], total: 1 }
+  })
+  assert.deepEqual(plain(api.mapCategoryQueries(['homes:shophouse', 'business:home_office'])), [
+    { propertyTypes: ['shophouse', 'home_office'] },
+  ])
+  const selected = api.toggleMapCategoryGroup([], 'business')
+  const result = await api.fetchCompleteMapSearch(
+    '',
+    selected,
+    { offerTypes: ['sale', 'rent'], maxPrice: '9000000' },
+    new AbortController().signal
+  )
+  assert.equal(requests.length, 2)
+  assert.equal(requests.filter((request) => !request.discoveryChannel).length, 1)
+  assert.ok(requests.every((request) => request.maxPrice === '9000000'))
+  assert.ok(requests.every((request) => JSON.stringify(request.offerTypes) === '["sale","rent"]'))
+  assert.deepEqual(plain(result), [property])
+})
+
+test('map defaults buy and rent while respecting explicit offers and an explicit all-offers link', () => {
+  const api = model()
+  for (const input of [undefined, '', [], ['invalid']])
+    assert.deepEqual(plain(api.initialMapOfferTypes(input)), ['sale', 'rent'])
+  assert.deepEqual(plain(api.initialMapOfferTypes('rent')), ['rent'])
+  assert.deepEqual(plain(api.initialMapOfferTypes(['business_transfer', 'sublease'])), [
+    'business_transfer',
+    'sublease',
+  ])
+  assert.deepEqual(plain(api.initialMapOfferTypes(['rent', 'rent', 'invalid'])), ['rent'])
+  assert.deepEqual(plain(api.initialMapOfferTypes('all')), [])
+  for (const offers of [[], ['rent'], ['sale', 'rent'], ['sublease']]) {
+    assert.deepEqual(plain(api.initialMapOfferTypes(api.mapOfferSearchValues(offers))), offers)
+  }
+  assert.equal(api.isDefaultMapOffers(['rent', 'sale']), true)
+  assert.equal(api.isDefaultMapOffers([]), false)
+  assert.equal(api.isDefaultMapOffers(['rent']), false)
+  const fresh = api.initialMapOfferTypes()
+  fresh.pop()
+  assert.deepEqual(plain(api.initialMapOfferTypes()), ['sale', 'rent'])
+})
+
+test('offer selection supports buy and rent together plus independently selected transfer and sublease', () => {
+  const api = model()
+  const buyRent = api.initialMapOfferTypes()
+  const withTransfer = api.toggleMapOffer(buyRent, 'business_transfer')
+  assert.deepEqual(plain(withTransfer), ['sale', 'rent', 'business_transfer'])
+  assert.deepEqual(plain(api.toggleMapOffer(withTransfer, 'sale')), ['rent', 'business_transfer'])
+  assert.deepEqual(plain(api.toggleMapOffer(withTransfer, 'business_transfer')), ['sale', 'rent'])
+  assert.deepEqual(plain(api.toggleMapOffer(['rent'], 'rent')), [])
 })
 
 test('pagination includes all 137 matches and preserves exact coordinates', async () => {
@@ -295,20 +380,19 @@ test('pagination includes all 137 matches and preserves exact coordinates', asyn
   assert.deepEqual(plain(result), inventory)
 })
 
-test('shared properties across channels create one marker, and subtypes remain an OR choice', async () => {
+test('overlapping condo searches still keep the residential and monthly-rental channels distinct', async () => {
   const api = model(async (_query, _signal, options) => ({
     listings:
       options.discoveryChannel === 'homes' ? [makeListing(1), makeListing(2)] : [makeListing(2), makeListing(3)],
     total: 2,
   }))
-  const result = await api.fetchCompleteMapSearch(
-    '',
-    ['homes:shophouse', 'business:shophouse'],
-    {},
-    new AbortController().signal
-  )
+  const result = await api.fetchCompleteMapSearch('', ['homes:condo', 'rooms:condo'], {}, new AbortController().signal)
   assert.equal(result.length, 3)
   assert.equal(new Set(result.map((item) => item.public_listing_id)).size, 3)
+  assert.deepEqual(plain(api.mapCategoryQueries(['homes:condo', 'rooms:condo'])), [
+    { discoveryChannel: 'homes', propertyTypes: ['condo'], spaceTypes: [] },
+    { discoveryChannel: 'rooms', propertyTypes: ['condo'], spaceTypes: [] },
+  ])
 })
 
 test('ignored offsets and interrupted pages cannot silently claim complete results', async () => {
