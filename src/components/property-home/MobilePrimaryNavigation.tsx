@@ -7,21 +7,21 @@ import { usePathname } from 'next/navigation'
 
 const channelHomePaths = ['/homes', '/rooms', '/business']
 
-const MobilePrimaryNavigation = ({ prototype = false }: { prototype?: boolean }) => {
+const MobilePrimaryNavigation = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const isChannelHome = channelHomePaths.includes(pathname)
 
-  if (!prototype && !isChannelHome) return null
+  if (!isChannelHome) return null
 
   const navigationItems = [
     {
       labelTh: 'หน้าแรก',
       labelEn: 'Home',
-      href: prototype ? '/homes2' : '/',
+      href: '/',
       icon: Home,
-      active: prototype ? pathname === '/homes2' : isChannelHome,
+      active: isChannelHome,
     },
     {
       labelTh: 'แผนที่',
@@ -56,9 +56,7 @@ const MobilePrimaryNavigation = ({ prototype = false }: { prototype?: boolean })
 
   return (
     <>
-      {!prototype ? (
-        <div aria-hidden="true" className="h-[calc(66px+env(safe-area-inset-bottom))] min-[744px]:hidden" />
-      ) : null}
+      <div aria-hidden="true" className="h-[calc(66px+env(safe-area-inset-bottom))] min-[744px]:hidden" />
       <nav
         aria-label={isThai ? 'เมนูหลัก' : 'Main navigation'}
         className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95"

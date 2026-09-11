@@ -21,6 +21,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: '/homes2',
+        destination: '/homes',
+        permanent: true,
+      },
+      {
         source: '/real-estate',
         destination: '/homes',
         permanent: true,

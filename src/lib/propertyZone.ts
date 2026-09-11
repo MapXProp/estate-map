@@ -18,14 +18,7 @@ export const getPropertyZoneFromPathname = (pathname: string): PropertyZone | nu
 
   if (pathname === '/business' || pathname.startsWith('/business/')) return 'business'
 
-  if (
-    pathname === '/homes' ||
-    pathname.startsWith('/homes/') ||
-    pathname === '/homes2' ||
-    pathname.startsWith('/homes2/') ||
-    pathname === '/buy' ||
-    pathname.startsWith('/buy/')
-  ) {
+  if (pathname === '/homes' || pathname.startsWith('/homes/') || pathname === '/buy' || pathname.startsWith('/buy/')) {
     return 'homes'
   }
 
