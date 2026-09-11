@@ -51,7 +51,7 @@ const discoveryModes = [
     descriptionEn: 'Find shops, stalls, offices, warehouses, factories and temporary spaces',
     href: '/business',
     icon: Store,
-    tone: 'bg-[var(--business-soft)] text-[color:var(--business-ink)]',
+    tone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
   },
 ]
 

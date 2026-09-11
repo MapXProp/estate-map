@@ -280,8 +280,7 @@ const PropertySearchOmnibox = ({
         'focus-within:border-[#8ab6a7] focus-within:shadow-[0_5px_18px_rgba(18,63,50,0.10)] dark:focus-within:border-emerald-700',
       heroFocus: 'focus-within:border-[#a9c8bd] focus-within:shadow-[0_26px_75px_-18px_rgba(15,76,58,0.42)]',
       accent: 'text-[#176b50] dark:text-emerald-300',
-      button:
-        'bg-[#123f32] text-white shadow-[#123f32]/20 hover:bg-[#0b3227] dark:bg-emerald-200 dark:text-emerald-950',
+      button: 'bg-[#123f32] shadow-[#123f32]/20 hover:bg-[#0b3227] dark:bg-emerald-200 dark:text-emerald-950',
       suggestion: 'hover:bg-[#f0f7f4] dark:hover:bg-emerald-950/40',
       suggestionIcon: 'bg-[#e9f3ee] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
     },
@@ -290,20 +289,18 @@ const PropertySearchOmnibox = ({
         'focus-within:border-[#9ED4ED] focus-within:shadow-[0_5px_18px_rgba(45,143,199,0.18)] dark:focus-within:border-[#356d89]',
       heroFocus: 'focus-within:border-[#9ED4ED] focus-within:shadow-[0_26px_75px_-18px_rgba(45,143,199,0.36)]',
       accent: 'text-[#2D8FC7] dark:text-[#8fd4f4]',
-      button: 'bg-[#1676AE] text-white shadow-[#1676AE]/24 hover:bg-[#0D6398] dark:bg-[#8fd4f4] dark:text-[#102b3a]',
+      button: 'bg-[#1676AE] shadow-[#1676AE]/24 hover:bg-[#0D6398] dark:bg-[#8fd4f4] dark:text-[#102b3a]',
       suggestion: 'hover:bg-[#EFF8FD] dark:hover:bg-[#102b3a]',
       suggestionIcon: 'bg-[#EFF8FD] text-[#2D8FC7] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
     },
     commerce: {
       headerFocus:
-        'focus-within:border-[var(--business-selection-border)] focus-within:shadow-[0_5px_18px_var(--business-ring)]',
-      heroFocus:
-        'focus-within:border-[var(--business-selection-border)] focus-within:shadow-[0_26px_75px_-18px_var(--business-ring)]',
-      accent: 'text-[color:var(--business-ink)]',
-      button:
-        'bg-[var(--business-action)] text-[color:var(--business-button-ink)] shadow-[var(--business-ring)] hover:bg-[var(--business-action-hover)]',
-      suggestion: 'hover:bg-[var(--business-surface)]',
-      suggestionIcon: 'bg-[var(--business-soft)] text-[color:var(--business-ink)]',
+        'focus-within:border-[#F2A086] focus-within:shadow-[0_5px_18px_rgba(230,90,47,0.18)] dark:focus-within:border-[#754032]',
+      heroFocus: 'focus-within:border-[#F2A086] focus-within:shadow-[0_26px_75px_-18px_rgba(230,90,47,0.36)]',
+      accent: 'text-[#E65A2F] dark:text-[#FFC2AD]',
+      button: 'bg-[#D94A22] shadow-[#D94A22]/26 hover:bg-[#BE3E1B] dark:bg-[#FFC2AD] dark:text-[#351B14]',
+      suggestion: 'hover:bg-[#FFF2EC] dark:hover:bg-[#351B14]',
+      suggestionIcon: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
     },
   }[tone]
 
@@ -382,7 +379,7 @@ const PropertySearchOmnibox = ({
           className={
             integratedHeader
               ? styles.integratedSubmit
-              : `shrink-0 font-semibold shadow-lg transition active:scale-[0.98] ${theme.button} ${
+              : `shrink-0 font-semibold text-white shadow-lg transition active:scale-[0.98] ${theme.button} ${
                   isHeader
                     ? 'grid size-8 place-items-center rounded-full'
                     : 'flex min-h-13 items-center gap-2 rounded-[20px] px-5 min-[744px]:min-h-16 min-[744px]:rounded-[22px] min-[744px]:px-7'

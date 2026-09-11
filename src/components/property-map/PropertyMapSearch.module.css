@@ -22,11 +22,11 @@
   --category-wash: #f3faff;
 }
 .business {
-  --category-ink: var(--business-ink);
-  --category-accent: var(--business-accent);
-  --category-soft: var(--business-soft);
-  --category-border: var(--business-border);
-  --category-wash: var(--business-surface);
+  --category-ink: #a34237;
+  --category-accent: #bd5b4c;
+  --category-soft: #fae9e4;
+  --category-border: #e9c9c0;
+  --category-wash: #fff7f4;
 }
 .land {
   --category-ink: #885c18;
@@ -933,6 +933,13 @@
   --category-soft: #214152;
   --category-border: #355465;
   --category-wash: #192c37;
+}
+:global(.dark) .business {
+  --category-ink: #f1b7a7;
+  --category-accent: #da9481;
+  --category-soft: #52352f;
+  --category-border: #63443b;
+  --category-wash: #32231f;
 }
 :global(.dark) .land {
   --category-ink: #ebd095;

@@ -50,10 +50,10 @@ const sites = [
     descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ และที่ดิน',
     descriptionEn: 'Shops, market stalls, offices, warehouses and event spaces',
     icon: Store,
-    tone: 'bg-[var(--business-soft)] text-[color:var(--business-ink)]',
-    activeTone: 'bg-[var(--business-soft)]',
-    checkTone: 'text-[color:var(--business-ink)]',
-    triggerTone: 'hover:border-[var(--business-selection-border)] hover:bg-[var(--business-surface)]',
+    tone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
+    activeTone: 'bg-[#FFE7DC] dark:bg-[#351B14]',
+    checkTone: 'text-[#E65A2F] dark:text-[#FFC2AD]',
+    triggerTone: 'hover:border-[#F2A086] hover:bg-[#FFF2EC] dark:hover:border-[#754032]',
   },
 ] as const
 

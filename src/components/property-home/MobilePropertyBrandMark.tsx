@@ -45,10 +45,10 @@ const mobileSites = [
     descriptionTh: 'พื้นที่ขายของ ล็อคในตลาด ออฟฟิศ และที่ดิน',
     descriptionEn: 'Shops, stalls, offices, warehouses and event spaces',
     icon: Store,
-    iconTone: 'bg-[var(--business-soft)] text-[color:var(--business-ink)]',
-    activeTone: 'border-transparent bg-[var(--business-soft)]',
-    checkTone: 'bg-[var(--business-action)] text-[color:var(--business-button-ink)]',
-    dotTone: 'bg-[var(--business-accent)]',
+    iconTone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
+    activeTone: 'border-transparent bg-[#FFE7DC] dark:border-transparent dark:bg-[#351B14]',
+    checkTone: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
+    dotTone: 'bg-[#E65A2F]',
   },
 ] as const
 
