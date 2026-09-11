@@ -18,6 +18,7 @@ import {
   mapCategoryGroups,
   mapListingPrice,
   matchesMapDetails,
+  setMapCategorySection,
   toggleMapCategory,
   toggleMapCategoryGroup,
 } from '@/lib/propertyMapSearch'
@@ -538,17 +539,52 @@ export default function PropertyMapSearch({
                           aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
                         >
                           {section.nameTh && (
-                            <h2 className={styles.subgroupHeading}>
-                              {section.id === 'retail' ? (
-                                <Store className="size-3.5" />
-                              ) : (
-                                <Building2 className="size-3.5" />
-                              )}
-                              {th ? section.nameTh : section.nameEn}
-                              <span>{section.options.length}</span>
-                            </h2>
+                            <div className={styles.sectionToolbar}>
+                              <h2 className={styles.subgroupHeading}>
+                                {section.id === 'retail' ? (
+                                  <Store className="size-3.5" />
+                                ) : (
+                                  <Building2 className="size-3.5" />
+                                )}
+                                {th ? section.nameTh : section.nameEn}
+                                <span>{section.options.length}</span>
+                              </h2>
+                              <div className={styles.sectionActions}>
+                                <button
+                                  type="button"
+                                  data-map-section-action="select"
+                                  data-map-section-group={`${group.code}:${section.id}`}
+                                  aria-label={`${th ? 'เลือกทั้งหมดในกลุ่ม' : 'Select all in'} ${th ? section.nameTh : section.nameEn}`}
+                                  aria-controls={`map-section-${group.code}-${section.id}`}
+                                  disabled={section.options.every((option) => categories.includes(option.id))}
+                                  onClick={() =>
+                                    setCategories((previous) =>
+                                      setMapCategorySection(previous, group.code, section.id, true)
+                                    )
+                                  }
+                                >
+                                  {th ? 'เลือกทั้งหมด' : 'Select all'}
+                                </button>
+                                <span aria-hidden="true">/</span>
+                                <button
+                                  type="button"
+                                  data-map-section-action="clear"
+                                  data-map-section-group={`${group.code}:${section.id}`}
+                                  aria-label={`${th ? 'ล้างทั้งหมดในกลุ่ม' : 'Clear all in'} ${th ? section.nameTh : section.nameEn}`}
+                                  aria-controls={`map-section-${group.code}-${section.id}`}
+                                  disabled={!section.options.some((option) => categories.includes(option.id))}
+                                  onClick={() =>
+                                    setCategories((previous) =>
+                                      setMapCategorySection(previous, group.code, section.id, false)
+                                    )
+                                  }
+                                >
+                                  {th ? 'ล้างทั้งหมด' : 'Clear all'}
+                                </button>
+                              </div>
+                            </div>
                           )}
-                          <div className={styles.chips}>
+                          <div id={`map-section-${group.code}-${section.id}`} className={styles.chips}>
                             {section.options.map((option) => {
                               const selected = categories.includes(option.id)
                               const label = th ? option.nameTh : option.nameEn

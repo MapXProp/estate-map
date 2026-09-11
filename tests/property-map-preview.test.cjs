@@ -43,13 +43,15 @@ test('selected pin stays above mobile preview and below the search field, includ
 
 test('desktop selected pin is positioned to the right of the existing results panel', () => {
   for (const width of [1024, 1280, 1905]) {
-    const map = rect(0, 300, width, 580)
-    const panel = rect(18, 314, 380, 548)
-    const target = model.getMapPreviewTarget(map, panel, false, 362)
-    assert.ok(target.x > panel.right + 30)
-    assert.ok(target.x < width - 20)
-    assert.ok(target.y > 100 && target.y < 550)
-    assert.equal(map.left, 0, 'positioning does not mutate geometry inputs')
+    for (const panelWidth of [380, 500]) {
+      const map = rect(0, 300, width, 580)
+      const panel = rect(18, 306, panelWidth, 566)
+      const target = model.getMapPreviewTarget(map, panel, false, 362)
+      assert.ok(target.x > panel.right + 30)
+      assert.ok(target.x < width - 20)
+      assert.ok(target.y > 100 && target.y < 550)
+      assert.equal(map.left, 0, 'positioning does not mutate geometry inputs')
+    }
   }
 })
 

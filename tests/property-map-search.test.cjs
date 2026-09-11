@@ -85,6 +85,61 @@ test('business sections keep land with buildings and expose all 19 choices once'
   assert.deepEqual(plain(ids).sort(), plain(business.options.map((option) => option.id)).sort())
 })
 
+test('retail section actions preserve other selections and clear partial selections directly', () => {
+  const api = model()
+  const retail = api.mapCategoryGroups
+    .find((group) => group.code === 'business')
+    .sections.find((section) => section.id === 'retail')
+  const baseline = ['homes:condo', 'rooms:apartment', 'business:office', ...plain(api.landMapCategoryIds)]
+  const partial = [...baseline, retail.options[0].id]
+  assert.deepEqual(plain(api.setMapCategorySection(partial, 'business', 'retail', false)), baseline)
+  const selected = api.setMapCategorySection(partial, 'business', 'retail', true)
+  assert.ok(retail.options.every((option) => selected.includes(option.id)))
+  assert.deepEqual(plain(api.setMapCategorySection(selected, 'business', 'retail', true)), plain(selected))
+  assert.deepEqual(plain(api.setMapCategorySection(selected, 'business', 'retail', false)), baseline)
+})
+
+test('building section actions synchronize land while retaining homes, rooms and retail choices', () => {
+  const api = model()
+  const buildings = api.mapCategoryGroups
+    .find((group) => group.code === 'business')
+    .sections.find((section) => section.id === 'buildings')
+  const baseline = ['homes:condo', 'rooms:apartment', 'business:market_stall']
+  const selected = api.setMapCategorySection(baseline, 'business', 'buildings', true)
+  assert.ok(buildings.options.every((option) => selected.includes(option.id)))
+  assert.ok(api.landMapCategoryIds.every((id) => selected.includes(id)))
+  assert.deepEqual(plain(api.setMapCategorySection(selected, 'business', 'buildings', false)), baseline)
+  assert.deepEqual(
+    plain(api.setMapCategorySection([...baseline, 'homes:land'], 'business', 'buildings', false)),
+    baseline
+  )
+  assert.deepEqual(plain(api.setMapCategorySection(baseline, 'business', 'unknown', true)), baseline)
+})
+
+test('selecting all retail spaces includes legacy listings without a subtype and preserves offer filters', async () => {
+  const requests = []
+  const api = model(async (_query, _signal, options) => {
+    requests.push(options)
+    return { listings: [{ ...makeListing(8), property_type_code: 'retail_space' }], total: 1 }
+  })
+  const selected = api.setMapCategorySection([], 'business', 'retail', true)
+  assert.deepEqual(plain(api.mapCategoryQueries(selected)), [
+    { discoveryChannel: 'business', propertyTypes: ['retail_space'], spaceTypes: [] },
+  ])
+  assert.deepEqual(plain(api.mapCategoryQueries([...selected, 'business:office'])), [
+    { discoveryChannel: 'business', propertyTypes: ['office', 'retail_space'], spaceTypes: [] },
+  ])
+  const result = await api.fetchCompleteMapSearch('', selected, { offerTypes: ['rent'] }, new AbortController().signal)
+  assert.equal(result.length, 1)
+  assert.equal(requests.length, 1)
+  assert.deepEqual(plain(requests[0].offerTypes), ['rent'])
+  assert.deepEqual(plain(requests[0].propertyTypes), ['retail_space'])
+  const cleared = api.setMapCategorySection(selected, 'business', 'retail', false)
+  assert.deepEqual(plain(api.mapCategoryQueries([...cleared, 'business:market_stall'])), [
+    { discoveryChannel: 'business', propertyTypes: [], spaceTypes: ['market_stall'] },
+  ])
+})
+
 test('the land shortcut searches land across all channels and keeps offer filters', async () => {
   const requests = []
   const api = model(async (_query, _signal, options) => {

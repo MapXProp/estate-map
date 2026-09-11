@@ -193,6 +193,44 @@
   border-left: 1px solid var(--category-border);
   padding-left: 12px;
 }
+.sectionToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 32px;
+}
+.sectionActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--category-ink);
+  font-size: 11px;
+}
+.sectionActions button {
+  min-height: 32px;
+  padding: 0 2px;
+  white-space: nowrap;
+  cursor: pointer;
+  text-underline-offset: 4px;
+}
+.sectionActions button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.sectionActions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.sectionActions > span {
+  opacity: 0.3;
+}
+.sectionActions button:focus-visible {
+  outline: 2px solid var(--category-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .subgroupHeading {
   display: flex;
   align-items: center;
@@ -203,7 +241,7 @@
   font-weight: 600;
 }
 .subgroupHeading > span {
-  margin-left: auto;
+  margin-left: 3px;
   font-size: 10px;
   font-weight: 400;
   opacity: 0.7;
@@ -384,6 +422,7 @@
   pointer-events: none;
 }
 .canvas {
+  --map-panel-width: 500px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -397,11 +436,11 @@
 .results {
   position: absolute;
   z-index: 25;
-  top: 14px;
-  bottom: 18px;
+  top: 6px;
+  bottom: 8px;
   left: 18px;
   display: none;
-  width: 380px;
+  width: var(--map-panel-width);
   overflow: hidden;
   border: 1px solid #dbe7df;
   border-radius: 20px;
@@ -458,8 +497,8 @@
   transform: translateX(-50%);
 }
 .panelVisible .locationSearch {
-  left: calc(50% + 195px);
-  width: min(540px, calc(100% - 460px));
+  left: calc(50% + var(--map-panel-width) / 2 + 5px);
+  width: min(540px, calc(100% - var(--map-panel-width) - 80px));
 }
 .zoomControls {
   position: absolute;
@@ -475,12 +514,12 @@
   transform: translateX(-50%);
 }
 .panelVisible .areaControl {
-  left: calc(50% + 195px);
+  left: calc(50% + var(--map-panel-width) / 2 + 5px);
 }
 .openPanel {
   position: absolute;
   z-index: 25;
-  top: 14px;
+  top: 6px;
   left: 18px;
   display: flex;
   align-items: center;
@@ -493,6 +532,26 @@
   box-shadow: 0 4px 16px #153b251a;
   font-size: 13px;
   font-weight: 600;
+}
+@media (min-width: 1024px) {
+  .categories {
+    padding: 4px 24px 6px;
+  }
+  .categoryHeading {
+    min-height: 44px;
+  }
+  .offers {
+    padding: 3px;
+  }
+  .groups {
+    padding-top: 4px;
+  }
+  .business > .groupHeading {
+    display: none;
+  }
+  .businessSections {
+    margin-top: 0;
+  }
 }
 @media (min-width: 1280px) {
   .groups {
@@ -542,6 +601,9 @@
   }
 }
 @media (max-width: 1023px) {
+  .sectionActions button {
+    min-height: 44px;
+  }
   .categories {
     max-height: calc(100% - 180px);
     overflow-y: auto;

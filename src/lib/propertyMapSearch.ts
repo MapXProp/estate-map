@@ -83,6 +83,21 @@ export function toggleMapCategoryGroup(categories: string[], code: DiscoveryChan
   return selected.filter((id) => !ids.has(id) && !(clearsLand && landCategoryIds.has(id)))
 }
 
+export function setMapCategorySection(
+  categories: string[],
+  code: DiscoveryChannelCode,
+  sectionId: string,
+  enabled: boolean
+) {
+  const selected = normalizeMapCategories(categories)
+  const section = mapCategoryGroups.find((group) => group.code === code)?.sections.find((item) => item.id === sectionId)
+  if (!section) return selected
+  const ids = new Set(section.options.map((item) => item.id))
+  if (enabled) return normalizeMapCategories([...selected, ...ids])
+  const clearsLand = hasMapLandSelection([...ids])
+  return selected.filter((id) => !ids.has(id) && !(clearsLand && landCategoryIds.has(id)))
+}
+
 export function initialMapCategories(filters: Partial<PropertyMapFilterState>, categories: string[] = []) {
   if (categories.some((id) => validMapCategoryIds.has(id))) return normalizeMapCategories(categories)
   const { discoveryChannels: channels = [], propertyTypes = [], spaceTypes = [] } = filters
@@ -114,11 +129,16 @@ export function mapCategoryQueries(categories: string[]): PropertySearchOptions[
     const options = group.options.filter((item) => selected.has(item.id) && !landCategoryIds.has(item.id))
     if (!options.length) return []
     const wholeGroup = group.options.every((item) => selected.has(item.id))
+    const allRetail =
+      group.code === 'business' && primaryBusinessSpaceTypeCodes.every((type) => selected.has(`business:${type}`))
     return [
       {
         discoveryChannel: group.code as DiscoveryChannelCode,
-        propertyTypes: wholeGroup ? [] : options.map((item) => item.propertyType).filter(Boolean),
-        spaceTypes: wholeGroup ? [] : options.map((item) => item.spaceType).filter(Boolean),
+        propertyTypes: wholeGroup
+          ? []
+          : [...options.map((item) => item.propertyType).filter(Boolean), ...(allRetail ? ['retail_space'] : [])],
+        // Selecting the entire retail section includes older listings without a subtype.
+        spaceTypes: wholeGroup || allRetail ? [] : options.map((item) => item.spaceType).filter(Boolean),
       },
     ]
   })
