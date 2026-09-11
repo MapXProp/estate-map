@@ -569,7 +569,7 @@ export default function PropertyMapSearch({
                                     aria-label={sharedCategory ? `${label} — ${sharedHint}` : undefined}
                                     aria-pressed={selected}
                                     onClick={() => toggleCategory(option.id)}
-                                    className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${mixedUse ? styles.mixedUse : ''} ${selected ? styles.selectedChip : ''}`}
+                                    className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${selected ? styles.selectedChip : ''}`}
                                   >
                                     <span className={styles.checkbox}>
                                       {selected && <Check className="size-3" strokeWidth={3} />}
