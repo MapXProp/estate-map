@@ -1,6 +1,6 @@
 # Channel hero images
 
-These images are used as atmosphere illustrations, not as available MapXProp listings. Each hero links to its image's Unsplash page.
+These images are used as atmosphere illustrations, not as available MapXProp listings. Source details are retained here for asset maintenance; the heroes display no attribution overlay. The Free Unsplash License does not require attribution (rechecked on 2026-09-11).
 
 ## Homes — home-garden.jpg
 

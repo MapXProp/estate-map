@@ -28,8 +28,6 @@ const channelContent = {
       cityLabel: 'Find homes by city',
     },
     photo: '/images/channel-heroes/home-garden.jpg',
-    photoSource: 'https://unsplash.com/photos/modern-house-with-large-windows-and-lush-garden-eWOgoFHlE8g',
-    photographer: 'Aalo Lens',
   },
   rooms: {
     icon: KeyRound,
@@ -48,8 +46,6 @@ const channelContent = {
       cityLabel: 'Find monthly rentals by city',
     },
     photo: '/images/channel-heroes/monthly-room.jpg',
-    photoSource: 'https://unsplash.com/photos/modern-bedroom-with-desk-bed-and-city-view-f_mWO1Spf4w',
-    photographer: 'Marc Wieland',
   },
   business: {
     icon: Store,
@@ -68,8 +64,6 @@ const channelContent = {
       cityLabel: 'Find business spaces by city',
     },
     photo: '/images/business-hero/cafe-interior.jpg',
-    photoSource: 'https://unsplash.com/photos/empty-cafe-dining-area-with-wooden-chairs-and-tables-A54YSu4ZpGc',
-    photographer: 'Haberdoedas',
   },
 } satisfies Record<ChannelMode, unknown>
 
@@ -118,20 +112,6 @@ export default function ChannelDiscoveryHero({ mode }: { mode: ChannelMode }) {
             sizes="(max-width: 639px) 30vw, (max-width: 1279px) 43vw, 530px"
             className={styles.photo}
           />
-          <figcaption className={styles.photoCredit}>
-            <a
-              href={content.photoSource}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={
-                th
-                  ? `ภาพบรรยากาศ โดย ${content.photographer} บน Unsplash (เปิดแท็บใหม่)`
-                  : `Atmosphere photo by ${content.photographer} on Unsplash (opens a new tab)`
-              }
-            >
-              <span>{th ? 'ภาพบรรยากาศ · ' : 'Inspiration · '}</span>Unsplash
-            </a>
-          </figcaption>
         </figure>
       </div>
 

@@ -28,35 +28,59 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: #f4f6f4;
+  box-shadow: inset 0 0 0 1px #e4e9e5;
 }
 .offers button {
+  position: relative;
+  isolation: isolate;
   display: flex;
   min-height: 44px;
+  min-width: 54px;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 10px;
-  border: 1px solid #e1e7e2;
-  border-radius: 12px;
-  color: #68766c;
-  background: #f9faf9;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: #657269;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  transition: color 160ms ease;
+}
+.offers button::before {
+  content: '';
+  position: absolute;
+  inset: 4px 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: #e7ede8;
+  opacity: 0;
+  transform: scale(0.94);
   transition:
+    opacity 160ms ease,
     background 160ms ease,
-    border-color 160ms ease;
+    transform 160ms ease;
 }
 .offers button[aria-pressed='true'] {
-  border-color: #cbd8ce;
-  background: #eaf0eb;
-  color: #415b4a;
+  color: #385746;
+}
+.offers button[aria-pressed='true']::before {
+  opacity: 1;
+  transform: scale(1);
 }
 .offers button:hover:not(:disabled) {
-  border-color: #a9bdae;
-  background: #e2ece4;
+  color: #385746;
+}
+.offers button:hover:not(:disabled)::before {
+  background: #dfe8e1;
+  opacity: 1;
+  transform: scale(1);
 }
 .offers button:disabled {
   cursor: default;
@@ -65,25 +89,27 @@
   outline: 2px solid #687e6d;
   outline-offset: 2px;
 }
-.checkbox {
-  display: grid;
-  width: 13px;
-  height: 13px;
-  place-items: center;
-  border: 1px solid #b9c8bd;
-  border-radius: 4px;
-  background: #fff;
+.offerLabel {
+  position: relative;
 }
-.checkbox svg {
+.offerLabel::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: #829a89;
   opacity: 0;
+  transform: translateX(-50%) scaleX(0.5);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
-.offers button[aria-pressed='true'] .checkbox {
-  border-color: #637d6c;
-  background: #637d6c;
-  color: #fff;
-}
-.offers button[aria-pressed='true'] .checkbox svg {
+.offers button[aria-pressed='true'] .offerLabel::after {
   opacity: 1;
+  transform: translateX(-50%) scaleX(1);
 }
 .searchField {
   min-width: 0;
@@ -137,7 +163,9 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .offers button {
+  .offers button,
+  .offers button::before,
+  .offerLabel::after {
     transition: none;
   }
 }
@@ -145,21 +173,26 @@
   border-color: #35423a;
 }
 :global(.dark) .offers button {
-  border-color: #405047;
-  background: #242e27;
   color: #b8c9be;
 }
-:global(.dark) .offers button[aria-pressed='true'] {
-  border-color: #607768;
+:global(.dark) .offers {
+  background: #242e27;
+  box-shadow: inset 0 0 0 1px #405047;
+}
+:global(.dark) .offers button::before {
   background: #344b3d;
+}
+:global(.dark) .offers button[aria-pressed='true'] {
   color: #e0ece3;
 }
 :global(.dark) .offers button:hover:not(:disabled) {
+  color: #e0ece3;
+}
+:global(.dark) .offers button:hover:not(:disabled)::before {
   background: #3a5545;
 }
-:global(.dark) .checkbox {
-  background: #223329;
-  border-color: #859e8e;
+:global(.dark) .offerLabel::after {
+  background: #a3baa9;
 }
 :global(.dark) .utilities {
   color: #bfcec5;

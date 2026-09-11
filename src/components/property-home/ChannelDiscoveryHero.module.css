@@ -169,22 +169,6 @@
   object-position: var(--hero-photo-position);
 }
 
-.photoCredit {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
-  font-size: 10px;
-  line-height: 1.5;
-  color: #fff;
-}
-
-.photoCredit a {
-  display: inline-block;
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: rgb(30 25 21 / 72%);
-}
-
 .locations {
   position: relative;
   display: flex;
@@ -377,16 +361,6 @@
 
   .photo {
     object-position: var(--hero-photo-mobile-position);
-  }
-
-  .photoCredit {
-    right: 4px;
-    bottom: 4px;
-    font-size: 8px;
-  }
-
-  .photoCredit span {
-    display: none;
   }
 
   .actions {

@@ -10,7 +10,6 @@ import {
 } from '@/lib/propertyHeaderSearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
-import { Check } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import AvatarDropdown from './AvatarDropdown'
@@ -40,6 +39,7 @@ const SearchFirstHeader = () => {
           <div className={styles.searchCluster}>
             <div
               className={styles.offers}
+              data-header-offers="segments"
               role="group"
               aria-label={isThai ? 'ซื้อหรือเช่า เลือกได้ทั้งคู่' : 'Buy or rent, select either or both'}
             >
@@ -54,10 +54,9 @@ const SearchFirstHeader = () => {
                     disabled={selected && offers.length === 1}
                     onClick={() => setOffers((previous) => toggleHeaderOffer(previous, offer))}
                   >
-                    <span className={styles.checkbox}>
-                      <Check className="size-2.5" aria-hidden="true" strokeWidth={2.5} />
+                    <span className={styles.offerLabel}>
+                      {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
                     </span>
-                    {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
                   </button>
                 )
               })}
