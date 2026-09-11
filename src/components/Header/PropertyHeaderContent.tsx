@@ -10,6 +10,7 @@ import {
 } from '@/lib/propertyHeaderSearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
+import { House, KeyRound } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import AvatarDropdown from './AvatarDropdown'
@@ -39,10 +40,13 @@ const SearchFirstHeader = () => {
           <div className={styles.searchCluster}>
             <div
               className={styles.offers}
-              data-header-offers="segments"
+              data-header-offers="home-and-key"
+              data-selection={offers.length === 2 ? 'both' : offers[0]}
               role="group"
               aria-label={isThai ? 'ซื้อหรือเช่า เลือกได้ทั้งคู่' : 'Buy or rent, select either or both'}
             >
+              <span className={styles.offerSelection} aria-hidden="true" />
+              <span className={styles.offerDivider} aria-hidden="true" />
               {defaultHeaderOffers.map((offer) => {
                 const selected = offers.includes(offer)
                 return (
@@ -54,6 +58,13 @@ const SearchFirstHeader = () => {
                     disabled={selected && offers.length === 1}
                     onClick={() => setOffers((previous) => toggleHeaderOffer(previous, offer))}
                   >
+                    <span className={styles.offerIcon} aria-hidden="true">
+                      {offer === 'sale' ? (
+                        <House size={18} strokeWidth={1.8} />
+                      ) : (
+                        <KeyRound size={18} strokeWidth={1.8} />
+                      )}
+                    </span>
                     <span className={styles.offerLabel}>
                       {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
                     </span>
@@ -74,7 +85,7 @@ const SearchFirstHeader = () => {
           </div>
           <div className={styles.actions}>
             <PropertyListingCta
-              tone="quiet"
+              tone="bright"
               label={isThai ? 'ลงประกาศ' : 'List property'}
               freeLabel={isThai ? 'ฟรี' : 'Free'}
             />

@@ -25,91 +25,118 @@
   gap: 10px;
 }
 .offers {
-  display: flex;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   flex-shrink: 0;
-  align-items: center;
-  gap: 2px;
+  width: 156px;
   padding-inline: 4px;
-  border-radius: 999px;
-  background: #f4f6f4;
-  box-shadow: inset 0 0 0 1px #e4e9e5;
+  border-radius: 16px;
+  background: #f1f4f2;
+  box-shadow:
+    inset 0 0 0 1px #e0e7e2,
+    0 2px 5px rgb(28 65 45 / 3%);
+}
+.offerSelection {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 4px;
+  z-index: -1;
+  width: calc((100% - 8px) / 2);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff 0%, #eff7f1 48%, #e0eee5 100%);
+  box-shadow:
+    inset 0 0 0 1px #c4d7cb,
+    inset 0 1px 0 rgb(255 255 255 / 90%),
+    0 2px 4px rgb(39 75 52 / 8%);
+  transition:
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.offers[data-selection='rent'] .offerSelection {
+  transform: translateX(100%);
+}
+.offers[data-selection='both'] .offerSelection {
+  width: calc(100% - 8px);
+}
+.offerDivider {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  width: 1px;
+  background: #c8d9ce;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.offers[data-selection='both'] .offerDivider {
+  opacity: 1;
 }
 .offers button {
   position: relative;
-  isolation: isolate;
   display: flex;
   min-height: 44px;
-  min-width: 54px;
+  min-width: 0;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
+  gap: 6px;
+  padding: 0 9px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 12px;
   color: #657269;
   background: transparent;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: color 160ms ease;
-}
-.offers button::before {
-  content: '';
-  position: absolute;
-  inset: 4px 0;
-  z-index: -1;
-  border-radius: inherit;
-  background: #e7ede8;
-  opacity: 0;
-  transform: scale(0.94);
   transition:
-    opacity 160ms ease,
-    background 160ms ease,
+    color 160ms ease,
     transform 160ms ease;
 }
 .offers button[aria-pressed='true'] {
-  color: #385746;
-}
-.offers button[aria-pressed='true']::before {
-  opacity: 1;
-  transform: scale(1);
+  color: #28593f;
 }
 .offers button:hover:not(:disabled) {
-  color: #385746;
+  color: #174c33;
 }
-.offers button:hover:not(:disabled)::before {
-  background: #dfe8e1;
-  opacity: 1;
-  transform: scale(1);
+.offers button:active:not(:disabled) {
+  transform: scale(0.96);
 }
 .offers button:disabled {
   cursor: default;
 }
 .offers button:focus-visible {
-  outline: 2px solid #687e6d;
+  outline: 2px solid #527760;
   outline-offset: 2px;
 }
-.offerLabel {
-  position: relative;
-}
-.offerLabel::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -4px;
-  width: 12px;
-  height: 2px;
-  border-radius: 2px;
-  background: #829a89;
-  opacity: 0;
-  transform: translateX(-50%) scaleX(0.5);
+.offerIcon {
+  display: grid;
+  width: 20px;
+  height: 22px;
+  flex-shrink: 0;
+  place-items: center;
+  color: #78877d;
   transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+    color 200ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.offers button[aria-pressed='true'] .offerLabel::after {
-  opacity: 1;
-  transform: translateX(-50%) scaleX(1);
+.offers button[aria-pressed='true'] .offerIcon {
+  color: #3e7b55;
+}
+.offers button[data-header-offer='sale'][aria-pressed='true'] .offerIcon svg {
+  fill: #dcecdf;
+}
+.offers button[data-header-offer='sale']:hover:not(:disabled) .offerIcon {
+  transform: translateY(-2px);
+}
+.offers button[data-header-offer='rent']:hover:not(:disabled) .offerIcon {
+  transform: rotate(-16deg);
+}
+.offerLabel {
+  line-height: 1.5;
 }
 .searchField {
   min-width: 0;
@@ -164,9 +191,14 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .offers button,
-  .offers button::before,
-  .offerLabel::after {
+  .offerSelection,
+  .offerDivider,
+  .offerIcon {
     transition: none;
+  }
+  .offers button:active:not(:disabled),
+  .offers button:hover:not(:disabled) .offerIcon {
+    transform: none;
   }
 }
 :global(.dark) .row {
@@ -179,8 +211,14 @@
   background: #242e27;
   box-shadow: inset 0 0 0 1px #405047;
 }
-:global(.dark) .offers button::before {
-  background: #344b3d;
+:global(.dark) .offerSelection {
+  background: linear-gradient(135deg, #3b5142, #2c4133);
+  box-shadow:
+    inset 0 0 0 1px #587661,
+    0 2px 4px rgb(0 0 0 / 12%);
+}
+:global(.dark) .offerDivider {
+  background: #587661;
 }
 :global(.dark) .offers button[aria-pressed='true'] {
   color: #e0ece3;
@@ -188,11 +226,14 @@
 :global(.dark) .offers button:hover:not(:disabled) {
   color: #e0ece3;
 }
-:global(.dark) .offers button:hover:not(:disabled)::before {
-  background: #3a5545;
+:global(.dark) .offerIcon {
+  color: #a4b7aa;
 }
-:global(.dark) .offerLabel::after {
-  background: #a3baa9;
+:global(.dark) .offers button[aria-pressed='true'] .offerIcon {
+  color: #b4d4be;
+}
+:global(.dark) .offers button[data-header-offer='sale'][aria-pressed='true'] .offerIcon svg {
+  fill: #476a52;
 }
 :global(.dark) .utilities {
   color: #bfcec5;
