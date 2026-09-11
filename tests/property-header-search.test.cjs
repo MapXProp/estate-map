@@ -17,7 +17,11 @@ function load(relative, imports = {}) {
   }
   vm.runInNewContext(
     ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+        jsx: ts.JsxEmit.ReactJSX,
+      },
     }).outputText,
     context,
     { filename }
@@ -62,15 +66,73 @@ test('search text remains intact and cannot overwrite the selected offer through
   assert.deepEqual([...url.searchParams.keys()], ['q', 'channel', 'offer_type'])
 })
 
-test('primary offer choices allow either or both and never leave a hidden all-offers state', () => {
-  const original = ['sale', 'rent']
-  const rent = api.toggleHeaderOffer(original, 'sale')
-  assert.deepEqual(plain(rent), ['rent'])
-  assert.deepEqual(plain(api.toggleHeaderOffer(rent, 'rent')), ['rent'])
-  assert.deepEqual(plain(api.toggleHeaderOffer(rent, 'sale')), ['rent', 'sale'])
-  assert.deepEqual(original, ['sale', 'rent'])
-  const url = new URL(api.getHeaderMapSearchUrl('', 'homes', []), 'https://mapxprop.com')
-  assert.deepEqual(url.searchParams.getAll('offer_type'), ['sale', 'rent'])
+test('clicking a header offer selects exactly that offer and submits it, including repeated clicks', () => {
+  const find = (node, predicate) => {
+    if (Array.isArray(node)) return node.map((child) => find(child, predicate)).find(Boolean)
+    if (!node || typeof node !== 'object') return undefined
+    return predicate(node) ? node : find(node.props?.children, predicate)
+  }
+  for (const channel of ['homes', 'rooms', 'business']) {
+    let state
+    const Omnibox = () => null
+    const leaf = () => null
+    const header = load('src/components/Header/PropertyHeaderContent.tsx', {
+      'react/jsx-runtime': require('react/jsx-runtime'),
+      react: {
+        useState: (initial) => {
+          if (state === undefined) state = initial()
+          return [
+            state,
+            (value) => {
+              state = typeof value === 'function' ? value(state) : value
+            },
+          ]
+        },
+      },
+      'next/navigation': { usePathname: () => `/${channel}` },
+      'lucide-react': { House: leaf, KeyRound: leaf },
+      '@/components/preferences/PreferencesProvider': {
+        usePreferences: () => ({ locale: 'th', propertyZone: channel }),
+      },
+      '@/components/property-home/PropertySearchOmnibox': { default: Omnibox },
+      '@/lib/propertyHeaderSearch': api,
+      '@/lib/propertyZone': load('src/lib/propertyZone.ts'),
+      '@/shared/Logo': { default: leaf },
+      './AvatarDropdown': { default: leaf },
+      './CurrLangDropdown': { default: leaf },
+      './NotifyDropdown': { default: leaf },
+      './PropertyHeaderClassic': { default: leaf },
+      './PropertyHeaderContent.module.css': { default: {} },
+      './PropertyListingCta': { default: leaf },
+      './PropertySiteSwitcher': { default: leaf },
+    }).default
+    const render = () => {
+      const element = header({})
+      return element.type(element.props)
+    }
+    let tree = render()
+    assert.deepEqual(plain(state), ['sale', 'rent'])
+    for (const clicked of ['sale', 'sale', 'rent', 'rent', 'sale']) {
+      const button = find(tree, (node) => node.props?.['data-header-offer'] === clicked)
+      assert.ok(button && !button.props.disabled)
+      button.props.onClick()
+      tree = render()
+      for (const offer of ['sale', 'rent']) {
+        assert.equal(
+          find(tree, (node) => node.props?.['data-header-offer'] === offer).props['aria-pressed'],
+          offer === clicked
+        )
+      }
+      const url = new URL(
+        find(tree, (node) => node.type === Omnibox).props.buildSearchUrl('อ่อนนุช'),
+        'https://mapxprop.com'
+      )
+      assert.deepEqual(url.searchParams.getAll('offer_type'), [clicked])
+      assert.equal(url.searchParams.get('channel'), channel)
+      assert.equal(url.searchParams.get('q'), 'อ่อนนุช')
+      assert.deepEqual(plain(map.initialMapOfferTypes(url.searchParams.getAll('offer_type'))), [clicked])
+    }
+  }
 })
 
 test('the header comparison option selects only the supported legacy layout', () => {

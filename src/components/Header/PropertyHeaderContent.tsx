@@ -2,12 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmnibox'
-import {
-  defaultHeaderOffers,
-  getHeaderMapSearchUrl,
-  toggleHeaderOffer,
-  type HeaderOfferType,
-} from '@/lib/propertyHeaderSearch'
+import { defaultHeaderOffers, getHeaderMapSearchUrl, type HeaderOfferType } from '@/lib/propertyHeaderSearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
 import { House, KeyRound } from 'lucide-react'
@@ -43,7 +38,7 @@ const SearchFirstHeader = () => {
               data-header-offers="home-and-key"
               data-selection={offers.length === 2 ? 'both' : offers[0]}
               role="group"
-              aria-label={isThai ? 'ซื้อหรือเช่า เลือกได้ทั้งคู่' : 'Buy or rent, select either or both'}
+              aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
             >
               <span className={styles.offerSelection} aria-hidden="true" />
               <span className={styles.offerDivider} aria-hidden="true" />
@@ -55,8 +50,7 @@ const SearchFirstHeader = () => {
                     type="button"
                     data-header-offer={offer}
                     aria-pressed={selected}
-                    disabled={selected && offers.length === 1}
-                    onClick={() => setOffers((previous) => toggleHeaderOffer(previous, offer))}
+                    onClick={() => setOffers([offer])}
                   >
                     <span className={styles.offerIcon} aria-hidden="true">
                       {offer === 'sale' ? (
