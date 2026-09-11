@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import './business-theme.css';
 @plugin '@tailwindcss/typography';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/aspect-ratio';

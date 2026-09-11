@@ -46,17 +46,19 @@
   --search-selection-border: #b7d4e5;
   --search-ring: rgb(38 117 152 / 12%);
 }
-.searchCluster[data-search-channel='business'] {
-  --search-accent: #e65a2f;
-  --search-strong: #e65a2f;
-  --search-hover: #d64b23;
-  --search-ink: #a63816;
-  --search-muted: #7b695e;
-  --search-border: #ffd5c4;
-  --search-surface: #fff2ec;
-  --search-selection: #ffe7dc;
-  --search-selection-border: #f2a086;
-  --search-ring: rgb(230 90 47 / 12%);
+.searchCluster[data-search-channel='business'],
+:global(.dark) .searchCluster[data-search-channel='business'] {
+  --search-accent: var(--business-accent);
+  --search-strong: var(--business-action);
+  --search-hover: var(--business-action-hover);
+  --search-button-ink: var(--business-button-ink);
+  --search-ink: var(--business-ink);
+  --search-muted: var(--business-muted);
+  --search-border: var(--business-border);
+  --search-surface: var(--business-surface);
+  --search-selection: var(--business-soft);
+  --search-selection-border: var(--business-selection-border);
+  --search-ring: var(--business-ring);
 }
 .offers {
   position: relative;
@@ -274,19 +276,6 @@
   --search-selection: #2d4554;
   --search-selection-border: #4c7185;
   --search-ring: rgb(155 207 230 / 12%);
-}
-:global(.dark) .searchCluster[data-search-channel='business'] {
-  --search-accent: #ffc2ad;
-  --search-strong: #ffc2ad;
-  --search-hover: #ffd8ca;
-  --search-button-ink: #351b14;
-  --search-ink: #ffece5;
-  --search-muted: #d9b9ab;
-  --search-border: #644033;
-  --search-surface: #271a16;
-  --search-selection: #351b14;
-  --search-selection-border: #754032;
-  --search-ring: rgb(255 194 173 / 12%);
 }
 :global(.dark) .utilities {
   color: #bfcec5;

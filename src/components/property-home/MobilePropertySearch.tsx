@@ -114,12 +114,12 @@ const propertyGroupTones: Record<
   },
   business: {
     activeTab:
-      'bg-[#E65A2F] text-white shadow-[0_3px_10px_rgba(230,90,47,0.22)] ring-1 ring-[#E65A2F] dark:bg-[#FFC2AD] dark:text-[#351B14] dark:ring-[#FFC2AD]',
-    inactiveCount: 'bg-[#FFE7DC] text-[#D94A22] dark:bg-[#351B14] dark:text-[#FFC2AD]',
+      'bg-[var(--business-action)] text-[color:var(--business-button-ink)] shadow-[0_3px_10px_var(--business-ring)] ring-1 ring-[var(--business-action)]',
+    inactiveCount: 'bg-[var(--business-soft)] text-[color:var(--business-ink)]',
     activeCard:
-      'border-[#E65A2F] bg-[#FFF2EC] text-[#8C321D] ring-1 ring-[#E65A2F] ring-inset dark:border-[#FFC2AD] dark:bg-[#351B14] dark:text-[#FFE8DF] dark:ring-[#FFC2AD]',
-    check: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
-    activeIcon: 'bg-white/80 dark:bg-[#4A251C]',
+      'border-[var(--business-accent)] bg-[var(--business-surface)] text-[color:var(--business-ink)] ring-1 ring-[var(--business-accent)] ring-inset',
+    check: 'bg-[var(--business-action)] text-[color:var(--business-button-ink)]',
+    activeIcon: 'bg-[var(--business-soft)]',
   },
 }
 

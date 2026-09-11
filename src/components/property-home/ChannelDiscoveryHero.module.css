@@ -1,20 +1,25 @@
 .section {
-  --hero-ink: #332e2a;
-  --hero-accent: #a64630;
-  --hero-border: #eee3db;
-  --hero-background: #faf5ef;
-  --hero-description: #72665c;
-  --hero-button: #b24c34;
-  --hero-button-hover: #963d29;
-  --hero-secondary: #675c53;
-  --hero-locations: #665e57;
-  --hero-label: #84766a;
-  --hero-link-background: #faf1ea;
-  --hero-link-ink: #a64630;
+  --hero-ink: var(--business-body);
+  --hero-accent: var(--business-action);
+  --hero-border: var(--business-border);
+  --hero-background: var(--business-surface);
+  --hero-description: var(--business-muted);
+  --hero-button: var(--business-action);
+  --hero-button-hover: var(--business-action-hover);
+  --hero-button-ink: #fff;
+  --hero-secondary: var(--business-muted);
+  --hero-locations: var(--business-muted);
+  --hero-label: var(--business-muted);
+  --hero-link-background: var(--business-soft);
+  --hero-link-ink: var(--business-ink);
   --hero-city-background: #fff;
   --hero-photo-position: 50% 48%;
   --hero-photo-mobile-position: 58% center;
   padding-top: 20px;
+}
+
+.section[data-property-hero='business'] {
+  --hero-button-ink: var(--business-button-ink);
 }
 
 .section[data-property-hero='homes'] {
@@ -132,7 +137,7 @@
   padding: 11px 17px;
   border-radius: 13px;
   background: var(--hero-button);
-  color: #fff;
+  color: var(--hero-button-ink);
 }
 
 .primary:hover {
@@ -267,17 +272,7 @@
 }
 
 :global(.dark) .section {
-  --hero-ink: #f4eee7;
-  --hero-accent: #e5a18c;
-  --hero-border: #493a30;
-  --hero-background: #27221e;
-  --hero-description: #c4b8ac;
-  --hero-secondary: #c4b8ac;
-  --hero-locations: #c4b8ac;
-  --hero-label: #baaa9c;
-  --hero-city-background: #27221e;
-  --hero-link-background: #3b2e26;
-  --hero-link-ink: #efb39e;
+  --hero-city-background: var(--business-surface);
 }
 
 :global(.dark) .section[data-property-hero='homes'] {
