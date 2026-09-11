@@ -33,23 +33,26 @@ const taxonomy = load('src/data/propertyTaxonomy.ts')
 const map = load('src/lib/propertyMapSearch.ts', { '@/data/propertyTaxonomy': taxonomy, './propertySearch': {} })
 const plain = (value) => JSON.parse(JSON.stringify(value))
 
-test('the header starts with buy and rent and can search the selected category without a location', () => {
+test('header defaults include only rental offers for rooms and can search without a location', () => {
   assert.deepEqual(plain(api.defaultHeaderOffers), ['sale', 'rent'])
   for (const channel of ['homes', 'rooms', 'business']) {
     const url = new URL(api.getHeaderMapSearchUrl('', channel, api.defaultHeaderOffers), 'https://mapxprop.com')
     assert.equal(url.pathname, '/properties/map')
     assert.equal(url.searchParams.has('q'), false)
     assert.equal(url.searchParams.get('channel'), channel)
-    assert.deepEqual(url.searchParams.getAll('offer_type'), ['sale', 'rent'])
+    assert.deepEqual(url.searchParams.getAll('offer_type'), channel === 'rooms' ? ['rent'] : ['sale', 'rent'])
   }
 })
 
 test('header offers and channel initialize the matching map filters for both single and combined offers', () => {
   for (const channel of ['homes', 'rooms', 'business']) {
-    for (const offers of [['sale'], ['rent'], ['sale', 'rent']]) {
+    for (const offers of [['sale'], ['rent'], ['sale', 'rent'], []]) {
       const url = new URL(api.getHeaderMapSearchUrl('อ่อนนุช', channel, offers), 'https://mapxprop.com')
       assert.equal(url.searchParams.get('q'), 'อ่อนนุช')
-      assert.deepEqual(plain(map.initialMapOfferTypes(url.searchParams.getAll('offer_type'))), offers)
+      assert.deepEqual(
+        plain(map.initialMapOfferTypes(url.searchParams.getAll('offer_type'))),
+        channel === 'rooms' ? ['rent'] : offers.length ? offers : ['sale', 'rent']
+      )
       const selected = map.initialMapCategories({ discoveryChannels: [url.searchParams.get('channel')] })
       const group = map.mapCategoryGroups.find((item) => item.code === channel)
       assert.ok(group.options.every((item) => selected.includes(item.id)))
@@ -73,6 +76,7 @@ test('clicking a header offer selects exactly that offer and submits it, includi
     return predicate(node) ? node : find(node.props?.children, predicate)
   }
   for (const channel of ['homes', 'rooms', 'business']) {
+    let activeChannel = channel
     let state
     const Omnibox = () => null
     const leaf = () => null
@@ -89,10 +93,10 @@ test('clicking a header offer selects exactly that offer and submits it, includi
           ]
         },
       },
-      'next/navigation': { usePathname: () => `/${channel}` },
+      'next/navigation': { usePathname: () => `/${activeChannel}` },
       'lucide-react': { House: leaf, KeyRound: leaf },
       '@/components/preferences/PreferencesProvider': {
-        usePreferences: () => ({ locale: 'th', propertyZone: channel }),
+        usePreferences: () => ({ locale: 'th', propertyZone: activeChannel }),
       },
       '@/components/property-home/PropertySearchOmnibox': { default: Omnibox },
       '@/lib/propertyHeaderSearch': api,
@@ -112,6 +116,22 @@ test('clicking a header offer selects exactly that offer and submits it, includi
     }
     let tree = render()
     assert.deepEqual(plain(state), ['sale', 'rent'])
+    const assertRentalOnly = () => {
+      assert.ok(!find(tree, (node) => node.props?.['data-header-offer']))
+      assert.ok(find(tree, (node) => node.props?.['data-header-offer-fixed'] === 'rent'))
+      for (const query of ['', 'อ่อนนุช']) {
+        const url = new URL(
+          find(tree, (node) => node.type === Omnibox).props.buildSearchUrl(query),
+          'https://mapxprop.com'
+        )
+        assert.equal(url.searchParams.get('channel'), 'rooms')
+        assert.deepEqual(url.searchParams.getAll('offer_type'), ['rent'])
+      }
+    }
+    if (channel === 'rooms') {
+      assertRentalOnly()
+      continue
+    }
     for (const clicked of ['sale', 'sale', 'rent', 'rent', 'sale']) {
       const button = find(tree, (node) => node.props?.['data-header-offer'] === clicked)
       assert.ok(button && !button.props.disabled)
@@ -134,6 +154,17 @@ test('clicking a header offer selects exactly that offer and submits it, includi
       assert.equal(url.searchParams.get('q'), 'อ่อนนุช')
       assert.deepEqual(plain(map.initialMapOfferTypes(url.searchParams.getAll('offer_type'))), [clicked])
     }
+    activeChannel = 'rooms'
+    tree = render()
+    assertRentalOnly()
+    activeChannel = channel
+    tree = render()
+    const restored = new URL(
+      find(tree, (node) => node.type === Omnibox).props.buildSearchUrl(''),
+      'https://mapxprop.com'
+    )
+    assert.equal(restored.searchParams.get('channel'), channel)
+    assert.deepEqual(restored.searchParams.getAll('offer_type'), ['sale'])
   }
 })
 

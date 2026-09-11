@@ -2,7 +2,12 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmnibox'
-import { defaultHeaderOffers, getHeaderMapSearchUrl, type HeaderOfferType } from '@/lib/propertyHeaderSearch'
+import {
+  defaultHeaderOffers,
+  getHeaderMapSearchUrl,
+  getHeaderOffers,
+  type HeaderOfferType,
+} from '@/lib/propertyHeaderSearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
 import { House, KeyRound } from 'lucide-react'
@@ -22,6 +27,8 @@ const SearchFirstHeader = () => {
   const pathname = usePathname()
   const siteMode = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const [offers, setOffers] = useState<HeaderOfferType[]>(() => [...defaultHeaderOffers])
+  const rentalOnly = siteMode === 'rooms'
+  const selectedOffers = getHeaderOffers(siteMode, offers)
   const searchTone = siteMode === 'rooms' ? 'mint' : siteMode === 'business' ? 'commerce' : 'green'
 
   return (
@@ -44,35 +51,55 @@ const SearchFirstHeader = () => {
               <div
                 className={styles.offers}
                 data-header-offers="home-and-key"
-                data-selection={offers.length === 2 ? 'both' : offers[0]}
+                data-selection={selectedOffers.length === 2 ? 'both' : selectedOffers[0]}
+                data-offer-count={rentalOnly ? 1 : 2}
                 role="group"
-                aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
+                aria-label={
+                  rentalOnly
+                    ? isThai
+                      ? 'รูปแบบประกาศ'
+                      : 'Listing type'
+                    : isThai
+                      ? 'เลือกซื้อหรือเช่า'
+                      : 'Choose buy or rent'
+                }
               >
                 <span className={styles.offerSelection} aria-hidden="true" />
-                <span className={styles.offerDivider} aria-hidden="true" />
-                {defaultHeaderOffers.map((offer) => {
-                  const selected = offers.includes(offer)
-                  return (
-                    <button
-                      key={offer}
-                      type="button"
-                      data-header-offer={offer}
-                      aria-pressed={selected}
-                      onClick={() => setOffers([offer])}
-                    >
-                      <span className={styles.offerIcon} aria-hidden="true">
-                        {offer === 'sale' ? (
-                          <House size={18} strokeWidth={1.8} />
-                        ) : (
-                          <KeyRound size={18} strokeWidth={1.8} />
-                        )}
-                      </span>
-                      <span className={styles.offerLabel}>
-                        {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
-                      </span>
-                    </button>
-                  )
-                })}
+                {rentalOnly ? (
+                  <span className={styles.fixedOffer} data-header-offer-fixed="rent">
+                    <span className={styles.offerIcon} aria-hidden="true">
+                      <KeyRound size={18} strokeWidth={1.8} />
+                    </span>
+                    <span className={styles.offerLabel}>{isThai ? 'เช่า' : 'Rent'}</span>
+                  </span>
+                ) : (
+                  <>
+                    <span className={styles.offerDivider} aria-hidden="true" />
+                    {defaultHeaderOffers.map((offer) => {
+                      const selected = selectedOffers.includes(offer)
+                      return (
+                        <button
+                          key={offer}
+                          type="button"
+                          data-header-offer={offer}
+                          aria-pressed={selected}
+                          onClick={() => setOffers([offer])}
+                        >
+                          <span className={styles.offerIcon} aria-hidden="true">
+                            {offer === 'sale' ? (
+                              <House size={18} strokeWidth={1.8} />
+                            ) : (
+                              <KeyRound size={18} strokeWidth={1.8} />
+                            )}
+                          </span>
+                          <span className={styles.offerLabel}>
+                            {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </>
+                )}
               </div>
             </PropertySearchOmnibox>
           </div>
