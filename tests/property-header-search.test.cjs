@@ -115,6 +115,8 @@ test('clicking a header offer selects exactly that offer and submits it, includi
     for (const clicked of ['sale', 'sale', 'rent', 'rent', 'sale']) {
       const button = find(tree, (node) => node.props?.['data-header-offer'] === clicked)
       assert.ok(button && !button.props.disabled)
+      assert.equal(button.props.type, 'button', 'offer controls must not submit their containing search form')
+      assert.ok(find(find(tree, (node) => node.type === Omnibox).props.children, (node) => node === button))
       button.props.onClick()
       tree = render()
       for (const offer of ['sale', 'rent']) {

@@ -19,10 +19,44 @@
   box-shadow: none;
 }
 .searchCluster {
-  display: flex;
+  --search-accent: #176b50;
+  --search-strong: #123f32;
+  --search-hover: #0b3227;
+  --search-button-ink: #fff;
+  --search-ink: #28593f;
+  --search-muted: #627169;
+  --search-border: #d8e5dd;
+  --search-surface: #f8faf8;
+  --search-selection: #e2efe6;
+  --search-selection-border: #bfd5c5;
+  --search-ring: rgb(23 107 80 / 12%);
   min-width: 0;
-  align-items: center;
-  gap: 10px;
+  width: 100%;
+  max-width: 780px;
+}
+.searchCluster[data-search-channel='rooms'] {
+  --search-accent: #216a8c;
+  --search-strong: #267598;
+  --search-hover: #1d5f7e;
+  --search-ink: #22566c;
+  --search-muted: #5e7180;
+  --search-border: #d5e5ee;
+  --search-surface: #f5f9fc;
+  --search-selection: #e0eef7;
+  --search-selection-border: #b7d4e5;
+  --search-ring: rgb(38 117 152 / 12%);
+}
+.searchCluster[data-search-channel='business'] {
+  --search-accent: #a64630;
+  --search-strong: #b24c34;
+  --search-hover: #963d29;
+  --search-ink: #803f30;
+  --search-muted: #786960;
+  --search-border: #eeddd7;
+  --search-surface: #fcf8f5;
+  --search-selection: #f6e7e0;
+  --search-selection-border: #e6c4b6;
+  --search-ring: rgb(178 76 52 / 12%);
 }
 .offers {
   position: relative;
@@ -30,13 +64,19 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   flex-shrink: 0;
-  width: 156px;
+  width: 148px;
   padding-inline: 4px;
-  border-radius: 16px;
-  background: #f1f4f2;
-  box-shadow:
-    inset 0 0 0 1px #e0e7e2,
-    0 2px 5px rgb(28 65 45 / 3%);
+  margin-inline-end: 7px;
+}
+.offers::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  right: -7px;
+  width: 1px;
+  background: var(--search-border);
+  pointer-events: none;
 }
 .offerSelection {
   position: absolute;
@@ -46,11 +86,10 @@
   z-index: -1;
   width: calc((100% - 8px) / 2);
   border-radius: 12px;
-  background: linear-gradient(135deg, #fff 0%, #eff7f1 48%, #e0eee5 100%);
+  background: linear-gradient(135deg, var(--search-surface), var(--search-selection));
   box-shadow:
-    inset 0 0 0 1px #c4d7cb,
-    inset 0 1px 0 rgb(255 255 255 / 90%),
-    0 2px 4px rgb(39 75 52 / 8%);
+    inset 0 0 0 1px var(--search-selection-border),
+    0 1px 3px var(--search-ring);
   transition:
     width 260ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -67,7 +106,7 @@
   bottom: 14px;
   left: 50%;
   width: 1px;
-  background: #c8d9ce;
+  background: var(--search-selection-border);
   pointer-events: none;
   opacity: 0;
   transition: opacity 160ms ease;
@@ -86,7 +125,7 @@
   padding: 0 9px;
   border: 0;
   border-radius: 12px;
-  color: #657269;
+  color: var(--search-muted);
   background: transparent;
   font-size: 13px;
   font-weight: 600;
@@ -97,10 +136,10 @@
     transform 160ms ease;
 }
 .offers button[aria-pressed='true'] {
-  color: #28593f;
+  color: var(--search-ink);
 }
 .offers button:hover:not(:disabled) {
-  color: #174c33;
+  color: var(--search-accent);
 }
 .offers button:active:not(:disabled) {
   transform: scale(0.96);
@@ -109,7 +148,7 @@
   cursor: default;
 }
 .offers button:focus-visible {
-  outline: 2px solid #527760;
+  outline: 2px solid var(--search-accent);
   outline-offset: 2px;
 }
 .offerIcon {
@@ -118,16 +157,17 @@
   height: 22px;
   flex-shrink: 0;
   place-items: center;
-  color: #78877d;
+  color: var(--search-muted);
   transition:
     color 200ms ease,
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .offers button[aria-pressed='true'] .offerIcon {
-  color: #3e7b55;
+  color: var(--search-accent);
 }
-.offers button[data-header-offer='sale'][aria-pressed='true'] .offerIcon svg {
-  fill: #dcecdf;
+.offerIcon svg {
+  fill: none;
+  stroke-width: 1.9;
 }
 .offers button[data-header-offer='sale']:hover:not(:disabled) .offerIcon {
   transform: translateY(-2px);
@@ -137,11 +177,6 @@
 }
 .offerLabel {
   line-height: 1.5;
-}
-.searchField {
-  min-width: 0;
-  flex: 1;
-  max-width: 620px;
 }
 .actions,
 .utilities {
@@ -157,9 +192,6 @@
 }
 @media (min-width: 1024px) and (max-width: 1199px) {
   .row {
-    gap: 8px;
-  }
-  .searchCluster {
     gap: 8px;
   }
   .actions {
@@ -179,8 +211,6 @@
   .searchCluster {
     grid-column: 1 / -1;
     grid-row: 2;
-  }
-  .searchField {
     max-width: none;
   }
   .actions {
@@ -197,43 +227,51 @@
     transition: none;
   }
   .offers button:active:not(:disabled),
-  .offers button:hover:not(:disabled) .offerIcon {
+  .offers button[data-header-offer]:hover:not(:disabled) .offerIcon {
     transform: none;
   }
 }
 :global(.dark) .row {
   border-color: #35423a;
 }
-:global(.dark) .offers button {
-  color: #b8c9be;
+:global(.dark) .searchCluster {
+  --search-accent: #a4d5b6;
+  --search-strong: #b3dec3;
+  --search-hover: #c8e8d3;
+  --search-button-ink: #143424;
+  --search-ink: #e0ece3;
+  --search-muted: #b8c9be;
+  --search-border: #354e3e;
+  --search-surface: #202e25;
+  --search-selection: #334a3a;
+  --search-selection-border: #587661;
+  --search-ring: rgb(164 213 182 / 12%);
 }
-:global(.dark) .offers {
-  background: #242e27;
-  box-shadow: inset 0 0 0 1px #405047;
+:global(.dark) .searchCluster[data-search-channel='rooms'] {
+  --search-accent: #9bcfe6;
+  --search-strong: #9bcfe6;
+  --search-hover: #b8e1f2;
+  --search-button-ink: #14313f;
+  --search-ink: #e2f0f7;
+  --search-muted: #b4c8d3;
+  --search-border: #334b59;
+  --search-surface: #1d2d37;
+  --search-selection: #2d4554;
+  --search-selection-border: #4c7185;
+  --search-ring: rgb(155 207 230 / 12%);
 }
-:global(.dark) .offerSelection {
-  background: linear-gradient(135deg, #3b5142, #2c4133);
-  box-shadow:
-    inset 0 0 0 1px #587661,
-    0 2px 4px rgb(0 0 0 / 12%);
-}
-:global(.dark) .offerDivider {
-  background: #587661;
-}
-:global(.dark) .offers button[aria-pressed='true'] {
-  color: #e0ece3;
-}
-:global(.dark) .offers button:hover:not(:disabled) {
-  color: #e0ece3;
-}
-:global(.dark) .offerIcon {
-  color: #a4b7aa;
-}
-:global(.dark) .offers button[aria-pressed='true'] .offerIcon {
-  color: #b4d4be;
-}
-:global(.dark) .offers button[data-header-offer='sale'][aria-pressed='true'] .offerIcon svg {
-  fill: #476a52;
+:global(.dark) .searchCluster[data-search-channel='business'] {
+  --search-accent: #e5a18c;
+  --search-strong: #e5a18c;
+  --search-hover: #f0baa9;
+  --search-button-ink: #3a2018;
+  --search-ink: #f6e7e0;
+  --search-muted: #cbb9af;
+  --search-border: #574137;
+  --search-surface: #32251f;
+  --search-selection: #50372c;
+  --search-selection-border: #825d4b;
+  --search-ring: rgb(229 161 140 / 12%);
 }
 :global(.dark) .utilities {
   color: #bfcec5;

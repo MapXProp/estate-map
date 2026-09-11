@@ -32,50 +32,49 @@ const SearchFirstHeader = () => {
           <div className={styles.category}>
             <PropertySiteSwitcher compact />
           </div>
-          <div className={styles.searchCluster}>
-            <div
-              className={styles.offers}
-              data-header-offers="home-and-key"
-              data-selection={offers.length === 2 ? 'both' : offers[0]}
-              role="group"
-              aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
+          <div className={styles.searchCluster} data-search-channel={siteMode}>
+            <PropertySearchOmnibox
+              variant="header"
+              tone={searchTone}
+              placeholder={isThai ? 'ค้นหาทำเล โครงการ หรือสถานี' : 'Location, project or station'}
+              buildSearchUrl={(query) => getHeaderMapSearchUrl(query, siteMode, offers)}
+              allowEmptyQuery
+              showTypeLabels
             >
-              <span className={styles.offerSelection} aria-hidden="true" />
-              <span className={styles.offerDivider} aria-hidden="true" />
-              {defaultHeaderOffers.map((offer) => {
-                const selected = offers.includes(offer)
-                return (
-                  <button
-                    key={offer}
-                    type="button"
-                    data-header-offer={offer}
-                    aria-pressed={selected}
-                    onClick={() => setOffers([offer])}
-                  >
-                    <span className={styles.offerIcon} aria-hidden="true">
-                      {offer === 'sale' ? (
-                        <House size={18} strokeWidth={1.8} />
-                      ) : (
-                        <KeyRound size={18} strokeWidth={1.8} />
-                      )}
-                    </span>
-                    <span className={styles.offerLabel}>
-                      {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-            <div className={styles.searchField}>
-              <PropertySearchOmnibox
-                variant="header"
-                tone={searchTone}
-                placeholder={isThai ? 'ค้นหาทำเล โครงการ หรือสถานี' : 'Location, project or station'}
-                buildSearchUrl={(query) => getHeaderMapSearchUrl(query, siteMode, offers)}
-                allowEmptyQuery
-                showTypeLabels
-              />
-            </div>
+              <div
+                className={styles.offers}
+                data-header-offers="home-and-key"
+                data-selection={offers.length === 2 ? 'both' : offers[0]}
+                role="group"
+                aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
+              >
+                <span className={styles.offerSelection} aria-hidden="true" />
+                <span className={styles.offerDivider} aria-hidden="true" />
+                {defaultHeaderOffers.map((offer) => {
+                  const selected = offers.includes(offer)
+                  return (
+                    <button
+                      key={offer}
+                      type="button"
+                      data-header-offer={offer}
+                      aria-pressed={selected}
+                      onClick={() => setOffers([offer])}
+                    >
+                      <span className={styles.offerIcon} aria-hidden="true">
+                        {offer === 'sale' ? (
+                          <House size={18} strokeWidth={1.8} />
+                        ) : (
+                          <KeyRound size={18} strokeWidth={1.8} />
+                        )}
+                      </span>
+                      <span className={styles.offerLabel}>
+                        {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </PropertySearchOmnibox>
           </div>
           <div className={styles.actions}>
             <PropertyListingCta
