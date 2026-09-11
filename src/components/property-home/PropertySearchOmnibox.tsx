@@ -20,6 +20,9 @@ type Props = {
   initialQuery?: string
   onSubmitQuery?: (query: string) => void
   buildQuery?: (query: string) => string
+  buildSearchUrl?: (query: string) => string
+  allowEmptyQuery?: boolean
+  showTypeLabels?: boolean
   suggestionsMode?: 'popover' | 'inline'
   showSuggestionsOnEmpty?: boolean
   placeholder?: string
@@ -31,6 +34,7 @@ const externalLocationPattern =
   /(?:ถนน|ซอย|หมู่บ้าน|คอนโด|อาคาร|ตึก|โครงการ|ตลาด|ห้าง|โรงเรียน|มหาวิทยาลัย|โรงพยาบาล|สถานี|วัด|road|soi|village|condo|building|project|market|mall|school|university|hospital|station)/i
 
 const locationTypeLabels: Record<string, { th: string; en: string }> = {
+  location: { th: 'ทำเล', en: 'Location' },
   country: { th: 'ประเทศ', en: 'Country' },
   province: { th: 'จังหวัด', en: 'Province' },
   district: { th: 'เขต / อำเภอ', en: 'District' },
@@ -117,6 +121,9 @@ const PropertySearchOmnibox = ({
   initialQuery = '',
   onSubmitQuery,
   buildQuery,
+  buildSearchUrl,
+  allowEmptyQuery = false,
+  showTypeLabels = false,
   suggestionsMode = 'popover',
   showSuggestionsOnEmpty = true,
   placeholder,
@@ -201,11 +208,11 @@ const PropertySearchOmnibox = ({
     event?.preventDefault()
     const rawValue = selectedQuery.trim()
     const value = (buildQuery?.(rawValue) ?? rawValue).trim()
-    if (!value) {
+    if (!value && !allowEmptyQuery) {
       setFocused(true)
       return
     }
-    if (isHeader) {
+    if (isHeader && rawValue) {
       savePropertyRecentSearch(
         rawValue,
         selectedSuggestion?.label || rawValue,
@@ -231,7 +238,7 @@ const PropertySearchOmnibox = ({
     setFocused(false)
     setActiveIndex(-1)
     onSubmitQuery?.(value)
-    router.push(getPropertyMapSearchUrl(value))
+    router.push(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value))
   }
 
   const selectSuggestion = (suggestion: PropertySearchSuggestion) => {
@@ -296,6 +303,7 @@ const PropertySearchOmnibox = ({
   return (
     <div ref={rootRef} className="relative w-full">
       <form
+        data-property-search-form
         onSubmit={submit}
         className={
           isHeader
@@ -404,6 +412,9 @@ const PropertySearchOmnibox = ({
                   {suggestions.map((suggestion, index) => {
                     const Icon = iconForSuggestion(suggestion)
                     const isActive = activeIndex === index
+                    const typeLabel = (locationTypeLabels[suggestion.description] ||
+                      locationTypeLabels[suggestion.type])?.[isThai ? 'th' : 'en']
+                    const description = suggestionDescription(suggestion, isThai)
                     return (
                       <button
                         id={`${listboxId}-option-${index}`}
@@ -422,14 +433,21 @@ const PropertySearchOmnibox = ({
                         >
                           <Icon className="size-4.5" strokeWidth={1.8} />
                         </span>
-                        <span className="min-w-0">
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-white">
                             {suggestion.label}
                           </span>
-                          <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
-                            {suggestionDescription(suggestion, isThai)}
-                          </span>
+                          {(!showTypeLabels || description !== typeLabel) && (
+                            <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
+                              {description}
+                            </span>
+                          )}
                         </span>
+                        {showTypeLabels && typeLabel && (
+                          <span className="shrink-0 rounded-md bg-neutral-100 px-2 py-1 text-[10px] text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                            {typeLabel}
+                          </span>
+                        )}
                       </button>
                     )
                   })}

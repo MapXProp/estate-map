@@ -4,9 +4,23 @@ type Props = {
   label?: string
   freeLabel?: string
   className?: string
+  tone?: 'bright' | 'quiet'
 }
 
-const PropertyListingCta = ({ label = 'ลงประกาศ', freeLabel = 'ฟรี', className = '' }: Props) => {
+const PropertyListingCta = ({ label = 'ลงประกาศ', freeLabel = 'ฟรี', className = '', tone = 'bright' }: Props) => {
+  if (tone === 'quiet')
+    return (
+      <Link
+        href="/add-listing/1?new=1"
+        data-property-listing-cta="quiet"
+        className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-[#edd4bc] bg-[#fff8ef] py-1.5 ps-3.5 pe-2 text-[13px] font-semibold whitespace-nowrap text-[#92552c] transition hover:border-[#dcb18d] hover:bg-[#f9eddf] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ae794e] dark:border-[#73543b] dark:bg-[#352a20] dark:text-[#e5bf96] ${className}`}
+      >
+        <span>{label}</span>
+        <span className="inline-flex min-h-6 items-center rounded-full bg-[#f4e5d4] px-2 text-[10px] font-medium dark:bg-[#4d3927]">
+          {freeLabel}
+        </span>
+      </Link>
+    )
   return (
     <Link
       href="/add-listing/1?new=1"

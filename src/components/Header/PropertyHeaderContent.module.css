@@ -1,0 +1,166 @@
+.header {
+  position: relative;
+}
+.row {
+  display: grid;
+  grid-template-columns: 88px auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 72px;
+  gap: 12px;
+  border-bottom: 1px solid #e4e9e5;
+}
+.logo {
+  width: 88px;
+}
+.category {
+  min-width: 0;
+}
+.category button {
+  box-shadow: none;
+}
+.searchCluster {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+.offers {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+.offers button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid #e1e7e2;
+  border-radius: 12px;
+  color: #68766c;
+  background: #f9faf9;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+.offers button[aria-pressed='true'] {
+  border-color: #cbd8ce;
+  background: #eaf0eb;
+  color: #415b4a;
+}
+.offers button:hover:not(:disabled) {
+  border-color: #a9bdae;
+  background: #e2ece4;
+}
+.offers button:disabled {
+  cursor: default;
+}
+.offers button:focus-visible {
+  outline: 2px solid #687e6d;
+  outline-offset: 2px;
+}
+.checkbox {
+  display: grid;
+  width: 13px;
+  height: 13px;
+  place-items: center;
+  border: 1px solid #b9c8bd;
+  border-radius: 4px;
+  background: #fff;
+}
+.checkbox svg {
+  opacity: 0;
+}
+.offers button[aria-pressed='true'] .checkbox {
+  border-color: #637d6c;
+  background: #637d6c;
+  color: #fff;
+}
+.offers button[aria-pressed='true'] .checkbox svg {
+  opacity: 1;
+}
+.searchField {
+  min-width: 0;
+  flex: 1;
+  max-width: 620px;
+}
+.actions,
+.utilities {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+}
+.utilities {
+  gap: 16px;
+  padding-inline: 4px;
+  color: #617166;
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .row {
+    gap: 8px;
+  }
+  .searchCluster {
+    gap: 8px;
+  }
+  .actions {
+    gap: 10px;
+  }
+  .utilities {
+    gap: 12px;
+  }
+}
+@media (max-width: 1023px) {
+  .row {
+    grid-template-columns: 88px auto minmax(0, 1fr);
+    gap: 8px 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .searchCluster {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .searchField {
+    max-width: none;
+  }
+  .actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .offers button {
+    transition: none;
+  }
+}
+:global(.dark) .row {
+  border-color: #35423a;
+}
+:global(.dark) .offers button {
+  border-color: #405047;
+  background: #242e27;
+  color: #b8c9be;
+}
+:global(.dark) .offers button[aria-pressed='true'] {
+  border-color: #607768;
+  background: #344b3d;
+  color: #e0ece3;
+}
+:global(.dark) .offers button:hover:not(:disabled) {
+  background: #3a5545;
+}
+:global(.dark) .checkbox {
+  background: #223329;
+  border-color: #859e8e;
+}
+:global(.dark) .utilities {
+  color: #bfcec5;
+}

@@ -3,7 +3,7 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
-import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, ChevronDown, House, Store } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -57,7 +57,13 @@ const sites = [
   },
 ] as const
 
-const PropertySiteSwitcher = () => {
+const PropertySiteSwitcher = ({
+  compact = false,
+  preserveClassic = false,
+}: {
+  compact?: boolean
+  preserveClassic?: boolean
+}) => {
   const pathname = usePathname()
   const { locale, propertyZone, setPropertyZone } = usePreferences()
   const activeId = getPropertyZoneFromPathname(pathname) ?? propertyZone
@@ -67,19 +73,30 @@ const PropertySiteSwitcher = () => {
   return (
     <Popover className="relative hidden min-[744px]:block">
       <PopoverButton
+        data-property-header-category
         aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
         className={`group flex h-11 items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5 shadow-sm transition focus-visible:ring-3 focus-visible:ring-neutral-400/20 focus-visible:outline-none min-[860px]:px-3 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:bg-neutral-800 ${activeSite.triggerTone}`}
       >
         <span className={`grid size-7 shrink-0 place-items-center rounded-full ${activeSite.tone}`}>
           <ActiveIcon className="size-3.5" strokeWidth={1.9} />
         </span>
-        <span className="hidden text-sm font-semibold whitespace-nowrap text-neutral-800 min-[768px]:inline min-[1100px]:hidden dark:text-neutral-100">
-          {locale === 'th' ? activeSite.labelTh : activeSite.labelEn}
-        </span>
-        <span className="hidden text-sm font-semibold whitespace-nowrap text-neutral-800 min-[1100px]:inline dark:text-neutral-100">
-          {locale === 'th' ? <PropertyCategoryLabel label={activeSite.titleTh} /> : activeSite.titleEn}
-        </span>
-        <ChevronDown className="hidden size-3.5 text-neutral-400 transition group-data-open:rotate-180 min-[900px]:block" />
+        {compact ? (
+          <span className="text-[13px] font-medium whitespace-nowrap text-neutral-700 dark:text-neutral-100">
+            {locale === 'th' ? (activeSite.id === 'homes' ? 'ที่อยู่อาศัย' : activeSite.labelTh) : activeSite.labelEn}
+          </span>
+        ) : (
+          <>
+            <span className="hidden text-sm font-semibold whitespace-nowrap text-neutral-800 min-[768px]:inline min-[1100px]:hidden dark:text-neutral-100">
+              {locale === 'th' ? activeSite.labelTh : activeSite.labelEn}
+            </span>
+            <span className="hidden text-sm font-semibold whitespace-nowrap text-neutral-800 min-[1100px]:inline dark:text-neutral-100">
+              {locale === 'th' ? <PropertyCategoryLabel label={activeSite.titleTh} /> : activeSite.titleEn}
+            </span>
+          </>
+        )}
+        <ChevronDown
+          className={`${compact ? '' : 'hidden min-[900px]:block'} size-3.5 text-neutral-400 transition group-data-open:rotate-180`}
+        />
       </PopoverButton>
 
       <TopNavPopoverBackdrop />
@@ -103,9 +120,10 @@ const PropertySiteSwitcher = () => {
             const Icon = site.icon
             const isActive = site.id === activeId
             return (
-              <Link
+              <CloseButton
+                as={Link}
                 key={site.id}
-                href={site.href}
+                href={preserveClassic ? `${site.href}?header_ui=classic` : site.href}
                 onClick={() => setPropertyZone(site.id)}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 transition ${
                   isActive ? site.activeTone : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'
@@ -123,7 +141,7 @@ const PropertySiteSwitcher = () => {
                   </span>
                 </span>
                 {isActive && <Check className={`size-4 shrink-0 ${site.checkTone}`} strokeWidth={2.2} />}
-              </Link>
+              </CloseButton>
             )
           })}
         </div>

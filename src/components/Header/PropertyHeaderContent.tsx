@@ -2,60 +2,96 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmnibox'
+import {
+  defaultHeaderOffers,
+  getHeaderMapSearchUrl,
+  toggleHeaderOffer,
+  type HeaderOfferType,
+} from '@/lib/propertyHeaderSearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
+import { Check } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
 import AvatarDropdown from './AvatarDropdown'
 import CurrLangDropdown from './CurrLangDropdown'
 import NotifyDropdown from './NotifyDropdown'
+import PropertyHeaderClassic from './PropertyHeaderClassic'
+import styles from './PropertyHeaderContent.module.css'
 import PropertyListingCta from './PropertyListingCta'
 import PropertySiteSwitcher from './PropertySiteSwitcher'
 
-const PropertyHeaderContent = () => {
+const SearchFirstHeader = () => {
   const { locale, propertyZone } = usePreferences()
   const isThai = locale === 'th'
   const pathname = usePathname()
   const siteMode = getPropertyZoneFromPathname(pathname) ?? propertyZone
-  const searchPlaceholder = {
-    homes: isThai ? 'ค้นหาบ้าน คอนโด หรือทำเล' : 'Search homes, condos or locations',
-    rooms: isThai ? 'ค้นหาห้องเช่า หอพัก หรือทำเล' : 'Search rooms, dorms or locations',
-    business: isThai ? 'ค้นหาพื้นที่ทำธุรกิจ' : 'Search business spaces',
-  }[siteMode]
+  const [offers, setOffers] = useState<HeaderOfferType[]>(() => [...defaultHeaderOffers])
   const searchTone = siteMode === 'rooms' ? 'mint' : siteMode === 'business' ? 'commerce' : 'green'
-  const buildSearchQuery = (query: string) => {
-    if (siteMode === 'rooms') return `${isThai ? 'ห้องเช่ารายเดือน' : 'monthly rental'} ${query}`
-    if (siteMode === 'homes') return query
-    return `${isThai ? 'พื้นที่ทำธุรกิจ' : 'business space'} ${query}`
-  }
 
   return (
-    <header className="relative">
+    <header className={styles.header} data-property-header-layout="search-first">
       <div className="container">
-        <div className="flex h-20 items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-700">
-          <div className="flex min-w-0 flex-1 items-center gap-3 min-[900px]:gap-4">
-            <Logo href={`/${siteMode}`} className="w-20 min-[1100px]:w-24" />
-            <div className="hidden h-7 border-l border-neutral-200 min-[900px]:block dark:border-neutral-700" />
-            <div className="max-w-xl min-w-[190px] flex-1 min-[900px]:min-w-[250px]">
+        <div className={styles.row}>
+          <Logo href={`/${siteMode}`} className={styles.logo} />
+          <div className={styles.category}>
+            <PropertySiteSwitcher compact />
+          </div>
+          <div className={styles.searchCluster}>
+            <div
+              className={styles.offers}
+              role="group"
+              aria-label={isThai ? 'ซื้อหรือเช่า เลือกได้ทั้งคู่' : 'Buy or rent, select either or both'}
+            >
+              {defaultHeaderOffers.map((offer) => {
+                const selected = offers.includes(offer)
+                return (
+                  <button
+                    key={offer}
+                    type="button"
+                    data-header-offer={offer}
+                    aria-pressed={selected}
+                    disabled={selected && offers.length === 1}
+                    onClick={() => setOffers((previous) => toggleHeaderOffer(previous, offer))}
+                  >
+                    <span className={styles.checkbox}>
+                      <Check className="size-2.5" aria-hidden="true" strokeWidth={2.5} />
+                    </span>
+                    {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
+                  </button>
+                )
+              })}
+            </div>
+            <div className={styles.searchField}>
               <PropertySearchOmnibox
                 variant="header"
                 tone={searchTone}
-                placeholder={searchPlaceholder}
-                buildQuery={buildSearchQuery}
+                placeholder={isThai ? 'ค้นหาทำเล โครงการ หรือสถานี' : 'Location, project or station'}
+                buildSearchUrl={(query) => getHeaderMapSearchUrl(query, siteMode, offers)}
+                allowEmptyQuery
+                showTypeLabels
               />
             </div>
           </div>
-
-          <div className="flex shrink-0 items-center gap-2 min-[1100px]:gap-3">
-            <PropertySiteSwitcher />
-            <PropertyListingCta label={isThai ? 'ลงประกาศ' : 'List property'} freeLabel={isThai ? 'ฟรี' : 'Free'} />
-            <NotifyDropdown className="hidden min-[744px]:block" />
-            <AvatarDropdown />
-            <CurrLangDropdown className="hidden min-[744px]:block" />
+          <div className={styles.actions}>
+            <PropertyListingCta
+              tone="quiet"
+              label={isThai ? 'ลงประกาศ' : 'List property'}
+              freeLabel={isThai ? 'ฟรี' : 'Free'}
+            />
+            <div className={styles.utilities}>
+              <NotifyDropdown />
+              <AvatarDropdown />
+              <CurrLangDropdown />
+            </div>
           </div>
         </div>
       </div>
     </header>
   )
 }
+
+const PropertyHeaderContent = ({ layout = 'search-first' }: { layout?: 'search-first' | 'classic' }) =>
+  layout === 'classic' ? <PropertyHeaderClassic /> : <SearchFirstHeader />
 
 export default PropertyHeaderContent
