@@ -37,8 +37,8 @@ export const mapCategoryGroups = (['homes', 'rooms', 'business'] as const).map((
       ? [
           {
             id: 'buildings',
-            nameTh: 'อาคาร ที่ดิน และกิจการ',
-            nameEn: 'Buildings, land & businesses',
+            nameTh: 'อาคารและกิจการ',
+            nameEn: 'Buildings & businesses',
             options: properties,
           },
           { id: 'retail', nameTh: 'พื้นที่ขายของ', nameEn: 'Retail & selling spaces', options: spaces },

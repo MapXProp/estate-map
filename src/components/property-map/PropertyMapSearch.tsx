@@ -501,89 +501,88 @@ export default function PropertyMapSearch({
                     <div
                       className={`${styles.categorySections} ${group.code === 'business' ? styles.businessSections : ''}`}
                     >
-                      {group.sections.map((section) => (
-                        <section
-                          key={section.id}
-                          data-map-section={section.id}
-                          aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
-                        >
-                          {section.nameTh && (
-                            <div className={styles.sectionToolbar}>
-                              <h2 className={styles.subgroupHeading}>
-                                {section.id === 'retail' ? (
-                                  <Store className="size-3.5" />
-                                ) : (
-                                  <Building2 className="size-3.5" />
-                                )}
-                                {th ? section.nameTh : section.nameEn}
-                                <span>{section.options.length}</span>
-                              </h2>
-                              <div className={styles.sectionActions}>
+                      {group.sections.map((section) => {
+                        const sectionSelected = section.options.every((option) => categories.includes(option.id))
+                        return (
+                          <section
+                            key={section.id}
+                            data-map-section={section.id}
+                            aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
+                          >
+                            {section.nameTh && (
+                              <div className={styles.sectionToolbar}>
+                                <h2 className={styles.subgroupHeading}>
+                                  {section.id === 'retail' ? (
+                                    <Store className="size-4 shrink-0" />
+                                  ) : (
+                                    <Building2 className="size-4 shrink-0" />
+                                  )}
+                                  {th ? section.nameTh : section.nameEn}
+                                  <span>{section.options.length}</span>
+                                </h2>
                                 <button
                                   type="button"
-                                  data-map-section-action="select"
+                                  className={styles.selectGroup}
+                                  data-map-section-action={sectionSelected ? 'clear' : 'select'}
                                   data-map-section-group={`${group.code}:${section.id}`}
-                                  aria-label={`${th ? 'เลือกทั้งหมดในกลุ่ม' : 'Select all in'} ${th ? section.nameTh : section.nameEn}`}
+                                  aria-pressed={sectionSelected}
+                                  aria-label={`${sectionSelected ? (th ? 'ล้างกลุ่มนี้' : 'Clear group') : th ? 'เลือกทั้งกลุ่ม' : 'Select group'}: ${th ? section.nameTh : section.nameEn}`}
                                   aria-controls={`map-section-${group.code}-${section.id}`}
-                                  disabled={section.options.every((option) => categories.includes(option.id))}
                                   onClick={() =>
                                     setCategories((previous) =>
-                                      setMapCategorySection(previous, group.code, section.id, true)
+                                      setMapCategorySection(
+                                        previous,
+                                        group.code,
+                                        section.id,
+                                        !section.options.every((option) => previous.includes(option.id))
+                                      )
                                     )
                                   }
                                 >
-                                  {th ? 'เลือกทั้งหมด' : 'Select all'}
-                                </button>
-                                <span aria-hidden="true">/</span>
-                                <button
-                                  type="button"
-                                  data-map-section-action="clear"
-                                  data-map-section-group={`${group.code}:${section.id}`}
-                                  aria-label={`${th ? 'ล้างทั้งหมดในกลุ่ม' : 'Clear all in'} ${th ? section.nameTh : section.nameEn}`}
-                                  aria-controls={`map-section-${group.code}-${section.id}`}
-                                  disabled={!section.options.some((option) => categories.includes(option.id))}
-                                  onClick={() =>
-                                    setCategories((previous) =>
-                                      setMapCategorySection(previous, group.code, section.id, false)
-                                    )
-                                  }
-                                >
-                                  {th ? 'ล้างทั้งหมด' : 'Clear all'}
+                                  {sectionSelected
+                                    ? th
+                                      ? 'ล้างกลุ่มนี้'
+                                      : 'Clear group'
+                                    : th
+                                      ? 'เลือกทั้งกลุ่ม'
+                                      : 'Select group'}
                                 </button>
                               </div>
+                            )}
+                            <div id={`map-section-${group.code}-${section.id}`} className={styles.chips}>
+                              {section.options.map((option) => {
+                                const selected = categories.includes(option.id)
+                                const label = th ? option.nameTh : option.nameEn
+                                const mixedUse = isMixedUseMapCategory(option.id)
+                                const sharedCategory = mixedUse || option.propertyType === 'land'
+                                const sharedHint = th
+                                  ? 'เลือกพร้อมกันในที่อยู่อาศัยและพื้นที่ธุรกิจ'
+                                  : 'Selected together in Homes and Business'
+                                return (
+                                  <button
+                                    key={option.id}
+                                    type="button"
+                                    data-map-category={option.id}
+                                    data-map-mixed-use={mixedUse || undefined}
+                                    data-map-shared-category={sharedCategory || undefined}
+                                    title={sharedCategory ? sharedHint : undefined}
+                                    aria-label={sharedCategory ? `${label} — ${sharedHint}` : undefined}
+                                    aria-pressed={selected}
+                                    onClick={() => toggleCategory(option.id)}
+                                    className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${mixedUse ? styles.mixedUse : ''} ${selected ? styles.selectedChip : ''}`}
+                                  >
+                                    <span className={styles.checkbox}>
+                                      {selected && <Check className="size-3" strokeWidth={3} />}
+                                    </span>
+                                    {label}
+                                    {sharedCategory && <Link2 className={styles.sharedIcon} aria-hidden="true" />}
+                                  </button>
+                                )
+                              })}
                             </div>
-                          )}
-                          <div id={`map-section-${group.code}-${section.id}`} className={styles.chips}>
-                            {section.options.map((option) => {
-                              const selected = categories.includes(option.id)
-                              const label = th ? option.nameTh : option.nameEn
-                              const mixedUse = isMixedUseMapCategory(option.id)
-                              const sharedHint = th
-                                ? 'เลือกพร้อมกันในที่อยู่อาศัยและพื้นที่ธุรกิจ'
-                                : 'Selected together in Homes and Business'
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  data-map-category={option.id}
-                                  data-map-mixed-use={mixedUse || undefined}
-                                  title={mixedUse ? sharedHint : undefined}
-                                  aria-label={mixedUse ? `${label} — ${sharedHint}` : undefined}
-                                  aria-pressed={selected}
-                                  onClick={() => toggleCategory(option.id)}
-                                  className={`${styles.chip} ${option.propertyType === 'land' ? styles.land : ''} ${mixedUse ? styles.mixedUse : ''} ${selected ? styles.selectedChip : ''}`}
-                                >
-                                  <span className={styles.checkbox}>
-                                    {selected && <Check className="size-3" strokeWidth={3} />}
-                                  </span>
-                                  {label}
-                                  {mixedUse && <Link2 className={styles.sharedIcon} aria-hidden="true" />}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </section>
-                      ))}
+                          </section>
+                        )
+                      })}
                     </div>
                   </fieldset>
                 )
