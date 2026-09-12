@@ -292,7 +292,7 @@ export default function PropertyMapSearch({
       setPreviewSelection({ id, requestKey })
       setHoveredId('')
       setPanelOpen(true)
-      setMobilePanelOpen(true)
+      setMobilePanelOpen(!window.matchMedia('(max-width: 1023px)').matches)
     },
     [requestKey, setMobilePanelOpen]
   )
@@ -347,7 +347,6 @@ export default function PropertyMapSearch({
   }, [])
   const { panelRef } = useMapBottomSheet(mobileSheetSnap, previewListing?.id, (next) => {
     setMobileSheetSnap(next)
-    if (next === 'peek') setPreviewSelection(null)
   })
 
   return (
@@ -369,12 +368,14 @@ export default function PropertyMapSearch({
               </span>
             )}
           </div>
-          <div className={styles.toolbar} data-map-search-controls>
+          <div className={styles.toolbar} data-map-search-controls data-offer-layout={offerLayout}>
             <MapOfferControls
               value={filters.offerTypes}
               onChange={(offerTypes) => setFilters((previous) => ({ ...previous, offerTypes }))}
               th={th}
               layout={offerLayout}
+              onReset={reset}
+              canReset={hasFilters}
             />
             <button
               type="button"
@@ -390,7 +391,9 @@ export default function PropertyMapSearch({
               <SlidersHorizontal className="size-4" />
               <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
               {detailsCount > 0 && (
-                <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{detailsCount}</span>
+                <span className={`${styles.detailsCount} rounded-full bg-[#176b50] px-1.5 text-[10px] text-white`}>
+                  {detailsCount}
+                </span>
               )}
             </button>
             <button
@@ -700,6 +703,8 @@ export default function PropertyMapSearch({
             <MapPinPreview
               key={previewListing.id}
               listing={previewListing}
+              mobileCollapsed={mobileSheetSnap === 'peek'}
+              onExpand={() => setMobilePanelOpen(true)}
               onClose={closeMapPreview}
               onBack={() => {
                 setPreviewSelection(null)

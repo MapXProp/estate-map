@@ -19,6 +19,9 @@
 .grip {
   display: none;
 }
+.mobileSummary {
+  display: none;
+}
 .back,
 .close {
   display: inline-flex;
@@ -288,6 +291,59 @@
   font-size: 12px;
 }
 @media (max-width: 1023px) {
+  .preview[data-mobile-collapsed='true'] .mobileSummary {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    min-height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .summaryExpand {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 56px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 4px 4px 14px;
+    font-size: 13px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  .summaryExpand strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .summaryExpand > span:last-child {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+  }
+  .summaryClose {
+    display: grid;
+    flex-shrink: 0;
+    width: 44px;
+    min-height: 44px;
+    place-items: center;
+    cursor: pointer;
+  }
+  .preview[data-mobile-collapsed='true'] .header,
+  .preview[data-mobile-collapsed='true'] .footer {
+    display: none;
+  }
+  .preview[data-mobile-collapsed='true'] .body {
+    visibility: hidden;
+  }
+  [data-sheet-dragging='true'] .preview[data-mobile-collapsed='true'] .body,
+  [data-sheet-settling='true'] .preview[data-mobile-collapsed='true'] .body {
+    visibility: visible;
+  }
   .media {
     height: clamp(132px, 24dvh, 190px);
     aspect-ratio: auto;

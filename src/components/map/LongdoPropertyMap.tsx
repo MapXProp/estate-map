@@ -472,6 +472,91 @@ const LongdoPropertyMap = ({
   const initialZoomRef = useRef(initialZoom)
 
   useEffect(() => {
+    const markerLink = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return null
+      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"]')
+      return link && placeholderRef.current?.contains(link) ? link : null
+    }
+    const activateMarker = (link: HTMLAnchorElement) => {
+      const markerId = link.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
+      if (markerId && link.dataset.mapxMarkerLink === 'true' && onMarkerSelect) {
+        onMarkerSelect(markerId)
+        return
+      }
+      rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
+      // Keep the selected preview behind the modal when opening an already-visible price.
+      if (markerId && onMarkerSelect && previewListingIdRef.current !== markerId) onMarkerSelect(markerId)
+      router.push(link.getAttribute('href') || link.href, { scroll: false })
+    }
+    let tap: {
+      link: HTMLAnchorElement
+      pointerId: number
+      x: number
+      y: number
+      started: number
+      moved: boolean
+    } | null = null
+    let markerTouch = false
+    let ignoreTouchClickUntil = 0
+    const pendingTaps = new Set<number>()
+    // Longdo prevents the default touch sequence, which can suppress the browser's
+    // compatibility click. Track actual taps before the SDK handles those events.
+    const pointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') {
+        ignoreTouchClickUntil = 0
+        markerTouch = false
+        tap = null
+        return
+      }
+      if (!event.isPrimary || event.button !== 0) {
+        tap = null
+        return
+      }
+      ignoreTouchClickUntil = 0
+      const link = markerLink(event.target)
+      markerTouch = Boolean(link)
+      tap = link
+        ? {
+            link,
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+            started: event.timeStamp,
+            moved: false,
+          }
+        : null
+    }
+    const pointerMove = (event: PointerEvent) => {
+      if (tap?.pointerId === event.pointerId && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 10)
+        tap.moved = true
+    }
+    const pointerUp = (event: PointerEvent) => {
+      if (markerTouch && event.pointerType !== 'mouse') {
+        ignoreTouchClickUntil = Date.now() + 800
+        if (event.isPrimary) markerTouch = false
+      }
+      if (!tap || tap.pointerId !== event.pointerId) return
+      const ended = tap
+      tap = null
+      ignoreTouchClickUntil = Date.now() + 800
+      if (
+        ended.moved ||
+        Math.hypot(event.clientX - ended.x, event.clientY - ended.y) > 10 ||
+        event.timeStamp - ended.started > 600
+      )
+        return
+      // Let the SDK finish touchend before changing the preview or opening a modal.
+      const frame = window.requestAnimationFrame(() => {
+        pendingTaps.delete(frame)
+        activateMarker(ended.link)
+      })
+      pendingTaps.add(frame)
+    }
+    const pointerCancel = () => {
+      if (markerTouch) ignoreTouchClickUntil = Date.now() + 800
+      markerTouch = false
+      tap = null
+    }
     const handleListingLink = (event: MouseEvent) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return
@@ -480,43 +565,31 @@ const LongdoPropertyMap = ({
       const target = event.target
       if (!(target instanceof Element)) return
       const propertyLink = target.closest<HTMLAnchorElement>('a[data-mapx-property-link="true"]')
-      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"]')
+      const link = markerLink(target)
       if (!link && !propertyLink) return
-
-      const markerId = link?.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
-      if (
-        markerId &&
-        link?.dataset.mapxMarkerLink === 'true' &&
-        onMarkerSelect &&
-        placeholderRef.current?.contains(link)
-      ) {
-        event.preventDefault()
-        event.stopImmediatePropagation()
-        onMarkerSelect(markerId)
+      if (!link) {
+        rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
         return
       }
-
-      rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
-
-      if (!link) return
-
       event.preventDefault()
       event.stopImmediatePropagation()
-      // If a price is already visible, open it immediately and retain that
-      // property's preview behind the modal for the return to the map.
-      if (
-        markerId &&
-        onMarkerSelect &&
-        placeholderRef.current?.contains(link) &&
-        previewListingIdRef.current !== markerId
-      ) {
-        onMarkerSelect(markerId)
-      }
-      router.push(link.getAttribute('href') || link.href, { scroll: false })
+      if (event.detail !== 0 && Date.now() < ignoreTouchClickUntil) return
+      activateMarker(link)
     }
 
+    document.addEventListener('pointerdown', pointerDown, true)
+    document.addEventListener('pointermove', pointerMove, true)
+    document.addEventListener('pointerup', pointerUp, true)
+    document.addEventListener('pointercancel', pointerCancel, true)
     document.addEventListener('click', handleListingLink, true)
-    return () => document.removeEventListener('click', handleListingLink, true)
+    return () => {
+      pendingTaps.forEach((frame) => window.cancelAnimationFrame(frame))
+      document.removeEventListener('pointerdown', pointerDown, true)
+      document.removeEventListener('pointermove', pointerMove, true)
+      document.removeEventListener('pointerup', pointerUp, true)
+      document.removeEventListener('pointercancel', pointerCancel, true)
+      document.removeEventListener('click', handleListingLink, true)
+    }
   }, [onMarkerSelect, router])
 
   useEffect(() => {
@@ -912,6 +985,7 @@ const LongdoPropertyMap = ({
           --mapx-marker-color: #ffffff !important;
           z-index: 2147483000 !important;
         }
+        div:has(> .mapx-price-marker.is-active),
         div:has(> .mapx-price-marker:hover),
         div:has(> .mapx-price-marker:focus-within) {
           z-index: 2147483000 !important;
@@ -1054,6 +1128,15 @@ const LongdoPropertyMap = ({
         .mapx-exact-coordinates .mapx-price-pointer-inner,
         .mapx-exact-coordinates .mapx-fan-line { display: none !important; }
         .mapx-exact-coordinates .mapx-marker-hover-card { bottom: 40px; }
+        @media (max-width: 1023px) {
+          .mapx-exact-coordinates .mapx-price-marker-link {
+            width: 44px;
+            height: 44px;
+          }
+          .mapx-exact-coordinates .mapx-price-details-link {
+            bottom: 24px;
+          }
+        }
       `}</style>
       <link rel="preconnect" href="https://api.longdo.com" />
       <link rel="preconnect" href="https://search.longdo.com" />

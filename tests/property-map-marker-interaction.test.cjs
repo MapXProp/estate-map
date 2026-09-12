@@ -14,7 +14,7 @@ const listing = {
   galleryImgs: [],
   priceAmount: 315000000,
 }
-function harness(width) {
+function harness(width, initialZoom = 14) {
   const slots = [],
     effects = [],
     frames = new Map(),
@@ -35,7 +35,9 @@ function harness(width) {
       this.link = link
       this.dataset = {}
       this.style = { setProperty() {} }
-      this.classList = { toggle() {} }
+      this.classes = new Set()
+      this.attributes = {}
+      this.classList = { toggle: (name, active) => (active ? this.classes.add(name) : this.classes.delete(name)) }
     }
     closest(selector) {
       return selector === '[data-map-canvas]'
@@ -46,8 +48,8 @@ function harness(width) {
             : this.link
           : this.root || this
     }
-    querySelectorAll() {
-      return []
+    querySelectorAll(selector) {
+      return this.isMap && selector.includes('data-mapx-price-marker') ? [markerRoot] : []
     }
     querySelector() {
       return this
@@ -61,11 +63,15 @@ function harness(width) {
     addEventListener() {}
     removeEventListener() {}
     focus() {}
-    setAttribute() {}
+    setAttribute(name, value) {
+      this.attributes[name] = value
+    }
     getAttribute(name) {
       return name === 'href' ? '/real-estate-listings/land-sutthisan' : null
     }
   }
+  const markerRoot = new Element()
+  markerRoot.dataset.mapxListingId = listing.id
   const hooks = {
     useRef(initial) {
       const i = cursor++
@@ -206,7 +212,10 @@ function harness(width) {
       cursor = 0
       tree = context.exports.default(props)
       visit(tree, (node) => {
-        if (node.props?.ref && !node.props.ref.current) node.props.ref.current = new Element()
+        if (node.props?.ref && !node.props.ref.current) {
+          node.props.ref.current = new Element()
+          node.props.ref.current.isMap = Boolean(node.props.onPointerDownCapture)
+        }
       })
       while (effects.length) effects.shift()()
       for (const [id, frame] of [...frames]) {
@@ -223,7 +232,7 @@ function harness(width) {
     currentHoverID: '',
     previewListingId: '',
     initialCenter: { lat: 13.8, lon: 100.4 },
-    initialZoom: 14,
+    initialZoom,
     exactCoordinates: true,
     onMarkerSelect: (id) => selected.push(id),
   })
@@ -232,12 +241,16 @@ function harness(width) {
   })
   render()
   calls.length = 0
-  function click(action, options = {}) {
+  function linkTarget(action) {
+    if (action === 'map') return new Element()
     const link = new Element()
     link.dataset[action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
-    link.root = { dataset: { mapxListingId: listing.id } }
+    link.root = markerRoot
+    return new Element(link)
+  }
+  function click(action, options = {}) {
     const event = {
-      target: new Element(link),
+      target: linkTarget(action),
       button: 0,
       prevented: false,
       stopped: false,
@@ -252,12 +265,32 @@ function harness(width) {
     listeners.get('click')(event)
     return event
   }
+  let pointerTime = 100
+  function pointer(type, action = 'dot', options = {}) {
+    const event = {
+      target: linkTarget(action),
+      pointerType: 'touch',
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      clientX: 100,
+      clientY: 200,
+      timeStamp: (pointerTime += 50),
+      ...options,
+    }
+    assert.ok(listeners.has(type), `${type} is handled without relying on a click`)
+    listeners.get(type)(event)
+    return event
+  }
   return {
     render,
     calls,
     navigation,
     selected,
     click,
+    pointer,
+    markerRoot,
+    unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
     api,
     getMarkerHtml: context.exports.getMarkerHtml,
     startMapGesture: (options = {}) =>
@@ -364,4 +397,78 @@ test('map interaction callback runs after a completed primary gesture without mo
   h.render()
   assert.equal(completed, 1)
   assert.deepEqual(h.calls, [])
+})
+
+test('native touch selects and activates a dot, then opens its price once even when the SDK suppresses clicks', () => {
+  for (const width of [390, 820]) {
+    const h = harness(width, 12)
+    assert.equal(h.markerRoot.dataset.mapxLabelVisible, 'false')
+    const center = h.api.location()
+    h.pointer('pointerdown')
+    h.pointer('pointerup', 'dot', { clientX: 104, clientY: 203, defaultPrevented: true })
+    assert.deepEqual(h.selected, [], 'SDK must finish touchend before React changes the preview')
+    h.render()
+    assert.deepEqual(h.selected, [listing.id])
+    h.render({ currentHoverID: listing.id, previewListingId: listing.id })
+    assert.ok(h.markerRoot.classes.has('is-active'))
+    assert.equal(h.markerRoot.dataset.mapxLabelVisible, 'true')
+    assert.equal(h.markerRoot.attributes['aria-expanded'], 'true')
+    h.pointer('pointerdown', 'price')
+    h.pointer('pointerup', 'price')
+    assert.equal(h.click('price', { detail: 1 }).prevented, true, 'a compatibility click is consumed')
+    h.render()
+    assert.equal(h.navigation.length, 1)
+    assert.equal(h.navigation[0][0], '/real-estate-listings/land-sutthisan')
+    assert.equal(h.navigation[0][1].scroll, false)
+    assert.deepEqual(h.selected, [listing.id])
+    assert.deepEqual(h.calls, [], 'tap activation never pans or zooms the map')
+    assert.equal(h.api.location(), center)
+  }
+})
+
+test('native taps on an already-visible price open details directly without requiring a dot tap', () => {
+  const h = harness(390)
+  h.pointer('pointerdown', 'price')
+  h.pointer('pointerup', 'price')
+  h.render()
+  assert.deepEqual(h.selected, [listing.id])
+  assert.equal(h.navigation.length, 1)
+  assert.deepEqual(h.calls, [])
+})
+
+test('panning away and back, pinching, long-pressing and cancelling a marker do not select or open it', () => {
+  for (const gesture of ['pan', 'pinch', 'hold', 'cancel', 'outside']) {
+    const h = harness(390)
+    h.pointer('pointerdown', gesture === 'outside' ? 'map' : 'dot')
+    if (gesture === 'pan') {
+      h.pointer('pointermove', 'dot', { clientX: 140 })
+      h.pointer('pointermove', 'dot', { clientX: 100 })
+    }
+    if (gesture === 'pinch') h.pointer('pointerdown', 'map', { pointerId: 2, isPrimary: false })
+    if (gesture === 'cancel') h.pointer('pointercancel')
+    h.pointer('pointerup', 'dot', { timeStamp: gesture === 'hold' ? 1000 : 350 })
+    if (gesture === 'pinch') h.pointer('pointerup', 'map', { pointerId: 2, isPrimary: false })
+    if (gesture !== 'outside') h.click('dot', { detail: 1 })
+    h.render()
+    assert.deepEqual(h.selected, [], gesture)
+    assert.equal(h.navigation.length, 0, gesture)
+    assert.deepEqual(h.calls, [], gesture)
+  }
+})
+
+test('touch de-duplication keeps keyboard and subsequent mouse clicks usable; unmount cancels queued taps', () => {
+  const h = harness(820)
+  h.pointer('pointerdown', 'price')
+  h.pointer('pointerup', 'price')
+  h.render()
+  h.click('price', { detail: 0 })
+  assert.equal(h.navigation.length, 2, 'keyboard activation is never suppressed')
+  h.pointer('pointerdown', 'price', { pointerType: 'mouse' })
+  h.click('price', { detail: 1 })
+  assert.equal(h.navigation.length, 3, 'mouse activation works immediately after touch')
+  h.pointer('pointerdown', 'price')
+  h.pointer('pointerup', 'price')
+  h.unmount()
+  h.render()
+  assert.equal(h.navigation.length, 3)
 })

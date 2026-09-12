@@ -96,8 +96,8 @@ test('preview renders photos, price, area and a separate details link; missing p
     address: 'ถนนสุทธิสาร กรุงเทพ',
     metadataSummary: '700 ตร.ว.',
   }
-  const render = (item) =>
-    renderToStaticMarkup(React.createElement(Preview, { listing: item, onBack() {}, onClose() {} }))
+  const render = (item, props = {}) =>
+    renderToStaticMarkup(React.createElement(Preview, { listing: item, onBack() {}, onClose() {}, ...props }))
   const html = render(listing)
   for (const text of [
     '315,000,000 บาท',
@@ -114,4 +114,10 @@ test('preview renders photos, price, area and a separate details link; missing p
   assert.ok(empty.includes('ยังไม่มีรูปภาพ'))
   assert.ok(empty.includes('ดูรายละเอียด'))
   assert.equal((empty.match(/<img /g) || []).length, 0)
+  const collapsed = render(listing, { mobileCollapsed: true, onExpand() {} })
+  assert.ok(collapsed.includes('data-mobile-collapsed="true"'))
+  assert.ok(collapsed.includes('data-map-expand-preview'))
+  assert.ok(collapsed.includes('aria-expanded="false"'))
+  assert.ok(collapsed.includes('ดูรูปและข้อมูล'))
+  assert.ok(collapsed.includes(`href="/real-estate-listings/${listing.handle}"`))
 })

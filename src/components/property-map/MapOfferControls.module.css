@@ -162,6 +162,9 @@
   outline: 2px solid #687e6d;
   outline-offset: 2px;
 }
+.mobileReset {
+  display: none;
+}
 @media (max-width: 1023px) {
   .controls,
   .more {
@@ -186,6 +189,19 @@
   }
   .moreButton {
     font-size: 12px;
+  }
+  .more {
+    min-width: 44px;
+  }
+  .mobileReset {
+    display: flex;
+    margin-top: 4px;
+    border-top: 1px solid #e5ebe6;
+    border-radius: 0 0 10px 10px;
+  }
+  .mobileReset:disabled {
+    cursor: default;
+    opacity: 0.45;
   }
 }
 @media (max-width: 639px) {

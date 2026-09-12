@@ -3,7 +3,7 @@
 import type { OfferTypeCode } from '@/data/propertyTaxonomy'
 import { toggleMapOffer } from '@/lib/propertyMapSearch'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, ChevronDown, RotateCcw, X } from 'lucide-react'
 import styles from './MapOfferControls.module.css'
 import legacy from './PropertyMapSearch.module.css'
 
@@ -19,11 +19,15 @@ export default function MapOfferControls({
   onChange,
   th,
   layout = 'compact',
+  onReset,
+  canReset = false,
 }: {
   value: OfferTypeCode[]
   onChange: (value: OfferTypeCode[]) => void
   th: boolean
   layout?: 'compact' | 'classic'
+  onReset?: () => void
+  canReset?: boolean
 }) {
   if (layout === 'classic')
     return (
@@ -150,6 +154,17 @@ export default function MapOfferControls({
             </span>
             {th ? 'ทุกแบบ' : 'All offers'}
           </button>
+          {onReset && (
+            <CloseButton
+              className={`${styles.option} ${styles.mobileReset}`}
+              data-map-mobile-reset
+              disabled={!canReset}
+              onClick={onReset}
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              {th ? 'คืนค่าเริ่มต้น' : 'Restore defaults'}
+            </CloseButton>
+          )}
         </PopoverPanel>
       </Popover>
     </div>

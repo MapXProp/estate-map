@@ -36,7 +36,8 @@ const model = load('src/lib/propertyMapSearch.ts', {
 function harness(width) {
   const slots = []
   let cursor = 0,
-    tree
+    tree,
+    onSheetSnap
   const hooks = {
     useState(initial) {
       const i = cursor++
@@ -66,7 +67,12 @@ function harness(width) {
       '@/data/listings': { toRealEstateListing: (row) => row },
       '@/data/propertyTaxonomy': taxonomy,
       '@/lib/propertyMapSearch': model,
-      '@/hooks/useMobileSheets': { useMapBottomSheet: () => ({ panelRef: () => {} }) },
+      '@/hooks/useMobileSheets': {
+        useMapBottomSheet: (_snap, _previewId, onSnap) => {
+          onSheetSnap = onSnap
+          return { panelRef: () => {} }
+        },
+      },
       '@/shared/Logo': { default: 'test-logo' },
       './MapOfferControls': { default: 'test-offers' },
       './MapPinPreview': { default: 'test-preview' },
@@ -122,7 +128,26 @@ function harness(width) {
     render()
   }
   render()
-  return { render, nodes, data, map, tab, click, center }
+  return {
+    render,
+    nodes,
+    data,
+    map,
+    tab,
+    click,
+    center,
+    seedSelectedListing(listing) {
+      const selection = slots.find((slot) => slot?.id === listing.id && slot.requestKey)
+      assert.ok(selection)
+      const index = slots.findIndex((slot) => slot?.rows && slot.status)
+      slots[index] = { key: selection.requestKey, rows: [listing], status: 'ready' }
+      render()
+    },
+    snapTo(value) {
+      onSheetSnap(value)
+      render()
+    },
+  }
 }
 
 test('mobile starts folded, keeps all tabs reachable and folds without clearing selected categories or camera', () => {
@@ -179,4 +204,41 @@ test('area search and the relocated all-types action keep their existing filter 
   assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], false)
   const offers = h.nodes((node) => node.type === 'test-offers')[0].props.value
   assert.deepEqual(Array.from(offers), ['sale', 'rent'])
+})
+
+test('mobile topbar keeps its logo and exposes the same reset in the compact offer menu', () => {
+  const h = harness(390)
+  const brand = h.data('data-map-brand', true)
+  assert.ok(brand.props.children.some((node) => node?.type === 'test-logo'))
+  assert.equal(h.data('data-map-search-controls', true).props['data-offer-layout'], 'compact')
+  h.click(h.tab('homes'))
+  h.click(h.data('data-map-category', 'homes:land'))
+  const offers = h.nodes((node) => node.type === 'test-offers')[0].props
+  assert.equal(offers.canReset, true)
+  offers.onReset()
+  h.render()
+  assert.equal(h.data('data-map-category', 'homes:land').props['aria-pressed'], false)
+  assert.equal(h.data('data-map-category', 'business:land').props['aria-pressed'], false)
+  assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['sale', 'rent'])
+})
+
+test('mobile selection keeps price visible above a collapsed preview that can expand and collapse without deselecting', () => {
+  for (const width of [320, 390, 820, 1440]) {
+    const h = harness(width)
+    h.map().onMarkerSelect('listing-6')
+    h.render()
+    h.seedSelectedListing({ id: 'listing-6', latitude: 13.7, longitude: 100.6, offer_amount: 315000000 })
+    assert.equal(h.map().currentHoverID, 'listing-6')
+    assert.equal(h.map().previewListingId, 'listing-6')
+    assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], width < 1024 ? 'peek' : 'middle')
+    const preview = () => h.nodes((node) => node.type === 'test-preview')[0].props
+    assert.equal(preview().mobileCollapsed, width < 1024)
+    preview().onExpand()
+    h.render()
+    assert.equal(preview().mobileCollapsed, false)
+    h.snapTo('peek')
+    assert.equal(preview().mobileCollapsed, true)
+    assert.equal(h.map().currentHoverID, 'listing-6')
+    assert.equal(h.map().initialCenter, h.center)
+  }
 })
