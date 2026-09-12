@@ -66,6 +66,7 @@ function harness(width) {
       '@/data/listings': { toRealEstateListing: (row) => row },
       '@/data/propertyTaxonomy': taxonomy,
       '@/lib/propertyMapSearch': model,
+      '@/hooks/useMobileSheets': { useMapBottomSheet: () => ({ panelRef: () => {} }) },
       '@/shared/Logo': { default: 'test-logo' },
       './MapOfferControls': { default: 'test-offers' },
       './MapPinPreview': { default: 'test-preview' },

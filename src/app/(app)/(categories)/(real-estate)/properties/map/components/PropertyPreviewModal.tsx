@@ -3,8 +3,10 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import sheetStyles from '@/components/property-map/MobileSheet.module.css'
 import PropertyPreviewContactCard from '@/components/property-map/PropertyPreviewContactCard'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
+import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { getMapPreviewGallery, stepMapPreviewImage } from '@/lib/propertyMapPreview'
 import { getPropertyPreviewContacts, getPropertyPreviewFacts } from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
@@ -41,6 +43,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
   const category = (isThai ? propertyType?.nameTh : propertyType?.nameEn) || (isThai ? 'อสังหาริมทรัพย์' : 'Property')
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [activeImage, setActiveImage] = useState<number | null>(null)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen && activeImage === null)
   const displayPrice =
     typeof listing.offer_amount === 'number' && listing.offer_amount > 0
       ? `${formatCurrencyFrom(listing.offer_amount, listing.currency)}${formatPricePeriod(listing.price_unit, isThai)}`
@@ -60,16 +63,27 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
   }
 
   return (
-    <Dialog open onClose={() => router.back()} className="relative z-[80]">
-      <DialogBackdrop className="fixed inset-0 bg-neutral-950/55 backdrop-blur-[1px]" />
+    <Dialog open onClose={dismiss} className="relative z-[80]">
+      <DialogBackdrop
+        ref={backdropRef}
+        className={`${sheetStyles.modalBackdrop} fixed inset-0 bg-neutral-950/55 backdrop-blur-[1px]`}
+      />
       <div className="fixed inset-0 overflow-y-auto p-3 lg:p-5">
         <div className="flex min-h-full items-center justify-center">
-          <DialogPanel className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1380px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_90px_rgba(0,0,0,.3)] lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900">
-            <header className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-4 sm:px-6 dark:border-neutral-800">
+          <DialogPanel
+            ref={panelRef}
+            data-property-detail-sheet
+            className={`${sheetStyles.modalPanel} relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1380px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_90px_rgba(0,0,0,.3)] lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900`}
+          >
+            <header
+              data-sheet-drag-handle
+              className={`${sheetStyles.handle} flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-4 sm:px-6 dark:border-neutral-800`}
+            >
+              <span className={sheetStyles.grip} aria-hidden="true" />
               <DialogTitle className="sr-only">{title}</DialogTitle>
               <button
                 type="button"
-                onClick={() => router.back()}
+                onClick={dismiss}
                 className="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800"
               >
                 <ChevronLeft className="size-5" />
@@ -92,7 +106,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
                 />
                 <button
                   type="button"
-                  onClick={() => router.back()}
+                  onClick={dismiss}
                   aria-label="ปิดรายละเอียด"
                   className="flex size-10 items-center justify-center rounded-full text-neutral-600 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
@@ -101,7 +115,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
               </div>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div data-sheet-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <div className="grid min-h-full lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
                 <div className="min-w-0 p-4 sm:p-6 lg:p-7">
                   <div className="relative grid h-[min(42dvh,400px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl bg-neutral-100 sm:h-[min(53dvh,560px)] dark:bg-neutral-800">

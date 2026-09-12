@@ -16,6 +16,9 @@
   padding: 0 8px;
   border-bottom: 1px solid #edf1ee;
 }
+.grip {
+  display: none;
+}
 .back,
 .close {
   display: inline-flex;
@@ -291,6 +294,22 @@
   }
   .header {
     min-height: 44px;
+    position: relative;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+  }
+  .grip {
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 999px;
+    background: #c9d1cc;
+    transform: translateX(-50%);
+    pointer-events: none;
   }
   .info {
     padding: 12px 16px;

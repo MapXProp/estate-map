@@ -8,6 +8,7 @@ import LongdoPropertyMap, {
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { toRealEstateListing } from '@/data/listings'
 import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/data/propertyTaxonomy'
+import { useMapBottomSheet } from '@/hooks/useMobileSheets'
 import {
   countMapCategories,
   defaultMapOfferTypes,
@@ -28,6 +29,7 @@ import {
   toggleMapCategoryGroup,
 } from '@/lib/propertyMapSearch'
 import type { PropertySearchListing } from '@/lib/propertySearch'
+import type { SheetSnap } from '@/lib/verticalSheetGesture'
 import Logo from '@/shared/Logo'
 import {
   Building2,
@@ -103,7 +105,9 @@ export default function PropertyMapSearch({
   const categoriesOpen = categoriesOverride ?? !shortViewport
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [panelOpen, setPanelOpen] = useState(true)
-  const [mobilePanelOpen, setMobilePanelOpen] = useState(false)
+  const [mobileSheetSnap, setMobileSheetSnap] = useState<SheetSnap>('peek')
+  const mobilePanelOpen = mobileSheetSnap !== 'peek'
+  const setMobilePanelOpen = useCallback((open: boolean) => setMobileSheetSnap(open ? 'middle' : 'peek'), [])
   const [hoveredId, setHoveredId] = useState('')
   const [previewSelection, setPreviewSelection] = useState<{ id: string; requestKey: string } | null>(null)
   const [sort, setSort] = useState<PropertyMapSort>('recommended')
@@ -290,7 +294,7 @@ export default function PropertyMapSearch({
       setPanelOpen(true)
       setMobilePanelOpen(true)
     },
-    [requestKey]
+    [requestKey, setMobilePanelOpen]
   )
   const closeMapPreview = () => {
     const id = previewSelection?.id
@@ -341,6 +345,10 @@ export default function PropertyMapSearch({
   const collapseMobileCategories = useCallback(() => {
     if (window.matchMedia('(max-width: 1023px)').matches) setMobileGroupOpen(false)
   }, [])
+  const { panelRef } = useMapBottomSheet(mobileSheetSnap, previewListing?.id, (next) => {
+    setMobileSheetSnap(next)
+    if (next === 'peek') setPreviewSelection(null)
+  })
 
   return (
     <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
@@ -674,6 +682,8 @@ export default function PropertyMapSearch({
         )}
 
         <aside
+          ref={panelRef}
+          data-sheet-snap={mobileSheetSnap}
           data-map-results-panel
           className={styles.results}
           aria-label={
@@ -702,6 +712,7 @@ export default function PropertyMapSearch({
             <button
               type="button"
               data-map-mobile-panel-toggle
+              data-sheet-drag-handle
               className={styles.mobilePanelToggle}
               aria-expanded={mobilePanelOpen}
               aria-controls="map-results-content"
@@ -812,6 +823,7 @@ export default function PropertyMapSearch({
               </div>
               <div
                 ref={resultsRef}
+                data-sheet-scroll
                 className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
                 aria-busy={loading}
               >

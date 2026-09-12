@@ -163,7 +163,8 @@ export default function MapPinPreview({
         }
       }}
     >
-      <header className={styles.header}>
+      <header className={styles.header} data-sheet-drag-handle>
+        <span className={styles.grip} aria-hidden="true" />
         <button type="button" onClick={onBack} className={styles.back}>
           <ArrowLeft className="size-4" />
           {th ? 'กลับไปรายการ' : 'Back to results'}
@@ -177,7 +178,7 @@ export default function MapPinPreview({
           <X className="size-5" />
         </button>
       </header>
-      <div className={styles.body}>
+      <div className={styles.body} data-sheet-scroll>
         <div
           className={styles.media}
           data-map-preview-photo

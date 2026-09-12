@@ -74,6 +74,8 @@ function modal(galleryOpen = false) {
     '@/components/BtnLikeIcon': { default: () => React.createElement('button', null, 'Save') },
     '@/components/PropertyDescription': { default: Description },
     '@/components/property-map/PropertyPreviewContactCard': { default: Contact },
+    '@/components/property-map/MobileSheet.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
+    '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose) => ({ panelRef: () => {}, backdropRef: () => {}, dismiss: onClose }) },
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom: (v) => `${v.toLocaleString('en-US')} บาท` }) },
     '@/data/propertyTaxonomy': load('src/data/propertyTaxonomy.ts'),
     '@/lib/propertyMapPreview': gallery,
