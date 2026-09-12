@@ -28,6 +28,38 @@ const inventory = Array.from({ length: 100 }, (_, index) => ({
   published_at: '2026-08-01T08:00:00Z', updated_at: '2026-09-11T09:00:00Z',
 }))
 
+test('the public home entry permanently resolves to /homes without accepting unknown cookie destinations', async () => {
+  const propertyZone = load('src/lib/propertyZone.ts')
+  for (const savedZone of [undefined, '', 'homes', 'unknown', 'https://example.invalid']) {
+    const page = load('src/app/(app)/(home-pages)/page.tsx', {
+      '@/lib/propertyZone': propertyZone,
+      'next/headers': { cookies: async () => ({ get: () => savedZone === undefined ? undefined : { value: savedZone } }) },
+      'next/navigation': {
+        redirect: destination => { throw Object.assign(new Error('redirect'), { destination, status: 307 }) },
+        permanentRedirect: destination => { throw Object.assign(new Error('redirect'), { destination, status: 308 }) },
+      },
+    }).default
+    await assert.rejects(page(), error => error.destination === '/homes' && error.status === 308)
+  }
+})
+
+test('returning visitors can still change their saved discovery channel after visiting the public entry', async () => {
+  let savedZone
+  const propertyZone = load('src/lib/propertyZone.ts')
+  const page = load('src/app/(app)/(home-pages)/page.tsx', {
+    '@/lib/propertyZone': propertyZone,
+    'next/headers': { cookies: async () => ({ get: () => savedZone === undefined ? undefined : { value: savedZone } }) },
+    'next/navigation': {
+      redirect: destination => { throw Object.assign(new Error('redirect'), { destination, status: 307 }) },
+      permanentRedirect: destination => { throw Object.assign(new Error('redirect'), { destination, status: 308 }) },
+    },
+  }).default
+  for (const [zone, destination, status] of [[undefined, '/homes', 308], ['rooms', '/rooms', 307], ['business', '/business', 307], ['homes', '/homes', 308]]) {
+    savedZone = zone
+    await assert.rejects(page(), error => error.destination === destination && error.status === status)
+  }
+})
+
 test('all 100 listings have distinct crawlable pagination URLs and no listings are lost', () => {
   const urls = [], ids = []
   for (let page = 1; page <= Math.ceil(inventory.length / catalog.CATALOG_PAGE_SIZE); page++) {
