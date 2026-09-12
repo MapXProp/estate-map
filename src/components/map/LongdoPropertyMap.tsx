@@ -161,6 +161,7 @@ export const getMarkerHtml = (
       href="${listingPath}"
       data-mapx-quick-view="true"
       class="mapx-price-details-link"
+      style="color:inherit;text-decoration:none;"
       aria-haspopup="dialog"
       aria-label="${detailsLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
     ><span class="mapx-price-pill">${escapeHtml(price)}</span></a>`
