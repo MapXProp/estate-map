@@ -14,12 +14,19 @@ import {
   Wifi01Icon,
 } from '@/components/Icons'
 import StartRating from '@/components/StartRating'
+import RelatedPropertyLinks from '@/components/property-home/RelatedPropertyLinks'
 import JsonLd from '@/components/seo/JsonLd'
 import { getListingReviews } from '@/data/data'
 import { getRealEstateListingByHandle } from '@/data/listings'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import { fetchPropertyListingDetail, type PropertyListingDetail } from '@/lib/propertySearch'
-import { absoluteUrl, createPageMetadata, SITE_NAME, SITE_URL } from '@/lib/seo'
+import {
+  getListingImages,
+  getListingPath,
+  getListingSeoDescription,
+  getListingStructuredData,
+} from '@/lib/propertyListingSeo'
+import { fetchPropertyListingDetail } from '@/lib/propertySearch'
+import { createPageMetadata } from '@/lib/seo'
 import { Button } from '@/shared/Button'
 import ButtonSecondary from '@/shared/ButtonSecondary'
 import { DescriptionDetails, DescriptionList, DescriptionTerm } from '@/shared/description-list'
@@ -37,7 +44,7 @@ import {
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { cache, Fragment } from 'react'
 import HeaderGallery from '../../components/HeaderGallery'
 import HostAvatar from '../../components/HostAvatar'
@@ -53,169 +60,15 @@ import PropertyListingView from './PropertyListingView'
 
 const getDatabaseListing = cache(fetchPropertyListingDetail)
 
-const getListingPath = (handle: string) => `/real-estate-listings/${encodeURIComponent(handle)}`
-
-const getListingImages = (listing: PropertyListingDetail) =>
-  listing.media
-    .filter((item) => item.media_type === 'image')
-    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
-    .map((item) => absoluteUrl(item.url))
-
-const getListingSection = (listing: PropertyListingDetail) => {
-  if (
-    listing.usage_type === 'business' ||
-    listing.event ||
-    ['shophouse', 'home_office', 'office', 'retail_space', 'warehouse', 'factory', 'hotel_resort'].includes(
-      listing.property_type_code
-    )
-  ) {
-    return { name: 'พื้นที่ธุรกิจ', url: absoluteUrl('/business') }
-  }
-  if (['rental_room', 'apartment', 'flat', 'dormitory', 'monthly_hotel'].includes(listing.property_type_code)) {
-    return { name: 'ห้องเช่าและที่พัก', url: absoluteUrl('/rooms') }
-  }
-  return { name: 'บ้านและที่อยู่อาศัย', url: absoluteUrl('/homes') }
-}
-
-const getAddressStructuredData = (listing: PropertyListingDetail) => ({
-  '@type': 'PostalAddress',
-  streetAddress: [listing.address, listing.road].filter(Boolean).join(' '),
-  addressLocality: listing.district,
-  addressRegion: listing.province,
-  postalCode: listing.postal_code,
-  addressCountry: 'TH',
-})
-
-const getListingStructuredData = (listing: PropertyListingDetail) => {
-  const canonicalUrl = absoluteUrl(getListingPath(listing.slug))
-  const images = getListingImages(listing)
-  const section = getListingSection(listing)
-  const breadcrumb = {
-    '@type': 'BreadcrumbList',
-    '@id': `${canonicalUrl}#breadcrumb`,
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'MapxProp', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: section.name, item: section.url },
-      { '@type': 'ListItem', position: 3, name: listing.title, item: canonicalUrl },
-    ],
-  }
-
-  if (listing.event?.rounds.length) {
-    const event = listing.event
-    const organizerName = event.organizer_name || listing.contact_organization_name || listing.contact_name || SITE_NAME
-    const locationName = event.venue_name || listing.building_name || listing.project_name || listing.address
-    const events = event.rounds.map((round, index) => ({
-      '@type': 'Event',
-      '@id': `${canonicalUrl}#round-${index + 1}`,
-      name: round.label ? `${event.name} – ${round.label}` : `${event.name} รอบที่ ${index + 1}`,
-      description: listing.description,
-      startDate: round.starts_on,
-      endDate: round.ends_on,
-      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-      eventStatus: 'https://schema.org/EventScheduled',
-      image: images,
-      url: `${canonicalUrl}#round-${index + 1}`,
-      location: {
-        '@type': 'Place',
-        name: [locationName, event.venue_floor_label].filter(Boolean).join(' · '),
-        address: getAddressStructuredData(listing),
-        ...(listing.latitude !== undefined && listing.longitude !== undefined
-          ? {
-              geo: {
-                '@type': 'GeoCoordinates',
-                latitude: listing.latitude,
-                longitude: listing.longitude,
-              },
-            }
-          : {}),
-      },
-      organizer: {
-        '@type': event.organizer_name || listing.contact_organization_name ? 'Organization' : 'Person',
-        name: organizerName,
-        ...(event.organizer_website_url ? { url: event.organizer_website_url } : {}),
-      },
-      ...(!event.price_on_request && (round.price_amount ?? listing.offer_amount) !== undefined
-        ? {
-            offers: {
-              '@type': 'Offer',
-              url: canonicalUrl,
-              price: round.price_amount ?? listing.offer_amount,
-              priceCurrency: listing.currency || 'THB',
-              availability:
-                round.availability_status === 'closed' ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
-            },
-          }
-        : {}),
-    }))
-
-    return { '@context': 'https://schema.org', '@graph': [breadcrumb, ...events] }
-  }
-
-  const place = {
-    '@type': 'Place',
-    '@id': `${canonicalUrl}#property`,
-    name: listing.title,
-    description: listing.description,
-    image: images,
-    address: getAddressStructuredData(listing),
-    ...(listing.latitude !== undefined && listing.longitude !== undefined
-      ? {
-          geo: {
-            '@type': 'GeoCoordinates',
-            latitude: listing.latitude,
-            longitude: listing.longitude,
-          },
-        }
-      : {}),
-  }
-
-  const offer =
-    listing.offer_amount !== undefined
-      ? {
-          '@type': 'Offer',
-          '@id': `${canonicalUrl}#offer`,
-          price: listing.offer_amount,
-          priceCurrency: listing.currency || 'THB',
-          url: canonicalUrl,
-          availability: 'https://schema.org/InStock',
-          itemOffered: { '@id': `${canonicalUrl}#property` },
-        }
-      : undefined
-
-  return {
-    '@context': 'https://schema.org',
-    '@graph': [
-      breadcrumb,
-      place,
-      ...(offer ? [offer] : []),
-      {
-        '@type': 'WebPage',
-        '@id': canonicalUrl,
-        url: canonicalUrl,
-        name: listing.title,
-        description: listing.description,
-        primaryImageOfPage: images[0] ? { '@type': 'ImageObject', url: images[0] } : undefined,
-        mainEntity: { '@id': `${canonicalUrl}#property` },
-        datePublished: listing.published_at,
-        inLanguage: 'th-TH',
-        breadcrumb: { '@id': `${canonicalUrl}#breadcrumb` },
-      },
-    ],
-  }
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }): Promise<Metadata> {
   const { handle } = await params
   const databaseListing = await getDatabaseListing(handle)
 
   if (databaseListing) {
     const propertyType = getPropertyType(databaseListing.property_type_code)
-    const location = [databaseListing.district, databaseListing.province].filter(Boolean).join(' ')
     return createPageMetadata({
       title: databaseListing.title,
-      description:
-        databaseListing.description ||
-        `ดูรายละเอียด${propertyType?.nameTh || 'อสังหาริมทรัพย์'}${location ? `ใน${location}` : ''} พร้อมราคา รูปภาพ ทำเล และข้อมูลติดต่อ`,
+      description: getListingSeoDescription(databaseListing),
       path: getListingPath(databaseListing.slug || handle),
       keywords: [
         databaseListing.event?.name,
@@ -225,8 +78,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
         databaseListing.province,
         'MapxProp',
       ].filter((value): value is string => Boolean(value)),
-      images: getListingImages(databaseListing),
-      type: 'article',
+      images: getListingImages(databaseListing).slice(0, 4),
     })
   }
   const listing = await getRealEstateListingByHandle(handle)
@@ -252,11 +104,13 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const { handle } = await params
 
   const databaseListing = await getDatabaseListing(handle)
+  if (databaseListing?.slug && databaseListing.slug !== handle) permanentRedirect(getListingPath(databaseListing.slug))
   if (databaseListing?.event) {
     return (
       <>
         <JsonLd data={getListingStructuredData(databaseListing)} />
         <EventBoothListingView listing={databaseListing} />
+        <RelatedPropertyLinks listing={databaseListing} />
       </>
     )
   }
@@ -265,6 +119,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
       <>
         <JsonLd data={getListingStructuredData(databaseListing)} />
         <LandListingView listing={databaseListing} />
+        <RelatedPropertyLinks listing={databaseListing} />
       </>
     )
   }
@@ -273,6 +128,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
       <>
         <JsonLd data={getListingStructuredData(databaseListing)} />
         <PropertyListingView listing={databaseListing} />
+        <RelatedPropertyLinks listing={databaseListing} />
       </>
     )
   }
@@ -280,7 +136,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
   const listing = await getRealEstateListingByHandle(handle)
 
   if (!listing?.id) {
-    return redirect('/real-estate-categories/all')
+    notFound()
   }
   const {
     address,

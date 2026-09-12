@@ -2,15 +2,12 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType } from '@/data/propertyTaxonomy'
-import {
-  fetchPropertySearch,
-  getPropertySearchUrl,
-  PropertySearchResponse,
-} from '@/lib/propertySearch'
+import { fetchPropertySearch, getPropertySearchUrl, PropertySearchResponse } from '@/lib/propertySearch'
 import { Bath, BedDouble, Building2, MapPin, Ruler, SearchX } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import PropertyPagination from './PropertyPagination'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 const offerRefinements = [
@@ -20,7 +17,15 @@ const offerRefinements = [
   ['เซ้ง', 'เซ้ง', 'Transfer'],
 ] as const
 
-const PropertySearchResults = ({ query }: { query: string }) => {
+const PropertySearchResults = ({
+  query,
+  initialData,
+  page = 1,
+}: {
+  query: string
+  initialData?: PropertySearchResponse
+  page?: number
+}) => {
   const router = useRouter()
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
@@ -28,11 +33,12 @@ const PropertySearchResults = ({ query }: { query: string }) => {
     query: string
     data: PropertySearchResponse | null
     error: boolean
-  }>({ query, data: null, error: false })
+  }>({ query, data: initialData || null, error: false })
   const data = requestState.query === query ? requestState.data : null
   const error = requestState.query === query && requestState.error
 
   useEffect(() => {
+    if (initialData) return
     const controller = new AbortController()
     fetchPropertySearch(query, controller.signal)
       .then((response) => setRequestState({ query, data: response, error: false }))
@@ -42,7 +48,7 @@ const PropertySearchResults = ({ query }: { query: string }) => {
         }
       })
     return () => controller.abort()
-  }, [query])
+  }, [query, initialData])
 
   const selectedOffer = data?.intent.offer_types?.[0]
   const selectedRefinement =
@@ -55,12 +61,15 @@ const PropertySearchResults = ({ query }: { query: string }) => {
           : ''
 
   const refine = (term: string) => {
-    const withoutOffer = query.replace(/(?:ซื้อ|ขาย|เช่า|ให้เช่า|เซ้ง|โอนกิจการ)/g, ' ').replace(/\s+/g, ' ').trim()
+    const withoutOffer = query
+      .replace(/(?:ซื้อ|ขาย|เช่า|ให้เช่า|เซ้ง|โอนกิจการ)/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
     router.push(getPropertySearchUrl([withoutOffer, term].filter(Boolean).join(' ')))
   }
 
   return (
-    <main className="container pb-24 pt-8 sm:pt-10 lg:pt-14">
+    <main className="container pt-8 pb-24 sm:pt-10 lg:pt-14">
       <div className="mx-auto max-w-4xl">
         <PropertySearchOmnibox initialQuery={query} />
       </div>
@@ -76,7 +85,9 @@ const PropertySearchResults = ({ query }: { query: string }) => {
             </h1>
             {data && (
               <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-                {isThai ? `พบ ${data.total.toLocaleString('th-TH')} ประกาศ` : `${data.total.toLocaleString()} listings found`}
+                {isThai
+                  ? `พบ ${data.total.toLocaleString('th-TH')} ประกาศ`
+                  : `${data.total.toLocaleString()} listings found`}
               </p>
             )}
           </div>
@@ -125,8 +136,12 @@ const PropertySearchResults = ({ query }: { query: string }) => {
 
         {error && (
           <div className="my-10 rounded-3xl border border-orange-200 bg-orange-50 p-7 text-orange-900 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-100">
-            <p className="font-semibold">{isThai ? 'ระบบค้นหายังเชื่อมต่อไม่ได้' : 'Search is temporarily unavailable'}</p>
-            <p className="mt-1 text-sm opacity-75">{isThai ? 'กรุณาลองใหม่อีกครั้งในสักครู่' : 'Please try again in a moment.'}</p>
+            <p className="font-semibold">
+              {isThai ? 'ระบบค้นหายังเชื่อมต่อไม่ได้' : 'Search is temporarily unavailable'}
+            </p>
+            <p className="mt-1 text-sm opacity-75">
+              {isThai ? 'กรุณาลองใหม่อีกครั้งในสักครู่' : 'Please try again in a moment.'}
+            </p>
           </div>
         )}
 
@@ -171,7 +186,7 @@ const PropertySearchResults = ({ query }: { query: string }) => {
                 >
                   <div className="relative grid aspect-[16/10] place-items-center overflow-hidden bg-gradient-to-br from-[#dcece5] via-[#edf4f0] to-[#d9e1ec] text-[#176b50] dark:from-emerald-950 dark:via-neutral-900 dark:to-slate-900">
                     <Building2 className="size-12 opacity-50 transition group-hover:scale-110" strokeWidth={1.3} />
-                    <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-neutral-800 dark:bg-neutral-900/90 dark:text-white">
+                    <span className="absolute top-4 left-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-neutral-800 dark:bg-neutral-900/90 dark:text-white">
                       {propertyTypeLabel}
                     </span>
                   </div>
@@ -182,15 +197,29 @@ const PropertySearchResults = ({ query }: { query: string }) => {
                       {[projectName, district, province, address].filter(Boolean).join(', ')}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-                      {listing.bedroom_count !== undefined && <span className="flex items-center gap-1"><BedDouble className="size-4" /> {listing.bedroom_count}</span>}
-                      {listing.bathroom_count !== undefined && <span className="flex items-center gap-1"><Bath className="size-4" /> {listing.bathroom_count}</span>}
-                      {listing.usable_area_sqm !== undefined && <span className="flex items-center gap-1"><Ruler className="size-4" /> {listing.usable_area_sqm} {isThai ? 'ตร.ม.' : 'sq.m.'}</span>}
+                      {listing.bedroom_count !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <BedDouble className="size-4" /> {listing.bedroom_count}
+                        </span>
+                      )}
+                      {listing.bathroom_count !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <Bath className="size-4" /> {listing.bathroom_count}
+                        </span>
+                      )}
+                      {listing.usable_area_sqm !== undefined && (
+                        <span className="flex items-center gap-1">
+                          <Ruler className="size-4" /> {listing.usable_area_sqm} {isThai ? 'ตร.ม.' : 'sq.m.'}
+                        </span>
+                      )}
                     </div>
                     {price !== undefined && (
                       <p className="mt-5 border-t border-neutral-100 pt-4 text-lg font-semibold text-neutral-950 dark:border-neutral-800 dark:text-white">
                         {formatCurrencyFrom(price, listing.currency)}
                         {listing.rent_price_monthly !== undefined && listing.sale_price === undefined && (
-                          <span className="ms-1 text-sm font-normal text-neutral-500">/{isThai ? 'เดือน' : 'month'}</span>
+                          <span className="ms-1 text-sm font-normal text-neutral-500">
+                            /{isThai ? 'เดือน' : 'month'}
+                          </span>
                         )}
                       </p>
                     )}
@@ -201,6 +230,13 @@ const PropertySearchResults = ({ query }: { query: string }) => {
           </div>
         )}
       </section>
+      {data && (
+        <PropertyPagination
+          page={page}
+          pages={Math.ceil(data.total / data.limit)}
+          basePath={getPropertySearchUrl(query)}
+        />
+      )}
     </main>
   )
 }

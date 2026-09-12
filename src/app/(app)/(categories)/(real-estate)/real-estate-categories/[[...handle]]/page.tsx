@@ -1,87 +1,56 @@
-import PropertyCardH from '@/components/PropertyCardH'
-import PropertyListingResultsHeader from '@/components/property-home/PropertyListingResultsHeader'
+import PropertyCatalogResults from '@/components/property-home/PropertyCatalogResults'
 import PropertySearchResults from '@/components/property-home/PropertySearchResults'
-import { getRealEstateCategoryByHandle } from '@/data/categories'
-import { getRealEstateListings } from '@/data/listings'
+import { CATALOG_PAGE_SIZE, CATALOG_PATH, catalogPageNumber, catalogPagePath } from '@/lib/propertyCatalog'
+import { fetchPropertySearch } from '@/lib/propertySearch'
+import { getPublishedProperties } from '@/lib/publishedProperties'
 import { createPageMetadata } from '@/lib/seo'
-import { Divider } from '@/shared/divider'
-import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: {
+type Props = {
   params: Promise<{ handle?: string[] }>
   searchParams: Promise<Record<string, string | string[] | undefined>>
-}): Promise<Metadata> {
-  const { handle } = await params
+}
+const title = 'รวมประกาศอสังหาริมทรัพย์ ขายและให้เช่า'
+const description =
+  'รวมประกาศบ้าน คอนโด ที่ดิน ห้องเช่า ร้านค้า ออฟฟิศ โกดัง และพื้นที่ธุรกิจ ทั้งขายและให้เช่าทั่วประเทศไทย'
+export async function generateMetadata({ searchParams }: Props) {
   const search = await searchParams
-  const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim() || ''
-  const hasFilters = Object.values(search).some((value) =>
-    Array.isArray(value) ? value.some((item) => item.trim()) : Boolean(value?.trim())
-  )
-  const categoryHandle = handle?.[0]?.toLowerCase() || 'all'
-  const category = await getRealEstateCategoryByHandle(handle?.[0])
-  if (!category) {
-    return createPageMetadata({
-      title: 'ไม่พบหมวดอสังหาริมทรัพย์',
-      description: 'ไม่พบหมวดอสังหาริมทรัพย์ที่คุณกำลังค้นหา',
-      path: `/real-estate-categories/${categoryHandle}`,
-      index: false,
-    })
-  }
-
-  const isMainCategory = categoryHandle === 'all'
+  const page = catalogPageNumber(search.page)
+  const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim()
+  const filtered = Object.entries(search).some(([key, value]) => key !== 'page' && Boolean(value))
   return createPageMetadata({
-    title: query ? `ผลค้นหา “${query}”` : isMainCategory ? 'รวมประกาศอสังหาริมทรัพย์ ขายและให้เช่า' : category.name,
+    title: query ? `ผลค้นหา “${query}”` : `${title}${page && page > 1 ? ` — หน้า ${page}` : ''}`,
     description: query
       ? `ดูผลค้นหาประกาศอสังหาริมทรัพย์สำหรับ ${query} พร้อมราคา รูปภาพ ทำเล และข้อมูลติดต่อ`
-      : isMainCategory
-        ? 'รวมประกาศบ้าน คอนโด ที่ดิน ห้องเช่า ร้านค้า ออฟฟิศ โกดัง และพื้นที่ธุรกิจ ทั้งขายและให้เช่าทั่วประเทศไทย'
-        : category.description,
-    path: `/real-estate-categories/${categoryHandle}`,
-    keywords: ['ประกาศอสังหาริมทรัพย์', 'บ้านขาย', 'บ้านเช่า', 'ห้องเช่า', 'ที่ดิน', 'พื้นที่ธุรกิจ'],
-    index: isMainCategory && !hasFilters,
+      : `${description}${page && page > 1 ? ` หน้าที่ ${page}` : ''}`,
+    path: catalogPagePath(CATALOG_PATH, filtered ? 1 : page || 1),
+    index: Boolean(page) && !filtered,
   })
 }
-
-const Page = async ({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ handle?: string[] }>
-  searchParams: Promise<{ q?: string | string[] }>
-}) => {
-  const { handle } = await params
-  const search = await searchParams
-  const q = Array.isArray(search.q) ? search.q[0] : search.q
-
-  if (q?.trim()) {
-    return <PropertySearchResults query={q.trim()} />
+export default async function Page({ params, searchParams }: Props) {
+  const [{ handle }, search] = await Promise.all([params, searchParams])
+  if (handle && (handle.length !== 1 || handle[0] !== 'all')) notFound()
+  const page = catalogPageNumber(search.page)
+  if (!page) notFound()
+  const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim()
+  if (!handle || (search.page === '1' && Object.keys(search).length === 1)) permanentRedirect(CATALOG_PATH)
+  if (query) {
+    const response = await fetchPropertySearch(query, undefined, {
+      limit: CATALOG_PAGE_SIZE,
+      offset: (page - 1) * CATALOG_PAGE_SIZE,
+    })
+    if (page > 1 && !response.listings.length) notFound()
+    return <PropertySearchResults key={`${query}:${page}`} query={query} initialData={response} page={page} />
   }
-
-  const category = await getRealEstateCategoryByHandle(handle?.[0])
-  const listings = await getRealEstateListings()
-
-  if (!category?.id) {
-    return redirect('/real-estate-categories/all')
-  }
-
+  const listings = await getPublishedProperties()
+  if (page > Math.max(1, Math.ceil(listings.length / CATALOG_PAGE_SIZE))) notFound()
   return (
-    <div className="pb-28">
-      <div className="relative container pt-8 sm:pt-10 lg:pt-14">
-        <PropertyListingResultsHeader count={listings.length} categoryHandle={category.handle} />
-        <Divider className="my-8 md:mb-12" />
-
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-          {listings.map((listing) => (
-            <PropertyCardH key={listing.id} data={listing} />
-          ))}
-        </div>
-      </div>
-    </div>
+    <PropertyCatalogResults
+      title={title}
+      description={description}
+      path={CATALOG_PATH}
+      listings={listings}
+      page={page}
+    />
   )
 }
-
-export default Page

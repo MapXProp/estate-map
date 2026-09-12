@@ -16,16 +16,23 @@ import { BadgeCheck, Building2, ExternalLink, Globe2, Mail, MapPin, MessageCircl
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-export default function OrganizationPublicProfile({ identifier }: { identifier: string }) {
+export default function OrganizationPublicProfile({
+  identifier,
+  initialData,
+}: {
+  identifier: string
+  initialData?: { organization: Organization; contacts: OrganizationContact[]; listings: OrganizationListing[] }
+}) {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
-  const [organization, setOrganization] = useState<Organization | null>(null)
-  const [contacts, setContacts] = useState<OrganizationContact[]>([])
-  const [listings, setListings] = useState<OrganizationListing[]>([])
-  const [loading, setLoading] = useState(true)
+  const [organization, setOrganization] = useState<Organization | null>(initialData?.organization || null)
+  const [contacts, setContacts] = useState<OrganizationContact[]>(initialData?.contacts || [])
+  const [listings, setListings] = useState<OrganizationListing[]>(initialData?.listings || [])
+  const [loading, setLoading] = useState(!initialData)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    if (initialData) return
     let cancelled = false
     Promise.all([getOrganization(identifier), getOrganizationListings(identifier)])
       .then(([detail, organizationListings]) => {
@@ -43,7 +50,7 @@ export default function OrganizationPublicProfile({ identifier }: { identifier: 
     return () => {
       cancelled = true
     }
-  }, [identifier])
+  }, [identifier, initialData])
 
   if (loading) return <div className="my-12 h-80 animate-pulse rounded-[32px] bg-neutral-100 dark:bg-neutral-800" />
   if (error || !organization) {

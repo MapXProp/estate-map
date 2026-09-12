@@ -1,8 +1,8 @@
+import PropertyLandingPage from '@/components/property-home/PropertyLandingPage'
 import { createPageMetadata } from '@/lib/seo'
-import PropertyHomePrototype from '../property-home/page'
 
 export const metadata = createPageMetadata({
-  title: 'พื้นที่ให้เช่าทำธุรกิจ ร้านค้า ออฟฟิศ โกดัง และบูธ',
+  title: 'พื้นที่ธุรกิจ ขายและให้เช่า ร้านค้า ออฟฟิศ โกดัง และบูธ',
   description:
     'ค้นหาร้านค้า ล็อกตลาด ออฟฟิศ โกดัง โรงงาน พื้นที่ค้าขาย และพื้นที่ออกบูธ พร้อมราคา เงื่อนไข ทำเล และแผนที่ทั่วประเทศไทย',
   path: '/business',
@@ -18,5 +18,5 @@ export const metadata = createPageMetadata({
 })
 
 export default function BusinessPage() {
-  return <PropertyHomePrototype />
+  return <PropertyLandingPage channel="business" />
 }

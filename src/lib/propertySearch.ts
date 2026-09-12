@@ -87,6 +87,7 @@ export type PropertySearchListing = {
   latitude?: number
   longitude?: number
   published_at?: string
+  updated_at?: string
   space_type_code: string
   space_type_codes?: string[]
   allowed_business_types?: string[]
@@ -171,6 +172,7 @@ export type PropertyListingDetail = {
   public_listing_id: string
   slug: string
   title: string
+  updated_at?: string
   title_en?: string
   description: string
   description_en?: string
@@ -454,8 +456,8 @@ export const fetchPropertyListingDetail = async (
     } catch (error) {
       if (signal?.aborted) throw error
       // A deployment or brief API restart should not turn an existing listing
-      // into a 404. Retry once before letting the page use its catalogue fallback.
-      if (attempt === 1) return null
+      // into a 404. Keep a real outage distinct from a missing/unpublished listing.
+      if (attempt === 1) throw error
       await new Promise((resolve) => setTimeout(resolve, 250))
     }
   }

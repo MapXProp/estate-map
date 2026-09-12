@@ -18,7 +18,7 @@ const footerNavigation = [
       ['พื้นที่ทำธุรกิจ', 'Business spaces', '/business'],
       ['ประกาศขาย', 'Properties for sale', '/buy'],
       ['ประกาศเช่า', 'Properties for rent', '/rent'],
-      ['ประกาศใหม่', 'New listings', '/real-estate-categories/all?sort=newest'],
+      ['ประกาศทั้งหมด', 'All listings', '/real-estate-categories/all'],
       ['ดูบนแผนที่', 'View on map', '/properties/map'],
     ],
   },

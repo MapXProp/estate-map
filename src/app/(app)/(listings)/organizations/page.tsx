@@ -1,4 +1,5 @@
 import OrganizationDirectory from '@/components/organizations/OrganizationDirectory'
+import { getPublicOrganizations } from '@/lib/publicOrganizations'
 import { createPageMetadata } from '@/lib/seo'
 
 export const metadata = createPageMetadata({
@@ -8,6 +9,6 @@ export const metadata = createPageMetadata({
   keywords: ['บริษัทอสังหาริมทรัพย์', 'ทรัพย์ NPA', 'นายหน้าอสังหาริมทรัพย์', 'องค์กร MapxProp'],
 })
 
-export default function Page() {
-  return <OrganizationDirectory />
+export default async function Page() {
+  return <OrganizationDirectory initialOrganizations={await getPublicOrganizations()} />
 }

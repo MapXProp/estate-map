@@ -88,6 +88,9 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
 
 export async function generateMetadata({ searchParams }: { searchParams: PageSearchParams }): Promise<Metadata> {
   const { query } = await getMapSearch(searchParams)
+  const hasFilters = Object.values(await searchParams).some((value) =>
+    Array.isArray(value) ? value.some(Boolean) : Boolean(value)
+  )
 
   return createPageMetadata({
     title: query ? `ค้นหา ${query} บนแผนที่` : 'ค้นหาอสังหาริมทรัพย์บนแผนที่',
@@ -102,7 +105,7 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
       'แผนที่ที่ดิน',
       'แผนที่พื้นที่ธุรกิจ',
     ],
-    index: !query,
+    index: !hasFilters,
   })
 }
 

@@ -7,6 +7,7 @@ import PropertyListingShowcase from '@/components/property-home/PropertyListingS
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import heroImage from '@/images/hero-right-3.png'
 import { getPropertyMapLocationHref } from '@/lib/propertyMapLocations'
+import type { PropertySearchListing } from '@/lib/propertySearch'
 import {
   ArrowRight,
   BedDouble,
@@ -271,7 +272,13 @@ const propertySiteModeFromPathname = (pathname: string): PropertySiteMode => {
   return 'homes'
 }
 
-const PropertyHomePrototype = () => {
+const PropertyHomePrototype = ({
+  initialListings,
+  offerType,
+}: {
+  initialListings?: PropertySearchListing[]
+  offerType?: 'sale' | 'rent'
+}) => {
   const pathname = usePathname()
   const mode = propertySiteModeFromPathname(pathname)
   const { locale, setPropertyZone } = usePreferences()
@@ -540,9 +547,14 @@ const PropertyHomePrototype = () => {
         </section>
       ) : null}
 
-      {!isMainLanding && <ChannelDiscoveryHero mode={mode} />}
+      {!isMainLanding && <ChannelDiscoveryHero mode={mode} offerType={offerType} />}
 
-      <PropertyListingShowcase mode={mode} compact={!isMainLanding} />
+      <PropertyListingShowcase
+        mode={mode}
+        compact={!isMainLanding}
+        initialListings={initialListings}
+        offerType={offerType}
+      />
 
       <section className="container pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-10 lg:pb-12">
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">

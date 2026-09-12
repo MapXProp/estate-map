@@ -102,9 +102,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const pricePerSquareWah =
     offerAmount > 0 && landAreaSquareWah > 0 ? Math.round(offerAmount / landAreaSquareWah) : storedPricePerSquareWah
   const formattedOfferAmount = formatCurrencyFrom(offerAmount, listing.currency)
-  const formattedPricePerSquareWah = pricePerSquareWah
-    ? formatCurrencyFrom(pricePerSquareWah, listing.currency)
-    : ''
+  const formattedPricePerSquareWah = pricePerSquareWah ? formatCurrencyFrom(pricePerSquareWah, listing.currency) : ''
   const fullAddress = [address, province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
@@ -124,6 +122,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   return (
     <div className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
+        <h1 className="sr-only">{title}</h1>
         <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
           <div className="mb-1.5 flex min-h-10 items-center justify-between gap-3">
             <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium">
@@ -140,9 +139,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               sizeClass="size-10"
             />
           </div>
-          <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950">
+          <p
+            aria-hidden="true"
+            className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950"
+          >
             {title}
-          </h1>
+          </p>
           {fullAddress && (
             <div className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
@@ -202,9 +204,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </div>
 
               <div className="order-1 hidden min-[744px]:order-2 min-[744px]:mt-4 min-[744px]:block">
-                <h1 className="max-w-4xl text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
+                <p
+                  aria-hidden="true"
+                  className="max-w-4xl text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]"
+                >
                   {title}
-                </h1>
+                </p>
                 {fullAddress && (
                   <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
                     <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
@@ -407,13 +412,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)]">
               <p className="text-sm text-neutral-500">ราคาขายรวม</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <p className="text-3xl font-semibold tracking-tight text-neutral-950">
-                  {formattedOfferAmount}
-                </p>
+                <p className="text-3xl font-semibold tracking-tight text-neutral-950">{formattedOfferAmount}</p>
                 {pricePerSquareWah ? (
-                  <p className="text-sm font-medium text-[#71817b]">
-                    เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.
-                  </p>
+                  <p className="text-sm font-medium text-[#71817b]">เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.</p>
                 ) : null}
               </div>
               <div className="my-5 border-t border-neutral-200" />
@@ -472,9 +473,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             <div className="min-w-0 flex-1">
               <p className="text-[10px] leading-none text-neutral-500">ราคาขาย</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                <p className="shrink-0 text-sm leading-none font-semibold text-neutral-950">
-                  {formattedOfferAmount}
-                </p>
+                <p className="shrink-0 text-sm leading-none font-semibold text-neutral-950">{formattedOfferAmount}</p>
                 {pricePerSquareWah ? (
                   <p className="text-[10px] leading-none font-medium whitespace-nowrap text-[#71817b]">
                     เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.

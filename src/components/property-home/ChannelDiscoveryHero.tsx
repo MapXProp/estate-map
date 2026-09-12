@@ -67,11 +67,37 @@ const channelContent = {
   },
 } satisfies Record<ChannelMode, unknown>
 
-export default function ChannelDiscoveryHero({ mode }: { mode: ChannelMode }) {
+export default function ChannelDiscoveryHero({ mode, offerType }: { mode: ChannelMode; offerType?: 'sale' | 'rent' }) {
   const { locale } = usePreferences()
   const th = locale === 'th'
   const content = channelContent[mode]
-  const copy = content[th ? 'th' : 'en']
+  const originalCopy = content[th ? 'th' : 'en']
+  const copy = offerType
+    ? {
+        ...originalCopy,
+        eyebrow: th
+          ? offerType === 'sale'
+            ? 'ประกาศขาย'
+            : 'ประกาศเช่า'
+          : offerType === 'sale'
+            ? 'For sale'
+            : 'For rent',
+        title: th
+          ? offerType === 'sale'
+            ? 'ซื้อบ้านที่ใช่'
+            : 'เช่าห้องที่ใช่'
+          : offerType === 'sale'
+            ? 'Buy your next home,'
+            : 'Rent your next room,',
+        description: th
+          ? offerType === 'sale'
+            ? 'บ้าน คอนโด และที่ดิน ที่ลงประกาศขาย'
+            : 'ห้องพักและอพาร์ตเมนต์ ที่ลงประกาศให้เช่า'
+          : offerType === 'sale'
+            ? 'Homes, condos and land available to buy.'
+            : 'Rooms and apartments available to rent.',
+      }
+    : originalCopy
   const Icon = content.icon
   const cityLabel = (location: (typeof propertyMapLocationPresets)[number]) =>
     th ? (location.slug === 'bangkok' ? 'กรุงเทพฯ' : location.nameTh) : location.nameEn
@@ -92,7 +118,10 @@ export default function ChannelDiscoveryHero({ mode }: { mode: ChannelMode }) {
         </div>
 
         <div className={styles.actions}>
-          <Link href={`/properties/map?channel=${mode}`} className={styles.primary}>
+          <Link
+            href={`/properties/map?channel=${mode}${offerType ? `&offer_type=${offerType}` : ''}`}
+            className={styles.primary}
+          >
             <Map size={18} strokeWidth={1.8} aria-hidden="true" />
             {th ? 'ค้นหาบนแผนที่' : 'Explore the map'}
             <ArrowRight size={16} aria-hidden="true" />

@@ -63,6 +63,12 @@ test('missing links and stale API responses never display another property', asy
 
 test('an API outage remains an error rather than a missing listing', async () => {
   await assert.rejects(client({}, 503).fetchSummary(oldListing.slug), /property search failed/)
+  const unavailable = client({}, 503)
+  await assert.rejects(unavailable.fetchDetail(oldListing.slug), /property listing detail failed/)
+  assert.equal(unavailable.requests.length, 2)
+  const missing = client({}, 404)
+  assert.equal(await missing.fetchDetail('missing'), null)
+  assert.equal(missing.requests.length, 1)
 })
 
 test('selected property photo requests support cancellation without retrying an aborted request', async () => {

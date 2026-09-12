@@ -7,13 +7,13 @@ import { BadgeCheck, Building2, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
-export default function OrganizationDirectory() {
+export default function OrganizationDirectory({ initialOrganizations }: { initialOrganizations?: Organization[] }) {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
-  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [organizations, setOrganizations] = useState<Organization[]>(initialOrganizations || [])
   const [organizationType, setOrganizationType] = useState('')
   const [specialty, setSpecialty] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialOrganizations)
   const [error, setError] = useState('')
 
   useEffect(() => {

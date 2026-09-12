@@ -8,7 +8,7 @@ import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertyS
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type ListingGroup = 'residential' | 'rooms' | 'mixed_use' | 'commercial' | 'land'
 
@@ -45,32 +45,14 @@ const DeferredListingImage = ({
   position?: 'center' | 'top'
   src: string
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [shouldLoad, setShouldLoad] = useState(eager)
   const [failedSrc, setFailedSrc] = useState('')
   const hasError = Boolean(src && failedSrc === src)
 
-  useEffect(() => {
-    if (shouldLoad || !containerRef.current) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return
-        setShouldLoad(true)
-        observer.disconnect()
-      },
-      { rootMargin: '240px' }
-    )
-
-    observer.observe(containerRef.current)
-    return () => observer.disconnect()
-  }, [shouldLoad])
-
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div className="absolute inset-0">
       {!src || hasError ? (
         <ListingImageFallback />
-      ) : shouldLoad ? (
+      ) : (
         <Image
           fill
           src={src}
@@ -84,7 +66,7 @@ const DeferredListingImage = ({
             position === 'top' ? 'object-top' : 'object-center'
           }`}
         />
-      ) : null}
+      )}
     </div>
   )
 }
@@ -515,34 +497,43 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
 const PropertyListingShowcase = ({
   mode = 'all',
   compact = false,
+  initialListings,
+  offerType,
 }: {
   mode?: 'all' | 'homes' | 'rooms' | 'business'
   compact?: boolean
+  initialListings?: PropertySearchListing[]
+  offerType?: 'sale' | 'rent'
 }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const savedListings = useSavedListings()
   const isThai = locale === 'th'
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
-  const [databaseListings, setDatabaseListings] = useState<PrototypeListing[]>([])
+  const [listingRows, setListingRows] = useState<PropertySearchListing[]>(initialListings || [])
+  const databaseListings = useMemo(
+    () => (initialListings || listingRows).map((listing) => toShowcaseListing(listing, isThai)),
+    [initialListings, listingRows, isThai]
+  )
 
   useEffect(() => {
+    if (initialListings) return
     let isCurrent = true
     const discoveryChannel = mode === 'all' ? undefined : mode
     // Fetch enough inventory before applying presentation groups locally. A
     // channel can contain more than one group (for example mixed-use listings
     // belong to both Homes and Business), so filtering a 12-item response can
     // otherwise leave recent cards missing from the homepage.
-    fetchPropertySearch('', undefined, { discoveryChannel, limit: 48 })
+    fetchPropertySearch('', undefined, { discoveryChannel, limit: 48, offerTypes: offerType ? [offerType] : undefined })
       .then((result) => {
-        if (isCurrent) setDatabaseListings(result.listings.map((listing) => toShowcaseListing(listing, isThai)))
+        if (isCurrent) setListingRows(result.listings)
       })
       .catch(() => {
-        if (isCurrent) setDatabaseListings([])
+        if (isCurrent) setListingRows([])
       })
     return () => {
       isCurrent = false
     }
-  }, [isThai, mode])
+  }, [initialListings, mode, offerType])
 
   const availableFilters = useMemo(() => {
     if (mode === 'homes')
@@ -727,7 +718,9 @@ const PropertyListingShowcase = ({
 
         <div className={`${compact ? 'mt-7' : 'mt-10'} text-center`}>
           <Link
-            href="/real-estate-categories/all"
+            href={
+              offerType ? `/properties/for-${offerType === 'sale' ? 'sale' : 'rent'}` : '/real-estate-categories/all'
+            }
             className="inline-flex min-h-12 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold text-neutral-900 transition hover:border-neutral-950 hover:bg-neutral-950 hover:text-white dark:border-neutral-700 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-neutral-950"
           >
             {isThai ? 'ดูประกาศทั้งหมด' : 'View all listings'}

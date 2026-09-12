@@ -10,7 +10,6 @@ import { TRealEstateListing } from '@/data/listings'
 import { Badge } from '@/shared/Badge'
 import Link from 'next/link'
 import { FC } from 'react'
-import { Bathtub01Icon, BedSingle01Icon, CropIcon } from './Icons'
 
 interface PropertyCardHProps {
   className?: string
@@ -30,9 +29,6 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     price,
     reviewStart,
     reviewCount,
-    acreage,
-    bathrooms,
-    bedrooms,
   } = data
   const title = isThai ? sourceTitle : data.titleEn || sourceTitle
   const displayPrice =
@@ -70,40 +66,9 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
   }
 
   const renderTienIch = () => {
-    return (
-      <div className="inline-grid grid-cols-3 gap-2">
-        <div className="flex items-center gap-x-2">
-          <span className="hidden sm:inline-block">
-            <BedSingle01Icon className="h-4 w-4" />
-          </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {bedrooms} {isThai ? 'ห้องนอน' : 'beds'}
-          </span>
-        </div>
-
-        {/* ---- */}
-        <div className="flex items-center gap-x-2">
-          <span className="hidden sm:inline-block">
-            <Bathtub01Icon className="h-4 w-4" />
-          </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {bathrooms} {isThai ? 'ห้องน้ำ' : 'baths'}
-          </span>
-        </div>
-
-        {/* ---- */}
-        <div className="flex items-center gap-x-2">
-          <span className="hidden sm:inline-block">
-            <CropIcon className="h-4 w-4" />
-          </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {acreage} {isThai ? 'ตร.ม.' : 'sq.m.'}
-          </span>
-        </div>
-      </div>
-    )
+    const facts = isThai ? data.metadataSummary : data.metadataSummaryEn
+    return facts ? <p className="text-sm text-neutral-500 dark:text-neutral-400">{facts}</p> : null
   }
-
   const renderContent = () => {
     return (
       <div className="flex grow flex-col items-start p-3 sm:pe-6">
@@ -111,13 +76,18 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <div className="flex items-center gap-x-2">
             {isAds && <Badge color="green">{isThai ? 'โฆษณา' : 'Ads'}</Badge>}
             <h2 className="text-lg font-medium capitalize">
-              <span className="line-clamp-2">{title}</span>
+              <Link href={listingHref} prefetch={false} className="relative line-clamp-2">
+                {title}
+              </Link>
             </h2>
           </div>
           {renderTienIch()}
+          <p className="line-clamp-2 text-sm text-neutral-500 dark:text-neutral-400">
+            {isThai ? data.address : data.addressEn || data.address}
+          </p>
           <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700"></div>
           <div className="flex w-full items-end justify-between">
-            <StartRating reviewCount={reviewCount} point={reviewStart} />
+            {reviewCount > 0 && <StartRating reviewCount={reviewCount} point={reviewStart} />}
             <span className="flex items-center justify-center rounded-lg border-2 border-secondary-500 px-2.5 py-1.5 text-sm leading-none font-medium text-secondary-500">
               {displayPrice}
             </span>
@@ -131,7 +101,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
     <div
       className={`group nc-PropertyCardH relative overflow-hidden rounded-3xl border border-neutral-200/80 bg-white dark:border-neutral-700 dark:bg-neutral-900 ${className}`}
     >
-      <Link href={listingHref} className="absolute inset-0"></Link>
+      <Link href={listingHref} prefetch={false} aria-label={title} className="absolute inset-0" tabIndex={-1}></Link>
       <div className="flex h-full w-full flex-col sm:flex-row sm:items-center">
         {renderSliderGallery()}
         {renderContent()}

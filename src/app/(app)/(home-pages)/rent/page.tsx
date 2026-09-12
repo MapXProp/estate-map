@@ -1,5 +1,5 @@
+import PropertyLandingPage from '@/components/property-home/PropertyLandingPage'
 import { createPageMetadata } from '@/lib/seo'
-import PropertyHomePrototype from '../property-home/page'
 
 export const metadata = createPageMetadata({
   title: 'เช่าบ้าน คอนโด ห้องพัก และที่พักรายเดือน',
@@ -10,5 +10,5 @@ export const metadata = createPageMetadata({
 })
 
 export default function RentPage() {
-  return <PropertyHomePrototype />
+  return <PropertyLandingPage channel="rooms" offerType="rent" />
 }
