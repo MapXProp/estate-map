@@ -1,5 +1,5 @@
 import RealEstateListingPage from '@/app/(app)/(listings)/real-estate-listings/[handle]/page'
-import { getRealEstateListingByHandle } from '@/data/listings'
+import { fetchPropertyListingDetail } from '@/lib/propertySearch'
 import { notFound } from 'next/navigation'
 import FullPropertyDetailView from '../../../components/FullPropertyDetailView'
 import PropertyPreviewModal from '../../../components/PropertyPreviewModal'
@@ -12,10 +12,6 @@ type PageProps = {
 const Page = async ({ params, searchParams }: PageProps) => {
   const { handle } = await params
   const { view } = await searchParams
-  const listing = await getRealEstateListingByHandle(handle)
-
-  if (!listing?.id) notFound()
-
   if (view === 'full') {
     return (
       <FullPropertyDetailView>
@@ -25,6 +21,9 @@ const Page = async ({ params, searchParams }: PageProps) => {
       </FullPropertyDetailView>
     )
   }
+
+  const listing = await fetchPropertyListingDetail(handle)
+  if (!listing?.id) notFound()
 
   return <PropertyPreviewModal listing={listing} />
 }

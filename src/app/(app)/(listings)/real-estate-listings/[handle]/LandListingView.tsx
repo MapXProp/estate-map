@@ -1,5 +1,7 @@
 'use client'
 
+import PropertyDescription from '@/components/PropertyDescription'
+
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -112,7 +114,6 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
       : ''
-  const descriptionParagraphs = description.split(/\n{2,}/).filter(Boolean)
   const factCards = [
     { icon: LandPlot, value: `${formatThaiNumber(landAreaSquareWah)} ตร.ว.`, label: 'เนื้อที่รวม' },
     ...(plotCount ? [{ icon: SplitSquareVertical, value: `${plotCount} แปลง`, label: 'แปลงติดกัน' }] : []),
@@ -320,11 +321,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
             <section className="order-1 mt-6 min-[744px]:order-none min-[744px]:mt-10 min-[744px]:border-t min-[744px]:border-neutral-200 min-[744px]:pt-8">
               <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">รายละเอียดที่ดิน</h2>
-              <div className="mt-5 space-y-4 text-[15px] leading-7 text-neutral-700 sm:text-base">
-                {descriptionParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
+              <PropertyDescription text={description} className="mt-5 text-[15px] sm:text-base" />
             </section>
 
             {featureCards.items.length > 0 && (

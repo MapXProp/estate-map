@@ -1,6 +1,7 @@
 'use client'
 
 import ListingImageFallback from '@/components/ListingImageFallback'
+import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
@@ -253,9 +254,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'รายละเอียดประกาศ' : 'Listing details'}
               </h2>
-              <div className="mt-5 space-y-4 font-sarabun text-[15px] leading-7 whitespace-pre-line text-neutral-700 sm:text-base dark:text-neutral-300">
-                {description}
-              </div>
+              <PropertyDescription text={description} className="mt-5 font-sarabun text-[15px] sm:text-base" />
             </section>
 
             {listing.amenities.length ? (
