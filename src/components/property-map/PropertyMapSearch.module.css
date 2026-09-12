@@ -1,5 +1,6 @@
 .search {
   --map-group-heading-size: 13px;
+  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -641,15 +642,19 @@
     --mobile-panel-peek: calc(56px + env(safe-area-inset-bottom, 0px));
   }
   .previewPanel {
-    top: 6px;
-    right: 8px;
+    z-index: 40;
+    top: 0;
+    right: 0;
     bottom: auto;
-    left: 8px;
+    left: 0;
     width: auto;
-    height: min(600px, 76%, calc(100% - var(--mobile-panel-peek) - 84px));
-    border-radius: 20px;
-    box-shadow: 0 12px 32px #153b2533;
+    height: var(--mobile-preview-height, 154px);
+    border: 0;
+    border-bottom: 1px solid #dbe7df;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 4px 12px #153b251a;
   }
+  .search[data-map-mobile-preview='true'] .categories,
   .canvas[data-map-preview-open='true'] .locationSearch,
   .canvas[data-map-preview-open='true'] .areaControl {
     visibility: hidden;

@@ -74,6 +74,9 @@ function harness(width) {
           return { panelRef: () => {} }
         },
       },
+      '@/hooks/useMapPreviewHeaderHeight': {
+        useMapPreviewHeaderHeight: () => ({ searchRef: null, categoriesRef: null, areaControlRef: null }),
+      },
       '@/shared/Logo': { default: 'test-logo' },
       './MapOfferControls': { default: 'test-offers' },
       './MapPinPreview': { default: 'test-preview' },
@@ -227,6 +230,7 @@ test('mobile topbar keeps its logo and exposes the same reset in the compact off
 test('selection immediately opens a separate top preview on mobile while the bottom panel remains a list', () => {
   for (const width of [320, 390, 820, 1440]) {
     const h = harness(width)
+    if (width < 1024) h.click(h.tab('homes'))
     h.map().onMarkerSelect('listing-6')
     h.render()
     h.seedSelectedListing({ id: 'listing-6', latitude: 13.7, longitude: 100.6, offer_amount: 315000000 })
@@ -236,6 +240,13 @@ test('selection immediately opens a separate top preview on mobile while the bot
     const preview = () => h.nodes((node) => node.type === 'test-preview')[0].props
     assert.equal(preview().listing.id, 'listing-6')
     assert.equal(h.nodes((node) => node.type === 'test-preview-panel')[0].props.mobile, width < 1024)
+    assert.equal(h.data('data-map-navigation', true).props.inert, width < 1024)
+    if (width < 1024) assert.equal(h.tab('homes').props['aria-expanded'], false)
+    const canvas = h.data('data-map-canvas', true)
+    const previewInsideCanvas = canvas.props.children.some(
+      (node) => node?.type === 'test-presence' && Boolean(node.props.children)
+    )
+    assert.equal(previewInsideCanvas, width >= 1024, 'mobile card is above navigation, outside the clipped map canvas')
     assert.equal(h.nodes((node) => node.props?.className === 'resultsList')[0].props.hidden, undefined)
     h.map().onMapInteraction()
     h.render()
@@ -245,6 +256,7 @@ test('selection immediately opens a separate top preview on mobile while the bot
     h.map().onMapBackgroundTap()
     h.render()
     assert.equal(h.nodes((node) => node.type === 'test-preview').length, width < 1024 ? 0 : 1)
+    assert.equal(h.data('data-map-navigation', true).props.inert, false)
     assert.equal(h.map().initialCenter, h.center)
   }
 })

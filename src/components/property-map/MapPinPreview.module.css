@@ -285,57 +285,104 @@
   font-size: 12px;
 }
 @media (max-width: 1023px) {
-  .body {
+  .preview {
     position: relative;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: clamp(100px, 30%, 160px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 44px;
+    column-gap: 12px;
+    padding: 8px 12px 8px 8px;
+  }
+  .body {
+    display: contents;
   }
   .media {
-    flex: 1 0 200px;
-    min-height: 200px;
+    grid-column: 1;
+    grid-row: 1 / -1;
+    min-height: 0;
+    height: 100%;
     aspect-ratio: auto;
+    border-radius: 12px;
   }
-  .header {
+  .media .image {
+    object-fit: cover;
+  }
+  .media .photoArrow,
+  .media .expandHint {
+    display: none;
+  }
+  .counter {
+    bottom: 6px;
+    left: 6px;
+    gap: 3px;
+    padding: 3px 5px;
+    font-size: 10px;
+  }
+  .preview > .header {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    right: 2px;
+    width: 44px;
     min-height: 44px;
+    padding: 0;
+    border: 0;
+  }
+  .back {
+    display: none;
   }
   .info {
-    flex-shrink: 0;
-    padding: 10px 14px;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
   }
   .price {
-    margin-top: 0;
-    font-size: 22px;
+    margin-top: 2px;
+    font-size: clamp(17px, 4.3vw, 22px);
   }
   .category {
-    position: absolute;
-    z-index: 2;
-    top: 10px;
-    left: 10px;
-    max-width: calc(100% - 20px);
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: var(--preview-badge-bg, #fffffff0);
-    pointer-events: none;
+    display: block;
+    overflow: hidden;
+    margin-right: 32px;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .category > svg {
+    display: none;
   }
   .title {
-    margin-top: 5px;
-    font-size: 14px;
+    margin-top: 3px;
+    font-size: 13px;
+    line-height: 1.4;
   }
-  .address {
-    -webkit-line-clamp: 1;
-  }
-  .facts {
-    margin-top: 6px;
-    border-top: 0;
-    padding-top: 0;
-    font-size: 12px;
+  .address,
+  .facts,
+  .retry,
+  .galleryButton {
+    display: none;
   }
   .footer {
-    padding-block: 8px;
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    border-top: 0;
+    padding: 0;
+    background: transparent;
+  }
+  .details {
+    width: 100%;
+    font-size: 12px;
+  }
+  .noImage {
+    gap: 5px;
+    padding: 8px;
+    font-size: 11px;
   }
 }
 :global(.dark) .preview {
-  --preview-badge-bg: #17271ff0;
   color: #e3eee7;
 }
 :global(.dark) .media {

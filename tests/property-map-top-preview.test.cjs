@@ -50,3 +50,71 @@ test('desktop preview and reduced-motion preference do not slide the card', () =
     assert.equal(props.transition.duration, 0)
   }
 })
+
+test('compact preview measures only the existing header through the search row and follows resizing', () => {
+  let top = 38,
+    bottom = 188,
+    resize,
+    disconnected = false,
+    cleanup
+  const properties = {}
+  const observed = []
+  const search = {
+    getBoundingClientRect: () => ({ top }),
+    style: {
+      setProperty: (key, value) => {
+        properties[key] = value
+      },
+    },
+  }
+  const categories = {}
+  const areaControl = { getBoundingClientRect: () => ({ bottom }) }
+  const refs = [search, categories, areaControl]
+  let cursor = 0
+  const events = new Map()
+  const context = {
+    exports: {},
+    require: () => ({
+      useRef: () => ({ current: refs[cursor++] }),
+      useLayoutEffect: (effect) => {
+        cleanup = effect()
+      },
+    }),
+    ResizeObserver: class {
+      constructor(callback) {
+        resize = callback
+      }
+      observe(node) {
+        observed.push(node)
+      }
+      disconnect() {
+        disconnected = true
+      }
+    },
+    window: {
+      addEventListener: (event, handler) => events.set(event, handler),
+      removeEventListener: (event) => events.delete(event),
+    },
+  }
+  vm.runInNewContext(
+    ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/hooks/useMapPreviewHeaderHeight.ts'), 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    context
+  )
+  context.exports.useMapPreviewHeaderHeight()
+  assert.equal(properties['--mobile-preview-height'], '156px')
+  assert.deepEqual(observed, refs)
+  // Same navigation/search height at a different page offset must not cover extra map.
+  top = 0
+  bottom = 150
+  events.get('resize')()
+  assert.equal(properties['--mobile-preview-height'], '156px')
+  bottom = 170
+  resize()
+  assert.equal(properties['--mobile-preview-height'], '176px')
+  assert.equal(Object.keys(properties).length, 1, 'measurement never writes map dimensions or position')
+  cleanup()
+  assert.equal(disconnected, true)
+  assert.equal(events.size, 0)
+})

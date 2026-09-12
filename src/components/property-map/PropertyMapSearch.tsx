@@ -8,6 +8,7 @@ import LongdoPropertyMap, {
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { toRealEstateListing } from '@/data/listings'
 import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/data/propertyTaxonomy'
+import { useMapPreviewHeaderHeight } from '@/hooks/useMapPreviewHeaderHeight'
 import { useMapBottomSheet } from '@/hooks/useMobileSheets'
 import {
   countMapCategories,
@@ -130,6 +131,7 @@ export default function PropertyMapSearch({
   const [resizeId, setResizeId] = useState(0)
   const resultsRef = useRef<HTMLDivElement>(null)
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null)
+  const { searchRef, categoriesRef, areaControlRef } = useMapPreviewHeaderHeight()
   const [load, setLoad] = useState<{
     key: string
     rows: PropertySearchListing[]
@@ -302,6 +304,7 @@ export default function PropertyMapSearch({
       setHoveredId('')
       setPanelOpen(true)
       setMobilePanelOpen(false)
+      setMobileGroupOpen(false)
     },
     [requestKey, setMobilePanelOpen]
   )
@@ -366,11 +369,37 @@ export default function PropertyMapSearch({
     setMobileSheetSnap(next)
     if (next !== 'peek' && mobileViewport) setPreviewSelection(null)
   })
+  const propertyPreview = previewListing && (
+    <MapPreviewPanel
+      key="selected-property"
+      mobile={mobileViewport}
+      label={th ? 'ตัวอย่างประกาศที่เลือก' : 'Selected property preview'}
+    >
+      <MapPinPreview
+        key={previewListing.id}
+        listing={previewListing}
+        onClose={closeMapPreview}
+        onBack={() => {
+          setPreviewSelection(null)
+          setMobilePanelOpen(true)
+          window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
+        }}
+      />
+    </MapPreviewPanel>
+  )
 
   return (
-    <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
+    <main
+      ref={searchRef}
+      data-map-mobile-preview={mobileViewport && Boolean(previewListing)}
+      className={styles.search}
+      aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}
+    >
       <h1 className="sr-only">{th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}</h1>
       <section
+        ref={categoriesRef}
+        data-map-navigation
+        inert={mobileViewport && Boolean(previewListing)}
         className={styles.categories}
         aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}
         onClickCapture={dismissMobilePreview}
@@ -687,7 +716,7 @@ export default function PropertyMapSearch({
             </div>
           )}
         </div>
-        <div className={styles.areaControl} data-map-area-control>
+        <div ref={areaControlRef} className={styles.areaControl} data-map-area-control>
           <button
             type="button"
             data-map-area-search
@@ -707,26 +736,7 @@ export default function PropertyMapSearch({
           </button>
         )}
 
-        <AnimatePresence initial={false}>
-          {previewListing && (
-            <MapPreviewPanel
-              key="selected-property"
-              mobile={mobileViewport}
-              label={th ? 'ตัวอย่างประกาศที่เลือก' : 'Selected property preview'}
-            >
-              <MapPinPreview
-                key={previewListing.id}
-                listing={previewListing}
-                onClose={closeMapPreview}
-                onBack={() => {
-                  setPreviewSelection(null)
-                  setMobilePanelOpen(true)
-                  window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
-                }}
-              />
-            </MapPreviewPanel>
-          )}
-        </AnimatePresence>
+        <AnimatePresence initial={false}>{!mobileViewport && propertyPreview}</AnimatePresence>
         <aside
           ref={panelRef}
           data-sheet-snap={mobileSheetSnap}
@@ -945,6 +955,7 @@ export default function PropertyMapSearch({
           </div>
         </aside>
       </div>
+      <AnimatePresence initial={false}>{mobileViewport && propertyPreview}</AnimatePresence>
       <MapSearchDetails
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
