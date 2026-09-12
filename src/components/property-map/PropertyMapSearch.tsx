@@ -288,7 +288,7 @@ export default function PropertyMapSearch({
       setHoveredId('')
       setPanelOpen(true)
       setMobilePanelOpen(true)
-      if (window.matchMedia('(max-width: 1023px)').matches) setCategoriesOpen(false)
+      // Keep the map canvas height unchanged while selecting a pin, including on mobile.
     },
     [requestKey]
   )

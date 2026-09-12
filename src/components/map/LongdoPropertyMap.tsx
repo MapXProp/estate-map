@@ -2,7 +2,6 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
-import { getMapPreviewTarget } from '@/lib/propertyMapPreview'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -111,7 +110,7 @@ const getListingQualityScore = (listing: TRealEstateListing) =>
     Boolean(listing.metadataSummary),
   ].filter(Boolean).length
 
-const getMarkerHtml = (
+export const getMarkerHtml = (
   listing: TRealEstateListing,
   price: string,
   active: boolean,
@@ -129,6 +128,9 @@ const getMarkerHtml = (
   const imageHtml = imageUrl
     ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
+  const detailsLabel = isThai ? 'ดูรายละเอียด' : 'View details'
+  const detailsArrow =
+    '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>'
 
   return `
   <div
@@ -147,10 +149,26 @@ const getMarkerHtml = (
       style="position:relative;display:block;color:inherit;text-decoration:none;outline:none;"
     >
       <span aria-hidden="true" class="mapx-compact-pin"></span>
-      <span class="mapx-price-pill">${escapeHtml(price)}</span>
+      ${
+        dockedPreview
+          ? ''
+          : `<span class="mapx-price-pill">${escapeHtml(price)}</span>
       <span aria-hidden="true" class="mapx-price-pointer-outer"></span>
-      <span aria-hidden="true" class="mapx-price-pointer-inner"></span>
+      <span aria-hidden="true" class="mapx-price-pointer-inner"></span>`
+      }
     </a>
+    ${
+      dockedPreview
+        ? `<a
+      href="${listingPath}"
+      data-mapx-quick-view="true"
+      class="mapx-price-details-link"
+      aria-haspopup="dialog"
+      aria-label="${detailsLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
+      title="${detailsLabel}"
+    ><span class="mapx-price-pill">${escapeHtml(price)}${detailsArrow}</span></a>`
+        : ''
+    }
     <span aria-hidden="true" class="mapx-fan-line"></span>
     ${
       dockedPreview
@@ -252,33 +270,6 @@ const LongdoPropertyMap = ({
     [searchSourceListings]
   )
   const listingsById = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings])
-
-  useEffect(() => {
-    const map = mapRef.current
-    const container = placeholderRef.current
-    const listing = listingsById.get(previewListingId)
-    if (!mapReady || !map || !container || !listing) return
-    const frame = window.requestAnimationFrame(() => {
-      const canvas = container.closest('[data-map-canvas]')
-      const panel = canvas?.querySelector<HTMLElement>('[data-map-results-panel]')
-      if (!panel) return
-      map.resize()
-      const rect = container.getBoundingClientRect()
-      const search = searchContainerRef.current?.getBoundingClientRect()
-      const target = getMapPreviewTarget(
-        rect,
-        panel.getBoundingClientRect(),
-        window.matchMedia('(max-width: 1023px)').matches,
-        search?.bottom || rect.top
-      )
-      map.location(getListingLocation(listing), false)
-      // Longdo can resolve any screen point to a location. Offset the camera,
-      // while every property marker keeps its stored latitude and longitude.
-      const camera = map.location({ x: rect.width - target.x, y: rect.height - target.y })
-      map.location(camera, false)
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [listingsById, mapReady, previewListingId])
 
   const applyMarkerDeclutter = useCallback(() => {
     const map = mapRef.current
@@ -492,7 +483,12 @@ const LongdoPropertyMap = ({
       if (!link && !propertyLink) return
 
       const markerId = link?.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
-      if (markerId && onMarkerSelect && placeholderRef.current?.contains(link)) {
+      if (
+        markerId &&
+        link?.dataset.mapxMarkerLink === 'true' &&
+        onMarkerSelect &&
+        placeholderRef.current?.contains(link)
+      ) {
         event.preventDefault()
         event.stopImmediatePropagation()
         onMarkerSelect(markerId)
@@ -505,7 +501,17 @@ const LongdoPropertyMap = ({
 
       event.preventDefault()
       event.stopImmediatePropagation()
-      router.push(link.getAttribute('href') || link.href)
+      // If a price is already visible, open it immediately and retain that
+      // property's preview behind the modal for the return to the map.
+      if (
+        markerId &&
+        onMarkerSelect &&
+        placeholderRef.current?.contains(link) &&
+        previewListingIdRef.current !== markerId
+      ) {
+        onMarkerSelect(markerId)
+      }
+      router.push(link.getAttribute('href') || link.href, { scroll: false })
     }
 
     document.addEventListener('click', handleListingLink, true)
@@ -847,6 +853,7 @@ const LongdoPropertyMap = ({
           isolation: isolate;
         }
         .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pill,
+        .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-details-link,
         .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pointer-outer,
         .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-pointer-inner {
           display: none;
@@ -868,6 +875,20 @@ const LongdoPropertyMap = ({
         .mapx-price-marker[data-mapx-label-visible="false"] .mapx-price-marker-link {
           padding: 2px;
         }
+        .mapx-price-details-link {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 44px;
+          color: inherit;
+          text-decoration: none;
+          border-radius: 999px;
+        }
+        .mapx-price-details-link:focus-visible {
+          outline: 2px solid #176b50;
+          outline-offset: 2px;
+        }
+        .mapx-price-details-link .mapx-price-pill { gap: 5px; }
         .mapx-fan-line {
           position: absolute;
           bottom: 0;
@@ -1017,6 +1038,17 @@ const LongdoPropertyMap = ({
         .mapx-exact-coordinates .mapx-price-marker:hover .mapx-price-pill,
         .mapx-exact-coordinates .mapx-price-marker:focus-within .mapx-price-pill {
           transform: translateX(-50%) scale(1.06);
+        }
+        .mapx-exact-coordinates .mapx-price-details-link {
+          position: absolute;
+          bottom: 4px;
+          left: 0;
+          width: max-content;
+          transform: translateX(-50%);
+        }
+        .mapx-exact-coordinates .mapx-price-marker .mapx-price-details-link .mapx-price-pill {
+          position: static;
+          transform: none;
         }
         .mapx-exact-coordinates .mapx-price-pointer-outer,
         .mapx-exact-coordinates .mapx-price-pointer-inner,

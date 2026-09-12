@@ -27,33 +27,6 @@ function load(relative, imports = {}) {
 }
 const model = load('src/lib/propertyMapPreview.ts')
 const plain = (value) => JSON.parse(JSON.stringify(value))
-const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height })
-
-test('selected pin stays above mobile preview and below the search field, including short canvases', () => {
-  for (const height of [180, 260, 360, 520, 680]) {
-    const map = rect(0, 150, 390, height)
-    const panelHeight = Math.min(470, height * 0.7, height - 68)
-    const panel = rect(0, map.bottom - panelHeight, 390, panelHeight)
-    const target = model.getMapPreviewTarget(map, panel, true, map.top + 54)
-    assert.ok(target.y > 54, `pin below search for ${height}`)
-    assert.ok(target.y + 5 < panel.top - map.top, `pin clear of panel for ${height}`)
-    assert.equal(target.x, 195)
-  }
-})
-
-test('desktop selected pin is positioned to the right of the existing results panel', () => {
-  for (const width of [1024, 1280, 1905]) {
-    for (const panelWidth of [380, 500]) {
-      const map = rect(0, 300, width, 580)
-      const panel = rect(18, 306, panelWidth, 566)
-      const target = model.getMapPreviewTarget(map, panel, false, 362)
-      assert.ok(target.x > panel.right + 30)
-      assert.ok(target.x < width - 20)
-      assert.ok(target.y > 100 && target.y < 550)
-      assert.equal(map.left, 0, 'positioning does not mutate geometry inputs')
-    }
-  }
-})
 
 test('photo preview keeps every real image, removes duplicates, and handles empty collections', () => {
   const images = Array.from({ length: 15 }, (_, index) => `https://example.com/photo-${index}.jpg`)
