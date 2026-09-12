@@ -69,6 +69,7 @@ const groupNames = {
   business: ['พื้นที่ธุรกิจ', 'Business'],
   rooms: ['ห้องเช่ารายเดือน', 'Monthly stays'],
 }
+const mobileGroupNames = { homes: ['อาศัย', 'Homes'], rooms: ['ห้องเช่า', 'Rooms'], business: ['ธุรกิจ', 'Business'] }
 export default function PropertyMapSearch({
   query = '',
   initialMapCenter,
@@ -96,7 +97,7 @@ export default function PropertyMapSearch({
   const [mobileGroup, setMobileGroup] = useState<DiscoveryChannelCode>(
     () => initialFilters.discoveryChannels?.[0] || 'homes'
   )
-  const [mobileGroupOpen, setMobileGroupOpen] = useState(true)
+  const [mobileGroupOpen, setMobileGroupOpen] = useState(false)
   const shortViewport = useSyncExternalStore(subscribeShortViewport, getShortViewport, getServerShortViewport)
   const [categoriesOverride, setCategoriesOpen] = useState<boolean>()
   const categoriesOpen = categoriesOverride ?? !shortViewport
@@ -288,7 +289,6 @@ export default function PropertyMapSearch({
       setHoveredId('')
       setPanelOpen(true)
       setMobilePanelOpen(true)
-      // Keep the map canvas height unchanged while selecting a pin, including on mobile.
     },
     [requestKey]
   )
@@ -338,14 +338,17 @@ export default function PropertyMapSearch({
     setMobilePanelOpen(false)
     setCategoriesOpen(false)
   }
+  const collapseMobileCategories = useCallback(() => {
+    if (window.matchMedia('(max-width: 1023px)').matches) setMobileGroupOpen(false)
+  }, [])
 
   return (
     <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
+      <h1 className="sr-only">{th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}</h1>
       <section className={styles.categories} aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}>
         <header className={styles.categoryHeading} data-map-topbar>
           <div className={styles.brand} data-map-brand>
             <Logo className={styles.logo} />
-            <h1 className="sr-only">{th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}</h1>
             {categories.length > 0 && (
               <span className={styles.selectionSummary}>
                 {isLandOnlyMapSelection(categories)
@@ -368,11 +371,16 @@ export default function PropertyMapSearch({
             <button
               type="button"
               data-map-details-toggle
+              aria-label={
+                th
+                  ? `ตัวกรองเพิ่มเติม${detailsCount ? ` (${detailsCount})` : ''}`
+                  : `More filters${detailsCount ? ` (${detailsCount})` : ''}`
+              }
               onClick={() => setDetailsOpen(true)}
               className={`${styles.detailsButton} ${detailsCount > 0 ? styles.activeDetailsButton : ''}`}
             >
               <SlidersHorizontal className="size-4" />
-              <span>{th ? 'ตัวกรอง' : 'Filters'}</span>
+              <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
               {detailsCount > 0 && (
                 <span className="rounded-full bg-[#176b50] px-1.5 text-[10px] text-white">{detailsCount}</span>
               )}
@@ -442,35 +450,38 @@ export default function PropertyMapSearch({
             <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
           </div>
         </header>
+        <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
+          {mapCategoryGroups.map((group) => {
+            const Icon = groupIcons[group.code]
+            const count = categories.filter((id) => id.startsWith(`${group.code}:`)).length
+            return (
+              <button
+                type="button"
+                key={group.code}
+                data-map-group={group.code}
+                aria-pressed={mobileGroup === group.code}
+                aria-expanded={categoriesOpen && mobileGroup === group.code && mobileGroupOpen}
+                aria-controls={`map-category-group-${group.code}`}
+                onClick={() => {
+                  setMobileGroupOpen(mobileGroup !== group.code || !categoriesOpen || !mobileGroupOpen)
+                  setCategoriesOpen(true)
+                  setMobileGroup(group.code)
+                  setMobilePanelOpen(false)
+                  setPreviewSelection(null)
+                  setResizeId((value) => value + 1)
+                }}
+                className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
+              >
+                <Icon className="size-4 shrink-0" />
+                <span>{mobileGroupNames[group.code][th ? 0 : 1]}</span>
+                {count > 0 && <span className={styles.groupCount}>{count}</span>}
+                {mobileGroup === group.code && <ChevronDown className={styles.groupChevron} aria-hidden="true" />}
+              </button>
+            )
+          })}
+        </div>
         {categoriesOpen && (
           <div id="map-category-options">
-            <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
-              {mapCategoryGroups.map((group) => {
-                const Icon = groupIcons[group.code]
-                const count = categories.filter((id) => id.startsWith(`${group.code}:`)).length
-                return (
-                  <button
-                    type="button"
-                    key={group.code}
-                    data-map-group={group.code}
-                    aria-pressed={mobileGroup === group.code}
-                    aria-expanded={mobileGroup === group.code && mobileGroupOpen}
-                    aria-controls={`map-category-group-${group.code}`}
-                    onClick={() => {
-                      setMobileGroupOpen(mobileGroup !== group.code || !mobileGroupOpen)
-                      setMobileGroup(group.code)
-                      setResizeId((value) => value + 1)
-                    }}
-                    className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    <span>{groupNames[group.code][th ? 0 : 1]}</span>
-                    {count > 0 && <span className={styles.groupCount}>{count}</span>}
-                    {mobileGroup === group.code && <ChevronDown className={styles.groupChevron} aria-hidden="true" />}
-                  </button>
-                )
-              })}
-            </div>
             <div className={styles.groups}>
               {mapCategoryGroups.map((group) => {
                 const Icon = groupIcons[group.code]
@@ -489,6 +500,14 @@ export default function PropertyMapSearch({
                         {groupNames[group.code][th ? 0 : 1]}
                         <span className="text-[10px] font-normal text-neutral-400">{group.options.length}</span>
                       </span>
+                      <button
+                        type="button"
+                        className={styles.mobileAllCategories}
+                        aria-pressed={!categories.length}
+                        onClick={() => setCategories([])}
+                      >
+                        {th ? 'ทุกหมวด' : 'All types'}
+                      </button>
                       <button
                         type="button"
                         aria-pressed={allSelected}
@@ -606,6 +625,7 @@ export default function PropertyMapSearch({
               currentHoverID={previewListing?.id || hoveredId}
               previewListingId={previewListing?.id}
               onMarkerSelect={selectMapMarker}
+              onMapInteraction={collapseMobileCategories}
               initialCenter={center}
               initialZoom={zoom}
               exactCoordinates
@@ -633,14 +653,17 @@ export default function PropertyMapSearch({
             </div>
           )}
         </div>
-        <div className={styles.areaControl}>
+        <div className={styles.areaControl} data-map-area-control>
           <button
             type="button"
+            data-map-area-search
+            aria-label={th ? 'ค้นหาประกาศในบริเวณแผนที่นี้' : 'Search listings in this map area'}
             onClick={() => setAreaRequestId((value) => value + 1)}
             className={`flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-semibold shadow-md ${viewportDirty ? 'border-[#176b50] bg-[#176b50] text-white' : 'border-[#dbe7df] bg-white text-[#176b50]'}`}
           >
             <MapPin className="size-4" />
-            {th ? 'ค้นหาบริเวณนี้' : 'Search this area'}
+            <span className={styles.desktopAreaLabel}>{th ? 'ค้นหาบริเวณนี้' : 'Search this area'}</span>
+            <span className={styles.mobileAreaLabel}>{th ? 'บริเวณนี้' : 'This area'}</span>
           </button>
         </div>
         {!panelOpen && (

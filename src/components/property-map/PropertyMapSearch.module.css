@@ -288,6 +288,10 @@
 .mobileTabs {
   display: none;
 }
+.mobileAllCategories,
+.mobileAreaLabel {
+  display: none;
+}
 .toolbar {
   display: flex;
   min-width: 0;
@@ -591,11 +595,28 @@
     max-height: calc(100% - 180px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 5px 12px 8px;
+    padding: 4px 10px 0;
+  }
+  .categoryHeading {
+    display: flex;
+    min-height: 44px;
+  }
+  .brand,
+  .headerActions {
+    display: none;
+  }
+  .toolbar {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .resetButton {
+    width: 44px;
+    min-height: 44px;
   }
   .canvas {
     --mobile-search-top: 10px;
     --mobile-search-height: 44px;
+    --mobile-area-width: 104px;
     --mobile-panel-ceiling: 68px;
     --mobile-panel-height: min(65%, calc(100% - var(--mobile-panel-ceiling)));
     --mobile-panel-peek: calc(56px + env(safe-area-inset-bottom, 0px));
@@ -606,21 +627,35 @@
   }
   .group {
     display: none;
+    margin-bottom: 6px;
+    padding: 4px 10px 10px;
   }
   .group.mobileActive {
     display: block;
   }
   .groupHeading {
-    min-height: 28px;
-    justify-content: flex-end;
+    min-height: 40px;
+    justify-content: space-between;
   }
   .groupHeading > span {
     display: none;
   }
+  .mobileAllCategories {
+    display: block;
+    min-height: 44px;
+    padding: 0 2px;
+    color: #687d71;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .mobileAllCategories:focus-visible {
+    outline: 2px solid var(--category-accent);
+    outline-offset: 2px;
+  }
   .mobileTabs {
     display: flex;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 2px;
+    margin-top: 2px;
     border-bottom: 1px solid #e5ece7;
   }
   .mobileTabs button {
@@ -629,7 +664,7 @@
     min-height: 44px;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 3px;
     border-bottom: 2px solid transparent;
     padding: 4px 0;
     font-size: 12px;
@@ -641,9 +676,16 @@
     outline: 2px solid var(--category-accent);
     outline-offset: -3px;
   }
+  .mobileTabs button > svg:first-child {
+    width: 14px;
+    height: 14px;
+  }
+  .mobileTabs .groupCount {
+    padding-inline: 3px;
+  }
   .groupChevron {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     flex-shrink: 0;
     transition: transform 160ms ease;
   }
@@ -699,7 +741,7 @@
   .panelVisible .locationSearch {
     top: var(--mobile-search-top);
     left: 12px;
-    width: calc(100% - 24px);
+    width: calc(100% - 24px - var(--mobile-area-width) - 6px);
     max-width: none;
     transform: none;
   }
@@ -708,22 +750,38 @@
     box-shadow: 0 3px 12px #123f3214;
   }
   .locationSearch [role='listbox'] {
+    width: calc(100vw - 24px);
     max-height: min(260px, 35dvh);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
   .areaControl,
   .panelVisible .areaControl {
-    top: calc(var(--mobile-search-top) + var(--mobile-search-height) + 12px);
-    left: 50%;
+    top: var(--mobile-search-top);
+    left: auto;
+    right: 12px;
+    width: var(--mobile-area-width);
+    transform: none;
     white-space: nowrap;
+  }
+  .areaControl button {
+    width: 100%;
+    min-height: var(--mobile-search-height);
+    gap: 5px;
+    padding-inline: 8px;
+    box-shadow: 0 3px 12px #123f3214;
+  }
+  .desktopAreaLabel {
+    display: none;
+  }
+  .mobileAreaLabel {
+    display: inline;
   }
   .zoomControls {
     right: 12px;
     bottom: calc(var(--mobile-panel-peek) + 12px);
   }
-  .mobilePanelVisible .zoomControls,
-  .mobilePanelVisible .areaControl {
+  .mobilePanelVisible .zoomControls {
     display: none;
   }
   .results,
@@ -824,8 +882,7 @@
     font-size: 11px;
   }
   .collapseCategoriesButton,
-  .accountButton,
-  .resetButton {
+  .accountButton {
     width: 32px;
   }
   .offers {
@@ -843,6 +900,16 @@
     min-width: 60px;
     padding-inline: 9px;
     gap: 4px;
+  }
+}
+@media (max-width: 359px) {
+  .detailsLabel {
+    display: none;
+  }
+  .detailsButton {
+    min-width: 44px;
+    justify-content: center;
+    padding-inline: 8px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -907,6 +974,7 @@
   border-color: #68b98a;
 }
 :global(.dark) .selectionSummary,
+:global(.dark) .mobileAllCategories,
 :global(.dark) .resetButton {
   color: #a6b9ad;
 }

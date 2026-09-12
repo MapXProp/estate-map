@@ -74,6 +74,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.moreLabelMobile {
+  display: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .moreButton[data-active] {
   color: #405b49;
   background: #edf2ed;
@@ -158,6 +163,16 @@
   outline-offset: 2px;
 }
 @media (max-width: 1023px) {
+  .controls,
+  .more {
+    flex: 1;
+  }
+  .moreLabelDesktop {
+    display: none;
+  }
+  .moreLabelMobile {
+    display: block;
+  }
   .primary {
     padding: 0;
     border: 0;

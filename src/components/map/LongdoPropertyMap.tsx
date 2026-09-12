@@ -201,6 +201,7 @@ interface Props {
   onLocationSearchFocus?: () => void
   onLocationSearch?: (location: LongdoLocation, label: string) => void
   onMarkerSelect?: (id: string) => void
+  onMapInteraction?: () => void
   previewListingId?: string
 }
 
@@ -222,6 +223,7 @@ const LongdoPropertyMap = ({
   onLocationSearchFocus,
   onLocationSearch,
   onMarkerSelect,
+  onMapInteraction,
   previewListingId = '',
 }: Props) => {
   const { locale, formatCurrencyFrom } = usePreferences()
@@ -1073,6 +1075,10 @@ const LongdoPropertyMap = ({
           declutterMarkersRef.current()
         }}
         onPointerDownCapture={() => placeholderRef.current?.focus({ preventScroll: true })}
+        onPointerUpCapture={(event) => {
+          // Finish the tap/drag before resizing the canvas; the camera stays unchanged.
+          if (event.isPrimary && event.button === 0 && onMapInteraction) window.requestAnimationFrame(onMapInteraction)
+        }}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />
       {mapReady && (

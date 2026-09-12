@@ -109,7 +109,10 @@ export default function MapOfferControls({
           data-active={selectedOther.length > 0 || !value.length || undefined}
           aria-label={th ? `รูปแบบอื่น: ${moreLabel} เลือกได้หลายแบบ` : `More offers: ${moreLabel}, select one or more`}
         >
-          <span>{moreLabel}</span>
+          <span className={styles.moreLabelDesktop}>{moreLabel}</span>
+          <span className={styles.moreLabelMobile}>
+            {!value.length || selectedOther.length === 1 ? moreLabel : th ? 'อื่น' : 'More'}
+          </span>
           {selectedOther.length > 1 && <span className={styles.count}>{selectedOther.length}</span>}
           <ChevronDown className={styles.chevron} aria-hidden="true" />
         </PopoverButton>

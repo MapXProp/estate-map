@@ -260,6 +260,10 @@ function harness(width) {
     click,
     api,
     getMarkerHtml: context.exports.getMarkerHtml,
+    finishMapGesture: (options = {}) =>
+      visit(tree, (node) => {
+        if (node.props?.onPointerUpCapture) node.props.onPointerUpCapture({ isPrimary: true, button: 0, ...options })
+      }),
     changePath: (path) => {
       pathname = path
       render()
@@ -335,4 +339,19 @@ test('dot and price are separate accessible links, escape content and preserve n
   assert.ok(!html.includes('<script>'))
   const legacy = h.getMarkerHtml(listing, '315,000,000 บาท', false, true, false, false)
   assert.equal((legacy.match(/<a\s/g) || []).length, 1)
+})
+
+test('map interaction callback runs after a completed primary gesture without moving the camera', () => {
+  const h = harness(390)
+  let completed = 0
+  h.render({ onMapInteraction: () => completed++ })
+  h.finishMapGesture()
+  assert.equal(completed, 0, 'do not resize underneath an unfinished tap')
+  h.render()
+  assert.equal(completed, 1)
+  h.finishMapGesture({ isPrimary: false })
+  h.finishMapGesture({ button: 2 })
+  h.render()
+  assert.equal(completed, 1)
+  assert.deepEqual(h.calls, [])
 })
