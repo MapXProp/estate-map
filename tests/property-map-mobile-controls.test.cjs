@@ -53,7 +53,7 @@ function harness(width) {
     useMemo: (fn) => fn(),
     useCallback: (fn) => fn,
     useEffect() {},
-    useSyncExternalStore: () => false,
+    useSyncExternalStore: (_subscribe, getSnapshot) => getSnapshot(),
   }
   const component = load(
     'src/components/property-map/PropertyMapSearch.tsx',
@@ -61,6 +61,7 @@ function harness(width) {
       react: hooks,
       'react/jsx-runtime': jsx,
       'lucide-react': require('lucide-react'),
+      'framer-motion': { AnimatePresence: 'test-presence' },
       '@/components/Header/AvatarDropdown': { default: 'test-account' },
       '@/components/map/LongdoPropertyMap': { default: 'test-map' },
       '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th' }) },
@@ -76,6 +77,7 @@ function harness(width) {
       '@/shared/Logo': { default: 'test-logo' },
       './MapOfferControls': { default: 'test-offers' },
       './MapPinPreview': { default: 'test-preview' },
+      './MapPreviewPanel': { default: 'test-preview-panel' },
       './MapResultCard': { default: 'test-card' },
       './MapSearchDetails': { default: 'test-filters' },
       './PropertyMapFilterBar': {
@@ -95,7 +97,7 @@ function harness(width) {
       './PropertyMapSearch.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
     },
     {
-      window: { matchMedia: () => ({ matches: width < 1024 }) },
+      window: { matchMedia: (query) => ({ matches: query.includes('max-width') && width < 1024 }) },
       process: { env: { NEXT_PUBLIC_LONGDO_MAP_KEY: 'test-key' } },
     }
   ).default
@@ -222,7 +224,7 @@ test('mobile topbar keeps its logo and exposes the same reset in the compact off
   assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['sale', 'rent'])
 })
 
-test('mobile selection keeps price visible above a collapsed preview that can expand and collapse without deselecting', () => {
+test('selection immediately opens a separate top preview on mobile while the bottom panel remains a list', () => {
   for (const width of [320, 390, 820, 1440]) {
     const h = harness(width)
     h.map().onMarkerSelect('listing-6')
@@ -230,15 +232,43 @@ test('mobile selection keeps price visible above a collapsed preview that can ex
     h.seedSelectedListing({ id: 'listing-6', latitude: 13.7, longitude: 100.6, offer_amount: 315000000 })
     assert.equal(h.map().currentHoverID, 'listing-6')
     assert.equal(h.map().previewListingId, 'listing-6')
-    assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], width < 1024 ? 'peek' : 'middle')
+    assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'peek')
     const preview = () => h.nodes((node) => node.type === 'test-preview')[0].props
-    assert.equal(preview().mobileCollapsed, width < 1024)
-    preview().onExpand()
+    assert.equal(preview().listing.id, 'listing-6')
+    assert.equal(h.nodes((node) => node.type === 'test-preview-panel')[0].props.mobile, width < 1024)
+    assert.equal(h.nodes((node) => node.props?.className === 'resultsList')[0].props.hidden, undefined)
+    h.map().onMapInteraction()
     h.render()
-    assert.equal(preview().mobileCollapsed, false)
-    h.snapTo('peek')
-    assert.equal(preview().mobileCollapsed, true)
+    assert.equal(preview().listing.id, 'listing-6', 'ordinary pan completion leaves the preview visible')
     assert.equal(h.map().currentHoverID, 'listing-6')
     assert.equal(h.map().initialCenter, h.center)
+    h.map().onMapBackgroundTap()
+    h.render()
+    assert.equal(h.nodes((node) => node.type === 'test-preview').length, width < 1024 ? 0 : 1)
+    assert.equal(h.map().initialCenter, h.center)
   }
+})
+
+test('another marker replaces the top preview; expanding results closes it on mobile', () => {
+  const h = harness(390)
+  for (const id of ['listing-6', 'listing-7']) {
+    h.map().onMarkerSelect(id)
+    h.render()
+    h.seedSelectedListing({ id, latitude: 13.7, longitude: 100.6, offer_amount: 315000000 })
+    const previews = h.nodes((node) => node.type === 'test-preview')
+    assert.equal(previews.length, 1)
+    assert.equal(previews[0].props.listing.id, id)
+    assert.equal(h.map().currentHoverID, id)
+  }
+  h.data('data-map-results-panel', true).props.onPointerDownCapture()
+  h.render()
+  assert.equal(
+    h.nodes((node) => node.type === 'test-preview').length,
+    0,
+    'touching the list dismisses the top preview before dragging'
+  )
+  h.snapTo('middle')
+  assert.equal(h.nodes((node) => node.type === 'test-preview').length, 0)
+  assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'middle')
+  assert.equal(h.map().initialCenter, h.center)
 })

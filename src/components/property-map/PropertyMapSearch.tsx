@@ -31,6 +31,7 @@ import {
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import type { SheetSnap } from '@/lib/verticalSheetGesture'
 import Logo from '@/shared/Logo'
+import { AnimatePresence } from 'framer-motion'
 import {
   Building2,
   Check,
@@ -52,6 +53,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import MapOfferControls from './MapOfferControls'
 import MapPinPreview from './MapPinPreview'
+import MapPreviewPanel from './MapPreviewPanel'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
 import { emptyPropertyMapFilters, type PropertyMapFilterState, type PropertyMapSort } from './PropertyMapFilterBar'
@@ -65,6 +67,12 @@ const subscribeShortViewport = (onChange: () => void) => {
 }
 const getShortViewport = () => window.matchMedia('(max-height: 500px)').matches
 const getServerShortViewport = () => false
+const subscribeMobileViewport = (onChange: () => void) => {
+  const media = window.matchMedia('(max-width: 1023px)')
+  media.addEventListener('change', onChange)
+  return () => media.removeEventListener('change', onChange)
+}
+const getMobileViewport = () => window.matchMedia('(max-width: 1023px)').matches
 const groupIcons = { homes: House, business: Building2, rooms: KeyRound }
 const groupNames = {
   homes: ['ที่อยู่อาศัย', 'Homes'],
@@ -101,6 +109,7 @@ export default function PropertyMapSearch({
   )
   const [mobileGroupOpen, setMobileGroupOpen] = useState(false)
   const shortViewport = useSyncExternalStore(subscribeShortViewport, getShortViewport, getServerShortViewport)
+  const mobileViewport = useSyncExternalStore(subscribeMobileViewport, getMobileViewport, getServerShortViewport)
   const [categoriesOverride, setCategoriesOpen] = useState<boolean>()
   const categoriesOpen = categoriesOverride ?? !shortViewport
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -292,7 +301,7 @@ export default function PropertyMapSearch({
       setPreviewSelection({ id, requestKey })
       setHoveredId('')
       setPanelOpen(true)
-      setMobilePanelOpen(!window.matchMedia('(max-width: 1023px)').matches)
+      setMobilePanelOpen(false)
     },
     [requestKey, setMobilePanelOpen]
   )
@@ -333,7 +342,10 @@ export default function PropertyMapSearch({
     setResizeId((previous) => previous + 1)
   }
   const toggleMobilePanel = () => {
-    if (!mobilePanelOpen) setCategoriesOpen(false)
+    if (!mobilePanelOpen) {
+      setCategoriesOpen(false)
+      setPreviewSelection(null)
+    }
     setMobilePanelOpen(!mobilePanelOpen)
   }
   const prepareMobileLocationSearch = () => {
@@ -345,14 +357,24 @@ export default function PropertyMapSearch({
   const collapseMobileCategories = useCallback(() => {
     if (window.matchMedia('(max-width: 1023px)').matches) setMobileGroupOpen(false)
   }, [])
+  const dismissMobilePreview = useCallback(() => {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    setPreviewSelection(null)
+    setHoveredId('')
+  }, [])
   const { panelRef } = useMapBottomSheet(mobileSheetSnap, previewListing?.id, (next) => {
     setMobileSheetSnap(next)
+    if (next !== 'peek' && mobileViewport) setPreviewSelection(null)
   })
 
   return (
     <main className={styles.search} aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}>
       <h1 className="sr-only">{th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}</h1>
-      <section className={styles.categories} aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}>
+      <section
+        className={styles.categories}
+        aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}
+        onClickCapture={dismissMobilePreview}
+      >
         <header className={styles.categoryHeading} data-map-topbar>
           <div className={styles.brand} data-map-brand>
             <Logo className={styles.logo} />
@@ -637,6 +659,7 @@ export default function PropertyMapSearch({
               previewListingId={previewListing?.id}
               onMarkerSelect={selectMapMarker}
               onMapInteraction={collapseMobileCategories}
+              onMapBackgroundTap={dismissMobilePreview}
               initialCenter={center}
               initialZoom={zoom}
               exactCoordinates
@@ -684,36 +707,35 @@ export default function PropertyMapSearch({
           </button>
         )}
 
+        <AnimatePresence initial={false}>
+          {previewListing && (
+            <MapPreviewPanel
+              key="selected-property"
+              mobile={mobileViewport}
+              label={th ? 'ตัวอย่างประกาศที่เลือก' : 'Selected property preview'}
+            >
+              <MapPinPreview
+                key={previewListing.id}
+                listing={previewListing}
+                onClose={closeMapPreview}
+                onBack={() => {
+                  setPreviewSelection(null)
+                  setMobilePanelOpen(true)
+                  window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
+                }}
+              />
+            </MapPreviewPanel>
+          )}
+        </AnimatePresence>
         <aside
           ref={panelRef}
           data-sheet-snap={mobileSheetSnap}
           data-map-results-panel
           className={styles.results}
-          aria-label={
-            previewListing
-              ? th
-                ? 'ตัวอย่างประกาศที่เลือก'
-                : 'Selected property preview'
-              : th
-                ? 'ประกาศที่ค้นพบ'
-                : 'Property results'
-          }
+          onPointerDownCapture={dismissMobilePreview}
+          aria-label={th ? 'ประกาศที่ค้นพบ' : 'Property results'}
         >
-          {previewListing && (
-            <MapPinPreview
-              key={previewListing.id}
-              listing={previewListing}
-              mobileCollapsed={mobileSheetSnap === 'peek'}
-              onExpand={() => setMobilePanelOpen(true)}
-              onClose={closeMapPreview}
-              onBack={() => {
-                setPreviewSelection(null)
-                setMobilePanelOpen(true)
-                window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
-              }}
-            />
-          )}
-          <div className={styles.resultsList} hidden={Boolean(previewListing)}>
+          <div className={styles.resultsList}>
             <button
               type="button"
               data-map-mobile-panel-toggle

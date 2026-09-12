@@ -12,7 +12,6 @@ import {
   ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Images,
   LoaderCircle,
   MapPin,
@@ -28,14 +27,10 @@ export default function MapPinPreview({
   listing,
   onBack,
   onClose,
-  mobileCollapsed = false,
-  onExpand,
 }: {
   listing: TRealEstateListing
   onBack: () => void
   onClose: () => void
-  mobileCollapsed?: boolean
-  onExpand?: () => void
 }) {
   const { locale, formatCurrencyFrom } = usePreferences()
   const th = locale === 'th'
@@ -72,9 +67,8 @@ export default function MapPinPreview({
     setImageIndex((index) => stepMapPreviewImage(index, direction, images.length))
 
   useEffect(() => {
-    if (mobileCollapsed && window.matchMedia('(max-width: 1023px)').matches) return
     headingRef.current?.focus({ preventScroll: true })
-  }, [mobileCollapsed])
+  }, [])
   useEffect(() => {
     const controller = new AbortController()
     void fetchPropertyListingDetail(listing.handle, controller.signal)
@@ -155,7 +149,6 @@ export default function MapPinPreview({
     <section
       id="map-property-preview"
       data-map-property-preview
-      data-mobile-collapsed={mobileCollapsed && Boolean(onExpand)}
       aria-labelledby="map-preview-heading"
       className={styles.preview}
       onKeyDown={(event) => {
@@ -170,39 +163,7 @@ export default function MapPinPreview({
         }
       }}
     >
-      {onExpand && (
-        <div className={styles.mobileSummary} data-collapsed={mobileCollapsed}>
-          <button
-            type="button"
-            className={styles.summaryExpand}
-            data-sheet-drag-handle
-            data-map-expand-preview
-            aria-expanded={!mobileCollapsed}
-            aria-controls="map-preview-content"
-            aria-label={th ? 'ดูรูปและข้อมูลประกาศที่เลือก' : 'Show selected property photos and information'}
-            onClick={onExpand}
-          >
-            <span className={styles.grip} aria-hidden="true" />
-            <strong>
-              {price}
-              {period}
-            </strong>
-            <span>
-              {th ? 'ดูรูปและข้อมูล' : 'Photos & info'} <ChevronUp className="size-4" />
-            </span>
-          </button>
-          <button
-            type="button"
-            className={styles.summaryClose}
-            onClick={onClose}
-            aria-label={th ? 'ปิดตัวอย่าง ดูรายการ' : 'Close preview and show listings'}
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-      )}
-      <header className={styles.header} data-sheet-drag-handle>
-        <span className={styles.grip} aria-hidden="true" />
+      <header className={styles.header}>
         <button type="button" onClick={onBack} className={styles.back}>
           <ArrowLeft className="size-4" />
           {th ? 'กลับไปรายการ' : 'Back to results'}

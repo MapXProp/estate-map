@@ -420,7 +420,8 @@
   position: absolute;
   inset: 0;
 }
-.results {
+.results,
+.previewPanel {
   position: absolute;
   z-index: 25;
   top: 6px;
@@ -433,6 +434,10 @@
   border-radius: 20px;
   background: #fff;
   box-shadow: 0 8px 32px #153b251a;
+}
+.previewPanel {
+  display: flex;
+  z-index: 26;
 }
 .panelVisible .results {
   display: flex;
@@ -521,6 +526,9 @@
   font-weight: 600;
 }
 @media (min-width: 1024px) {
+  .canvas[data-map-preview-open='true'] .results {
+    display: none;
+  }
   .categories {
     padding: 4px 24px 6px;
   }
@@ -631,6 +639,21 @@
     --mobile-panel-ceiling: 68px;
     --mobile-panel-height: min(65%, calc(100% - var(--mobile-panel-ceiling)));
     --mobile-panel-peek: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  .previewPanel {
+    top: 6px;
+    right: 8px;
+    bottom: auto;
+    left: 8px;
+    width: auto;
+    height: min(600px, 76%, calc(100% - var(--mobile-panel-peek) - 84px));
+    border-radius: 20px;
+    box-shadow: 0 12px 32px #153b2533;
+  }
+  .canvas[data-map-preview-open='true'] .locationSearch,
+  .canvas[data-map-preview-open='true'] .areaControl {
+    visibility: hidden;
+    pointer-events: none;
   }
   .groups {
     display: block;
@@ -835,10 +858,6 @@
   .mobilePanelVisible .resultsContent {
     display: flex;
   }
-  .canvas[data-map-preview-open='true'] .results:not([data-sheet-snap='peek']) {
-    height: var(--mobile-sheet-height, min(470px, 70%, calc(100% - var(--mobile-panel-ceiling))));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
   .canvas[data-map-preview-open] .results[data-sheet-snap='full'] {
     height: var(--mobile-sheet-height, calc(100% - var(--mobile-panel-ceiling)));
   }
@@ -960,12 +979,14 @@
   }
 }
 :global(.dark) .search,
-:global(.dark) .results {
+:global(.dark) .results,
+:global(.dark) .previewPanel {
   color: #e4ede7;
   background: #171c19;
 }
 :global(.dark) .categories,
 :global(.dark) .results,
+:global(.dark) .previewPanel,
 :global(.dark) .resultsHeader,
 :global(.dark) .detailsButton {
   border-color: #324037;

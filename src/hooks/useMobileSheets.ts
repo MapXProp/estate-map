@@ -69,7 +69,7 @@ export function useSwipeDismiss(onClose: () => void, enabled = true) {
   return { panelRef, backdropRef, dismiss }
 }
 
-export function useMapBottomSheet(snap: SheetSnap, previewId: string | undefined, onSnap: (snap: SheetSnap) => void) {
+export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefined, onSnap: (snap: SheetSnap) => void) {
   const [node, panelRef] = useState<HTMLElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const frame = useRef<number | null>(null)
@@ -89,7 +89,7 @@ export function useMapBottomSheet(snap: SheetSnap, previewId: string | undefined
     points.current = {
       peek,
       full,
-      middle: Math.min(full, previewId ? Math.min(470, canvasHeight * 0.7) : canvasHeight * 0.65),
+      middle: Math.min(full, canvasHeight * 0.65),
     }
   }
   const reset = useCallback(() => {
@@ -104,7 +104,7 @@ export function useMapBottomSheet(snap: SheetSnap, previewId: string | undefined
   useEffect(() => {
     reset()
     return reset
-  }, [reset, snap, previewId])
+  }, [reset, snap, selectionId])
   useEffect(() => {
     if (!node) return
     const media = window.matchMedia('(max-width: 1023px)')

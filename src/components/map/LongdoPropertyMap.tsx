@@ -202,6 +202,7 @@ interface Props {
   onLocationSearch?: (location: LongdoLocation, label: string) => void
   onMarkerSelect?: (id: string) => void
   onMapInteraction?: () => void
+  onMapBackgroundTap?: () => void
   previewListingId?: string
 }
 
@@ -224,6 +225,7 @@ const LongdoPropertyMap = ({
   onLocationSearch,
   onMarkerSelect,
   onMapInteraction,
+  onMapBackgroundTap,
   previewListingId = '',
 }: Props) => {
   const { locale, formatCurrencyFrom } = usePreferences()
@@ -232,6 +234,9 @@ const LongdoPropertyMap = ({
   const router = useRouter()
   const placeholderRef = useRef<HTMLDivElement>(null)
   const singlePointerGestureRef = useRef(false)
+  const backgroundTapRef = useRef<{ pointerId: number; x: number; y: number; started: number; moved: boolean } | null>(
+    null
+  )
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const mapRef = useRef<LongdoMapInstance | null>(null)
@@ -1160,15 +1165,46 @@ const LongdoPropertyMap = ({
         }}
         onPointerDownCapture={(event) => {
           singlePointerGestureRef.current = event.isPrimary && event.button === 0
+          const target = event.target
+          backgroundTapRef.current =
+            event.isPrimary &&
+            event.button === 0 &&
+            target instanceof Element &&
+            !target.closest('a,button,input,select,textarea,[data-mapx-price-marker]')
+              ? {
+                  pointerId: event.pointerId,
+                  x: event.clientX,
+                  y: event.clientY,
+                  started: event.timeStamp,
+                  moved: false,
+                }
+              : null
           placeholderRef.current?.focus({ preventScroll: true })
+        }}
+        onPointerMoveCapture={(event) => {
+          const tap = backgroundTapRef.current
+          if (tap?.pointerId === event.pointerId && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 10)
+            tap.moved = true
         }}
         onPointerUpCapture={(event) => {
           // Finish a one-finger tap/drag before resizing; never fold during a pinch.
           if (singlePointerGestureRef.current && event.isPrimary && event.button === 0 && onMapInteraction)
             window.requestAnimationFrame(onMapInteraction)
+          const tap = backgroundTapRef.current
+          if (
+            tap &&
+            tap.pointerId === event.pointerId &&
+            !tap.moved &&
+            Math.hypot(event.clientX - tap.x, event.clientY - tap.y) <= 10 &&
+            event.timeStamp - tap.started <= 600 &&
+            onMapBackgroundTap
+          )
+            window.requestAnimationFrame(onMapBackgroundTap)
+          backgroundTapRef.current = null
           singlePointerGestureRef.current = false
         }}
         onPointerCancelCapture={() => {
+          backgroundTapRef.current = null
           singlePointerGestureRef.current = false
         }}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"

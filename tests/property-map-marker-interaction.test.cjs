@@ -40,6 +40,8 @@ function harness(width, initialZoom = 14) {
       this.classList = { toggle: (name, active) => (active ? this.classes.add(name) : this.classes.delete(name)) }
     }
     closest(selector) {
+      if (selector === 'a,button,input,select,textarea,[data-mapx-price-marker]')
+        return this.link || (this.isControl ? this : null)
       return selector === '[data-map-canvas]'
         ? this
         : selector.startsWith('a[')
@@ -243,6 +245,11 @@ function harness(width, initialZoom = 14) {
   calls.length = 0
   function linkTarget(action) {
     if (action === 'map') return new Element()
+    if (action === 'control') {
+      const node = new Element()
+      node.isControl = true
+      return node
+    }
     const link = new Element()
     link.dataset[action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
     link.root = markerRoot
@@ -296,11 +303,38 @@ function harness(width, initialZoom = 14) {
     startMapGesture: (options = {}) =>
       visit(tree, (node) => {
         if (node.props?.onPointerDownCapture)
-          node.props.onPointerDownCapture({ isPrimary: true, button: 0, ...options })
+          node.props.onPointerDownCapture({
+            target: linkTarget(options.action || 'map'),
+            pointerId: 1,
+            clientX: 100,
+            clientY: 200,
+            timeStamp: 100,
+            isPrimary: true,
+            button: 0,
+            ...options,
+          })
+      }),
+    moveMapGesture: (options = {}) =>
+      visit(tree, (node) => {
+        if (node.props?.onPointerMoveCapture)
+          node.props.onPointerMoveCapture({ pointerId: 1, clientX: 100, clientY: 200, ...options })
+      }),
+    cancelMapGesture: () =>
+      visit(tree, (node) => {
+        node.props?.onPointerCancelCapture?.()
       }),
     finishMapGesture: (options = {}) =>
       visit(tree, (node) => {
-        if (node.props?.onPointerUpCapture) node.props.onPointerUpCapture({ isPrimary: true, button: 0, ...options })
+        if (node.props?.onPointerUpCapture)
+          node.props.onPointerUpCapture({
+            pointerId: 1,
+            clientX: 100,
+            clientY: 200,
+            timeStamp: 200,
+            isPrimary: true,
+            button: 0,
+            ...options,
+          })
       }),
     changePath: (path) => {
       pathname = path
@@ -471,4 +505,38 @@ test('touch de-duplication keeps keyboard and subsequent mouse clicks usable; un
   h.unmount()
   h.render()
   assert.equal(h.navigation.length, 3)
+})
+
+test('a background tap closes the mobile preview after the gesture completes without moving the map', () => {
+  const h = harness(390)
+  let dismissed = 0
+  h.render({ onMapBackgroundTap: () => dismissed++ })
+  h.startMapGesture()
+  h.finishMapGesture({ clientX: 104, clientY: 202 })
+  assert.equal(dismissed, 0)
+  h.render()
+  assert.equal(dismissed, 1)
+  assert.deepEqual(h.calls, [])
+})
+
+test('marker and price taps, controls, panning, pinching, cancellation and long holds do not dismiss the preview', () => {
+  for (const action of ['dot', 'price', 'control', 'pan', 'pinch', 'cancel', 'hold', 'right-click']) {
+    const h = harness(390)
+    let dismissed = 0
+    h.render({ onMapBackgroundTap: () => dismissed++ })
+    h.startMapGesture({
+      action: ['dot', 'price', 'control'].includes(action) ? action : 'map',
+      button: action === 'right-click' ? 2 : 0,
+    })
+    if (action === 'pan') {
+      h.moveMapGesture({ clientX: 150 })
+      h.moveMapGesture({ clientX: 100 })
+    }
+    if (action === 'pinch') h.startMapGesture({ pointerId: 2, isPrimary: false })
+    if (action === 'cancel') h.cancelMapGesture()
+    h.finishMapGesture({ timeStamp: action === 'hold' ? 1000 : 300 })
+    h.render()
+    assert.equal(dismissed, 0, action)
+    assert.deepEqual(h.calls, [], action)
+  }
 })

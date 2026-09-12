@@ -339,6 +339,10 @@ function hookHarness(kind, config = {}) {
       enabled = value
       render()
     },
+    changeSelection(id) {
+      config.previewId = id
+      render()
+    },
     unmount() {
       slots.forEach((slot) => slot?.cleanup?.())
     },
@@ -433,15 +437,15 @@ test('full-sheet content scrolls natively; a handle pull collapses even with con
   assert.equal(h.scroller.scrollTop, 170)
 })
 
-test('preview snapping respects safe areas and search clearance; cancellation restores the current level', () => {
+test('list snapping respects safe areas and search clearance; cancellation restores the current level', () => {
   const h = hookHarness('bottom', { previewId: 'listing-6' })
-  h.root.offsetHeight = 470
+  h.root.offsetHeight = 455
   h.root.paddingBottom = '34px'
   h.start()
   h.move(0, -800)
   assert.equal(h.root.properties.get('--mobile-sheet-height'), '632px')
   h.root.dispatch('touchcancel', h.handle)
-  assert.equal(h.root.properties.get('--mobile-sheet-height'), '470px')
+  assert.equal(h.root.properties.get('--mobile-sheet-height'), '455px')
   h.advance(280)
   assert.equal(h.snap, 'middle')
   h.start()
@@ -450,4 +454,17 @@ test('preview snapping respects safe areas and search clearance; cancellation re
   h.end()
   h.advance(260)
   assert.equal(h.snap, 'peek')
+})
+
+test('selecting a property cancels an unfinished list expansion so it cannot cover the new top preview', () => {
+  const h = hookHarness('bottom', { snap: 'peek' })
+  h.root.offsetHeight = 56
+  h.start()
+  h.move(0, -70, 400)
+  h.end(120)
+  assert.equal(h.root.attrs['data-sheet-settling'], 'true')
+  h.changeSelection('listing-7')
+  h.advance(300)
+  assert.equal(h.snap, 'peek')
+  assert.equal(h.root.properties.has('--mobile-sheet-height'), false)
 })
