@@ -260,6 +260,11 @@ function harness(width) {
     click,
     api,
     getMarkerHtml: context.exports.getMarkerHtml,
+    startMapGesture: (options = {}) =>
+      visit(tree, (node) => {
+        if (node.props?.onPointerDownCapture)
+          node.props.onPointerDownCapture({ isPrimary: true, button: 0, ...options })
+      }),
     finishMapGesture: (options = {}) =>
       visit(tree, (node) => {
         if (node.props?.onPointerUpCapture) node.props.onPointerUpCapture({ isPrimary: true, button: 0, ...options })
@@ -345,11 +350,16 @@ test('map interaction callback runs after a completed primary gesture without mo
   const h = harness(390)
   let completed = 0
   h.render({ onMapInteraction: () => completed++ })
+  h.startMapGesture()
   h.finishMapGesture()
   assert.equal(completed, 0, 'do not resize underneath an unfinished tap')
   h.render()
   assert.equal(completed, 1)
+  h.startMapGesture()
+  h.startMapGesture({ isPrimary: false })
+  h.finishMapGesture()
   h.finishMapGesture({ isPrimary: false })
+  h.startMapGesture({ button: 2 })
   h.finishMapGesture({ button: 2 })
   h.render()
   assert.equal(completed, 1)

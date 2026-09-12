@@ -231,6 +231,7 @@ const LongdoPropertyMap = ({
   const pathname = usePathname()
   const router = useRouter()
   const placeholderRef = useRef<HTMLDivElement>(null)
+  const singlePointerGestureRef = useRef(false)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const mapRef = useRef<LongdoMapInstance | null>(null)
@@ -1074,10 +1075,18 @@ const LongdoPropertyMap = ({
           map.repaint()
           declutterMarkersRef.current()
         }}
-        onPointerDownCapture={() => placeholderRef.current?.focus({ preventScroll: true })}
+        onPointerDownCapture={(event) => {
+          singlePointerGestureRef.current = event.isPrimary && event.button === 0
+          placeholderRef.current?.focus({ preventScroll: true })
+        }}
         onPointerUpCapture={(event) => {
-          // Finish the tap/drag before resizing the canvas; the camera stays unchanged.
-          if (event.isPrimary && event.button === 0 && onMapInteraction) window.requestAnimationFrame(onMapInteraction)
+          // Finish a one-finger tap/drag before resizing; never fold during a pinch.
+          if (singlePointerGestureRef.current && event.isPrimary && event.button === 0 && onMapInteraction)
+            window.requestAnimationFrame(onMapInteraction)
+          singlePointerGestureRef.current = false
+        }}
+        onPointerCancelCapture={() => {
+          singlePointerGestureRef.current = false
         }}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />
