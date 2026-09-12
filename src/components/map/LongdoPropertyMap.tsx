@@ -129,8 +129,6 @@ export const getMarkerHtml = (
     ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
   const detailsLabel = isThai ? 'ดูรายละเอียด' : 'View details'
-  const detailsArrow =
-    '<svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>'
 
   return `
   <div
@@ -165,8 +163,7 @@ export const getMarkerHtml = (
       class="mapx-price-details-link"
       aria-haspopup="dialog"
       aria-label="${detailsLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
-      title="${detailsLabel}"
-    ><span class="mapx-price-pill">${escapeHtml(price)}${detailsArrow}</span></a>`
+    ><span class="mapx-price-pill">${escapeHtml(price)}</span></a>`
         : ''
     }
     <span aria-hidden="true" class="mapx-fan-line"></span>
@@ -888,7 +885,6 @@ const LongdoPropertyMap = ({
           outline: 2px solid #176b50;
           outline-offset: 2px;
         }
-        .mapx-price-details-link .mapx-price-pill { gap: 5px; }
         .mapx-fan-line {
           position: absolute;
           bottom: 0;
