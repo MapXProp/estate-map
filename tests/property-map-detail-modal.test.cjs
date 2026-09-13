@@ -61,7 +61,7 @@ test('unknown rooms stay absent and land area is not mistaken for usable area', 
   assert.equal(helpers.getPropertyPreviewFacts({ bedroom_count: 0, bathroom_count: null }, true).length, 0)
 })
 
-const common = { react: React, 'react/jsx-runtime': jsx, 'lucide-react': require('lucide-react') }
+const common = { react: React, 'react/jsx-runtime': jsx, 'lucide-react': require('lucide-react'), '@/lib/contactAnalytics': load('src/lib/contactAnalytics.ts') }
 const Description = load('src/components/PropertyDescription.tsx', common).default
 const Contact = load('src/components/property-map/PropertyPreviewContactCard.tsx', {
   ...common, '@/lib/propertyPreviewDetails': helpers,
@@ -83,7 +83,7 @@ function modal(galleryOpen = false) {
     '@headlessui/react': {
       Dialog: ({ open, children }) => open ? React.createElement('div', null, children) : null,
       DialogBackdrop: () => null,
-      DialogPanel: ({ children, className }) => React.createElement('div', { className }, children),
+      DialogPanel: ({ children, ...props }) => React.createElement('div', props, children),
       DialogTitle: ({ children, className }) => React.createElement('h2', { className }, children),
     },
     'next/image': { default: ({ src, alt, loading }) => React.createElement('img', { src, alt, loading }) },
@@ -100,6 +100,8 @@ test('map detail initially renders three photos, correct total, actual contacts 
   assert.ok(!html.includes('line-clamp-4'))
   assert.ok(!html.includes('ข้อมูลจาก SAM'))
   assert.ok(!html.includes('href="tel:"'))
+  assert.ok(html.includes('data-analytics-surface="map_modal"'))
+  assert.ok(html.includes('data-analytics-listing-id="public-1280"'))
 })
 
 test('opening gallery makes every photo available with lazy loading, including photo 29', () => {

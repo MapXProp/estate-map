@@ -4,6 +4,7 @@ import ListingImageFallback from '@/components/ListingImageFallback'
 import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
+import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
@@ -149,7 +150,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   ]
 
   return (
-    <div className="pb-24 min-[744px]:pb-0">
+    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
         {media.length ? (
           <HeaderGallery
@@ -371,6 +372,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL) && (
                 <MobileListingContactSheet
+                  analyticsListingId={listing.public_listing_id}
+                  analyticsPropertyType={listing.property_type_code}
                   contactName={listing.contact_name}
                   roleLabel={contactRoleLabel(listing.contact_role_code)}
                   organizationName={listing.organization_name || listing.contact_organization_name}

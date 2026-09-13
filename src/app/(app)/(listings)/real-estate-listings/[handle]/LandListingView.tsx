@@ -5,6 +5,7 @@ import PropertyDescription from '@/components/PropertyDescription'
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
@@ -120,7 +121,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   ]
 
   return (
-    <div className="pb-24 min-[744px]:pb-0">
+    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[744px]:pb-0">
       <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
         <h1 className="sr-only">{title}</h1>
         <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
@@ -484,6 +485,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || phoneURL || emailURL || lineURL) && (
                 <MobileListingContactSheet
+                  analyticsListingId={listing.public_listing_id}
+                  analyticsPropertyType={listing.property_type_code}
                   contactName={listing.contact_name}
                   roleLabel={contactRole}
                   authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}

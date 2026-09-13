@@ -694,7 +694,7 @@ const MobilePhotoGallery = ({
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} className="relative z-50 md:hidden">
+    <Dialog open={open} onClose={handleClose} data-analytics-surface="gallery" className="relative z-50 md:hidden">
       <DialogBackdrop
         className="fixed inset-0 bg-neutral-950/25 transition-opacity duration-200"
         style={{ opacity: Math.max(0, 1 - dragOffset / 360) }}
@@ -900,7 +900,12 @@ const DesktopPhotoGallery = ({
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} className="relative z-50 hidden min-[744px]:block">
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      data-analytics-surface="gallery"
+      className="relative z-50 hidden min-[744px]:block"
+    >
       <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
       <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
         <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900">
@@ -1430,6 +1435,7 @@ const HeaderGalleryGrid2 = ({
                 fill
                 sizes={isWideMobileTile ? '100vw' : mobilePreviewImageCount >= 5 && index >= 2 ? '34vw' : '50vw'}
                 priority={index < 2}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
                 className="object-cover transition duration-200 active:scale-[0.98]"
               />
               {isAllMediaTile && (

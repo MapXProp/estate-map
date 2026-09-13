@@ -136,10 +136,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </AuthModalProvider>
           </PreferencesProvider>
         </ThemeProvider>
+        {process.env.NODE_ENV === 'production' && googleAnalyticsId ? (
+          <DeferredGoogleAnalytics gaId={googleAnalyticsId} />
+        ) : null}
       </body>
-      {process.env.NODE_ENV === 'production' && googleAnalyticsId ? (
-        <DeferredGoogleAnalytics gaId={googleAnalyticsId} />
-      ) : null}
     </html>
   )
 }

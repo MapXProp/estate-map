@@ -26,6 +26,8 @@ import {
 type VerificationStatus = 'unverified' | 'identity_verified' | 'authority_verified' | ''
 
 interface MobileListingContactSheetProps {
+  analyticsListingId?: string
+  analyticsPropertyType?: string
   contactName: string
   roleLabel: string
   authorityLabel?: string
@@ -46,6 +48,8 @@ const formatPhone = (value: string) => {
 }
 
 const MobileListingContactSheet = ({
+  analyticsListingId,
+  analyticsPropertyType,
   contactName,
   roleLabel,
   authorityLabel,
@@ -331,7 +335,14 @@ const MobileListingContactSheet = ({
         <ContactRound className="size-[19px]" />
       </button>
 
-      <Dialog open={open} onClose={closeSheet} className="relative z-[100] min-[744px]:hidden">
+      <Dialog
+        open={open}
+        onClose={closeSheet}
+        data-analytics-surface="mobile_contact_sheet"
+        data-analytics-listing-id={analyticsListingId}
+        data-analytics-property-type={analyticsPropertyType}
+        className="relative z-[100] min-[744px]:hidden"
+      >
         <DialogBackdrop
           transition
           style={dragOffset > 0 ? { opacity: Math.max(0, 1 - dragOffset / 360) } : undefined}

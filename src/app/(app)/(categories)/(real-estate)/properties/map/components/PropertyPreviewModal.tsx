@@ -7,6 +7,7 @@ import sheetStyles from '@/components/property-map/MobileSheet.module.css'
 import PropertyPreviewContactCard from '@/components/property-map/PropertyPreviewContactCard'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
+import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { getMapPreviewGallery, stepMapPreviewImage } from '@/lib/propertyMapPreview'
 import { getPropertyPreviewContacts, getPropertyPreviewFacts } from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
@@ -71,6 +72,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
       <div className="fixed inset-0 overflow-y-auto p-3 lg:p-5">
         <div className="flex min-h-full items-center justify-center">
           <DialogPanel
+            {...listingAnalyticsAttributes(listing, 'map_modal')}
             ref={panelRef}
             data-property-detail-sheet
             className={`${sheetStyles.modalPanel} relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1380px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_30px_90px_rgba(0,0,0,.3)] lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900`}

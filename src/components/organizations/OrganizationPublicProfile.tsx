@@ -68,7 +68,11 @@ export default function OrganizationPublicProfile({
   }
 
   return (
-    <main className="py-9 sm:py-12 lg:py-14">
+    <main
+      data-analytics-surface="organization"
+      data-analytics-organization-id={organization.public_organization_id}
+      className="py-9 sm:py-12 lg:py-14"
+    >
       <nav className="mb-5 font-sarabun text-sm text-neutral-500">
         <Link href="/organizations" className="hover:text-[#176b50]">
           {isThai ? 'องค์กร' : 'Organizations'}
