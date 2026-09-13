@@ -105,7 +105,6 @@ export function installContactAnalytics(win: AnalyticsWindow, doc: Document, loa
       ...params,
       send_to: win.__mapxpropAnalyticsId,
       page_location: win.location.origin + win.location.pathname,
-      transport_type: 'beacon',
     })
     // The event is queued synchronously before loading the external tag. Keep
     // the native tel/LINE link behavior: no preventDefault or navigation delay.
