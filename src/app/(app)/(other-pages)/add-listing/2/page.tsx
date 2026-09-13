@@ -1,5 +1,7 @@
 'use client'
 
+import { useListingStepAnalytics } from '@/hooks/useListingStepAnalytics'
+
 import BusinessDetails from '@/components/add-listing/BusinessDetails'
 import HomesDetails from '@/components/add-listing/HomesDetails'
 import { useListingFlowProgress } from '@/components/add-listing/ListingFlowProgressContext'
@@ -56,6 +58,7 @@ const Page = () => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
+  useListingStepAnalytics(2, Boolean(draft))
   const [marker, setMarker] = useState(THAILAND_CENTER)
   const [coordinateInput, setCoordinateInput] = useState('')
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)

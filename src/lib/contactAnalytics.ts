@@ -8,7 +8,7 @@ export type ContactSurface =
   | 'organization'
   | 'site'
 
-type AnalyticsWindow = Window & {
+export type AnalyticsWindow = Window & {
   dataLayer?: unknown[]
   gtag?: (...args: unknown[]) => void
   __mapxpropAnalyticsId?: string

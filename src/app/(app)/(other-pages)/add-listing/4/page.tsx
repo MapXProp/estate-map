@@ -23,6 +23,7 @@ import {
   type ListingDraftValue,
   type ListingMediaType,
 } from '@/lib/listingDraft'
+import { trackListingFunnel } from '@/lib/listingFunnelAnalytics'
 import {
   listingPhotoURLsFromOrder,
   normalizeListingPhotoOrder,
@@ -76,6 +77,7 @@ const Page = () => {
   const [sessionChecked, setSessionChecked] = useState(false)
   const processLockRef = useRef(false)
   const autoStartedRef = useRef(false)
+  const stepTrackedRef = useRef(false)
 
   const persistMedia = useCallback(
     (
@@ -106,6 +108,7 @@ const Page = () => {
 
     const startingDraft = getListingDraft()
     if (!Object.keys(startingDraft).length) {
+      trackListingFunnel({ kind: 'error', stage: 'missing_draft' }, startingDraft)
       setFailure({
         stage: 'save',
         message: isThai ? 'ไม่พบข้อมูลประกาศที่กำลังส่ง' : 'The listing data could not be found.',
@@ -120,11 +123,16 @@ const Page = () => {
     // complete.
     const validationIssue = validateListingDraftForPublish(startingDraft)
     if (validationIssue) {
+      trackListingFunnel({ kind: 'error', stage: 'validation' }, startingDraft)
       storeListingPublishValidationIssue(validationIssue)
       setMediaProgress(initialListingMediaProgress)
       processLockRef.current = false
       router.replace(`/add-listing/${validationIssue.step}`)
       return
+    }
+
+    if (!stepTrackedRef.current) {
+      stepTrackedRef.current = trackListingFunnel({ kind: 'step', step: 4 }, startingDraft)
     }
 
     let photoUrls = readValues(startingDraft['listingPhotoUrls[]'])
@@ -151,6 +159,7 @@ const Page = () => {
       )
 
     if (missingFileCount > 0) {
+      trackListingFunnel({ kind: 'error', stage: 'files' }, startingDraft)
       setFailure({
         stage: 'files',
         message: isThai
@@ -235,6 +244,7 @@ const Page = () => {
       panoramaUrls = await uploadQueue(pendingMedia.panoramas, '360', panoramaUrls, MAX_PANORAMAS, 'panoramas')
       floorPlanUrls = await uploadQueue(pendingMedia.floorPlans, 'image', floorPlanUrls, 1, 'floorPlans')
     } catch (error) {
+      trackListingFunnel({ kind: 'error', stage: 'upload' }, startingDraft)
       await persistMedia(photoUrls, photoOrder, videoUrls, panoramaUrls, floorPlanUrls[0] || '', true)
       setFailure({
         stage: 'upload',
@@ -258,6 +268,7 @@ const Page = () => {
       currentFileName: '',
     })
 
+    let publishConfirmed = false
     try {
       const completedDraft = getListingDraft()
       await saveListingContactProfile(contactProfileFromDraft(completedDraft)).catch(() => undefined)
@@ -268,6 +279,9 @@ const Page = () => {
 
       const publicListingId = response.public_listing_id || ''
       if (!publicListingId) throw new Error('Listing was saved without a listing ID')
+
+      publishConfirmed = true
+      trackListingFunnel({ kind: 'success', listingId: publicListingId }, getListingDraft())
 
       const submissionResult: SubmissionResult = {
         publicListingId,
@@ -281,6 +295,7 @@ const Page = () => {
       setResult(submissionResult)
       setStage('success')
     } catch (error) {
+      trackListingFunnel({ kind: 'error', stage: publishConfirmed ? 'finalize' : 'publish' }, startingDraft)
       setFailure({
         stage: 'save',
         message: getListingSaveErrorMessage(error, isThai),

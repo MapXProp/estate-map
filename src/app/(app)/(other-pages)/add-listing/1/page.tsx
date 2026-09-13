@@ -32,6 +32,7 @@ import {
   type UseCaseCode,
 } from '@/data/propertyTaxonomy'
 import { useAuth } from '@/hooks/useAuth'
+import { useListingStepAnalytics } from '@/hooks/useListingStepAnalytics'
 import {
   clearCloudListingDraft,
   clearListingDraft,
@@ -44,6 +45,7 @@ import {
   type ListingDraftValue,
 } from '@/lib/listingDraft'
 import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
+import { trackListingFunnel } from '@/lib/listingFunnelAnalytics'
 import { consumeListingPublishValidationIssue, listingValidationMessage } from '@/lib/listingPublishValidation'
 import { getMyOrganizations, type Organization } from '@/lib/organizations'
 import Input from '@/shared/Input'
@@ -170,6 +172,7 @@ const Page = () => {
   const submitLockRef = useRef(false)
   const [draftReady, setDraftReady] = useState(false)
   const { isAuthenticated, refresh } = useAuth()
+  useListingStepAnalytics(1, draftReady)
 
   const propertyType = selectedPropertyType ? getPropertyType(selectedPropertyType) : undefined
   const selectedGroup = propertyType?.groupCode ?? ''
@@ -607,6 +610,7 @@ const Page = () => {
     const authenticated = isAuthenticated || Boolean(await refresh())
 
     if (!authenticated) {
+      trackListingFunnel({ kind: 'auth' }, savedDraft)
       submitLockRef.current = false
       setSubmittingStep(null)
       setAuthCheckpointOpen(true)

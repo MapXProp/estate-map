@@ -1,5 +1,7 @@
 'use client'
 
+import { useListingStepAnalytics } from '@/hooks/useListingStepAnalytics'
+
 import EventDetailsPanel, { type EventRoundDraft } from '@/components/add-listing/EventDetailsPanel'
 import {
   initialListingMediaProgress,
@@ -114,6 +116,7 @@ const Page = () => {
   const { pendingMedia, setPendingMedia, setMediaProgress } = useListingFlowProgress()
   const isThai = locale === 'th'
   const [draft, setDraft] = useState<ListingDraft | null>(null)
+  useListingStepAnalytics(3, Boolean(draft))
   const [offers, setOffers] = useState<OfferTypeCode[]>(['rent'])
   const [salePrice, setSalePrice] = useState('')
   const [rentPriceMonthly, setRentPriceMonthly] = useState('')
