@@ -112,7 +112,7 @@ function environment({ width = 390, reducedMotion = false } = {}) {
     performance: { now: () => time },
     getComputedStyle: (node) => ({
       paddingBottom: node.paddingBottom,
-      getPropertyValue: (key) => (key === '--mobile-panel-ceiling' ? '68px' : ''),
+      getPropertyValue: (key) => (key === '--mobile-panel-ceiling' ? '68px' : node.properties.get(key) || ''),
     }),
     setTimeout: schedule,
     clearTimeout: (id) => jobs.delete(id),
@@ -454,6 +454,19 @@ test('list snapping respects safe areas and search clearance; cancellation resto
   h.end()
   h.advance(260)
   assert.equal(h.snap, 'peek')
+})
+
+test('list snapping leaves room for overlaid navigation without reducing the map surface', () => {
+  const h = hookHarness('bottom', { snap: 'peek' })
+  h.root.properties.set('--map-navigation-height', '100px')
+  h.root.offsetHeight = 56
+  h.start()
+  h.move(0, -800)
+  assert.equal(h.root.properties.get('--mobile-sheet-height'), '532px')
+  assert.equal(h.root.parentElement.clientHeight, 700)
+  h.end()
+  h.advance(260)
+  assert.equal(h.snap, 'full')
 })
 
 test('selecting a property cancels an unfinished list expansion so it cannot cover the new top preview', () => {

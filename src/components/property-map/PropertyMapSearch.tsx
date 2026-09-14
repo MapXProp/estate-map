@@ -128,7 +128,6 @@ export default function PropertyMapSearch({
   const [retry, setRetry] = useState(0)
   const [center, setCenter] = useState(initialMapCenter)
   const [zoom, setZoom] = useState(initialMapZoom || 12)
-  const [resizeId, setResizeId] = useState(0)
   const resultsRef = useRef<HTMLDivElement>(null)
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null)
   const { searchRef, categoriesRef, areaControlRef } = useMapPreviewHeaderHeight()
@@ -342,7 +341,6 @@ export default function PropertyMapSearch({
   const toggleCategory = (id: string) => setCategories((previous) => toggleMapCategory(previous, id))
   const togglePanel = () => {
     setPanelOpen((previous) => !previous)
-    setResizeId((previous) => previous + 1)
   }
   const toggleMobilePanel = () => {
     if (!mobilePanelOpen) {
@@ -495,7 +493,6 @@ export default function PropertyMapSearch({
                   if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
                 }
                 setCategoriesOpen(!categoriesOpen)
-                setResizeId(resizeId + 1)
               }}
               className={styles.collapseCategoriesButton}
               aria-label={
@@ -531,7 +528,6 @@ export default function PropertyMapSearch({
                   setMobileGroup(group.code)
                   setMobilePanelOpen(false)
                   setPreviewSelection(null)
-                  setResizeId((value) => value + 1)
                 }}
                 className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
               >
@@ -709,7 +705,6 @@ export default function PropertyMapSearch({
                 setAreaRequestId((value) => value + 1)
                 setMobilePanelOpen(false)
               }}
-              resizeRequestId={resizeId}
             />
           ) : (
             <div className="flex size-full items-center justify-center p-10 text-center text-neutral-500">

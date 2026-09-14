@@ -80,16 +80,18 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
     const canvas = node.parentElement
     const css = getComputedStyle(node)
     const canvasHeight = canvas?.clientHeight || 600
+    const navigationHeight = parseFloat(css.getPropertyValue('--map-navigation-height')) || 0
+    const availableHeight = Math.max(0, canvasHeight - navigationHeight)
     const ceiling = parseFloat(css.getPropertyValue('--mobile-panel-ceiling')) || 68
     // The collapsed grab area includes the device's bottom safe area.
     const probe = node.querySelector<HTMLElement>('[data-map-mobile-panel-toggle]')
     const safeBottom = probe ? parseFloat(getComputedStyle(probe).paddingBottom) - 8 : 0
     const peek = 56 + Math.max(0, safeBottom || 0, parseFloat(css.paddingBottom) || 0)
-    const full = Math.max(peek, canvasHeight - ceiling)
+    const full = Math.max(peek, availableHeight - ceiling)
     points.current = {
       peek,
       full,
-      middle: Math.min(full, canvasHeight * 0.65),
+      middle: Math.min(full, availableHeight * 0.65),
     }
   }
   const reset = useCallback(() => {

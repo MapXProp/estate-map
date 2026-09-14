@@ -13,9 +13,10 @@ export function useMapPreviewHeaderHeight() {
     const areaControl = areaControlRef.current
     if (!search || !categories || !areaControl) return
 
-    // Cover only the existing navigation and search row. Absolute positioning and
-    // visibility:hidden keep the map's size and coordinate positions unchanged.
+    // Navigation overlays the full-size map. Only the controls below it move
+    // when categories expand or fold; the map surface never changes dimensions.
     const measure = () => {
+      search.style.setProperty('--map-navigation-height', `${categories.getBoundingClientRect().height}px`)
       const height = Math.max(0, areaControl.getBoundingClientRect().bottom - search.getBoundingClientRect().top + 6)
       search.style.setProperty('--mobile-preview-height', `${height}px`)
     }

@@ -54,6 +54,7 @@ test('desktop preview and reduced-motion preference do not slide the card', () =
 test('compact preview measures only the existing header through the search row and follows resizing', () => {
   let top = 38,
     bottom = 188,
+    navigationHeight = 96,
     resize,
     disconnected = false,
     cleanup
@@ -67,7 +68,7 @@ test('compact preview measures only the existing header through the search row a
       },
     },
   }
-  const categories = {}
+  const categories = { getBoundingClientRect: () => ({ height: navigationHeight }) }
   const areaControl = { getBoundingClientRect: () => ({ bottom }) }
   const refs = [search, categories, areaControl]
   let cursor = 0
@@ -104,6 +105,7 @@ test('compact preview measures only the existing header through the search row a
   )
   context.exports.useMapPreviewHeaderHeight()
   assert.equal(properties['--mobile-preview-height'], '156px')
+  assert.equal(properties['--map-navigation-height'], '96px')
   assert.deepEqual(observed, refs)
   // Same navigation/search height at a different page offset must not cover extra map.
   top = 0
@@ -111,9 +113,16 @@ test('compact preview measures only the existing header through the search row a
   events.get('resize')()
   assert.equal(properties['--mobile-preview-height'], '156px')
   bottom = 170
+  navigationHeight = 116
   resize()
   assert.equal(properties['--mobile-preview-height'], '176px')
-  assert.equal(Object.keys(properties).length, 1, 'measurement never writes map dimensions or position')
+  assert.equal(properties['--map-navigation-height'], '116px')
+  navigationHeight = 44
+  bottom = 98
+  resize()
+  assert.equal(properties['--map-navigation-height'], '44px')
+  assert.equal(properties['--mobile-preview-height'], '104px')
+  assert.deepEqual(Object.keys(properties).sort(), ['--map-navigation-height', '--mobile-preview-height'])
   cleanup()
   assert.equal(disconnected, true)
   assert.equal(events.size, 0)

@@ -196,6 +196,17 @@ test('desktop map interactions leave the category section expanded', () => {
   assert.equal(h.data('aria-controls', 'map-category-options').props['aria-expanded'], true)
 })
 
+test('folding and reopening desktop categories never requests a map resize or changes its camera', () => {
+  const h = harness(1440)
+  const resizeRequest = h.map().resizeRequestId
+  for (let i = 0; i < 4; i++) {
+    h.click(h.data('aria-controls', 'map-category-options'))
+    assert.equal(h.map().resizeRequestId, resizeRequest)
+    assert.equal(h.map().initialCenter, h.center)
+    assert.equal(h.map().initialZoom, 15)
+  }
+})
+
 test('area search and the relocated all-types action keep their existing filter behavior', () => {
   const h = harness(390)
   h.click(h.tab('business'))
