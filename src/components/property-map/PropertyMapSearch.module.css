@@ -760,7 +760,6 @@
     transform: rotate(180deg);
   }
   .mobileTabs .activeTab {
-    border-bottom-color: var(--category-accent);
     background: var(--category-soft);
     color: var(--category-ink);
     font-weight: 600;
