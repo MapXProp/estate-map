@@ -68,6 +68,7 @@ function harness(width) {
       '@/data/listings': { toRealEstateListing: (row) => row },
       '@/data/propertyTaxonomy': taxonomy,
       '@/lib/propertyMapSearch': model,
+      '@/hooks/useMapAreaLabel': { useMapAreaLabel: () => 'สาทร · กรุงเทพมหานคร' },
       '@/hooks/useMobileSheets': {
         useMapBottomSheet: (_snap, _previewId, onSnap) => {
           onSheetSnap = onSnap
@@ -233,11 +234,9 @@ test('visible topbar reset clears all category groups and filters without moving
   h.click(h.data('data-map-category', 'homes:land'))
   h.click(h.data('data-map-category', 'rooms:condo'))
   const details = h.nodes((node) => node.type === 'test-filters')[0].props
-  details.onChange({ ...details.value, offerTypes: ['business_transfer'], minPrice: '1000000', bedrooms: 3 })
+  details.onChange({ ...details.value, offerTypes: ['rent'], minPrice: '1000000', bedrooms: 3 })
   h.map().onSearchArea({ bounds: { minLat: 13, maxLat: 14, minLon: 100, maxLon: 101 } })
   h.render()
-  const offers = h.nodes((node) => node.type === 'test-offers')[0].props
-  assert.equal(offers.canReset, true)
   assert.equal(h.data('data-map-reset', true).props.disabled, false)
   h.click(h.data('data-map-reset', true))
   assert.equal(h.data('data-map-category', 'homes:land').props['aria-pressed'], false)
@@ -303,8 +302,22 @@ test('another marker replaces the top preview; expanding results closes it on mo
     0,
     'touching the list dismisses the top preview before dragging'
   )
-  h.snapTo('middle')
+  h.snapTo('full')
   assert.equal(h.nodes((node) => node.type === 'test-preview').length, 0)
-  assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'middle')
+  assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'full')
   assert.equal(h.map().initialCenter, h.center)
+})
+
+test('observing a moved viewport does not issue camera commands or implicitly filter results', () => {
+  const h = harness(390)
+  h.map().onViewportChange({ center: { lat: 13.73, lon: 100.52 }, zoom: 16 })
+  h.render()
+  assert.equal(h.map().initialCenter, h.center)
+  assert.equal(h.map().initialZoom, 15)
+  assert.equal(h.map().areaSearchRequestId, 0)
+  assert.match(h.data('data-map-area-label', true).props.title, /สาทร/)
+  h.click(h.data('data-map-mobile-panel-toggle', true))
+  assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'full')
+  h.click(h.data('data-map-mobile-panel-toggle', true))
+  assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'peek')
 })

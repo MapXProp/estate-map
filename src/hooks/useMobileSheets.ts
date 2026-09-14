@@ -74,7 +74,7 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const frame = useRef<number | null>(null)
   const baseHeight = useRef(0)
-  const points = useRef({ peek: 56, middle: 300, full: 500 })
+  const points = useRef({ peek: 84, full: 500 })
   const measure = () => {
     if (!node) return
     const canvas = node.parentElement
@@ -86,12 +86,11 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
     // The collapsed grab area includes the device's bottom safe area.
     const probe = node.querySelector<HTMLElement>('[data-map-mobile-panel-toggle]')
     const safeBottom = probe ? parseFloat(getComputedStyle(probe).paddingBottom) - 8 : 0
-    const peek = 56 + Math.max(0, safeBottom || 0, parseFloat(css.paddingBottom) || 0)
+    const peek = 84 + Math.max(0, safeBottom || 0, parseFloat(css.paddingBottom) || 0)
     const full = Math.max(peek, availableHeight - ceiling)
     points.current = {
       peek,
       full,
-      middle: Math.min(full, availableHeight * 0.65),
     }
   }
   const reset = useCallback(() => {
@@ -136,7 +135,13 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
     onEnd: (dy, velocity, cancelled) => {
       if (!node) return
       const height = Math.max(points.current.peek, Math.min(points.current.full, baseHeight.current - dy))
-      const target = cancelled ? snap : chooseSheetSnap(height, velocity, points.current)
+      const target = cancelled
+        ? snap
+        : Math.abs(dy) >= 48
+          ? dy < 0
+            ? 'full'
+            : 'peek'
+          : chooseSheetSnap(height, velocity, points.current)
       node.setAttribute('data-sheet-dragging', 'false')
       node.setAttribute('data-sheet-settling', 'true')
       node.style.setProperty('--mobile-sheet-height', `${points.current[target]}px`)

@@ -203,6 +203,8 @@ export const getMarkerHtml = (
   </div>`
 }
 
+export type PropertyMapViewport = { center: LongdoLocation; zoom: number; initial?: boolean }
+
 interface Props {
   apiKey: string
   currentHoverID: string
@@ -210,7 +212,7 @@ interface Props {
   searchSourceListings?: TRealEstateListing[]
   areaSearchRequestId?: number
   onSearchArea?: (search: PropertyMapAreaSearch, listingIds: string[]) => number | void | Promise<number | void>
-  onViewportChange?: () => void
+  onViewportChange?: (viewport: PropertyMapViewport) => void
   mobileControlsVisible?: boolean
   resizeRequestId?: number
   initialCenter?: LongdoLocation
@@ -780,7 +782,9 @@ const LongdoPropertyMap = ({
     const notifyViewportChange = () => {
       declutterMarkersRef.current()
       window.setTimeout(() => declutterMarkersRef.current(), 180)
-      if (viewportEventsEnabledRef.current) onViewportChangeRef.current?.()
+      if (viewportEventsEnabledRef.current) {
+        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom() })
+      }
     }
 
     mapRef.current = map
@@ -788,6 +792,7 @@ const LongdoPropertyMap = ({
       setMapReady(true)
       enableViewportEventsTimer = setTimeout(() => {
         viewportEventsEnabledRef.current = true
+        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom(), initial: true })
       }, 600)
     })
     map.Event.bind('location', notifyViewportChange)

@@ -331,18 +331,16 @@ test('shared mixed-use listings search globally once and deduplicate across chan
   assert.deepEqual(plain(result), [property])
 })
 
-test('map defaults buy and rent while respecting explicit offers and an explicit all-offers link', () => {
+test('map normalizes old offer links to Buy/Rent and preserves either selected offer', () => {
   const api = model()
   for (const input of [undefined, '', [], ['invalid']])
     assert.deepEqual(plain(api.initialMapOfferTypes(input)), ['sale', 'rent'])
   assert.deepEqual(plain(api.initialMapOfferTypes('rent')), ['rent'])
-  assert.deepEqual(plain(api.initialMapOfferTypes(['business_transfer', 'sublease'])), [
-    'business_transfer',
-    'sublease',
-  ])
+  assert.deepEqual(plain(api.initialMapOfferTypes(['business_transfer', 'sublease'])), ['sale', 'rent'])
+  assert.deepEqual(plain(api.initialMapOfferTypes(['business_transfer', 'rent'])), ['rent'])
   assert.deepEqual(plain(api.initialMapOfferTypes(['rent', 'rent', 'invalid'])), ['rent'])
-  assert.deepEqual(plain(api.initialMapOfferTypes('all')), [])
-  for (const offers of [[], ['rent'], ['sale', 'rent'], ['sublease']]) {
+  assert.deepEqual(plain(api.initialMapOfferTypes('all')), ['sale', 'rent'])
+  for (const offers of [['sale'], ['rent'], ['sale', 'rent']]) {
     assert.deepEqual(plain(api.initialMapOfferTypes(api.mapOfferSearchValues(offers))), offers)
   }
   assert.equal(api.isDefaultMapOffers(['rent', 'sale']), true)
@@ -353,14 +351,27 @@ test('map defaults buy and rent while respecting explicit offers and an explicit
   assert.deepEqual(plain(api.initialMapOfferTypes()), ['sale', 'rent'])
 })
 
-test('offer selection supports buy and rent together plus independently selected transfer and sublease', () => {
+test('offer selection allows Buy/Rent together and keeps at least one selected', () => {
   const api = model()
   const buyRent = api.initialMapOfferTypes()
   const withTransfer = api.toggleMapOffer(buyRent, 'business_transfer')
-  assert.deepEqual(plain(withTransfer), ['sale', 'rent', 'business_transfer'])
-  assert.deepEqual(plain(api.toggleMapOffer(withTransfer, 'sale')), ['rent', 'business_transfer'])
+  assert.deepEqual(plain(withTransfer), ['sale', 'rent'])
+  assert.deepEqual(plain(api.toggleMapOffer(withTransfer, 'sale')), ['rent'])
   assert.deepEqual(plain(api.toggleMapOffer(withTransfer, 'business_transfer')), ['sale', 'rent'])
-  assert.deepEqual(plain(api.toggleMapOffer(['rent'], 'rent')), [])
+  assert.deepEqual(plain(api.toggleMapOffer(['rent'], 'rent')), ['rent'])
+  assert.deepEqual(plain(api.toggleMapOffer(['sale'], 'rent')), ['sale', 'rent'])
+})
+
+test('search summaries describe selected property types without duplicate shared categories', () => {
+  const api = model()
+  assert.equal(api.mapSearchSummary([], ['sale', 'rent'], true), 'กำลังหา อสังหาฯ ทุกประเภท')
+  assert.equal(api.mapSearchSummary(['homes:condo', 'rooms:condo'], ['rent'], true), 'หาเช่า คอนโด')
+  const summary = api.mapSearchSummary(['homes:detached_house', 'homes:condo'], ['sale'], true)
+  assert.match(summary, /^หาซื้อ /)
+  assert.match(summary, /คอนโด/)
+  const shared = api.mapSearchSummary(['homes:land', 'business:land'], ['sale'], true)
+  assert.equal(shared, 'หาซื้อ ที่ดิน')
+  assert.equal(api.mapSearchSummary(['homes:land'], ['sale'], false), 'Buying Land')
 })
 
 test('pagination includes all 137 matches and preserves exact coordinates', async () => {

@@ -3,7 +3,6 @@ import {
   discoveryChannels,
   getBusinessSpaceType,
   getPropertyType,
-  offerTypes,
   primaryBusinessSpaceTypeCodes,
   type DiscoveryChannelCode,
   type OfferTypeCode,
@@ -164,17 +163,51 @@ export function mapCategoryQueries(categories: string[]): PropertySearchOptions[
 export const defaultMapOfferTypes: OfferTypeCode[] = ['sale', 'rent']
 export function initialMapOfferTypes(value?: string | string[]): OfferTypeCode[] {
   const values = (Array.isArray(value) ? value : value ? [value] : []).map((item) => item.trim())
-  if (values.includes('all')) return []
   const selected = [...new Set(values)].filter((code): code is OfferTypeCode =>
-    offerTypes.some((offer) => offer.code === code)
+    defaultMapOfferTypes.includes(code as OfferTypeCode)
   )
   return selected.length ? selected : [...defaultMapOfferTypes]
 }
-export const mapOfferSearchValues = (offers: OfferTypeCode[]) => (offers.length ? offers : ['all'])
+export const mapOfferSearchValues = (offers: OfferTypeCode[]) => initialMapOfferTypes(offers)
 export const isDefaultMapOffers = (offers: OfferTypeCode[]) =>
   offers.length === 2 && defaultMapOfferTypes.every((offer) => offers.includes(offer))
-export const toggleMapOffer = (offers: OfferTypeCode[], value: OfferTypeCode) =>
-  offers.includes(value) ? offers.filter((offer) => offer !== value) : [...offers, value]
+export const toggleMapOffer = (offers: OfferTypeCode[], value: OfferTypeCode) => {
+  const selected = initialMapOfferTypes(offers)
+  if (!defaultMapOfferTypes.includes(value)) return selected
+  if (!selected.includes(value)) return [...selected, value]
+  return selected.length === 1 ? selected : selected.filter((offer) => offer !== value)
+}
+
+export function mapSearchSummary(categories: string[], offers: OfferTypeCode[], th: boolean) {
+  const selected = new Set(normalizeMapCategories(categories))
+  const labels = new Map<string, string>()
+  mapCategoryGroups.forEach((group) =>
+    group.options.forEach((option) => {
+      if (selected.has(option.id))
+        labels.set(option.propertyType || option.spaceType, th ? option.nameTh : option.nameEn)
+    })
+  )
+  const names = [...labels.values()]
+  const types = names.length
+    ? names.slice(0, 2).join(' / ') +
+      (names.length > 2 ? (th ? ` และอีก ${names.length - 2} ประเภท` : ` +${names.length - 2} types`) : '')
+    : th
+      ? 'อสังหาฯ ทุกประเภท'
+      : 'all property types'
+  const prefix =
+    offers.length === 1
+      ? offers[0] === 'sale'
+        ? th
+          ? 'หาซื้อ'
+          : 'Buying'
+        : th
+          ? 'หาเช่า'
+          : 'Renting'
+      : th
+        ? 'กำลังหา'
+        : 'Looking for'
+  return `${prefix} ${types}`
+}
 
 export async function fetchCompleteMapSearch(
   query: string,

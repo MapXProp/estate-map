@@ -1,4 +1,4 @@
-export type SheetSnap = 'peek' | 'middle' | 'full'
+export type SheetSnap = 'peek' | 'full'
 export type SheetDragOptions = {
   enabled?: boolean
   canDrag: (down: boolean, handle: boolean, atTop: boolean) => boolean

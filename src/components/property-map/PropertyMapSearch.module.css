@@ -90,6 +90,8 @@
   min-height: 48px;
 }
 .brand {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   min-width: 0;
   align-items: center;
@@ -297,11 +299,16 @@
   display: none;
 }
 .toolbar {
+  display: contents;
+}
+.searchActions {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 .offers {
   display: flex;
@@ -495,6 +502,49 @@
   gap: 5px;
   color: #176b50;
   font-size: 12px;
+  flex-shrink: 0;
+}
+.sheetSummaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  line-height: 22px;
+}
+.sheetSummary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sheetArea {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  color: #687d71;
+  font-size: 12px;
+}
+.sheetArea > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheetCount {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  color: #176b50;
+  font-size: 12px;
+  font-weight: 600;
+}
+.resultsArea {
+  margin-top: 4px;
+  color: #687d71;
+  font-size: 12px;
 }
 .locationSearch {
   position: absolute;
@@ -599,16 +649,10 @@
 }
 @media (max-width: 1279px) {
   .categoryHeading {
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 12px;
   }
-  .headerActions {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .toolbar {
-    grid-column: 1 / -1;
-    grid-row: 2;
+  .searchActions {
+    gap: 6px;
   }
 }
 @media (max-width: 1023px) {
@@ -622,7 +666,6 @@
     padding: 4px 10px 0;
   }
   .categoryHeading {
-    display: flex;
     min-height: 44px;
     gap: 6px;
   }
@@ -635,11 +678,6 @@
   }
   .headerActions {
     display: none;
-  }
-  .toolbar {
-    flex: 1;
-    width: auto;
-    justify-content: space-between;
   }
   .resetButton {
     width: 48px;
@@ -656,11 +694,8 @@
     --mobile-search-height: 44px;
     --mobile-area-width: 104px;
     --mobile-panel-ceiling: 68px;
-    --mobile-panel-height: min(
-      calc((100% - var(--map-navigation-height, 0px)) * 0.65),
-      calc(100% - var(--map-navigation-height, 0px) - var(--mobile-panel-ceiling))
-    );
-    --mobile-panel-peek: calc(56px + env(safe-area-inset-bottom, 0px));
+    --mobile-panel-height: calc(100% - var(--map-navigation-height, 0px) - var(--mobile-panel-ceiling));
+    --mobile-panel-peek: calc(84px + env(safe-area-inset-bottom, 0px));
   }
   .previewPanel {
     z-index: 40;
@@ -809,7 +844,7 @@
     font-size: 12px;
     padding-inline: 9px;
   }
-  .toolbar {
+  .searchActions {
     gap: 7px;
   }
   .offers button {
@@ -920,7 +955,7 @@
     display: flex;
   }
   .mobilePanelVisible .mobilePanelToggle {
-    min-height: 48px;
+    min-height: 76px;
     padding-bottom: 8px;
   }
   .resultsHeader {
@@ -934,7 +969,8 @@
     grid-column: 1;
     grid-row: 1;
   }
-  .resultsTitle {
+  .resultsTitle,
+  .resultsArea {
     display: none;
   }
   .resultsMeta {
@@ -1015,7 +1051,7 @@
     padding-inline: 8px;
   }
   .categoryHeading,
-  .toolbar {
+  .searchActions {
     gap: 4px;
   }
   .logo {
@@ -1100,8 +1136,13 @@
   background: #1a2c21;
   color: #a0dab9;
 }
-:global(.dark) .mobilePanelAction {
+:global(.dark) .mobilePanelAction,
+:global(.dark) .sheetCount {
   color: #a0dab9;
+}
+:global(.dark) .sheetArea,
+:global(.dark) .resultsArea {
+  color: #a6b9ad;
 }
 :global(.dark) .homes {
   --category-ink: #a0dab9;
