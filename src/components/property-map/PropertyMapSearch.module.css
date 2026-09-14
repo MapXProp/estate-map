@@ -669,7 +669,8 @@
     margin-bottom: 6px;
     padding: 4px 10px 10px;
     border: 0;
-    border-radius: 16px;
+    border-top: 1px solid var(--category-accent);
+    border-radius: 0 0 16px 16px;
   }
   .group.mobileActive {
     display: block;
@@ -697,6 +698,9 @@
     display: flex;
     gap: 4px;
     margin: 2px 0 6px;
+  }
+  .mobileTabs:has(button[aria-expanded='true']) {
+    margin-bottom: 0;
   }
   .mobileTabs button {
     display: flex;
@@ -743,6 +747,23 @@
     background: var(--category-soft);
     color: var(--category-ink);
     font-weight: 600;
+  }
+  .mobileTabs .activeTab[aria-expanded='true'] {
+    position: relative;
+    z-index: 1;
+    border: 1px solid var(--category-accent);
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    background: var(--category-wash);
+  }
+  .mobileTabs .activeTab[aria-expanded='true']::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 1px;
+    background: var(--category-wash);
+    content: '';
   }
   .categorySections {
     max-height: min(190px, 28dvh);
