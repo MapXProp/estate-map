@@ -687,6 +687,13 @@
   .group.mobileActive {
     display: block;
   }
+  /* Align the panel edge with the selected tab at either end of the row. */
+  .homes.mobileActive {
+    border-top-left-radius: 0;
+  }
+  .business.mobileActive {
+    border-top-right-radius: 0;
+  }
   .groupHeading {
     display: none;
   }
