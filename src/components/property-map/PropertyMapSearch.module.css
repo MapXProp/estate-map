@@ -137,7 +137,7 @@
 }
 .collapseCategoriesButton:hover,
 .accountButton:hover,
-.resetButton:hover {
+.resetButton:not(:disabled):hover {
   background: #edf6f1;
 }
 .logo:focus-visible,
@@ -401,13 +401,25 @@
   color: #176b50;
 }
 .resetButton {
-  width: 30px;
+  display: flex;
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1px solid #dce9e1;
   border-radius: 999px;
-  color: #809087;
+  background: #f4faf6;
+  color: #176b50;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
-.resetButton[data-inactive] {
-  visibility: hidden;
-  pointer-events: none;
+.resetButton:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .canvas {
   --map-panel-width: 500px;
@@ -626,12 +638,15 @@
     width: auto;
     justify-content: space-between;
   }
-  .toolbar[data-offer-layout='compact'] > .resetButton {
-    display: none;
-  }
   .resetButton {
-    width: 44px;
+    width: 48px;
     min-height: 44px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px 1px;
+    border-radius: 12px;
+    font-size: 10.5px;
+    line-height: 1.2;
   }
   .canvas {
     --mobile-search-top: 10px;
@@ -964,6 +979,21 @@
     right: 0;
   }
 }
+@media (max-width: 359px) {
+  .categories {
+    padding-inline: 8px;
+  }
+  .categoryHeading,
+  .toolbar {
+    gap: 4px;
+  }
+  .logo {
+    width: 64px;
+  }
+  .resetButton {
+    width: 44px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .offers button,
   .offerFill,
@@ -1031,9 +1061,13 @@
   border-color: #68b98a;
 }
 :global(.dark) .selectionSummary,
-:global(.dark) .mobileAllCategories,
-:global(.dark) .resetButton {
+:global(.dark) .mobileAllCategories {
   color: #a6b9ad;
+}
+:global(.dark) .resetButton {
+  border-color: #365540;
+  background: #1a2c21;
+  color: #a0dab9;
 }
 :global(.dark) .mobilePanelAction {
   color: #a0dab9;

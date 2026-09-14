@@ -452,13 +452,14 @@ export default function PropertyMapSearch({
               onClick={reset}
               className={styles.resetButton}
               data-map-reset
-              data-inactive={!hasFilters || undefined}
               disabled={!hasFilters}
-              aria-hidden={!hasFilters || undefined}
-              aria-label={th ? 'คืนค่าเริ่มต้น' : 'Restore default filters'}
-              title={th ? 'คืนค่าเริ่มต้น' : 'Restore default filters'}
+              aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
+              title={
+                th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
+              }
             >
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+              <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
             </button>
           </div>
           <div className={styles.headerActions}>

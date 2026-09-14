@@ -162,7 +162,7 @@ export default function MapOfferControls({
               onClick={onReset}
             >
               <RotateCcw aria-hidden="true" className="size-4" />
-              {th ? 'คืนค่าเริ่มต้น' : 'Restore defaults'}
+              {th ? 'เริ่มใหม่' : 'Reset all filters'}
             </CloseButton>
           )}
         </PopoverPanel>

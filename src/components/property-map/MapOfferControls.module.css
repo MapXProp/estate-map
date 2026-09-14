@@ -219,6 +219,21 @@
     gap: 4px;
   }
 }
+@media (max-width: 399px) {
+  .controls,
+  .primary {
+    gap: 2px;
+  }
+  .primary button {
+    min-width: 44px;
+    padding-inline: 2px;
+    gap: 2px;
+  }
+  .moreButton {
+    padding-inline: 2px;
+    gap: 2px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .primary button,
   .moreButton,

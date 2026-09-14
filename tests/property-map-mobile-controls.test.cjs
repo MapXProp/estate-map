@@ -211,20 +211,33 @@ test('area search and the relocated all-types action keep their existing filter 
   assert.deepEqual(Array.from(offers), ['sale', 'rent'])
 })
 
-test('mobile topbar keeps its logo and exposes the same reset in the compact offer menu', () => {
+test('visible topbar reset clears all category groups and filters without moving the map', () => {
   const h = harness(390)
   const brand = h.data('data-map-brand', true)
   assert.ok(brand.props.children.some((node) => node?.type === 'test-logo'))
   assert.equal(h.data('data-map-search-controls', true).props['data-offer-layout'], 'compact')
+  assert.equal(h.data('data-map-reset', true).props.disabled, true)
+  assert.equal(h.data('data-map-reset', true).props['aria-hidden'], undefined)
   h.click(h.tab('homes'))
   h.click(h.data('data-map-category', 'homes:land'))
+  h.click(h.data('data-map-category', 'rooms:condo'))
+  const details = h.nodes((node) => node.type === 'test-filters')[0].props
+  details.onChange({ ...details.value, offerTypes: ['business_transfer'], minPrice: '1000000', bedrooms: 3 })
+  h.map().onSearchArea({ bounds: { minLat: 13, maxLat: 14, minLon: 100, maxLon: 101 } })
+  h.render()
   const offers = h.nodes((node) => node.type === 'test-offers')[0].props
   assert.equal(offers.canReset, true)
-  offers.onReset()
-  h.render()
+  assert.equal(h.data('data-map-reset', true).props.disabled, false)
+  h.click(h.data('data-map-reset', true))
   assert.equal(h.data('data-map-category', 'homes:land').props['aria-pressed'], false)
   assert.equal(h.data('data-map-category', 'business:land').props['aria-pressed'], false)
+  assert.equal(h.data('data-map-category', 'rooms:condo').props['aria-pressed'], false)
   assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['sale', 'rent'])
+  assert.equal(h.nodes((node) => node.type === 'test-filters')[0].props.value.minPrice, '')
+  assert.equal(h.nodes((node) => node.type === 'test-filters')[0].props.value.bedrooms, 0)
+  assert.equal(h.data('data-map-reset', true).props.disabled, true)
+  assert.equal(h.map().initialCenter, h.center)
+  assert.equal(h.map().initialZoom, 15)
 })
 
 test('selection immediately opens a separate top preview on mobile while the bottom panel remains a list', () => {
