@@ -463,7 +463,7 @@ export const businessSpaceTypes = [
   },
   {
     code: 'mall_kiosk',
-    nameTh: 'ล็อกหรือคีออสในห้าง',
+    nameTh: 'ล็อกในห้าง',
     nameEn: 'Mall kiosk',
     description: 'คีออส เคาน์เตอร์ หรือพื้นที่กลางห้าง',
   },
@@ -525,6 +525,7 @@ export const businessSpaceTypes = [
 
 export const primaryBusinessSpaceTypeCodes = [
   'standalone_shop',
+  'shophouse_ground_floor',
   'market_stall',
   'event_booth',
   'mall_kiosk',
@@ -534,7 +535,6 @@ export const primaryBusinessSpaceTypeCodes = [
   'office_canteen',
   'dormitory_shop',
   'street_food_space',
-  'shophouse_ground_floor',
 ] as const
 
 export type BusinessSpaceTypeCode = (typeof businessSpaceTypes)[number]['code']
