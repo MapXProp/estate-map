@@ -676,6 +676,8 @@
     pointer-events: none;
   }
   .groups {
+    position: relative;
+    z-index: 1;
     display: block;
     padding-top: 0;
   }
@@ -686,13 +688,6 @@
   }
   .group.mobileActive {
     display: block;
-  }
-  /* Align the panel edge with the selected tab at either end of the row. */
-  .homes.mobileActive {
-    border-top-left-radius: 0;
-  }
-  .business.mobileActive {
-    border-top-right-radius: 0;
   }
   .groupHeading {
     display: none;
@@ -733,6 +728,7 @@
     border-bottom: 1px solid #e5ece7;
   }
   .mobileTabs button {
+    position: relative;
     display: flex;
     flex: 1;
     min-height: 44px;
@@ -770,6 +766,16 @@
     background: var(--category-soft);
     color: var(--category-ink);
     font-weight: 600;
+  }
+  /* Carry the selected fill behind the panel's rounded top corners. */
+  .mobileTabs button[aria-expanded='true']::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    height: 17px;
+    background: inherit;
+    pointer-events: none;
   }
   .categorySections {
     max-height: min(190px, 28dvh);
