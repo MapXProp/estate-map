@@ -1,7 +1,7 @@
 import {
-  getBusinessSpaceType,
   getDiscoveryChannel,
   getPropertyType,
+  primaryBusinessSpaceTypeCodes,
   type ListingScopeCode,
   type OfferTypeCode,
   type UseCaseCode,
@@ -92,7 +92,7 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   }
   if (
     spaceTypes.length > 2 ||
-    spaceTypes.some((spaceType) => !getBusinessSpaceType(spaceType)) ||
+    spaceTypes.some((spaceType) => !primaryBusinessSpaceTypeCodes.some((code) => code === spaceType)) ||
     (!propertyType.supportsBusinessSpaceType && spaceTypes.length > 0)
   ) {
     return issue(

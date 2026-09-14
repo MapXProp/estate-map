@@ -41,14 +41,14 @@ const makeListing = (index) => ({
   longitude: 100.1,
 })
 
-test('all 32 posting choices remain reachable across three groups', () => {
+test('all 31 posting choices remain reachable across three groups', () => {
   const groups = model().mapCategoryGroups
   assert.deepEqual(plain(groups.map((group) => [group.code, group.options.length])), [
     ['homes', 7],
     ['rooms', 6],
-    ['business', 19],
+    ['business', 18],
   ])
-  assert.equal(new Set(groups.flatMap((group) => group.options.map((item) => item.id))).size, 32)
+  assert.equal(new Set(groups.flatMap((group) => group.options.map((item) => item.id))).size, 31)
 })
 
 test('mixed category selections keep each channel tied to its own types', () => {
@@ -69,19 +69,19 @@ test('existing channel/type links select the corresponding visible chips', () =>
   ])
   assert.equal(
     model().initialMapCategories({ discoveryChannels: ['business'], propertyTypes: ['retail_space'] }).length,
-    11
+    10
   )
   assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land', 'business:land'])
 })
 
-test('business sections keep land with buildings and expose all 19 choices once', () => {
+test('business sections keep land with buildings and expose all 18 choices once', () => {
   const business = model().mapCategoryGroups.find((group) => group.code === 'business')
   assert.deepEqual(plain(business.sections.map((section) => [section.id, section.options.length])), [
     ['buildings', 8],
-    ['retail', 11],
+    ['retail', 10],
   ])
   const ids = business.sections.flatMap((section) => section.options.map((option) => option.id))
-  assert.equal(new Set(ids).size, 19)
+  assert.equal(new Set(ids).size, 18)
   assert.deepEqual(plain(ids).sort(), plain(business.options.map((option) => option.id)).sort())
 })
 

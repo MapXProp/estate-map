@@ -534,7 +534,6 @@ export const primaryBusinessSpaceTypeCodes = [
   'school_canteen',
   'office_canteen',
   'dormitory_shop',
-  'street_food_space',
 ] as const
 
 export type BusinessSpaceTypeCode = (typeof businessSpaceTypes)[number]['code']

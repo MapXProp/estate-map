@@ -119,9 +119,18 @@ test('legacy drafts cannot submit retail event metadata with a non-retail proper
 })
 
 test('retail options retain stable codes after moving the ground-floor shop to second place', () => {
-  assert.equal(taxonomy.primaryBusinessSpaceTypeCodes.length, 11)
+  assert.equal(taxonomy.primaryBusinessSpaceTypeCodes.length, 10)
   assert.equal(taxonomy.primaryBusinessSpaceTypeCodes[1], 'shophouse_ground_floor')
   assert.equal(taxonomy.getBusinessSpaceType('mall_kiosk').nameTh, 'ล็อกในห้าง')
+  assert.equal(taxonomy.primaryBusinessSpaceTypeCodes.includes('street_food_space'), false)
+  const validation = load('src/lib/listingPublishValidation.ts', { '@/data/propertyTaxonomy': taxonomy })
+  const retiredDraft = {
+    ...retail,
+    property_group_code: 'commercial',
+    space_type_code: 'street_food_space',
+    'spaceTypeCodes[]': ['street_food_space'],
+  }
+  assert.equal(validation.validateListingDraftForPublish(retiredDraft).code, 'business_space_type_invalid')
   const lib = setup(retail)
   for (const code of taxonomy.primaryBusinessSpaceTypeCodes) {
     const payload = lib.buildCreateListingPayload({ ...retail, space_type_code: code, 'spaceTypeCodes[]': [code] })

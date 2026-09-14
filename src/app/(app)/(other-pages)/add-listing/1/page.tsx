@@ -106,7 +106,6 @@ const businessSpaceTypeIcons = {
   school_canteen: Store,
   office_canteen: Store,
   dormitory_shop: Store,
-  street_food_space: Store,
   shophouse_ground_floor: Building,
   event_booth: CalendarRange,
 } satisfies Record<(typeof primaryBusinessSpaceTypeCodes)[number], LucideIcon>
@@ -413,6 +412,7 @@ const Page = () => {
         ...readDraftValues(draft['spaceTypeCodes[]']).map((code) => getBusinessSpaceType(code)?.code),
       ]
         .filter((code): code is BusinessSpaceTypeCode => Boolean(code))
+        .filter((code) => primaryBusinessSpaceTypeCodes.some((selectable) => selectable === code))
         .filter((code, index, all) => all.indexOf(code) === index)
         .slice(0, 2)
       setSelectedOffers(
@@ -523,7 +523,7 @@ const Page = () => {
       ? businessSpaceTypes.filter((code) => code !== spaceTypeCode)
       : [...businessSpaceTypes, spaceTypeCode]
     const hasFoodSpace = nextSpaceTypes.some((code) =>
-      ['food_court_counter', 'street_food_space', 'school_canteen', 'office_canteen'].includes(code)
+      ['food_court_counter', 'school_canteen', 'office_canteen'].includes(code)
     )
 
     if (selectedPropertyType !== retailSpace.code) {

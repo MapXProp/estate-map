@@ -1,8 +1,8 @@
 import type { PropertyMapFeature, PropertyMapFilterState } from '@/components/property-map/PropertyMapFilterBar'
 import PropertyMapSearch from '@/components/property-map/PropertyMapSearch'
 import {
-  businessSpaceTypes,
   discoveryChannels,
+  primaryBusinessSpaceTypeCodes,
   propertyTypes,
   type BusinessSpaceTypeCode,
   type DiscoveryChannelCode,
@@ -38,7 +38,7 @@ const getSearchParamValues = (value?: string | string[]) =>
   (Array.isArray(value) ? value : value ? [value] : []).map((item) => item.trim()).filter(Boolean)
 
 const propertyTypeCodes = new Set(propertyTypes.map((item) => item.code))
-const spaceTypeCodes = new Set(businessSpaceTypes.map((item) => item.code))
+const spaceTypeCodes = new Set<string>(primaryBusinessSpaceTypeCodes)
 const discoveryChannelCodes = new Set(discoveryChannels.map((item) => item.code))
 
 const getInitialFilters = (search: Awaited<PageSearchParams>): Partial<PropertyMapFilterState> => ({
