@@ -668,9 +668,6 @@
     display: none;
     margin-bottom: 6px;
     padding: 4px 10px 10px;
-    border: 0;
-    border-top: 1px solid var(--category-accent);
-    border-radius: 0 0 16px 16px;
   }
   .group.mobileActive {
     display: block;
@@ -696,23 +693,19 @@
   }
   .mobileTabs {
     display: flex;
-    gap: 4px;
-    margin: 2px 0 6px;
-  }
-  .mobileTabs:has(button[aria-expanded='true']) {
-    margin-bottom: 0;
+    gap: 2px;
+    margin-top: 2px;
+    border-bottom: 1px solid #e5ece7;
   }
   .mobileTabs button {
     display: flex;
     flex: 1;
-    min-width: 0;
     min-height: 44px;
     align-items: center;
     justify-content: center;
     gap: 3px;
-    border: 0;
-    border-radius: 12px;
-    padding: 4px 6px;
+    border-bottom: 2px solid transparent;
+    padding: 4px 0;
     font-size: 12px;
     color: var(--category-ink);
     cursor: pointer;
@@ -727,12 +720,7 @@
     height: 14px;
   }
   .mobileTabs .groupCount {
-    display: inline-grid;
-    min-width: 16px;
-    height: 16px;
-    place-items: center;
-    padding-inline: 4px;
-    line-height: 1;
+    padding-inline: 3px;
   }
   .groupChevron {
     width: 10px;
@@ -744,26 +732,10 @@
     transform: rotate(180deg);
   }
   .mobileTabs .activeTab {
+    border-bottom-color: var(--category-accent);
     background: var(--category-soft);
     color: var(--category-ink);
     font-weight: 600;
-  }
-  .mobileTabs .activeTab[aria-expanded='true'] {
-    position: relative;
-    z-index: 1;
-    border: 1px solid var(--category-accent);
-    border-bottom: 0;
-    border-radius: 12px 12px 0 0;
-    background: var(--category-wash);
-  }
-  .mobileTabs .activeTab[aria-expanded='true']::after {
-    position: absolute;
-    right: 0;
-    bottom: -1px;
-    left: 0;
-    height: 1px;
-    background: var(--category-wash);
-    content: '';
   }
   .categorySections {
     max-height: min(190px, 28dvh);
@@ -776,9 +748,6 @@
   .chips {
     max-height: none;
     gap: 6px;
-  }
-  .chip {
-    border-radius: 10px;
   }
   .businessSections {
     grid-template-columns: 1fr;
