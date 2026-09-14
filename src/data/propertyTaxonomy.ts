@@ -63,7 +63,7 @@ export const discoveryChannels: DiscoveryChannelDefinition[] = [
   {
     code: 'homes',
     route: '/homes',
-    nameTh: 'บ้าน คอนโด & ที่อยู่อาศัย',
+    nameTh: 'ที่อยู่อาศัย',
     nameEn: 'Homes & residential',
     description: 'บ้าน คอนโด ทาวน์โฮม ตึกแถว และที่ดิน',
     propertyTypeCodes: [
@@ -80,7 +80,7 @@ export const discoveryChannels: DiscoveryChannelDefinition[] = [
   {
     code: 'rooms',
     route: '/rooms',
-    nameTh: 'ห้องเช่า & ที่พักรายเดือน',
+    nameTh: 'ห้องเช่ารายเดือน',
     nameEn: 'Rooms & monthly stays',
     description: 'ห้องแบ่งเช่า อพาร์ตเมนต์ แฟลต หอพัก คอนโด และที่พักระยะยาว',
     propertyTypeCodes: ['rental_room', 'apartment', 'flat', 'dormitory', 'condo', 'monthly_hotel'],
@@ -89,7 +89,7 @@ export const discoveryChannels: DiscoveryChannelDefinition[] = [
   {
     code: 'business',
     route: '/business',
-    nameTh: 'พื้นที่ทำธุรกิจ',
+    nameTh: 'พื้นที่ธุรกิจ',
     nameEn: 'Business spaces',
     description: 'ตึกแถว ร้านค้า อพาร์ตเมนต์ขายทั้งอาคาร ออฟฟิศ โกดัง โรงงาน โรงแรม และที่ดิน',
     propertyTypeCodes: [

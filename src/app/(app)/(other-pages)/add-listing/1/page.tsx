@@ -414,11 +414,11 @@ const Page = () => {
       ]
         .filter((code): code is BusinessSpaceTypeCode => Boolean(code))
         .filter((code, index, all) => all.indexOf(code) === index)
-        .slice(0, 3)
+        .slice(0, 2)
       setSelectedOffers(
         nextChannel === 'rooms' ? ['rent'] : savedOffers.length ? savedOffers : offersFromLegacy(draft.listing_type)
       )
-      setBusinessSpaceTypes(savedBusinessSpaceTypes)
+      setBusinessSpaceTypes(nextPropertyType.supportsBusinessSpaceType ? savedBusinessSpaceTypes : [])
       setDraftReady(true)
     }
 
@@ -525,7 +525,6 @@ const Page = () => {
     const hasFoodSpace = nextSpaceTypes.some((code) =>
       ['food_court_counter', 'street_food_space', 'school_canteen', 'office_canteen'].includes(code)
     )
-    const nextHasEventBooth = nextSpaceTypes.includes('event_booth')
 
     if (selectedPropertyType !== retailSpace.code) {
       resetListingDetailsForCategoryChange(selectedChannel, retailSpace.code)
@@ -650,15 +649,18 @@ const Page = () => {
         />
         <input type="hidden" name="listing_scope" value={selectedScope} />
         <input type="hidden" name="space_type_code" value={primaryBusinessSpaceType} />
+        <input type="hidden" name="spaceTypeCodes[]" value="" />
         {businessSpaceTypes.map((code) => (
           <input key={code} type="hidden" name="spaceTypeCodes[]" value={code} />
         ))}
         <input type="hidden" name="usage_type" value={mapUseCasesToLegacyUsage(selectedUseCases)} />
         <input type="hidden" name="listing_type" value={offersToLegacyListingType(selectedOffers)} />
         <input type="hidden" name="organizationPublicId" value={selectedOrganizationId} />
+        <input type="hidden" name="useCaseCodes[]" value="" />
         {selectedUseCases.map((code) => (
           <input key={code} type="hidden" name="useCaseCodes[]" value={code} />
         ))}
+        <input type="hidden" name="offerTypes[]" value="" />
         {selectedOffers.map((code) => (
           <input key={code} type="hidden" name="offerTypes[]" value={code} />
         ))}
@@ -769,7 +771,7 @@ const Page = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="font-sarabun text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                  {isThai ? 'อาคารและที่ดิน' : 'Buildings and land'}
+                  {isThai ? 'อาคารและกิจการ' : 'Buildings & businesses'}
                 </h3>
                 <div className="mt-3 grid grid-cols-2 gap-2.5 min-[744px]:grid-cols-3">
                   {businessPropertyTypes.map((item) => {
@@ -791,7 +793,7 @@ const Page = () => {
 
               <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
                 <h3 className="font-sarabun text-sm font-semibold text-neutral-700 dark:text-neutral-200">
-                  {isThai ? 'ร้านค้า ล็อก และพื้นที่ชั่วคราว' : 'Retail, stalls and temporary spaces'}
+                  {isThai ? 'พื้นที่ขายของ' : 'Retail & selling spaces'}
                 </h3>
                 <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
                   {isThai

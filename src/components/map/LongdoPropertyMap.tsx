@@ -110,6 +110,26 @@ const getListingQualityScore = (listing: TRealEstateListing) =>
     Boolean(listing.metadataSummary),
   ].filter(Boolean).length
 
+// Screen offsets only: each spoke still ends at the listing's stored coordinate.
+// Callers order by listing ID so choosing a different preview cannot shuffle pins.
+export const getSpiderOffsets = (count: number, labelWidth: number) => {
+  const offsets: Array<{ x: number; y: number }> = []
+  if (count < 2) return offsets
+  const horizontalRadius = Math.max(76, Math.min(132, labelWidth + 16))
+  for (let start = 0, ring = 1; start < count; ring++) {
+    const ringCount = Math.min(8 * ring, count - start)
+    for (let index = 0; index < ringCount; index++) {
+      const angle = (index * Math.PI * 2) / ringCount - (count === 2 ? Math.PI : Math.PI / 2)
+      offsets.push({
+        x: Math.round(Math.cos(angle) * horizontalRadius * ring),
+        y: Math.round(Math.sin(angle) * 80 * ring),
+      })
+    }
+    start += ringCount
+  }
+  return offsets
+}
+
 export const getMarkerHtml = (
   listing: TRealEstateListing,
   price: string,
@@ -325,17 +345,9 @@ const LongdoPropertyMap = ({
     if (!candidates.length) return
 
     const zoom = map.zoom()
-    // In the map search workspace, every dot stays at the stored coordinate.
-    // Only price labels change visibility; markers are never grouped or fanned.
-    if (exactCoordinates && zoom <= 12) {
-      candidates.forEach(({ root, listing }) => {
-        root.dataset.mapxLabelVisible = listing.id === currentHoverIDRef.current ? 'true' : 'false'
-      })
-      return
-    }
     const showEveryLabel = !exactCoordinates && zoom >= 19
-    const fanSharedCoordinates = !exactCoordinates && zoom >= 16
-    if (fanSharedCoordinates) {
+    // Expand duplicates at street zoom, or on selection while zoomed out.
+    if (zoom >= 16 || currentHoverIDRef.current) {
       const coordinateGroups = new Map<string, typeof candidates>()
       candidates.forEach((candidate) => {
         const { lat, lng } = candidate.listing.map
@@ -345,16 +357,11 @@ const LongdoPropertyMap = ({
 
       coordinateGroups.forEach((group) => {
         if (group.length < 2) return
-        const horizontalSpacing = Math.max(
-          105,
-          Math.min(190, Math.max(...group.map(({ pill }) => pill.offsetWidth)) + 18)
-        )
+        if (zoom < 16 && !group.some(({ listing }) => listing.id === currentHoverIDRef.current)) return
+        group.sort((first, second) => first.listing.id.localeCompare(second.listing.id))
+        const offsets = getSpiderOffsets(group.length, Math.max(...group.map(({ pill }) => pill.offsetWidth)))
         group.forEach(({ root }, index) => {
-          if (index === 0) return
-          const row = Math.ceil(index / 3)
-          const column = ((index - 1) % 3) - 1
-          const fanX = column * horizontalSpacing
-          const fanY = row * -50
+          const { x: fanX, y: fanY } = offsets[index]
           const lineX = -fanX
           const lineY = -fanY
           const lineLength = Math.hypot(lineX, lineY)
@@ -366,6 +373,14 @@ const LongdoPropertyMap = ({
           root.style.setProperty('--mapx-fan-angle', `${lineAngle}deg`)
         })
       })
+    }
+
+    if (exactCoordinates && zoom <= 12) {
+      candidates.forEach(({ root, listing }) => {
+        root.dataset.mapxLabelVisible =
+          root.dataset.mapxFanned === 'true' || listing.id === currentHoverIDRef.current ? 'true' : 'false'
+      })
+      return
     }
 
     if (showEveryLabel) {
@@ -983,6 +998,19 @@ const LongdoPropertyMap = ({
         .mapx-price-marker[data-mapx-fanned="true"] .mapx-fan-line {
           display: block;
         }
+        .mapx-fan-line::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: -3px;
+          width: 6px;
+          height: 6px;
+          box-sizing: border-box;
+          border: 1px solid #176b50;
+          border-radius: 50%;
+          background: #ffffff;
+          transform: translateY(-50%);
+        }
         .mapx-price-marker.is-active,
         .mapx-price-marker:hover,
         .mapx-price-marker:focus-within {
@@ -1076,7 +1104,7 @@ const LongdoPropertyMap = ({
           width: 0 !important;
           height: 0;
           padding: 0 !important;
-          transform: none !important;
+          transform: translate(var(--mapx-fan-x), var(--mapx-fan-y)) !important;
         }
         .mapx-exact-coordinates .mapx-price-marker-link {
           position: absolute !important;
@@ -1130,8 +1158,7 @@ const LongdoPropertyMap = ({
           transform: none;
         }
         .mapx-exact-coordinates .mapx-price-pointer-outer,
-        .mapx-exact-coordinates .mapx-price-pointer-inner,
-        .mapx-exact-coordinates .mapx-fan-line { display: none !important; }
+        .mapx-exact-coordinates .mapx-price-pointer-inner { display: none !important; }
         .mapx-exact-coordinates .mapx-marker-hover-card { bottom: 40px; }
         @media (max-width: 1023px) {
           .mapx-exact-coordinates .mapx-price-marker-link {

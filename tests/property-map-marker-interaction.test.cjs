@@ -14,7 +14,7 @@ const listing = {
   galleryImgs: [],
   priceAmount: 315000000,
 }
-function harness(width, initialZoom = 14) {
+function harness(width, initialZoom = 14, initialListings = [listing]) {
   const slots = [],
     effects = [],
     frames = new Map(),
@@ -34,7 +34,12 @@ function harness(width, initialZoom = 14) {
     constructor(link = null) {
       this.link = link
       this.dataset = {}
-      this.style = { setProperty() {} }
+      this.offsetWidth = 100
+      this.style = {
+        setProperty(name, value) {
+          this[name] = value
+        },
+      }
       this.classes = new Set()
       this.attributes = {}
       this.classList = { toggle: (name, active) => (active ? this.classes.add(name) : this.classes.delete(name)) }
@@ -51,7 +56,7 @@ function harness(width, initialZoom = 14) {
           : this.root || this
     }
     querySelectorAll(selector) {
-      return this.isMap && selector.includes('data-mapx-price-marker') ? [markerRoot] : []
+      return this.isMap && selector.includes('data-mapx-price-marker') ? markerRoots : []
     }
     querySelector() {
       return this
@@ -72,8 +77,12 @@ function harness(width, initialZoom = 14) {
       return name === 'href' ? '/real-estate-listings/land-sutthisan' : null
     }
   }
-  const markerRoot = new Element()
-  markerRoot.dataset.mapxListingId = listing.id
+  const markerRoots = initialListings.map((item) => {
+    const root = new Element()
+    root.dataset.mapxListingId = item.id
+    return root
+  })
+  const markerRoot = markerRoots[0]
   const hooks = {
     useRef(initial) {
       const i = cursor++
@@ -230,7 +239,7 @@ function harness(width, initialZoom = 14) {
   }
   render({
     apiKey: 'test-key',
-    listings: [listing],
+    listings: initialListings,
     currentHoverID: '',
     previewListingId: '',
     initialCenter: { lat: 13.8, lon: 100.4 },
@@ -243,7 +252,7 @@ function harness(width, initialZoom = 14) {
   })
   render()
   calls.length = 0
-  function linkTarget(action) {
+  function linkTarget(action, markerIndex = 0) {
     if (action === 'map') return new Element()
     if (action === 'control') {
       const node = new Element()
@@ -252,12 +261,12 @@ function harness(width, initialZoom = 14) {
     }
     const link = new Element()
     link.dataset[action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
-    link.root = markerRoot
+    link.root = markerRoots[markerIndex]
     return new Element(link)
   }
   function click(action, options = {}) {
     const event = {
-      target: linkTarget(action),
+      target: linkTarget(action, options.markerIndex),
       button: 0,
       prevented: false,
       stopped: false,
@@ -297,6 +306,8 @@ function harness(width, initialZoom = 14) {
     click,
     pointer,
     markerRoot,
+    markerRoots,
+    getSpiderOffsets: context.exports.getSpiderOffsets,
     unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
     api,
     getMarkerHtml: context.exports.getMarkerHtml,
@@ -360,6 +371,60 @@ test('dot selects a preview without changing the camera on phone, tablet and des
     assert.equal(h.api.location(), center)
     assert.equal(h.api.zoom(), 15)
     assert.equal(h.navigation.length, 0)
+  }
+})
+
+test('coincident pins spread at street zoom and stay in place when selecting each listing', () => {
+  for (const width of [390, 1440]) {
+    const listings = [
+      listing,
+      { ...listing, id: 'listing-7' },
+      { ...listing, id: 'elsewhere', map: { lat: 13.71, lng: 100.61 } },
+    ]
+    const h = harness(width, 17, listings)
+    const positions = () => h.markerRoots.map((root) => [root.style['--mapx-fan-x'], root.style['--mapx-fan-y']])
+    const before = positions()
+    assert.notDeepEqual(before[0], before[1])
+    assert.deepEqual(before[2], ['0px', '0px'])
+    for (const markerIndex of [0, 1]) {
+      assert.equal(h.markerRoots[markerIndex].dataset.mapxFanned, 'true')
+      h.click('dot', { markerIndex })
+      h.render({ previewListingId: listings[markerIndex].id, currentHoverID: listings[markerIndex].id })
+      assert.deepEqual(positions(), before)
+    }
+    assert.deepEqual(h.selected, ['listing-6', 'listing-7'])
+    h.render({ previewListingId: '', currentHoverID: '' })
+    assert.deepEqual(positions(), before)
+    assert.deepEqual(h.calls, [])
+  }
+})
+
+test('a duplicate can be expanded at overview zoom without recentering or zooming', () => {
+  const h = harness(390, 12, [listing, { ...listing, id: 'listing-7' }])
+  assert.ok(h.markerRoots.every((root) => root.dataset.mapxFanned === 'false'))
+  h.click('dot')
+  h.render({ currentHoverID: listing.id, previewListingId: listing.id })
+  assert.ok(h.markerRoots.every((root) => root.dataset.mapxFanned === 'true'))
+  const positions = h.markerRoots.map((root) => root.style['--mapx-fan-x'])
+  h.render({ currentHoverID: 'listing-7', previewListingId: 'listing-7' })
+  assert.deepEqual(
+    h.markerRoots.map((root) => root.style['--mapx-fan-x']),
+    positions
+  )
+  assert.deepEqual(h.calls, [])
+})
+
+test('spider layouts keep separate touch targets for small and large duplicate groups', () => {
+  const h = harness(390)
+  for (const count of [2, 3, 4, 8, 9, 16, 24, 50, 100]) {
+    const offsets = h.getSpiderOffsets(count, 100)
+    assert.equal(offsets.length, count)
+    offsets.forEach((point, index) => {
+      assert.ok(Math.hypot(point.x, point.y) >= 44)
+      offsets.slice(index + 1).forEach((other) => {
+        assert.ok(Math.hypot(point.x - other.x, point.y - other.y) >= 44, `${count} pins keep 44px clearance`)
+      })
+    })
   }
 })
 

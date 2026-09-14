@@ -223,6 +223,8 @@ export const prepareOrganizationListingDraft = (publicOrganizationId: string, di
 }
 
 const CATEGORY_DETAIL_DRAFT_KEYS = [
+  'space_type_code',
+  'spaceTypeCodes[]',
   'usableAreaSqm',
   'landAreaSqm',
   'Bedroom',
@@ -739,12 +741,14 @@ export const buildCreateListingPayload = (draft: ListingDraft): CreateListingPay
     ...values(draft['allowedBusinessTypes[]']),
     ...useCaseCodes.filter((code) => code !== 'residential'),
   ].filter((value, index, all) => all.indexOf(value) === index)
-  const primarySpaceTypeCode = normalizeCode(text(draft.space_type_code))
-  const spaceTypeCodes = [primarySpaceTypeCode, ...values(draft['spaceTypeCodes[]']).map(normalizeCode)].filter(
-    (value, index, all) => Boolean(value) && all.indexOf(value) === index
-  )
-  const isTemporarySpace = spaceTypeCodes.includes('event_booth')
   const isRetailSpace = normalizeCode(text(draft.property_type_code)) === 'retail_space'
+  const primarySpaceTypeCode = normalizeCode(text(draft.space_type_code))
+  const spaceTypeCodes = isRetailSpace
+    ? [primarySpaceTypeCode, ...values(draft['spaceTypeCodes[]']).map(normalizeCode)].filter(
+        (value, index, all) => Boolean(value) && all.indexOf(value) === index
+      )
+    : []
+  const isTemporarySpace = spaceTypeCodes.includes('event_booth')
   const offerTypeCodes = rawOfferTypeCodes
     .map((code) =>
       ['event_booking', 'contact_organizer'].includes(normalizeCode(code)) ? 'rent' : normalizeCode(code)
