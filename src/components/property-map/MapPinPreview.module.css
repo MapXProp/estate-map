@@ -300,136 +300,135 @@
   color: #b1bdb4;
   font-size: 12px;
 }
-@media (max-width: 1023px) {
-  .preview {
-    position: relative;
-    display: grid;
-    grid-template-columns: clamp(124px, 38%, 210px) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) 44px;
-    column-gap: 12px;
-    padding: 8px 12px 8px 8px;
-  }
-  .body {
-    display: contents;
-  }
-  .media {
-    grid-column: 1;
-    grid-row: 1 / -1;
-    min-height: 0;
-    height: 100%;
-    aspect-ratio: auto;
-    border-radius: 12px;
-  }
-  .media .image {
-    object-fit: cover;
-  }
-  .media .photoArrow,
-  .media .expandHint {
-    display: none;
-  }
-  .media .next {
-    top: auto;
-    right: 6px;
-    bottom: 6px;
-    display: grid;
-    transform: none;
-    width: 44px;
-    height: 44px;
-  }
-  .counter {
-    bottom: 6px;
-    left: 6px;
-    gap: 3px;
-    padding: 3px 5px;
-    font-size: 10px;
-  }
-  .preview > .header {
-    position: absolute;
-    z-index: 3;
-    top: 0;
-    right: 2px;
-    width: 44px;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-  }
-  .back {
-    display: none;
-  }
-  .info {
-    grid-column: 2;
-    grid-row: 1;
-    min-width: 0;
-    overflow: hidden;
-    padding: 0;
-  }
-  .price {
-    margin-top: 2px;
-    font-size: clamp(18px, 4.4vw, 25px);
-  }
-  .category {
-    display: block;
-    overflow: hidden;
-    margin-right: 32px;
-    line-height: 18px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .category > svg {
-    display: none;
-  }
-  .title {
-    margin-top: 3px;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .quickFacts {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 5px;
-    margin-top: 8px;
-    color: #456452;
-    font-size: 12px;
-    line-height: 18px;
-  }
-  .quickFacts > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    border-radius: 6px;
-    background: #f0f6f2;
-    padding: 2px 5px;
-    white-space: nowrap;
-  }
-  .quickFacts svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
-  .address,
-  .facts,
-  .retry,
-  .galleryButton {
-    display: none;
-  }
-  .footer {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    border-top: 0;
-    padding: 0;
-    background: transparent;
-  }
-  .details {
-    width: 100%;
-    font-size: 12px;
-  }
-  .noImage {
-    gap: 5px;
-    padding: 8px;
-    font-size: 11px;
-  }
+/* The top sheet and anchored card share the same compact content. */
+.preview {
+  position: relative;
+  display: grid;
+  grid-template-columns: clamp(124px, 38%, 210px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 44px;
+  column-gap: 12px;
+  padding: 8px 12px 8px 8px;
+}
+.body {
+  display: contents;
+}
+.media {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 12px;
+}
+.media .image {
+  object-fit: cover;
+}
+.media .photoArrow,
+.media .expandHint {
+  display: none;
+}
+.media .next {
+  top: auto;
+  right: 6px;
+  bottom: 6px;
+  display: grid;
+  transform: none;
+  width: 44px;
+  height: 44px;
+}
+.counter {
+  bottom: 6px;
+  left: 6px;
+  gap: 3px;
+  padding: 3px 5px;
+  font-size: 10px;
+}
+.preview > .header {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 2px;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+}
+.back {
+  display: none;
+}
+.info {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+}
+.price {
+  margin-top: 2px;
+  font-size: clamp(18px, 4.4vw, 25px);
+}
+.category {
+  display: block;
+  overflow: hidden;
+  margin-right: 32px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.category > svg {
+  display: none;
+}
+.title {
+  margin-top: 3px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.quickFacts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  color: #456452;
+  font-size: 12px;
+  line-height: 18px;
+}
+.quickFacts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  background: #f0f6f2;
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+.quickFacts svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.address,
+.facts,
+.retry,
+.galleryButton {
+  display: none;
+}
+.footer {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  border-top: 0;
+  padding: 0;
+  background: transparent;
+}
+.details {
+  width: 100%;
+  font-size: 12px;
+}
+.noImage {
+  gap: 5px;
+  padding: 8px;
+  font-size: 11px;
 }
 @media (max-width: 1023px) and (max-height: 520px) {
   .quickFacts {

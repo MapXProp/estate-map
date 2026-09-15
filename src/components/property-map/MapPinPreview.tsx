@@ -153,7 +153,7 @@ export default function MapPinPreview({
         src={activeImage}
         alt={`${title} · ${th ? 'รูป' : 'Photo'} ${imageIndex + 1}`}
         fill
-        sizes={fullscreen ? '100vw' : '(min-width: 1024px) 500px, (min-width: 560px) 210px, 38vw'}
+        sizes={fullscreen ? '100vw' : '(min-width: 768px) 160px, (min-width: 560px) 210px, 38vw'}
         className={styles.image}
         onError={() => setFailedImages((previous) => [...previous, activeImage])}
       />

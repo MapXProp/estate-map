@@ -1336,6 +1336,7 @@ const LongdoPropertyMap = ({
       />
       <div
         ref={placeholderRef}
+        data-map-marker-surface
         tabIndex={-1}
         className="pointer-events-auto size-full touch-none overscroll-contain outline-none"
         onPointerEnter={() => {

@@ -1,24 +1,29 @@
 'use client'
 
+import { useMapAnchoredPreview } from '@/hooks/useMapAnchoredPreview'
 import { motion, useIsPresent, useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import styles from './PropertyMapSearch.module.css'
 
 export default function MapPreviewPanel({
   mobile,
+  listingId = '',
   label,
   children,
 }: {
   mobile: boolean
+  listingId?: string
   label: string
   children: ReactNode
 }) {
   const present = useIsPresent()
   const reducedMotion = useReducedMotion()
   const animate = mobile && !reducedMotion
+  const previewRef = useMapAnchoredPreview(listingId, !mobile)
 
   return (
     <motion.aside
+      ref={previewRef}
       data-map-preview-panel
       data-mobile-top-sheet={mobile}
       className={styles.previewPanel}

@@ -107,7 +107,15 @@ function harness(width) {
       './PropertyMapSearch.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
     },
     {
-      window: { matchMedia: (query) => ({ matches: query.includes('max-width') && width < 1024 }) },
+      window: {
+        matchMedia: (query) => ({
+          matches: query.split(',').some((part) => {
+            const maxWidth = part.match(/max-width: (\d+)/),
+              maxHeight = part.match(/max-height: (\d+)/)
+            return (!maxWidth || width <= Number(maxWidth[1])) && (!maxHeight || 900 <= Number(maxHeight[1]))
+          }),
+        }),
+      },
       process: { env: { NEXT_PUBLIC_LONGDO_MAP_KEY: 'test-key' } },
     }
   ).default
@@ -332,7 +340,20 @@ test('visible topbar reset clears all category groups and filters without moving
   assert.equal(h.map().initialZoom, 15)
 })
 
-test('selection immediately opens a separate top preview on mobile while the bottom panel remains a list', () => {
+test('desktop results start collapsed; opening the list replaces the floating preview without moving the map', () => {
+  const h = harness(1440)
+  h.click(h.data('data-map-open-results', true))
+  assert.equal(h.nodes((node) => node.props?.['data-map-open-results']).length, 0)
+  h.map().onMarkerSelect('listing-6')
+  h.render()
+  h.seedSelectedListing({ id: 'listing-6', latitude: 13.7, longitude: 100.6 })
+  assert.equal(h.nodes((node) => node.type === 'test-preview').length, 1)
+  h.click(h.data('data-map-open-results', true))
+  assert.equal(h.nodes((node) => node.type === 'test-preview').length, 0)
+  assert.equal(h.map().initialCenter, h.center)
+})
+
+test('selection keeps the phone top sheet and anchors tablet/desktop previews inside the map', () => {
   for (const width of [320, 390, 820, 1440]) {
     const h = harness(width)
     if (width < 1024) h.click(h.tab('homes'))
@@ -344,14 +365,14 @@ test('selection immediately opens a separate top preview on mobile while the bot
     assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'peek')
     const preview = () => h.nodes((node) => node.type === 'test-preview')[0].props
     assert.equal(preview().listing.id, 'listing-6')
-    assert.equal(h.nodes((node) => node.type === 'test-preview-panel')[0].props.mobile, width < 1024)
-    assert.equal(h.data('data-map-navigation', true).props.inert, width < 1024)
+    assert.equal(h.nodes((node) => node.type === 'test-preview-panel')[0].props.mobile, width < 768)
+    assert.equal(h.data('data-map-navigation', true).props.inert, width < 768)
     if (width < 1024) assert.equal(h.tab('homes').props['aria-expanded'], false)
     const canvas = h.data('data-map-canvas', true)
     const previewInsideCanvas = canvas.props.children.some(
       (node) => node?.type === 'test-presence' && Boolean(node.props.children)
     )
-    assert.equal(previewInsideCanvas, width >= 1024, 'mobile card is above navigation, outside the clipped map canvas')
+    assert.equal(previewInsideCanvas, width >= 768, 'phone card is above navigation, outside the clipped map canvas')
     assert.equal(h.nodes((node) => node.props?.className === 'resultsList')[0].props.hidden, undefined)
     h.map().onMapInteraction()
     h.render()

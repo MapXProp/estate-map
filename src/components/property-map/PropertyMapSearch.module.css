@@ -946,8 +946,8 @@
     box-shadow: 0 8px 20px #153b2524;
   }
   .search[data-map-mobile-preview='true'] .categories,
-  .canvas[data-map-preview-open='true'] .locationSearch,
-  .canvas[data-map-preview-open='true'] .areaControl {
+  .canvas[data-map-top-sheet='true'] .locationSearch,
+  .canvas[data-map-top-sheet='true'] .areaControl {
     visibility: hidden;
     pointer-events: none;
   }
@@ -1325,6 +1325,76 @@
     max-height: 110px;
     overflow-y: auto;
   }
+}
+/* Keep the input itself centered across the whole map on PC and tablets. */
+@media (min-width: 768px) {
+  .canvas[data-map-floating-layout='true'] {
+    --map-centered-search-width: min(548px, calc(100% - 360px));
+  }
+  .canvas[data-map-floating-layout='true'] .locationSearch {
+    top: calc(var(--map-navigation-height, 0px) + 14px);
+    left: 50%;
+    width: var(--map-centered-search-width);
+    transform: translateX(-50%);
+  }
+  .canvas[data-map-floating-layout='true'] .areaControl {
+    top: calc(var(--map-navigation-height, 0px) + 14px);
+    right: auto;
+    left: calc(50% + var(--map-centered-search-width) / 2 + 8px);
+    width: 144px;
+    transform: none;
+  }
+  .canvas[data-map-floating-layout='true'] .openPanel {
+    top: calc(var(--map-navigation-height, 0px) + 14px);
+  }
+}
+@media (min-width: 1024px) {
+  .results {
+    top: calc(var(--map-navigation-height, 0px) + 76px);
+  }
+}
+.previewPanel[data-mobile-top-sheet='false'] {
+  z-index: 26;
+  top: 0;
+  right: auto;
+  bottom: auto;
+  left: 0;
+  width: 420px;
+  height: 196px;
+  max-width: calc(100% - 24px);
+  overflow: visible;
+  border: 1px solid #dbe7df;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px #153b2530;
+}
+.previewPanel[data-mobile-top-sheet='false']:not([data-anchor-visible='true']) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.previewPanel[data-mobile-top-sheet='false']::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: calc(var(--preview-arrow-x, 50%) - 7px);
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  border-right: 1px solid #dbe7df;
+  border-bottom: 1px solid #dbe7df;
+  background: inherit;
+}
+.previewPanel[data-anchor-placement='below']::after {
+  top: -8px;
+  bottom: auto;
+  transform: rotate(225deg);
+}
+.previewPanel[data-anchor-placement='beside']::after {
+  display: none;
+}
+:global(.dark) .previewPanel[data-mobile-top-sheet='false'],
+:global(.dark) .previewPanel[data-mobile-top-sheet='false']::after {
+  border-color: #344439;
 }
 :global(.dark) .search,
 :global(.dark) .results,

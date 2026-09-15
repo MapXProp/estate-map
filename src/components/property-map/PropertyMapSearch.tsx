@@ -87,6 +87,14 @@ const subscribeMobileViewport = (onChange: () => void) => {
   return () => media.removeEventListener('change', onChange)
 }
 const getMobileViewport = () => window.matchMedia('(max-width: 1023px)').matches
+// Keep the existing top sheet on phones, including short landscape screens.
+const phonePreviewQuery = '(max-width: 767px), (max-width: 1023px) and (max-height: 500px)'
+const subscribePhonePreview = (onChange: () => void) => {
+  const media = window.matchMedia(phonePreviewQuery)
+  media.addEventListener('change', onChange)
+  return () => media.removeEventListener('change', onChange)
+}
+const getPhonePreview = () => window.matchMedia(phonePreviewQuery).matches
 const groupIcons = { homes: House, business: Building2, rooms: KeyRound }
 const groupNames = {
   homes: ['ที่อยู่อาศัย', 'Homes'],
@@ -129,10 +137,11 @@ export default function PropertyMapSearch({
   const [mobileGroupOpen, setMobileGroupOpen] = useState(false)
   const shortViewport = useSyncExternalStore(subscribeShortViewport, getShortViewport, getServerShortViewport)
   const mobileViewport = useSyncExternalStore(subscribeMobileViewport, getMobileViewport, getServerShortViewport)
+  const phonePreview = useSyncExternalStore(subscribePhonePreview, getPhonePreview, getServerShortViewport)
   const [categoriesOverride, setCategoriesOpen] = useState<boolean>()
   const categoriesOpen = categoriesOverride ?? !shortViewport
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(true)
+  const [panelOpen, setPanelOpen] = useState(initialMapMode === 'projects' || Boolean(initialProject))
   const [mobileSheetSnap, setMobileSheetSnap] = useState<SheetSnap>(initialProject ? 'full' : 'peek')
   const mobilePanelOpen = mobileSheetSnap !== 'peek'
   const setMobilePanelOpen = useCallback((open: boolean) => setMobileSheetSnap(open ? 'full' : 'peek'), [])
@@ -393,9 +402,10 @@ export default function PropertyMapSearch({
       setSelectedProject(null)
       setPreviewSelection({ id, requestKey })
       setHoveredId('')
-      setPanelOpen(true)
+      setPanelOpen(false)
       setMobilePanelOpen(false)
       setMobileGroupOpen(false)
+      if (!window.matchMedia(phonePreviewQuery).matches) setCategoriesOpen(false)
     },
     [requestKey, setMobilePanelOpen]
   )
@@ -477,6 +487,7 @@ export default function PropertyMapSearch({
   const changeMapMode = (next: PropertyMapMode) => {
     if (next === mapMode) return
     setMapMode(next)
+    setPanelOpen(next === 'projects')
     setSelectedProject(null)
     setPreviewSelection(null)
     setHoveredId('')
@@ -500,6 +511,7 @@ export default function PropertyMapSearch({
   }
   const toggleCategory = (id: string) => setCategories((previous) => toggleMapCategory(previous, id))
   const togglePanel = () => {
+    if (!panelOpen) setPreviewSelection(null)
     setPanelOpen((previous) => !previous)
   }
   const toggleMobilePanel = () => {
@@ -510,8 +522,8 @@ export default function PropertyMapSearch({
     setMobilePanelOpen(!mobilePanelOpen)
   }
   const prepareMobileLocationSearch = () => {
-    if (!window.matchMedia('(max-width: 1023px)').matches) return
     setPreviewSelection(null)
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
     setMobilePanelOpen(false)
     setCategoriesOpen(false)
   }
@@ -531,7 +543,8 @@ export default function PropertyMapSearch({
   const propertyPreview = previewListing && (
     <MapPreviewPanel
       key="selected-property"
-      mobile={mobileViewport}
+      mobile={phonePreview}
+      listingId={previewListing.id}
       label={th ? 'ตัวอย่างประกาศที่เลือก' : 'Selected property preview'}
     >
       <MapPinPreview
@@ -540,6 +553,7 @@ export default function PropertyMapSearch({
         onClose={closeMapPreview}
         onBack={() => {
           setPreviewSelection(null)
+          setPanelOpen(true)
           setMobilePanelOpen(true)
           window.requestAnimationFrame(() => resultsHeadingRef.current?.focus({ preventScroll: true }))
         }}
@@ -550,7 +564,7 @@ export default function PropertyMapSearch({
   return (
     <main
       ref={searchRef}
-      data-map-mobile-preview={mobileViewport && Boolean(previewListing)}
+      data-map-mobile-preview={phonePreview && Boolean(previewListing)}
       className={styles.search}
       aria-label={th ? 'ค้นหาอสังหาบนแผนที่' : 'Find properties on the map'}
     >
@@ -558,7 +572,7 @@ export default function PropertyMapSearch({
       <section
         ref={categoriesRef}
         data-map-navigation
-        inert={mobileViewport && Boolean(previewListing)}
+        inert={phonePreview && Boolean(previewListing)}
         className={styles.categories}
         aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}
         onClickCapture={dismissMobilePreview}
@@ -835,6 +849,8 @@ export default function PropertyMapSearch({
         data-map-canvas
         data-mobile-results-open={mobilePanelOpen}
         data-map-preview-open={Boolean(previewListing)}
+        data-map-top-sheet={phonePreview && Boolean(previewListing)}
+        data-map-floating-layout={!phonePreview}
         className={`${styles.canvas} ${panelOpen ? styles.panelVisible : ''} ${mobilePanelOpen ? styles.mobilePanelVisible : ''}`}
       >
         <div className={styles.map}>
@@ -915,7 +931,7 @@ export default function PropertyMapSearch({
           )}
         </div>
         {!panelOpen && (
-          <button type="button" onClick={togglePanel} className={styles.openPanel}>
+          <button type="button" data-map-open-results onClick={togglePanel} className={styles.openPanel}>
             <List className="size-4" />
             {mapMode === 'projects'
               ? th
@@ -927,7 +943,7 @@ export default function PropertyMapSearch({
           </button>
         )}
 
-        <AnimatePresence initial={false}>{!mobileViewport && propertyPreview}</AnimatePresence>
+        <AnimatePresence initial={false}>{!phonePreview && propertyPreview}</AnimatePresence>
         <aside
           ref={panelRef}
           data-sheet-snap={mobileSheetSnap}
@@ -1210,7 +1226,7 @@ export default function PropertyMapSearch({
           )}
         </aside>
       </div>
-      <AnimatePresence initial={false}>{mobileViewport && propertyPreview}</AnimatePresence>
+      <AnimatePresence initial={false}>{phonePreview && propertyPreview}</AnimatePresence>
       <MapSearchDetails
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}

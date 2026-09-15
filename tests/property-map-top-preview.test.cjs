@@ -11,6 +11,7 @@ function panel({ mobile = true, present = true, reduced = false } = {}) {
     require: (name) =>
       ({
         'react/jsx-runtime': require('react/jsx-runtime'),
+        '@/hooks/useMapAnchoredPreview': { useMapAnchoredPreview: () => null },
         'framer-motion': {
           motion: { aside: 'test-motion-aside' },
           useIsPresent: () => present,
