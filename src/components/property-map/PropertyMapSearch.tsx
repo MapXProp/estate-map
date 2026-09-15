@@ -531,7 +531,6 @@ export default function PropertyMapSearch({
               </span>
             )}
           </div>
-          <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
           <div className={styles.toolbar} data-map-search-controls data-offer-layout={offerLayout}>
             <MapOfferControls
               value={filters.offerTypes}
@@ -624,9 +623,12 @@ export default function PropertyMapSearch({
                     </button>
                   </>
                 )}
-                <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
               </div>
             </div>
+          </div>
+          <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
+          <div className={styles.accountControl}>
+            <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
           </div>
         </header>
         {mapMode === 'listings' && (

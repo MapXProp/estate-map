@@ -2,12 +2,12 @@
 
 import type { OfferTypeCode } from '@/data/propertyTaxonomy'
 import { toggleMapOffer } from '@/lib/propertyMapSearch'
-import { Check } from 'lucide-react'
+import { Check, House, KeyRound, type LucideIcon } from 'lucide-react'
 import styles from './MapOfferControls.module.css'
 
-const options: Array<{ value: OfferTypeCode; th: string; en: string }> = [
-  { value: 'sale', th: 'ซื้อ', en: 'Buy' },
-  { value: 'rent', th: 'เช่า', en: 'Rent' },
+const options: Array<{ value: OfferTypeCode; th: string; en: string; icon: LucideIcon }> = [
+  { value: 'sale', th: 'ซื้อ', en: 'Buy', icon: House },
+  { value: 'rent', th: 'เช่า', en: 'Rent', icon: KeyRound },
 ]
 
 export default function MapOfferControls({
@@ -37,10 +37,11 @@ export default function MapOfferControls({
             aria-pressed={value.includes(offer.value)}
             onClick={() => onChange(toggleMapOffer(value, offer.value))}
           >
+            <offer.icon className={styles.offerIcon} aria-hidden="true" strokeWidth={2} />
+            {th ? offer.th : offer.en}
             <span className={styles.check}>
               <Check aria-hidden="true" strokeWidth={2.5} />
             </span>
-            {th ? offer.th : offer.en}
           </button>
         ))}
       </div>

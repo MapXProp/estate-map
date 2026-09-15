@@ -1,96 +1,117 @@
 .controls {
   flex-shrink: 0;
-  color: #435f50;
 }
 .primary {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 .primary button {
+  --offer-ink: #a82f1c;
+  --offer-start: #c74426;
+  --offer-end: #a82f1c;
+  --offer-edge: #e98663;
+  --offer-selected-ink: #fff;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   min-height: 44px;
-  min-width: 60px;
-  padding: 0 10px;
-  border: 1px solid #cddbd2;
-  border-radius: 10px;
+  min-width: 72px;
+  padding: 0 12px;
+  border: 1px solid #ead6c6;
+  border-radius: 14px;
+  background: #fffaf5;
+  color: var(--offer-ink);
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+.primary button[data-map-offer='rent'] {
+  --offer-ink: #97440b;
+  --offer-start: #ffb248;
+  --offer-end: #f69321;
+  --offer-edge: #f5b85e;
+  --offer-selected-ink: #542700;
 }
 .primary button[aria-pressed='true'] {
-  background: #176b50;
-  border-color: #176b50;
-  color: #fff;
-  box-shadow: 0 2px 5px #173e291a;
+  border-color: var(--offer-edge);
+  background: linear-gradient(145deg, var(--offer-start), var(--offer-end));
+  color: var(--offer-selected-ink);
+  box-shadow:
+    inset 0 1px 0 #ffffff30,
+    0 3px 8px #a849171f;
+}
+.offerIcon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
 }
 .check {
+  position: absolute;
+  top: 3px;
+  right: 3px;
   display: grid;
   place-items: center;
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
-  border: 1px solid #b9c7bc;
-  border-radius: 4px;
-  background: #fff;
-}
-.check svg {
   width: 10px;
   height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--offer-ink);
   opacity: 0;
 }
-[aria-pressed='true'] > .check {
-  background: #fff;
-  border-color: #fff;
-  color: #176b50;
+.check svg {
+  width: 8px;
+  height: 8px;
 }
-[aria-pressed='true'] > .check svg {
+[aria-pressed='true'] > .check {
   opacity: 1;
 }
 .primary button:hover {
-  background: #edf6f1;
+  border-color: var(--offer-edge);
+  box-shadow: 0 2px 7px #a849171f;
 }
 .primary button[aria-pressed='true']:hover {
-  background: #12563f;
-  border-color: #12563f;
+  background: var(--offer-end);
 }
 .primary button:focus-visible {
-  outline: 2px solid #176b50;
-  outline-offset: 2px;
+  outline: 2px solid #bd491b;
+  outline-offset: 3px;
 }
 @media (max-width: 639px) {
-  .primary button {
-    min-width: 52px;
-    padding-inline: 7px;
-    font-size: 12px;
+  .primary {
     gap: 4px;
   }
+  .primary button {
+    min-width: 54px;
+    padding-inline: 8px;
+    font-size: 13px;
+    gap: 5px;
+  }
+  .offerIcon {
+    width: 16px;
+    height: 16px;
+  }
 }
-:global(.dark) .controls {
-  color: #d0dcd2;
+@media (prefers-reduced-motion: reduce) {
+  .primary button {
+    transition: none;
+  }
 }
-:global(.dark) .primary button {
-  border-color: #485b4d;
+:global(.dark) .primary button:not([aria-pressed='true']) {
+  background: #2b241f;
+  border-color: #72553f;
+  color: #f9c298;
 }
 :global(.dark) .primary button[aria-pressed='true'] {
-  background: #237f59;
-  border-color: #32986d;
-  color: #fff;
-}
-:global(.dark) .check {
-  border-color: #7c9382;
-  background: #24342a;
-}
-:global(.dark) [aria-pressed='true'] > .check {
-  background: #fff;
-  border-color: #fff;
+  box-shadow:
+    inset 0 1px 0 #ffffff30,
+    0 3px 10px #e8752926;
 }
 :global(.dark) .primary button:hover {
-  background: #304337;
-}
-:global(.dark) .primary button[aria-pressed='true']:hover {
-  background: #299467;
+  border-color: var(--offer-edge);
 }
