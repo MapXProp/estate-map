@@ -24,13 +24,11 @@ import {
   defaultMapOfferTypes,
   fetchCompleteMapSearch,
   hasMapCoordinates,
-  hasMapLandSelection,
   initialMapCategories,
   initialMapOfferTypes,
   isDefaultMapOffers,
   isLandOnlyMapSelection,
   isMixedUseMapCategory,
-  landMapCategoryIds,
   mapCategoryGroups,
   mapListingPrice,
   mapOfferSearchValues,
@@ -51,7 +49,6 @@ import {
   ChevronUp,
   House,
   KeyRound,
-  LandPlot,
   Link2,
   List,
   LoaderCircle,
@@ -594,20 +591,6 @@ export default function PropertyMapSearch({
             <div className={styles.headerActions}>
               {mapMode === 'listings' && (
                 <>
-                  <button
-                    type="button"
-                    data-map-land-shortcut
-                    aria-pressed={hasMapLandSelection(categories)}
-                    onClick={() => {
-                      toggleCategory(landMapCategoryIds[0])
-                      setMobileGroup('homes')
-                      setMobileGroupOpen(true)
-                    }}
-                    className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
-                  >
-                    <LandPlot className="size-4" />
-                    {th ? 'ที่ดิน' : 'Land'}
-                  </button>
                   <button
                     type="button"
                     aria-pressed={!categories.length}
