@@ -23,6 +23,7 @@ export type MapProject = {
   slug: string
   name: string
   nameEn: string
+  displayName?: string
   category: string
   location: { lat: number; lon: number }
   listingIds: string[]
@@ -34,6 +35,7 @@ export type MapProjectDetails = {
   slug: string
   name_th: string
   name_en: string
+  display_name?: string
   project_category: string
   district: string
   province: string
@@ -55,6 +57,7 @@ export function mapProjectSearchSeed(project: MapProjectDetails, fallback?: MapP
     slug: project.slug,
     name: project.name_th,
     nameEn: project.name_en,
+    displayName: project.display_name,
     category: project.project_category,
     location,
     listingIds: fallback?.id === project.public_project_id ? fallback.listingIds : [],
@@ -90,6 +93,7 @@ export function groupMapProjects(listings: TRealEstateListing[]): MapProject[] {
         slug: listing.projectSlug,
         name: listing.projectName,
         nameEn: listing.projectNameEn,
+        displayName: listing.projectDisplayName,
         category: listing.projectCategory,
         location,
         listingIds: [listing.id],

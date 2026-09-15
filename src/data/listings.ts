@@ -1196,6 +1196,7 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     viewCount: listing.view_count || 0,
     projectName: listing.project_name || '',
     projectNameEn: listing.project_name_en || listing.project_name || '',
+    projectDisplayName: listing.project_display_name || listing.project_name_en || listing.project_name || '',
     projectPublicId: listing.project_public_id || '',
     projectSlug: listing.project_slug || '',
     projectCategory: listing.project_category || '',

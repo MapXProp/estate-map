@@ -48,7 +48,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
       caption: item.title || item.alt_text,
     }))
   const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
-  const projectDisplayName = listing.project_name_en || listing.project_name
+  const projectDisplayName = listing.project_display_name || listing.project_name_en || listing.project_name
   const price = formatPrice(listing, isThai, formatCurrencyFrom)
   const formatRetailAmount = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const retailTerms =

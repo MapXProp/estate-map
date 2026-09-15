@@ -13,7 +13,7 @@ export const mapSearchName = (value: string) =>
 
 export const projectSearchSuggestion = (project: MapProjectDetails): MapSearchSuggestion => ({
   kind: 'project',
-  label: project.name_en || project.name_th,
+  label: project.display_name || project.name_en || project.name_th,
   project,
 })
 

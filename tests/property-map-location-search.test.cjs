@@ -32,6 +32,21 @@ const project = (id, category = 'condominium') => ({
 })
 const plain = (value) => JSON.parse(JSON.stringify(value))
 
+test('a village displays its preferred Thai name while its English name and aliases remain searchable', () => {
+  const m = model()
+  const village = {
+    ...project('nimittra'),
+    name_th: 'หมู่บ้านนิมิตรา',
+    name_en: 'Nimittra',
+    display_name: 'หมู่บ้านนิมิตรา',
+    aliases: ['Nimittra Bang Kruai'],
+  }
+  assert.equal(m.projectSearchSuggestion(village).label, 'หมู่บ้านนิมิตรา')
+  for (const query of ['หมู่บ้านนิมิตรา', 'Nimittra', 'Nimittra Bang Kruai'])
+    assert.equal(m.preferredMapProject(query, [village, project('condo')]), village)
+  assert.equal(m.projectSearchSuggestion(project('condo')).label, 'The Address Sathorn')
+})
+
 test('project mode ranks all registered project types before places and deduplicates each source', async () => {
   const projects = ['condominium', 'housing_estate', 'commercial_complex'].map((type, i) => project(String(i), type))
   const m = model(async (url) =>

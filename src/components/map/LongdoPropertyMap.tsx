@@ -212,7 +212,7 @@ export type PropertyMapViewport = {
 }
 
 export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean) => {
-  const name = project.nameEn || project.name
+  const name = project.displayName || project.nameEn || project.name
   const label = isThai ? 'ดูประกาศทั้งหมดในโครงการ' : 'View all listings in this project'
   const count = project.listingCount ?? project.listingIds.length
   const countLabel =
@@ -799,7 +799,7 @@ const LongdoPropertyMap = ({
             router.push(
               `/properties/map?map_mode=projects&project=${encodeURIComponent(project.slug || project.public_project_id)}`
             )
-          setSearchText(project.name_en || project.name_th)
+          setSearchText(project.display_name || project.name_en || project.name_th)
           setIsSearchFocused(false)
           searchInputRef.current?.blur()
           return

@@ -68,6 +68,7 @@ export type PropertySearchListing = {
   project_public_id?: string
   project_slug?: string
   project_name_en?: string
+  project_display_name?: string
   project_category?: string
   project_latitude?: number
   project_longitude?: number
@@ -192,6 +193,7 @@ export type PropertyListingDetail = {
   project_public_id?: string
   project_slug?: string
   project_name_en?: string
+  project_display_name?: string
   project_category?: string
   building_name: string
   address: string

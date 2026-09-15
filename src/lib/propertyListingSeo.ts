@@ -52,7 +52,7 @@ export const getListingSeoDescription = (listing: PropertyListingDetail) => {
   return cleanSeoText(
     [
       `${offer}${type}`,
-      listing.project_name_en || listing.project_name,
+      listing.project_display_name || listing.project_name_en || listing.project_name,
       listing.address,
       listing.district,
       listing.province,

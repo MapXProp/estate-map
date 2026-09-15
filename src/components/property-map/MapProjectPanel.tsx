@@ -67,7 +67,8 @@ export default function MapProjectPanel({
     if (scrollRef.current) scrollRef.current.scrollTop = 0
   }, [offer, sort])
   const project = data?.project
-  const name = project?.name_en || seed?.nameEn || project?.name_th || seed?.name
+  const name =
+    project?.display_name || seed?.displayName || project?.name_en || seed?.nameEn || project?.name_th || seed?.name
   const category = project?.project_category || seed?.category
   const categoryLabel = projectCategoryLabel(category || '', th)
   const counts = {

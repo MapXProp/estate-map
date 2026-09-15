@@ -337,7 +337,7 @@ export default function PropertyMapSearch({
               location.lon <= area.maxLon)
         )
         .sort((a, b) =>
-          (th ? a.name : a.nameEn || a.name).localeCompare(th ? b.name : b.nameEn || b.name, th ? 'th' : 'en')
+          (a.displayName || a.nameEn || a.name).localeCompare(b.displayName || b.nameEn || b.name, th ? 'th' : 'en')
         ),
     [mapProjects, area, th]
   )
