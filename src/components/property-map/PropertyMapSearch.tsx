@@ -608,22 +608,22 @@ export default function PropertyMapSearch({
                 </button>
               </div>
             </div>
-            <div className={styles.headerActions}>
-              <button
-                type="button"
-                onClick={reset}
-                className={styles.resetButton}
-                data-map-reset
-                disabled={!hasFilters}
-                aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
-                title={
-                  th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
-                }
-              >
-                <RotateCcw className="size-3.5" aria-hidden="true" />
-                <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
-              </button>
-              {mapMode === 'listings' && (
+            {mapMode === 'listings' && (
+              <div className={styles.headerActions}>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className={styles.resetButton}
+                  data-map-reset
+                  disabled={!hasFilters}
+                  aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
+                  title={
+                    th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
+                  }
+                >
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
+                </button>
                 <button
                   type="button"
                   data-map-categories-toggle
@@ -654,8 +654,8 @@ export default function PropertyMapSearch({
                     <ChevronDown className="size-4" aria-hidden="true" />
                   )}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
           <div className={styles.accountControl}>
