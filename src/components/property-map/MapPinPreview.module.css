@@ -216,7 +216,7 @@
   padding: 10px 12px;
   background: #fff;
 }
-.galleryButton,
+.mapsButton,
 .details {
   display: flex;
   min-height: 44px;
@@ -229,7 +229,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.galleryButton {
+.mapsButton {
   background: #f8faf8;
   color: #3b6250;
 }
@@ -304,9 +304,10 @@
 .preview {
   position: relative;
   display: grid;
-  grid-template-columns: clamp(124px, 38%, 210px) minmax(0, 1fr);
+  grid-template-columns: 44% minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) 44px;
   column-gap: 12px;
+  row-gap: 8px;
   padding: 8px 12px 8px 8px;
 }
 .body {
@@ -314,7 +315,7 @@
 }
 .media {
   grid-column: 1;
-  grid-row: 1 / -1;
+  grid-row: 1;
   min-height: 0;
   height: 100%;
   aspect-ratio: auto;
@@ -364,8 +365,10 @@
   padding: 0;
 }
 .price {
-  margin-top: 2px;
-  font-size: clamp(18px, 4.4vw, 25px);
+  margin-top: 7px;
+  color: #456452;
+  font-size: 18px;
+  font-weight: 600;
 }
 .category {
   display: block;
@@ -379,18 +382,30 @@
   display: none;
 }
 .title {
-  margin-top: 3px;
-  font-size: 13px;
+  margin-top: 2px;
+  margin-right: 20px;
+  font-size: 14px;
   line-height: 1.4;
+}
+.listingTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: 4px;
+  color: #607569;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 .quickFacts {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
-  margin-top: 8px;
+  margin-top: 6px;
   color: #456452;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 18px;
 }
 .quickFacts > span {
@@ -409,21 +424,29 @@
 }
 .address,
 .facts,
-.retry,
-.galleryButton {
+.retry {
   display: none;
 }
 .footer {
-  grid-column: 2;
+  grid-column: 1 / -1;
   grid-row: 2;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
   border-top: 0;
   padding: 0;
   background: transparent;
 }
+.mapsButton,
 .details {
   width: 100%;
   font-size: 12px;
+}
+.details:only-child {
+  grid-column: 1 / -1;
+}
+.mapsButton:hover {
+  background: #edf4ef;
+  border-color: #b9cebf;
 }
 .noImage {
   gap: 5px;
@@ -431,8 +454,36 @@
   font-size: 11px;
 }
 @media (max-width: 1023px) and (max-height: 520px) {
+  .preview {
+    grid-template-columns: min(32%, 240px) minmax(0, 1fr);
+  }
+  .media {
+    grid-row: 1 / -1;
+  }
+  .footer {
+    grid-column: 2;
+  }
+  .title,
+  .listingTitle {
+    -webkit-line-clamp: 1;
+  }
   .quickFacts {
     display: none;
+  }
+}
+@media (max-width: 359px) and (min-height: 521px) {
+  .preview {
+    column-gap: 8px;
+    padding-right: 8px;
+  }
+  .price {
+    font-size: 17px;
+  }
+  .quickFacts {
+    gap: 3px;
+  }
+  .quickFacts > span {
+    padding-inline: 4px;
   }
 }
 @media (max-width: 1023px) and (max-height: 440px) {
@@ -464,6 +515,7 @@
   background: #25392e;
 }
 :global(.dark) .category,
+:global(.dark) .listingTitle,
 :global(.dark) .address,
 :global(.dark) .back {
   color: #a0b6a8;
@@ -472,7 +524,7 @@
 :global(.dark) .facts {
   color: #8bdbb4;
 }
-:global(.dark) .galleryButton {
+:global(.dark) .mapsButton {
   border-color: #42564a;
   background: #233a2c;
   color: #dbeddf;

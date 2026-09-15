@@ -939,7 +939,7 @@
     bottom: auto;
     left: 0;
     width: auto;
-    height: min(224px, max(204px, calc(var(--mobile-preview-height, 154px) + 48px)), 38dvh);
+    height: min(248px, 46dvh);
     border: 0;
     border-bottom: 1px solid #dbe7df;
     border-radius: 0 0 22px 22px;
@@ -1359,8 +1359,8 @@
   right: auto;
   bottom: auto;
   left: 0;
-  width: 420px;
-  height: 196px;
+  width: 480px;
+  height: 236px;
   max-width: calc(100% - 24px);
   overflow: visible;
   border: 1px solid #dbe7df;

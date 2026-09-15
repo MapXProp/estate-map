@@ -42,6 +42,14 @@ test('photo arrows wrap in both directions and remain valid with zero or one ima
   assert.equal(model.stepMapPreviewImage(0, -1, 0), 0)
 })
 
+test('Google Maps uses the listing coordinates and does not invent locations when coordinates are unavailable', () => {
+  assert.equal(model.getMapPreviewGoogleMapsUrl({ lat: 13.7218, lng: 100.5278 }), 'https://www.google.com/maps/search/?api=1&query=13.7218%2C100.5278')
+  assert.equal(model.getMapPreviewGoogleMapsUrl({ lat: 0, lng: 0 }), 'https://www.google.com/maps/search/?api=1&query=0%2C0')
+  for (const location of [undefined, { lat: NaN, lng: 100 }, { lat: 13, lng: Infinity }, { lat: 91, lng: 100 }, { lat: 13, lng: -181 }]) {
+    assert.equal(model.getMapPreviewGoogleMapsUrl(location), null)
+  }
+})
+
 test('full gallery excludes videos and rejects unrelated or unavailable listing responses', () => {
   const detail = {
     slug: 'old-land',
@@ -96,6 +104,7 @@ test('preview renders photos, price, area and a separate details link; missing p
     priceCurrency: 'THB',
     address: 'ถนนสุทธิสาร กรุงเทพ',
     metadataSummary: '700 ตร.ว.',
+    map: { lat: 13.7218, lng: 100.5278 },
   }
   const render = (item, props = {}) =>
     renderToStaticMarkup(React.createElement(Preview, { listing: item, onBack() {}, onClose() {}, ...props }))
@@ -110,6 +119,8 @@ test('preview renders photos, price, area and a separate details link; missing p
   ])
     assert.ok(html.includes(text), text)
   assert.ok(html.includes(`href="/real-estate-listings/${listing.handle}"`))
+  assert.ok(html.includes('https://www.google.com/maps/search/?api=1&amp;query=13.7218%2C100.5278'))
+  assert.ok(html.includes('target="_blank" rel="noopener noreferrer"'))
   assert.equal((html.match(/<img /g) || []).length, 1)
   const empty = render({ ...listing, featuredImage: '' })
   assert.ok(empty.includes('ยังไม่มีรูปภาพ'))
@@ -117,4 +128,12 @@ test('preview renders photos, price, area and a separate details link; missing p
   assert.equal((empty.match(/<img /g) || []).length, 0)
   assert.ok(!html.includes('data-mobile-collapsed'))
   assert.ok(!html.includes('data-map-expand-preview'))
+  const project = render({ ...listing, projectDisplayName: 'The Address Sathorn' })
+  assert.ok(project.includes('The Address Sathorn'))
+  assert.match(project, /<p[^>]*data-map-preview-title[^>]*>ขายที่ดิน สุทธิสาร<\/p>/)
+  const duplicate = render({ ...listing, projectDisplayName: listing.title })
+  assert.ok(!duplicate.includes('data-map-preview-title='))
+  const unmapped = render({ ...listing, map: undefined })
+  assert.ok(!unmapped.includes('data-map-preview-google-maps'))
+  assert.ok(unmapped.includes('ดูรายละเอียด'))
 })

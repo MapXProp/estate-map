@@ -17,3 +17,15 @@ export function getMapPreviewGallery(detail: PropertyListingDetail | null, ident
 export function stepMapPreviewImage(index: number, direction: number, count: number) {
   return count > 0 ? (((index + direction) % count) + count) % count : 0
 }
+
+export function getMapPreviewGoogleMapsUrl(location?: { lat: number; lng: number }) {
+  if (
+    !location ||
+    !Number.isFinite(location.lat) ||
+    !Number.isFinite(location.lng) ||
+    Math.abs(location.lat) > 90 ||
+    Math.abs(location.lng) > 180
+  )
+    return null
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.lat},${location.lng}`)}`
+}

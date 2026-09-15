@@ -4,7 +4,12 @@ import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import type { TRealEstateListing } from '@/data/listings'
 import { getPropertyType, offerTypes } from '@/data/propertyTaxonomy'
-import { getMapPreviewGallery, getMapPreviewImages, stepMapPreviewImage } from '@/lib/propertyMapPreview'
+import {
+  getMapPreviewGallery,
+  getMapPreviewGoogleMapsUrl,
+  getMapPreviewImages,
+  stepMapPreviewImage,
+} from '@/lib/propertyMapPreview'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { fetchPropertyListingDetail } from '@/lib/propertySearch'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -41,6 +46,8 @@ export default function MapPinPreview({
   const th = locale === 'th'
   const title = th ? listing.title : listing.titleEn || listing.title
   const headline = listing.projectDisplayName || listing.projectNameEn || listing.projectName || title
+  const showListingTitle = title.trim().toLocaleLowerCase() !== headline.trim().toLocaleLowerCase()
+  const googleMapsUrl = getMapPreviewGoogleMapsUrl(listing.map)
   const [images, setImages] = useState(() => getMapPreviewImages(listing.featuredImage, listing.galleryImgs))
   const [imageIndex, setImageIndex] = useState(0)
   const [galleryOpen, setGalleryOpen] = useState(false)
@@ -153,7 +160,7 @@ export default function MapPinPreview({
         src={activeImage}
         alt={`${title} · ${th ? 'รูป' : 'Photo'} ${imageIndex + 1}`}
         fill
-        sizes={fullscreen ? '100vw' : '(min-width: 768px) 160px, (min-width: 560px) 210px, 38vw'}
+        sizes={fullscreen ? '100vw' : '(min-width: 768px) 240px, 44vw'}
         className={styles.image}
         onError={() => setFailedImages((previous) => [...previous, activeImage])}
       />
@@ -278,13 +285,18 @@ export default function MapPinPreview({
             {category} · {offer}
             {listing.isMapPromoted && <span>{th ? 'โปรโมต' : 'Promoted'}</span>}
           </p>
+          <h2 id="map-preview-heading" tabIndex={-1} ref={headingRef} className={styles.title} title={title}>
+            {headline}
+          </h2>
+          {showListingTitle && (
+            <p className={styles.listingTitle} data-map-preview-title title={title}>
+              {title}
+            </p>
+          )}
           <p className={styles.price}>
             {price}
             <span>{period}</span>
           </p>
-          <h2 id="map-preview-heading" tabIndex={-1} ref={headingRef} className={styles.title} title={title}>
-            {headline}
-          </h2>
           {quickFacts.length > 0 && (
             <div className={styles.quickFacts} data-map-preview-facts>
               {quickFacts.map(({ icon: Icon, text, label }) => (
@@ -312,15 +324,21 @@ export default function MapPinPreview({
         </div>
       </div>
       <footer className={styles.footer}>
-        <button
-          type="button"
-          className={styles.galleryButton}
-          disabled={!imageAvailable}
-          onClick={() => setGalleryOpen(true)}
-        >
-          <Maximize2 className="size-4" />
-          {th ? 'ดูรูปเต็ม' : 'Full photos'}
-        </button>
+        {googleMapsUrl && (
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.mapsButton}
+            data-map-preview-google-maps
+            aria-label={
+              th ? 'เปิดตำแหน่งประกาศใน Google Maps (แท็บใหม่)' : 'Open property location in Google Maps (new tab)'
+            }
+          >
+            <MapPin className="size-4" aria-hidden="true" />
+            {th ? 'เปิด Google Maps' : 'Google Maps'}
+          </a>
+        )}
         <Link
           href={`/real-estate-listings/${encodeURIComponent(listing.handle)}`}
           scroll={false}
