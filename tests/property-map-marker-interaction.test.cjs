@@ -584,7 +584,26 @@ test('dot and price are separate accessible links, escape content and preserve n
   assert.equal((legacy.match(/<a\s/g) || []).length, 1)
 })
 
-test('map interaction callback runs after a completed primary gesture without moving the camera', () => {
+test('mouse press folds map controls before release, once per gesture, without changing the camera', () => {
+  const h = harness(1440)
+  let folds = 0
+  h.render({ onMapInteraction: () => folds++ })
+  h.startMapGesture({ pointerType: 'mouse' })
+  assert.equal(folds, 1, 'fold synchronously on primary mouse down')
+  h.moveMapGesture({ clientX: 160 })
+  h.finishMapGesture({ pointerType: 'mouse', clientX: 160 })
+  h.render()
+  assert.equal(folds, 1, 'mouse up does not fold again')
+  h.startMapGesture({ pointerType: 'mouse', button: 2 })
+  h.finishMapGesture({ pointerType: 'mouse', button: 2 })
+  h.startMapGesture({ pointerType: 'mouse', isPrimary: false })
+  h.finishMapGesture({ pointerType: 'mouse', isPrimary: false })
+  h.render()
+  assert.equal(folds, 1, 'secondary presses do not fold')
+  assert.deepEqual(h.calls, [])
+})
+
+test('touch map interaction callback waits for a completed primary gesture without moving the camera', () => {
   const h = harness(390)
   let completed = 0
   h.render({ onMapInteraction: () => completed++ })

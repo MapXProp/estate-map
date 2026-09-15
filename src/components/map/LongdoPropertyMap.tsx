@@ -1291,7 +1291,9 @@ const LongdoPropertyMap = ({
           declutterMarkersRef.current()
         }}
         onPointerDownCapture={(event) => {
-          singlePointerGestureRef.current = event.isPrimary && event.button === 0
+          const primaryPress = event.isPrimary && event.button === 0
+          singlePointerGestureRef.current = primaryPress && event.pointerType !== 'mouse'
+          if (primaryPress && event.pointerType === 'mouse') onMapInteraction?.()
           const target = event.target
           backgroundTapRef.current =
             event.isPrimary &&
@@ -1314,7 +1316,7 @@ const LongdoPropertyMap = ({
             tap.moved = true
         }}
         onPointerUpCapture={(event) => {
-          // Finish a one-finger tap/drag before resizing; never fold during a pinch.
+          // Mouse presses already folded on pointer down. Wait for touch gestures to finish so pinching stays stable.
           if (singlePointerGestureRef.current && event.isPrimary && event.button === 0 && onMapInteraction)
             window.requestAnimationFrame(onMapInteraction)
           const tap = backgroundTapRef.current
