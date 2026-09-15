@@ -480,8 +480,9 @@ export default function PropertyMapSearch({
     setMobilePanelOpen(false)
     setCategoriesOpen(false)
   }
-  const collapseMobileCategories = useCallback(() => {
+  const collapseCategories = useCallback(() => {
     if (window.matchMedia('(max-width: 1023px)').matches) setMobileGroupOpen(false)
+    else setCategoriesOpen(false)
   }, [])
   const dismissMobilePreview = useCallback(() => {
     if (!window.matchMedia('(max-width: 1023px)').matches) return
@@ -812,7 +813,7 @@ export default function PropertyMapSearch({
               onMarkerSelect={selectMapMarker}
               onProjectSelect={selectMapProject}
               selectedProjectId={selectedProject?.id}
-              onMapInteraction={collapseMobileCategories}
+              onMapInteraction={collapseCategories}
               onMapBackgroundTap={dismissMobilePreview}
               initialCenter={center}
               initialZoom={zoom}

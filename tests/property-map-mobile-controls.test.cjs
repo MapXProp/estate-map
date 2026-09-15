@@ -216,12 +216,21 @@ test('tabs reopen after location search has collapsed the entire category sectio
   assert.equal(h.nodes((node) => node.props?.['data-map-category-group']).length, 3)
 })
 
-test('desktop map interactions leave the category section expanded', () => {
-  const h = harness(1440)
-  h.map().onMapInteraction()
-  h.render()
-  assert.equal(h.nodes((node) => node.props?.['data-map-category-group']).length, 3)
-  assert.equal(h.data('aria-controls', 'map-category-options').props['aria-expanded'], true)
+test('desktop map interactions fold categories and the arrow restores their selection without moving the camera', () => {
+  for (const width of [1024, 1440, 1920]) {
+    const h = harness(width)
+    h.click(h.data('data-map-category', 'homes:condo'))
+    h.map().onMapInteraction()
+    h.render()
+    assert.equal(h.nodes((node) => node.props?.['data-map-category-group']).length, 0)
+    assert.equal(h.data('aria-controls', 'map-category-options').props['aria-expanded'], false)
+    assert.equal(h.map().initialCenter, h.center)
+    assert.equal(h.map().initialZoom, 15)
+    h.click(h.data('aria-controls', 'map-category-options'))
+    assert.equal(h.nodes((node) => node.props?.['data-map-category-group']).length, 3)
+    assert.equal(h.data('data-map-category', 'homes:condo').props['aria-pressed'], true)
+    assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['sale', 'rent'])
+  }
 })
 
 test('folding and reopening desktop categories never requests a map resize or changes its camera', () => {
