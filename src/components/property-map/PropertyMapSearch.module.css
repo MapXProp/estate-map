@@ -904,7 +904,7 @@
   .logo {
     width: clamp(76px, 20vw, 96px);
   }
-  .headerActions,
+  .allCategoriesButton,
   .categoryPanelActions,
   .accountControl {
     display: none;

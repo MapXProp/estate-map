@@ -1319,7 +1319,7 @@ const LongdoPropertyMap = ({
             height: 44px;
           }
           .mapx-exact-coordinates .mapx-price-details-link {
-            bottom: 24px;
+            bottom: 8px;
           }
         }
       `}</style>

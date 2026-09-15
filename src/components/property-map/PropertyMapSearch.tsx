@@ -606,25 +606,23 @@ export default function PropertyMapSearch({
                     </span>
                   )}
                 </button>
-                <button
-                  type="button"
-                  onClick={reset}
-                  className={styles.resetButton}
-                  data-map-reset
-                  disabled={!hasFilters}
-                  aria-label={
-                    th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'
-                  }
-                  title={
-                    th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
-                  }
-                >
-                  <RotateCcw className="size-3.5" aria-hidden="true" />
-                  <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
-                </button>
               </div>
             </div>
             <div className={styles.headerActions}>
+              <button
+                type="button"
+                onClick={reset}
+                className={styles.resetButton}
+                data-map-reset
+                disabled={!hasFilters}
+                aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
+                title={
+                  th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
+                }
+              >
+                <RotateCcw className="size-3.5" aria-hidden="true" />
+                <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
+              </button>
               {mapMode === 'listings' && (
                 <button
                   type="button"
