@@ -369,9 +369,17 @@
   align-items: center;
   gap: 8px;
 }
-.searchActions {
+.primaryControls {
   display: flex;
   flex: 1;
+  min-width: max-content;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.searchActions {
+  display: flex;
+  flex: 0 0 auto;
   min-width: 0;
   align-items: center;
   gap: 8px;
@@ -1263,6 +1271,9 @@
     width: 64px;
   }
   .toolbar {
+    gap: 6px;
+  }
+  .primaryControls {
     gap: 6px;
   }
   .resetButton {

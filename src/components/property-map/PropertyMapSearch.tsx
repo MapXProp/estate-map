@@ -532,98 +532,102 @@ export default function PropertyMapSearch({
             )}
           </div>
           <div className={styles.toolbar} data-map-search-controls data-offer-layout={offerLayout}>
-            <MapOfferControls
-              value={filters.offerTypes}
-              onChange={(offerTypes) => setFilters((previous) => ({ ...previous, offerTypes }))}
-              th={th}
-              layout={offerLayout}
-            />
-            <div className={styles.searchActions}>
-              <button
-                type="button"
-                data-map-details-toggle
-                aria-label={
-                  th
-                    ? `ตัวกรองเพิ่มเติม${detailsCount ? ` (${detailsCount})` : ''}`
-                    : `More filters${detailsCount ? ` (${detailsCount})` : ''}`
-                }
-                onClick={() => setDetailsOpen(true)}
-                className={`${styles.detailsButton} ${detailsCount > 0 ? styles.activeDetailsButton : ''}`}
-              >
-                <SlidersHorizontal className="size-4" />
-                <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
-                {detailsCount > 0 && (
-                  <span className={`${styles.detailsCount} rounded-full bg-[#176b50] px-1.5 text-[10px] text-white`}>
-                    {detailsCount}
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={reset}
-                className={styles.resetButton}
-                data-map-reset
-                disabled={!hasFilters}
-                aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
-                title={
-                  th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
-                }
-              >
-                <RotateCcw className="size-3.5" aria-hidden="true" />
-                <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
-              </button>
-              <div className={styles.headerActions}>
-                {mapMode === 'listings' && (
-                  <>
-                    <button
-                      type="button"
-                      data-map-land-shortcut
-                      aria-pressed={hasMapLandSelection(categories)}
-                      onClick={() => {
-                        toggleCategory(landMapCategoryIds[0])
-                        setMobileGroup('homes')
-                        setMobileGroupOpen(true)
-                      }}
-                      className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
-                    >
-                      <LandPlot className="size-4" />
-                      {th ? 'ที่ดิน' : 'Land'}
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={!categories.length}
-                      onClick={() => setCategories([])}
-                      className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
-                    >
-                      {th ? 'ทุกหมวด' : 'All types'}
-                    </button>
-                    <button
-                      type="button"
-                      aria-expanded={categoriesOpen}
-                      aria-controls="map-category-options"
-                      onClick={() => {
-                        if (!categoriesOpen) {
-                          setMobilePanelOpen(false)
-                          if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
-                        }
-                        setCategoriesOpen(!categoriesOpen)
-                      }}
-                      className={styles.collapseCategoriesButton}
-                      aria-label={
-                        categoriesOpen
-                          ? th
-                            ? 'ย่อหมวดหมู่'
-                            : 'Collapse categories'
-                          : th
-                            ? 'แสดงหมวดหมู่'
-                            : 'Expand categories'
-                      }
-                    >
-                      {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                    </button>
-                  </>
-                )}
+            <div className={styles.primaryControls} data-map-primary-controls>
+              <MapOfferControls
+                value={filters.offerTypes}
+                onChange={(offerTypes) => setFilters((previous) => ({ ...previous, offerTypes }))}
+                th={th}
+                layout={offerLayout}
+              />
+              <div className={styles.searchActions}>
+                <button
+                  type="button"
+                  data-map-details-toggle
+                  aria-label={
+                    th
+                      ? `ตัวกรองเพิ่มเติม${detailsCount ? ` (${detailsCount})` : ''}`
+                      : `More filters${detailsCount ? ` (${detailsCount})` : ''}`
+                  }
+                  onClick={() => setDetailsOpen(true)}
+                  className={`${styles.detailsButton} ${detailsCount > 0 ? styles.activeDetailsButton : ''}`}
+                >
+                  <SlidersHorizontal className="size-4" />
+                  <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
+                  {detailsCount > 0 && (
+                    <span className={`${styles.detailsCount} rounded-full bg-[#176b50] px-1.5 text-[10px] text-white`}>
+                      {detailsCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className={styles.resetButton}
+                  data-map-reset
+                  disabled={!hasFilters}
+                  aria-label={
+                    th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'
+                  }
+                  title={
+                    th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
+                  }
+                >
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
+                </button>
               </div>
+            </div>
+            <div className={styles.headerActions}>
+              {mapMode === 'listings' && (
+                <>
+                  <button
+                    type="button"
+                    data-map-land-shortcut
+                    aria-pressed={hasMapLandSelection(categories)}
+                    onClick={() => {
+                      toggleCategory(landMapCategoryIds[0])
+                      setMobileGroup('homes')
+                      setMobileGroupOpen(true)
+                    }}
+                    className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
+                  >
+                    <LandPlot className="size-4" />
+                    {th ? 'ที่ดิน' : 'Land'}
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={!categories.length}
+                    onClick={() => setCategories([])}
+                    className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
+                  >
+                    {th ? 'ทุกหมวด' : 'All types'}
+                  </button>
+                  <button
+                    type="button"
+                    aria-expanded={categoriesOpen}
+                    aria-controls="map-category-options"
+                    onClick={() => {
+                      if (!categoriesOpen) {
+                        setMobilePanelOpen(false)
+                        if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
+                      }
+                      setCategoriesOpen(!categoriesOpen)
+                    }}
+                    className={styles.collapseCategoriesButton}
+                    aria-label={
+                      categoriesOpen
+                        ? th
+                          ? 'ย่อหมวดหมู่'
+                          : 'Collapse categories'
+                        : th
+                          ? 'แสดงหมวดหมู่'
+                          : 'Expand categories'
+                    }
+                  >
+                    {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
