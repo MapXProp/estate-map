@@ -66,17 +66,20 @@ const Description = load('src/components/PropertyDescription.tsx', common).defau
 const Contact = load('src/components/property-map/PropertyPreviewContactCard.tsx', {
   ...common, '@/lib/propertyPreviewDetails': helpers,
 }).default
-function modal(galleryOpen = false) {
+function modal(galleryOpen = false, activeImage = null, gestures = []) {
   let stateIndex = 0
-  return load('src/app/(app)/(categories)/(real-estate)/properties/map/components/PropertyPreviewModal.tsx', {
+  const imports = {
     ...common,
-    react: { ...React, useState: (initial) => [stateIndex++ === 0 ? galleryOpen : initial, () => {}] },
+    react: { ...React, useState: () => [stateIndex++ === 0 ? galleryOpen : activeImage, () => {}] },
     '@/components/BtnLikeIcon': { default: () => React.createElement('button', null, 'Save') },
     '@/components/ListingViewCount': { default: () => null },
     '@/components/PropertyDescription': { default: Description },
     '@/components/property-map/PropertyPreviewContactCard': { default: Contact },
     '@/components/property-map/MobileSheet.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
-    '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose) => ({ panelRef: () => {}, backdropRef: () => {}, dismiss: onClose }) },
+    '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose, enabled) => {
+      gestures.push({ onClose, enabled })
+      return { panelRef: () => {}, backdropRef: () => {}, dismiss: onClose }
+    } },
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom: (v) => `${v.toLocaleString('en-US')} บาท` }) },
     '@/data/propertyTaxonomy': load('src/data/propertyTaxonomy.ts'),
     '@/lib/propertyMapPreview': gallery,
@@ -87,9 +90,11 @@ function modal(galleryOpen = false) {
       DialogPanel: ({ children, ...props }) => React.createElement('div', props, children),
       DialogTitle: ({ children, className }) => React.createElement('h2', { className }, children),
     },
-    'next/image': { default: ({ src, alt, loading }) => React.createElement('img', { src, alt, loading }) },
+    'next/image': { default: ({ src, alt, loading, sizes, className }) => React.createElement('img', { src, alt, loading, sizes, className }) },
     'next/navigation': { useRouter: () => ({ back() {} }) },
-  }).default
+  }
+  imports['@/components/property-map/PropertyPhotoGallery'] = load('src/components/property-map/PropertyPhotoGallery.tsx', imports)
+  return load('src/app/(app)/(categories)/(real-estate)/properties/map/components/PropertyPreviewModal.tsx', imports).default
 }
 
 test('map detail initially renders three photos, correct total, actual contacts and complete description', () => {
@@ -110,6 +115,19 @@ test('opening gallery makes every photo available with lazy loading, including p
   assert.equal((html.match(/loading="lazy"/g) || []).length, 29)
   assert.ok(html.includes('src="/photo-29.webp"'))
   assert.equal((html.match(/<img /g) || []).length, 32)
+})
+
+test('only the visible gallery can be pulled closed; full-size viewing suspends both underlying sheets', () => {
+  for (const [open, image, enabled] of [[false, null, [true]], [true, null, [false, true]], [true, 28, [false, false]]]) {
+    const gestures = []
+    const html = renderToStaticMarkup(React.createElement(modal(open, image, gestures), { listing: fixture }))
+    assert.deepEqual(gestures.map(g => g.enabled), enabled)
+    if (image !== null) {
+      assert.ok(html.includes('data-property-full-photo'))
+      assert.ok(html.includes('class="object-contain"'), 'Full-size viewing keeps the whole image')
+      assert.ok(html.includes('29 / 29'))
+    }
+  }
 })
 
 test('zero and one-photo listings do not repeat images or render empty image/contact URLs', () => {

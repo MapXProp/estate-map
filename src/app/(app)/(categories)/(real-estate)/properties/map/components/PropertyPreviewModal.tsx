@@ -5,15 +5,16 @@ import ListingViewCount from '@/components/ListingViewCount'
 import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import sheetStyles from '@/components/property-map/MobileSheet.module.css'
+import PropertyPhotoGallery from '@/components/property-map/PropertyPhotoGallery'
 import PropertyPreviewContactCard from '@/components/property-map/PropertyPreviewContactCard'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
-import { getMapPreviewGallery, stepMapPreviewImage } from '@/lib/propertyMapPreview'
+import { getMapPreviewGallery } from '@/lib/propertyMapPreview'
 import { getPropertyPreviewContacts, getPropertyPreviewFacts } from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
-import { ChevronLeft, ChevronRight, ExternalLink, ImageIcon, MapPin, Maximize2, Phone, Share2, X } from 'lucide-react'
+import { ChevronLeft, ExternalLink, ImageIcon, MapPin, Maximize2, Phone, Share2, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
@@ -40,20 +41,16 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
   const facts = getPropertyPreviewFacts(listing, isThai)
   const primaryContact = getPropertyPreviewContacts(listing)[0]
   const contactRef = useRef<HTMLElement>(null)
-  const touchRef = useRef<{ x: number; y: number } | null>(null)
   const propertyType = getPropertyType(normalizeLegacyPropertyType(listing.property_type_code))
   const category = (isThai ? propertyType?.nameTh : propertyType?.nameEn) || (isThai ? 'อสังหาริมทรัพย์' : 'Property')
   const [galleryOpen, setGalleryOpen] = useState(false)
-  const [activeImage, setActiveImage] = useState<number | null>(null)
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen && activeImage === null)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen)
   const displayPrice =
     typeof listing.offer_amount === 'number' && listing.offer_amount > 0
       ? `${formatCurrencyFrom(listing.offer_amount, listing.currency)}${formatPricePeriod(listing.price_unit, isThai)}`
       : isThai
         ? 'สอบถามราคา'
         : 'Price on request'
-  const changeImage = (direction: number) =>
-    setActiveImage((index) => stepMapPreviewImage(index ?? 0, direction, images.length))
 
   const shareProperty = async () => {
     const shareData = { title, url: `${window.location.origin}/real-estate-listings/${encodeURIComponent(handle)}` }
@@ -245,125 +242,9 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
         </div>
       </div>
 
-      <Dialog open={galleryOpen} onClose={() => setGalleryOpen(false)} className="relative z-[90]">
-        <DialogBackdrop className="fixed inset-0 bg-neutral-950/75 backdrop-blur-[2px]" />
-        <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
-          <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1540px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900">
-            <header className="flex min-h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-5 lg:px-7 dark:border-neutral-800">
-              <div>
-                <DialogTitle className="text-lg font-semibold text-neutral-950 dark:text-white">
-                  {isThai ? 'รูปภาพทั้งหมด' : 'All photos'}
-                </DialogTitle>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  เลือกภาพเพื่อดูขนาดใหญ่ · {images.length} รูป
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setGalleryOpen(false)}
-                aria-label="ปิดแกลเลอรี"
-                className="flex size-10 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              >
-                <X className="size-5" />
-              </button>
-            </header>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-3 lg:p-4 dark:bg-neutral-950/60">
-              <div className="grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3">
-                {images.map((image, index) => (
-                  <button
-                    key={`${image}-${index}`}
-                    type="button"
-                    onClick={() => setActiveImage(index)}
-                    aria-label={`เปิดรูปที่ ${index + 1} จาก ${images.length}`}
-                    className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-neutral-200 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800"
-                  >
-                    <Image
-                      src={image}
-                      alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${index + 1}`}
-                      fill
-                      sizes="(max-width: 1279px) 50vw, 33vw"
-                      loading="lazy"
-                      className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95"
-                    />
-                    <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/60 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
-                      {index + 1} / {images.length}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </DialogPanel>
-        </div>
-      </Dialog>
-
-      <Dialog open={activeImage !== null} onClose={() => setActiveImage(null)} className="relative z-[100]">
-        <DialogBackdrop className="fixed inset-0 bg-black" />
-        <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-10">
-          <DialogPanel
-            className="relative size-full max-w-[1500px] touch-pan-y"
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                event.preventDefault()
-                changeImage(event.key === 'ArrowLeft' ? -1 : 1)
-              }
-            }}
-            onTouchStart={(event) => {
-              const touch = event.touches[0]
-              touchRef.current = { x: touch.clientX, y: touch.clientY }
-            }}
-            onTouchEnd={(event) => {
-              const start = touchRef.current
-              touchRef.current = null
-              if (!start || images.length < 2) return
-              const touch = event.changedTouches[0]
-              const dx = touch.clientX - start.x
-              if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(touch.clientY - start.y) * 1.5)
-                changeImage(dx < 0 ? 1 : -1)
-            }}
-          >
-            <DialogTitle className="sr-only">{isThai ? 'รูปภาพขนาดใหญ่' : 'Full size photo'}</DialogTitle>
-            {activeImage !== null && (
-              <>
-                <Image
-                  src={images[activeImage]}
-                  alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${activeImage + 1}`}
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-contain"
-                />
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 rounded-full bg-white/12 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                  {activeImage + 1} / {images.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveImage(null)}
-                  aria-label="กลับไปแกลเลอรี"
-                  className="absolute top-0 right-0 flex size-11 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <X className="size-6" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeImage(-1)}
-                  aria-label={locale === 'th' ? 'รูปก่อนหน้า' : 'Previous image'}
-                  className="absolute top-1/2 left-0 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <ChevronLeft className="size-7" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeImage(1)}
-                  aria-label={locale === 'th' ? 'รูปถัดไป' : 'Next image'}
-                  className="absolute top-1/2 right-0 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <ChevronRight className="size-7" />
-                </button>
-              </>
-            )}
-          </DialogPanel>
-        </div>
-      </Dialog>
+      {galleryOpen && (
+        <PropertyPhotoGallery images={images} title={title} isThai={isThai} onClose={() => setGalleryOpen(false)} />
+      )}
     </Dialog>
   )
 }
