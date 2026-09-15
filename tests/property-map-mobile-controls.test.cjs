@@ -71,7 +71,7 @@ function harness(width) {
       '@/lib/propertyMapSearch': model,
       '@/lib/propertyMapProjects': projects,
       '@/hooks/useMapAreaLabel': { useMapAreaLabel: () => 'สาทร · กรุงเทพมหานคร' },
-      '@/hooks/useMapAutoAreaSearch': { useMapAutoAreaSearch: () => false },
+      '@/hooks/useMapAutoAreaSearch': { useMapAutoAreaSearch: () => true },
       '@/hooks/useMobileSheets': {
         useMapBottomSheet: (_snap, _previewId, onSnap) => {
           onSheetSnap = onSnap
@@ -289,12 +289,13 @@ test('folding and reopening desktop categories never requests a map resize or ch
   }
 })
 
-test('area search and the relocated all-types action keep their existing filter behavior', () => {
+test('automatic mobile search replaces the manual button while the all-types action preserves offer filters', () => {
   const h = harness(390)
   h.click(h.tab('business'))
   h.click(h.data('data-map-category', 'business:office'))
-  h.click(h.data('data-map-area-search', true))
-  assert.equal(h.map().areaSearchRequestId, 1)
+  assert.equal(h.data('data-map-auto-search', true).props.role, 'status')
+  assert.equal(h.nodes((node) => node.props?.['data-map-area-search']).length, 0)
+  assert.equal(h.map().areaSearchRequestId, 0)
   assert.equal(h.map().initialCenter, h.center)
   assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], true)
   const allTypes = h.nodes((node) => node.props?.className === 'mobileAllCategories')[2]

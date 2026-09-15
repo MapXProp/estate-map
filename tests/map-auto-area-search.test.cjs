@@ -6,8 +6,7 @@ const { test } = require('node:test')
 const ts = require('typescript')
 
 function harness() {
-  let enabled = true,
-    now = 0,
+  let now = 0,
     sequence = 0,
     previousDeps,
     cleanup
@@ -16,7 +15,7 @@ function harness() {
   const onSearch = (bounds) => searches.push(bounds)
   const context = {
     exports: {},
-    window: { matchMedia: () => ({ matches: enabled }) },
+    window: { matchMedia: () => ({ matches: false }) },
     setTimeout(fn, ms) {
       const id = ++sequence
       timers.set(id, { fn, at: now + ms })
@@ -46,8 +45,7 @@ function harness() {
   )
   return {
     searches,
-    render(viewport, automatic = true) {
-      enabled = automatic
+    render(viewport) {
       return context.exports.useMapAutoAreaSearch(viewport, onSearch)
     },
     advance(ms) {
@@ -69,7 +67,7 @@ const viewport = (value) => ({
   bounds: { minLat: value, maxLat: value + 1, minLon: 100, maxLon: 101 },
 })
 
-test('initial automatic search waits for a usable viewport and then selects its area', () => {
+test('phones enable automatic search too, waiting for a usable viewport before selecting its area', () => {
   const h = harness(),
     first = { ...viewport(13), initial: true }
   assert.equal(h.render(undefined), true)
@@ -98,23 +96,23 @@ test('continuous pan and zoom changes produce one search for the final area afte
   assert.equal(h.searches.length, 1, 'there is no periodic reload')
 })
 
-test('phone mode cancels pending automatic work and never searches on pan', () => {
+test('losing a usable viewport cancels pending work until the map becomes available again', () => {
   const h = harness(),
     next = viewport(13)
   h.render(next)
   h.advance(400)
-  assert.equal(h.render(next, false), false)
-  h.advance(1000)
-  h.render(viewport(14), false)
+  assert.equal(h.render(undefined), true)
   h.advance(1000)
   assert.equal(h.searches.length, 0)
+  h.render(next)
+  h.advance(700)
+  assert.deepEqual(h.searches, [next.bounds])
 })
 
-test('switching to automatic mode searches the current area and leaving the page cancels work', () => {
+test('leaving the page cancels pending automatic work', () => {
   const h = harness(),
     next = viewport(13)
-  h.render(next, false)
-  h.render(next, true)
+  h.render(next)
   h.advance(700)
   assert.deepEqual(h.searches, [next.bounds])
   h.render(viewport(14))
