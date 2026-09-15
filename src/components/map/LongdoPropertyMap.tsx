@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
+import { groupMapProjects, type MapProject } from '@/lib/propertyMapProjects'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -115,14 +116,14 @@ const getListingQualityScore = (listing: TRealEstateListing) =>
 export const getSpiderOffsets = (count: number, labelWidth: number) => {
   const offsets: Array<{ x: number; y: number }> = []
   if (count < 2) return offsets
-  const horizontalRadius = Math.max(76, Math.min(132, labelWidth + 16))
+  const horizontalRadius = Math.max(64, Math.min(84, labelWidth / 2 + 12))
   for (let start = 0, ring = 1; start < count; ring++) {
     const ringCount = Math.min(8 * ring, count - start)
     for (let index = 0; index < ringCount; index++) {
       const angle = (index * Math.PI * 2) / ringCount - (count === 2 ? Math.PI : Math.PI / 2)
       offsets.push({
         x: Math.round(Math.cos(angle) * horizontalRadius * ring),
-        y: Math.round(Math.sin(angle) * 80 * ring),
+        y: Math.round(Math.sin(angle) * 64 * ring),
       })
     }
     start += ringCount
@@ -205,6 +206,27 @@ export const getMarkerHtml = (
 
 export type PropertyMapViewport = { center: LongdoLocation; zoom: number; initial?: boolean }
 
+export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean) => {
+  const name = isThai ? project.name : project.nameEn || project.name
+  const label = isThai ? 'ดูประกาศทั้งหมดในโครงการ' : 'View all listings in this project'
+  const count = project.listingCount ?? project.listingIds.length
+  const countLabel =
+    project.listingCount === undefined
+      ? isThai
+        ? 'ประกาศที่ตรงกับการค้นหา'
+        : 'Matching listings'
+      : isThai
+        ? 'ประกาศทั้งหมดในโครงการ'
+        : 'All project listings'
+  const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
+  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" class="mapx-project-marker${selected ? ' is-selected' : ''}">
+    <a href="/properties/map?project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
+      <span class="mapx-project-label"><span>${escapeHtml(name)}</span><small>${isThai ? 'โครงการ · ดูประกาศ' : 'Project · View listings'}</small></span>
+      <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
+    </a>
+  </div>`
+}
+
 interface Props {
   apiKey: string
   currentHoverID: string
@@ -223,6 +245,8 @@ interface Props {
   onLocationSearchFocus?: () => void
   onLocationSearch?: (location: LongdoLocation, label: string) => void
   onMarkerSelect?: (id: string) => void
+  onProjectSelect?: (project: MapProject) => void
+  selectedProjectId?: string
   onMapInteraction?: () => void
   onMapBackgroundTap?: () => void
   previewListingId?: string
@@ -246,6 +270,8 @@ const LongdoPropertyMap = ({
   onLocationSearchFocus,
   onLocationSearch,
   onMarkerSelect,
+  onProjectSelect,
+  selectedProjectId = '',
   onMapInteraction,
   onMapBackgroundTap,
   previewListingId = '',
@@ -298,6 +324,8 @@ const LongdoPropertyMap = ({
     [searchSourceListings]
   )
   const listingsById = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings])
+  const projects = useMemo(() => (onProjectSelect ? groupMapProjects(listings) : []), [listings, onProjectSelect])
+  const projectListingIds = useMemo(() => new Set(projects.flatMap((project) => project.listingIds)), [projects])
 
   const applyMarkerDeclutter = useCallback(() => {
     const map = mapRef.current
@@ -344,9 +372,12 @@ const LongdoPropertyMap = ({
         return first.listing.id.localeCompare(second.listing.id)
       })
 
-    if (!candidates.length) return
-
     const zoom = map.zoom()
+    const projectRoots = Array.from(mapContainer.querySelectorAll<HTMLElement>('[data-mapx-project-marker]'))
+    projectRoots.forEach((root) => {
+      root.dataset.mapxProjectLabel = zoom >= 16 ? 'true' : 'false'
+    })
+    if (!candidates.length) return
     const showEveryLabel = !exactCoordinates && zoom >= 19
     // Expand duplicates at street zoom, or on selection while zoomed out.
     if (zoom >= 16 || currentHoverIDRef.current) {
@@ -391,7 +422,12 @@ const LongdoPropertyMap = ({
 
     const mapRect = mapContainer.getBoundingClientRect()
     const collisionGap = zoom <= 10 ? 14 : zoom <= 13 ? 10 : zoom <= 16 ? 7 : 4
-    const acceptedRects: Array<{ left: number; top: number; right: number; bottom: number }> = []
+    const acceptedRects: Array<{ left: number; top: number; right: number; bottom: number }> = projectRoots.flatMap(
+      (root) => {
+        const label = root.querySelector<HTMLElement>('.mapx-project-label')
+        return [root.getBoundingClientRect(), ...(label?.offsetWidth ? [label.getBoundingClientRect()] : [])]
+      }
+    )
 
     candidates.forEach(({ root, pill }, priorityIndex) => {
       const rect = pill.getBoundingClientRect()
@@ -496,10 +532,18 @@ const LongdoPropertyMap = ({
   useEffect(() => {
     const markerLink = (target: EventTarget | null) => {
       if (!(target instanceof Element)) return null
-      const link = target.closest<HTMLAnchorElement>('a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"]')
+      const link = target.closest<HTMLAnchorElement>(
+        'a[data-mapx-quick-view="true"], a[data-mapx-marker-link="true"], a[data-mapx-project-link="true"]'
+      )
       return link && placeholderRef.current?.contains(link) ? link : null
     }
     const activateMarker = (link: HTMLAnchorElement) => {
+      if (link.dataset.mapxProjectLink === 'true' && onProjectSelect) {
+        const projectId = link.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId
+        const project = projects.find((item) => item.id === projectId)
+        if (project) onProjectSelect(project)
+        return
+      }
       const markerId = link.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
       if (markerId && link.dataset.mapxMarkerLink === 'true' && onMarkerSelect) {
         onMarkerSelect(markerId)
@@ -612,7 +656,7 @@ const LongdoPropertyMap = ({
       document.removeEventListener('pointercancel', pointerCancel, true)
       document.removeEventListener('click', handleListingLink, true)
     }
-  }, [onMarkerSelect, router])
+  }, [onMarkerSelect, onProjectSelect, projects, router])
 
   useEffect(() => {
     const container = placeholderRef.current
@@ -886,6 +930,7 @@ const LongdoPropertyMap = ({
     const nextMarkers: LongdoOverlay[] = []
     listings.forEach((listing, index) => {
       if (!isValidLocation(locations[index])) return
+      if (projectListingIds.has(listing.id)) return
       const active = listing.id === currentHoverIDRef.current
       const marker = new longdo.Marker(locations[index], {
         clickable: true,
@@ -905,11 +950,37 @@ const LongdoPropertyMap = ({
       map.Overlays.add(marker)
       nextMarkers.push(marker)
     })
+    projects.forEach((project) => {
+      const marker = new longdo.Marker(project.location, {
+        clickable: true,
+        icon: {
+          html: getProjectMarkerHtml(
+            project,
+            isThai,
+            project.id === selectedProjectId || project.slug === selectedProjectId
+          ),
+          offset: { x: 0, y: 0 },
+        },
+      })
+      map.Overlays.add(marker)
+      nextMarkers.push(marker)
+    })
     listingMarkersRef.current = nextMarkers
     scheduleMarkerDeclutter()
     const settleTimers = [100, 500, 1500, 4000].map((delay) => window.setTimeout(scheduleMarkerDeclutter, delay))
     return () => settleTimers.forEach((timer) => window.clearTimeout(timer))
-  }, [displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter, onMarkerSelect])
+  }, [
+    displayPrices,
+    isThai,
+    listings,
+    locations,
+    mapReady,
+    scheduleMarkerDeclutter,
+    onMarkerSelect,
+    projectListingIds,
+    projects,
+    selectedProjectId,
+  ])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
@@ -947,6 +1018,19 @@ const LongdoPropertyMap = ({
       className={`relative size-full overflow-hidden bg-[#eef3f0] ${exactCoordinates ? 'mapx-exact-coordinates' : ''}`}
     >
       <style>{`
+        .mapx-project-marker { position: relative; width: 44px; height: 44px; transform: translate(-50%,-50%); font-family: Sarabun,Arial,sans-serif; z-index: 920; }
+        .mapx-project-link { position: relative; display: grid; width: 44px; height: 44px; place-items: center; text-decoration: none !important; color: #176b50 !important; border-radius: 50%; }
+        .mapx-project-pin { position: relative; display: grid; width: 32px; height: 32px; place-items: center; border: 2px solid #176b50; border-radius: 11px; background: white; box-shadow: 0 3px 10px #123f3230; }
+        .mapx-project-pin b { position: absolute; top: -8px; right: -10px; display: grid; min-width: 19px; height: 19px; padding: 0 4px; place-items: center; border: 2px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 10px; }
+        .mapx-project-label { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; max-width: 186px; width: max-content; flex-direction: column; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
+        .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+        .mapx-project-label small { margin-top: 2px; font-size: 10px; color: #638171; font-weight: 400; }
+        .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
+        .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label { display: flex; }
+        .mapx-project-marker.is-selected .mapx-project-pin { background: #176b50; color: white; }
+        .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
+        div:has(> .mapx-project-marker) { z-index: 920 !important; }
+        div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected) { z-index: 2147482999 !important; }
         .mapx-price-marker {
           cursor: pointer;
           isolation: isolate;

@@ -27,6 +27,7 @@ class ElementStub {
   constructor(tag = 'div', attrs = {}, parent = null) {
     this.tag = tag
     this.attrs = { ...attrs }
+    this.dataset = {}
     this.parentElement = parent
     this.listeners = new Map()
     this.captures = new Set()
@@ -464,6 +465,18 @@ test('list snapping leaves room for overlaid navigation without reducing the map
   h.move(0, -800)
   assert.equal(h.root.properties.get('--mobile-sheet-height'), '532px')
   assert.equal(h.root.parentElement.clientHeight, 700)
+  h.end()
+  h.advance(260)
+  assert.equal(h.snap, 'full')
+})
+
+test('a project sheet keeps the same map clearance while being dragged and when settled', () => {
+  const h = hookHarness('bottom', { snap: 'peek' })
+  h.root.dataset.projectOpen = 'true'
+  h.root.offsetHeight = 84
+  h.start()
+  h.move(0, -800)
+  assert.equal(h.root.properties.get('--mobile-sheet-height'), `${820 * .48}px`)
   h.end()
   h.advance(260)
   assert.equal(h.snap, 'full')

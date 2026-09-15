@@ -12,10 +12,12 @@ export default function MapResultCard({
   listing,
   onHover,
   onLocate,
+  compact = false,
 }: {
   listing: TRealEstateListing
   onHover: (id: string) => void
-  onLocate: () => void
+  onLocate?: () => void
+  compact?: boolean
 }) {
   const { locale, formatCurrencyFrom } = usePreferences()
   const th = locale === 'th'
@@ -57,7 +59,9 @@ export default function MapResultCard({
         onClick={() => rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}`)}
         className="flex gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-[#176b50]"
       >
-        <div className="relative h-[108px] w-[112px] shrink-0 overflow-hidden rounded-xl bg-[#e9f0eb]">
+        <div
+          className={`relative shrink-0 overflow-hidden rounded-xl bg-[#e9f0eb] ${compact ? 'size-[88px]' : 'h-[108px] w-[112px]'}`}
+        >
           {listing.featuredImage ? (
             <Image
               src={listing.featuredImage}
@@ -75,36 +79,60 @@ export default function MapResultCard({
             </span>
           )}
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
           <p className="text-[11px] font-medium text-[#568170] dark:text-emerald-400">
-            {th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'} ·{' '}
+            {!compact && (
+              <>
+                {th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'}{' '}
+                ·{' '}
+              </>
+            )}
             {th ? listing.offer : offerTypes.find((offer) => offer.nameTh === listing.offer)?.nameEn || listing.offer}
           </p>
-          <h3 className="mt-1 line-clamp-2 text-sm leading-5 font-semibold text-neutral-900 dark:text-white">
+          <h3
+            className={
+              compact
+                ? 'order-2 mt-1 truncate text-xs text-neutral-600 dark:text-neutral-300'
+                : 'mt-1 line-clamp-2 text-sm leading-5 font-semibold text-neutral-900 dark:text-white'
+            }
+          >
             {title}
           </h3>
-          <p className="mt-1 truncate text-xs text-neutral-500">
-            {th ? listing.address : listing.addressEn || listing.address}
-          </p>
-          <p className="mt-2 text-base leading-5 font-bold text-[#176b50] dark:text-emerald-400">
+          {!compact && (
+            <p className="mt-1 truncate text-xs text-neutral-500">
+              {th ? listing.address : listing.addressEn || listing.address}
+            </p>
+          )}
+          <p
+            className={`${compact ? 'order-1 mt-1' : 'mt-2'} text-base leading-5 font-bold text-[#176b50] dark:text-emerald-400`}
+          >
             {price}
             <span className="ms-0.5 text-[11px] font-normal">{period}</span>
           </p>
+          {compact && (
+            <p className="order-3 mt-1 text-[11px] text-neutral-500">
+              {th ? listing.metadataSummary : listing.metadataSummaryEn}
+            </p>
+          )}
         </div>
       </Link>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] text-neutral-500">
-          {th ? listing.metadataSummary : listing.metadataSummaryEn}
-        </p>
-        <button
-          type="button"
-          onClick={onLocate}
-          className="flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-[#176b50] hover:bg-[#e4f1e9] dark:text-emerald-400 dark:hover:bg-neutral-700"
-          aria-label={`${th ? 'ดูตำแหน่ง' : 'Locate'} ${title}`}
-        >
-          <Maximize2 className="size-3" />
-          {th ? 'ดูตำแหน่ง' : 'Locate'}
-        </button>
+        {!compact && (
+          <p className="truncate text-[11px] text-neutral-500">
+            {th ? listing.metadataSummary : listing.metadataSummaryEn}
+          </p>
+        )}
+        {onLocate && (
+          <button
+            type="button"
+            onClick={onLocate}
+            className="flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-[#176b50] hover:bg-[#e4f1e9] dark:text-emerald-400 dark:hover:bg-neutral-700"
+            aria-label={`${th ? 'ดูตำแหน่ง' : 'Locate'} ${title}`}
+          >
+            <Maximize2 className="size-3" />
+            {th ? 'ดูตำแหน่ง' : 'Locate'}
+          </button>
+        )}
       </div>
     </article>
   )

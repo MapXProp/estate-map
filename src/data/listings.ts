@@ -1166,11 +1166,7 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
           : listing.offer_price_unit === 'event_period'
             ? ' / งาน'
             : ''
-  const priceAmount = isRetailSpace
-    ? listing.offer_amount
-    : isRental
-      ? listing.rent_price_monthly
-      : listing.sale_price
+  const priceAmount = isRetailSpace ? listing.offer_amount : isRental ? listing.rent_price_monthly : listing.sale_price
   const priceUnit = isRetailSpace ? listing.offer_price_unit : isRental ? 'month' : ''
   const galleryImgs = [...new Set([listing.primary_image_url, ...(listing.image_urls || [])].filter(Boolean))].slice(
     0,
@@ -1189,9 +1185,7 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
       ? `${Math.round(listing.land_area_sqm / 4).toLocaleString('en-US')} sq.wah`
       : '',
     listing.usable_area_sqm ? `${Math.round(listing.usable_area_sqm).toLocaleString('en-US')} sq.m.` : '',
-    listing.bedroom_count
-      ? `${listing.bedroom_count} bedroom${listing.bedroom_count === 1 ? '' : 's'}`
-      : '',
+    listing.bedroom_count ? `${listing.bedroom_count} bedroom${listing.bedroom_count === 1 ? '' : 's'}` : '',
     listing.event_round_count ? `${listing.event_round_count} round${listing.event_round_count === 1 ? '' : 's'}` : '',
   ].filter(Boolean)
   const addressEn = [listing.address_en, listing.district_en, listing.province_en].filter(Boolean).join(', ')
@@ -1202,6 +1196,12 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     viewCount: listing.view_count || 0,
     projectName: listing.project_name || '',
     projectNameEn: listing.project_name_en || listing.project_name || '',
+    projectPublicId: listing.project_public_id || '',
+    projectSlug: listing.project_slug || '',
+    projectCategory: listing.project_category || '',
+    projectLatitude: listing.project_latitude,
+    projectLongitude: listing.project_longitude,
+    projectListingCount: listing.project_listing_count,
     title: listing.title,
     titleEn: listing.title_en || listing.title,
     handle: listing.slug || listing.public_listing_id,

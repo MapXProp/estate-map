@@ -5,6 +5,10 @@ const vm = require('node:vm')
 const { test } = require('node:test')
 const ts = require('typescript')
 const jsx = require('react/jsx-runtime')
+const projectContext = { exports: {}, require: () => ({}) }
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapProjects.ts'), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, projectContext)
 
 const listing = {
   id: 'listing-6',
@@ -14,14 +18,14 @@ const listing = {
   galleryImgs: [],
   priceAmount: 315000000,
 }
-function harness(width, initialZoom = 14, initialListings = [listing]) {
+function harness(width, initialZoom = 14, initialListings = [listing], projectsEnabled = false) {
   const slots = [],
     effects = [],
     frames = new Map(),
     listeners = new Map(),
     calls = [],
     navigation = [],
-    selected = []
+    selected = [], selectedProjects = [], overlays = []
   let cursor = 0,
     dirty = false,
     tree,
@@ -56,6 +60,7 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
           : this.root || this
     }
     querySelectorAll(selector) {
+      if (this.isMap && selector.includes('data-mapx-project-marker')) return projectRoots
       return this.isMap && selector.includes('data-mapx-price-marker') ? markerRoots : []
     }
     querySelector() {
@@ -83,6 +88,9 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
     return root
   })
   const markerRoot = markerRoots[0]
+  const projectRoots = projectsEnabled ? projectContext.exports.groupMapProjects(initialListings).map(project => {
+    const root = new Element(); root.dataset.mapxProjectId = project.id; return root
+  }) : []
   const hooks = {
     useRef(initial) {
       const i = cursor++
@@ -131,6 +139,7 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
     'lucide-react': require('lucide-react'),
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom }) },
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
+    '@/lib/propertyMapProjects': projectContext.exports,
     'next/navigation': { usePathname: () => pathname, useRouter: () => router },
     'next/script': { default: 'sdk-script' },
   }
@@ -158,7 +167,7 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
               if (event === 'ready') callback()
             },
           }
-          this.Overlays = { add() {}, remove() {}, clear() {} }
+          this.Overlays = { add(marker) { overlays.push(marker) }, remove() {}, clear() {} }
           this.location = (...args) => {
             if (args.length) {
               calls.push(['location', ...args])
@@ -178,7 +187,7 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
           api = this
         }
       },
-      Marker: class {},
+      Marker: class { constructor(location, options) { this.location = location; this.options = options } },
     },
   }
   const context = {
@@ -246,6 +255,7 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
     initialZoom,
     exactCoordinates: true,
     onMarkerSelect: (id) => selected.push(id),
+    onProjectSelect: projectsEnabled ? project => selectedProjects.push(project) : undefined,
   })
   visit(tree, (node) => {
     if (node.type === 'sdk-script') node.props.onReady()
@@ -260,8 +270,8 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
       return node
     }
     const link = new Element()
-    link.dataset[action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
-    link.root = markerRoots[markerIndex]
+    link.dataset[action === 'project' ? 'mapxProjectLink' : action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
+    link.root = action === 'project' ? projectRoots[markerIndex] : markerRoots[markerIndex]
     return new Element(link)
   }
   function click(action, options = {}) {
@@ -303,6 +313,9 @@ function harness(width, initialZoom = 14, initialListings = [listing]) {
     calls,
     navigation,
     selected,
+    selectedProjects,
+    overlays,
+    getProjectMarkerHtml: context.exports.getProjectMarkerHtml,
     click,
     pointer,
     markerRoot,
@@ -426,6 +439,37 @@ test('spider layouts keep separate touch targets for small and large duplicate g
       })
     })
   }
+})
+
+test('a project replaces coincident price pins with one accessible building marker and opens without moving the camera', () => {
+  const units = [listing, { ...listing, id: 'listing-7' }].map(row => ({ ...row, projectPublicId: 'project-a', projectSlug: 'the-address', projectName: 'The Address <A>', projectCategory: 'condominium' }))
+  for (const width of [390, 1440]) {
+    const h = harness(width, 17, units, true)
+    const markers = h.overlays.filter(marker => marker.options?.icon)
+    assert.ok(markers.every(marker => marker.options.icon.html.includes('data-mapx-project-marker')))
+    const html = markers[0].options.icon.html
+    assert.ok(html.includes('The Address &lt;A&gt;'))
+    assert.ok(html.includes('project=the-address'))
+    assert.ok(!html.includes('mapx-fan-line'))
+    h.click('project')
+    assert.equal(h.selectedProjects.length, 1)
+    assert.equal(h.selectedProjects[0].id, 'project-a')
+    assert.equal(h.navigation.length, 0)
+    assert.equal(h.selected.length, 0)
+    assert.deepEqual(h.calls, [])
+    h.pointer('pointerdown', 'project')
+    h.pointer('pointerup', 'project')
+    h.click('project', { detail: 1 })
+    h.render()
+    assert.equal(h.selectedProjects.length, 2, 'native touch and compatibility click open once')
+    assert.equal(h.click('project', { ctrlKey: true }).prevented, false)
+    assert.deepEqual(h.calls, [])
+  }
+})
+
+test('a two-pin spider has at most 84px wings instead of 132px', () => {
+  const offsets = harness(390).getSpiderOffsets(2, 180)
+  assert.ok(offsets.every(point => Math.hypot(point.x, point.y) <= 84))
 })
 
 test('price opens details immediately and preserves camera when opening and closing the modal', () => {

@@ -69,6 +69,9 @@ export type PropertySearchListing = {
   project_slug?: string
   project_name_en?: string
   project_category?: string
+  project_latitude?: number
+  project_longitude?: number
+  project_listing_count?: number
   address: string
   address_en?: string
   province: string
@@ -285,6 +288,7 @@ export type PropertyDiscoveryChannel = 'homes' | 'rooms' | 'business'
 export type PropertySearchOptions = {
   view?: 'map'
   identifier?: string
+  project?: string
   discoveryChannel?: PropertyDiscoveryChannel
   propertyTypes?: string[]
   spaceTypes?: string[]
@@ -314,6 +318,7 @@ export type PropertyMapAreaSearchRequest = {
 const appendPropertySearchFilters = (params: URLSearchParams, options: PropertySearchOptions) => {
   if (options.view) params.set('view', options.view)
   if (options.identifier !== undefined) params.set('identifier', options.identifier)
+  if (options.project !== undefined) params.set('project', options.project)
   if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
   options.propertyTypes?.forEach((value) => params.append('property_type', value))
   options.spaceTypes?.forEach((value) => params.append('space_type', value))
