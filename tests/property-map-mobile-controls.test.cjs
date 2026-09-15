@@ -24,6 +24,7 @@ function load(file, imports, globals = {}) {
   return context.exports
 }
 const taxonomy = load('src/data/propertyTaxonomy.ts', {})
+const projects = load('src/lib/propertyMapProjects.ts', { './auth': {}, './propertySearch': {} })
 const model = load('src/lib/propertyMapSearch.ts', {
   '@/data/propertyTaxonomy': taxonomy,
   './propertySearch': {
@@ -68,6 +69,7 @@ function harness(width) {
       '@/data/listings': { toRealEstateListing: (row) => row },
       '@/data/propertyTaxonomy': taxonomy,
       '@/lib/propertyMapSearch': model,
+      '@/lib/propertyMapProjects': projects,
       '@/hooks/useMapAreaLabel': { useMapAreaLabel: () => 'สาทร · กรุงเทพมหานคร' },
       '@/hooks/useMobileSheets': {
         useMapBottomSheet: (_snap, _previewId, onSnap) => {
@@ -82,6 +84,9 @@ function harness(width) {
       './MapOfferControls': { default: 'test-offers' },
       './MapPinPreview': { default: 'test-preview' },
       './MapPreviewPanel': { default: 'test-preview-panel' },
+      './MapProjectPanel': { default: 'test-project-panel' },
+      './MapProjectResults': { default: 'test-project-results' },
+      './MapViewControls': { default: 'test-map-view-controls' },
       './MapResultCard': { default: 'test-card' },
       './MapSearchDetails': { default: 'test-filters' },
       './PropertyMapFilterBar': {
@@ -155,6 +160,27 @@ function harness(width) {
     },
   }
 }
+
+test('one project switch hides listing categories, clears previews and preserves the camera and category selection', () => {
+  const h = harness(390)
+  const controls = () => h.nodes((node) => node.type === 'test-map-view-controls')[0].props
+  assert.equal(controls().mode, 'listings')
+  h.click(h.tab('homes'))
+  const category = h.nodes((node) => node.props?.['data-map-category'])[0]
+  h.click(category)
+  const categoryId = category.props['data-map-category']
+  controls().onModeChange('projects')
+  h.render()
+  assert.equal(h.map().mapMode, 'projects')
+  assert.equal(h.nodes((node) => node.props?.['data-map-group']).length, 0)
+  assert.equal(h.nodes((node) => node.type === 'test-project-results').length, 1)
+  assert.deepEqual(h.map().initialCenter, h.center)
+  assert.equal(h.map().initialZoom, 15)
+  controls().onModeChange('listings')
+  h.render()
+  assert.equal(h.map().mapMode, 'listings')
+  assert.equal(h.data('data-map-category', categoryId).props['aria-pressed'], true)
+})
 
 test('mobile starts folded, keeps all tabs reachable and folds without clearing selected categories or camera', () => {
   for (const width of [320, 390, 820]) {

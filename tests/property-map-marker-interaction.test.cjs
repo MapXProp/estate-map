@@ -6,9 +6,12 @@ const { test } = require('node:test')
 const ts = require('typescript')
 const jsx = require('react/jsx-runtime')
 const projectContext = { exports: {}, require: () => ({}) }
-vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapProjects.ts'), 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText, projectContext)
+vm.runInNewContext(
+  ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapProjects.ts'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  projectContext
+)
 
 const listing = {
   id: 'listing-6',
@@ -25,7 +28,9 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     listeners = new Map(),
     calls = [],
     navigation = [],
-    selected = [], selectedProjects = [], overlays = []
+    selected = [],
+    selectedProjects = [],
+    overlays = []
   let cursor = 0,
     dirty = false,
     tree,
@@ -88,9 +93,13 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     return root
   })
   const markerRoot = markerRoots[0]
-  const projectRoots = projectsEnabled ? projectContext.exports.groupMapProjects(initialListings).map(project => {
-    const root = new Element(); root.dataset.mapxProjectId = project.id; return root
-  }) : []
+  const projectRoots = projectsEnabled
+    ? projectContext.exports.groupMapProjects(initialListings).map((project) => {
+        const root = new Element()
+        root.dataset.mapxProjectId = project.id
+        return root
+      })
+    : []
   const hooks = {
     useRef(initial) {
       const i = cursor++
@@ -167,7 +176,13 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
               if (event === 'ready') callback()
             },
           }
-          this.Overlays = { add(marker) { overlays.push(marker) }, remove() {}, clear() {} }
+          this.Overlays = {
+            add(marker) {
+              overlays.push(marker)
+            },
+            remove() {},
+            clear() {},
+          }
           this.location = (...args) => {
             if (args.length) {
               calls.push(['location', ...args])
@@ -187,7 +202,12 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
           api = this
         }
       },
-      Marker: class { constructor(location, options) { this.location = location; this.options = options } },
+      Marker: class {
+        constructor(location, options) {
+          this.location = location
+          this.options = options
+        }
+      },
     },
   }
   const context = {
@@ -255,7 +275,8 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     initialZoom,
     exactCoordinates: true,
     onMarkerSelect: (id) => selected.push(id),
-    onProjectSelect: projectsEnabled ? project => selectedProjects.push(project) : undefined,
+    onProjectSelect: projectsEnabled ? (project) => selectedProjects.push(project) : undefined,
+    mapMode: projectsEnabled ? 'projects' : undefined,
   })
   visit(tree, (node) => {
     if (node.type === 'sdk-script') node.props.onReady()
@@ -270,7 +291,8 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       return node
     }
     const link = new Element()
-    link.dataset[action === 'project' ? 'mapxProjectLink' : action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] = 'true'
+    link.dataset[action === 'project' ? 'mapxProjectLink' : action === 'dot' ? 'mapxMarkerLink' : 'mapxQuickView'] =
+      'true'
     link.root = action === 'project' ? projectRoots[markerIndex] : markerRoots[markerIndex]
     return new Element(link)
   }
@@ -441,12 +463,18 @@ test('spider layouts keep separate touch targets for small and large duplicate g
   }
 })
 
-test('a project replaces coincident price pins with one accessible building marker and opens without moving the camera', () => {
-  const units = [listing, { ...listing, id: 'listing-7' }].map(row => ({ ...row, projectPublicId: 'project-a', projectSlug: 'the-address', projectName: 'The Address <A>', projectCategory: 'condominium' }))
+test('project mode replaces coincident price pins with one accessible building marker and opens without moving the camera', () => {
+  const units = [listing, { ...listing, id: 'listing-7' }].map((row) => ({
+    ...row,
+    projectPublicId: 'project-a',
+    projectSlug: 'the-address',
+    projectName: 'The Address <A>',
+    projectCategory: 'condominium',
+  }))
   for (const width of [390, 1440]) {
     const h = harness(width, 17, units, true)
-    const markers = h.overlays.filter(marker => marker.options?.icon)
-    assert.ok(markers.every(marker => marker.options.icon.html.includes('data-mapx-project-marker')))
+    const markers = h.overlays.filter((marker) => marker.options?.icon)
+    assert.ok(markers.every((marker) => marker.options.icon.html.includes('data-mapx-project-marker')))
     const html = markers[0].options.icon.html
     assert.ok(html.includes('The Address &lt;A&gt;'))
     assert.ok(html.includes('project=the-address'))
@@ -460,7 +488,11 @@ test('a project replaces coincident price pins with one accessible building mark
     const overlayCount = h.overlays.length
     h.render({ selectedProjectId: 'project-a' })
     h.render({ selectedProjectId: '' })
-    assert.equal(h.overlays.length, overlayCount, 'selection highlights existing project pins without rebuilding overlays')
+    assert.equal(
+      h.overlays.length,
+      overlayCount,
+      'selection highlights existing project pins without rebuilding overlays'
+    )
     h.pointer('pointerdown', 'project')
     h.pointer('pointerup', 'project')
     h.click('project', { detail: 1 })
@@ -471,9 +503,35 @@ test('a project replaces coincident price pins with one accessible building mark
   }
 })
 
+test('listing pins are the default; switching to all projects and back preserves the camera', () => {
+  const units = ['condominium', 'housing_estate', 'commercial_complex', 'mixed_use'].map((category, i) => ({
+    ...listing,
+    id: `unit-${i}`,
+    projectPublicId: `project-${i}`,
+    projectSlug: `project-${i}`,
+    projectName: `Project ${i}`,
+    projectCategory: category,
+  }))
+  const rows = [...units, { ...listing, id: 'standalone' }]
+  const h = harness(1440, 17, rows)
+  h.render({ onProjectSelect: () => {} })
+  const markers = (since) => h.overlays.slice(since).filter((marker) => marker.options?.icon)
+  assert.equal(markers(0).length, rows.length)
+  assert.ok(markers(0).every((marker) => marker.options.icon.html.includes('data-mapx-price-marker')))
+  let before = h.overlays.length
+  h.render({ mapMode: 'projects' })
+  assert.equal(markers(before).length, units.length)
+  assert.ok(markers(before).every((marker) => marker.options.icon.html.includes('data-mapx-project-marker')))
+  before = h.overlays.length
+  h.render({ mapMode: 'listings' })
+  assert.equal(markers(before).length, rows.length)
+  assert.ok(markers(before).every((marker) => marker.options.icon.html.includes('data-mapx-price-marker')))
+  assert.deepEqual(h.calls, [], 'mode switches never pan or zoom')
+})
+
 test('a two-pin spider has at most 84px wings instead of 132px', () => {
   const offsets = harness(390).getSpiderOffsets(2, 180)
-  assert.ok(offsets.every(point => Math.hypot(point.x, point.y) <= 84))
+  assert.ok(offsets.every((point) => Math.hypot(point.x, point.y) <= 84))
 })
 
 test('price opens details immediately and preserves camera when opening and closing the modal', () => {

@@ -9,6 +9,7 @@ import {
   type PropertyTypeCode,
 } from '@/data/propertyTaxonomy'
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
+import { normalizeMapMode } from '@/lib/propertyMapProjects'
 import { initialMapOfferTypes } from '@/lib/propertyMapSearch'
 import { createPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
@@ -16,6 +17,7 @@ import type { Metadata } from 'next'
 type PageSearchParams = Promise<{
   q?: string | string[]
   project?: string | string[]
+  map_mode?: string | string[]
   location?: string | string[]
   lat?: string | string[]
   lon?: string | string[]
@@ -77,9 +79,12 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
   const requestedZoom = Number(getFirstSearchParam(search.zoom))
   const zoom = Number.isFinite(requestedZoom) && requestedZoom >= 5 && requestedZoom <= 19 ? requestedZoom : undefined
   const query = getFirstSearchParam(search.q) || location?.nameTh || ''
+  const project = getFirstSearchParam(search.project).slice(0, 200)
+  const initialMapMode = normalizeMapMode(getFirstSearchParam(search.map_mode), Boolean(project))
   return {
     query,
-    initialProject: getFirstSearchParam(search.project).slice(0, 200),
+    initialMapMode,
+    initialProject: initialMapMode === 'projects' ? project : '',
     mapCenter: coordinates || (location ? { lat: location.latitude, lon: location.longitude } : undefined),
     mapZoom: zoom || location?.zoom,
     initialFilters: getInitialFilters(search),
@@ -112,7 +117,7 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
 }
 
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
-  const { query, mapCenter, mapZoom, initialFilters, initialCategories, offerLayout, initialProject } =
+  const { query, mapCenter, mapZoom, initialFilters, initialCategories, offerLayout, initialProject, initialMapMode } =
     await getMapSearch(searchParams)
 
   return (
@@ -125,6 +130,7 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
         initialCategories,
         offerLayout,
         initialProject,
+        initialMapMode,
       })}
       query={query}
       initialMapCenter={mapCenter}
@@ -133,6 +139,7 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
       initialCategories={initialCategories}
       offerLayout={offerLayout}
       initialProject={initialProject}
+      initialMapMode={initialMapMode}
     />
   )
 }

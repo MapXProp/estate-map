@@ -1,0 +1,45 @@
+'use client'
+
+import type { PropertyMapMode } from '@/lib/propertyMapProjects'
+import { Building2, MapPin } from 'lucide-react'
+import styles from './PropertyMapSearch.module.css'
+
+export default function MapViewControls({
+  mode,
+  th,
+  onModeChange,
+}: {
+  mode: PropertyMapMode
+  th: boolean
+  onModeChange: (mode: PropertyMapMode) => void
+}) {
+  return (
+    <div className={styles.mapViewBar} data-map-view-controls>
+      <div className={styles.mapViewSwitch} role="group" aria-label={th ? 'รูปแบบหมุดบนแผนที่' : 'Map view'}>
+        <button
+          type="button"
+          data-map-mode="listings"
+          aria-pressed={mode === 'listings'}
+          onClick={() => onModeChange('listings')}
+        >
+          <MapPin className="size-4" />
+          {th ? 'หมุดประกาศ' : 'Listing pins'}
+        </button>
+        <button
+          type="button"
+          data-map-mode="projects"
+          aria-pressed={mode === 'projects'}
+          onClick={() => onModeChange('projects')}
+        >
+          <Building2 className="size-4" />
+          {th ? 'ดูโครงการ' : 'Projects'}
+        </button>
+      </div>
+      {mode === 'projects' && (
+        <span className={styles.mapViewHint}>
+          {th ? 'บ้าน · คอนโด · ห้าง · ทุกโครงการ' : 'Houses · condos · malls · all projects'}
+        </span>
+      )}
+    </div>
+  )
+}

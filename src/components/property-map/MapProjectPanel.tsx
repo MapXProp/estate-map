@@ -6,6 +6,7 @@ import {
   fetchMapProject,
   fetchMapProjectListings,
   hasProjectOffer,
+  projectCategoryLabel,
   validProjectLocation,
   type MapProject,
   type MapProjectDetails,
@@ -68,14 +69,7 @@ export default function MapProjectPanel({
   const project = data?.project
   const name = th ? project?.name_th || seed?.name : project?.name_en || project?.name_th || seed?.nameEn || seed?.name
   const category = project?.project_category || seed?.category
-  const categoryLabel =
-    category === 'condominium'
-      ? th
-        ? 'โครงการคอนโด'
-        : 'Condominium project'
-      : th
-        ? 'โครงการอสังหาฯ'
-        : 'Property project'
+  const categoryLabel = projectCategoryLabel(category || '', th)
   const counts = {
     all: data?.rows.length || 0,
     sale: data?.rows.filter((row) => hasProjectOffer(row, 'sale')).length || 0,

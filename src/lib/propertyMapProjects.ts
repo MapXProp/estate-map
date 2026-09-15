@@ -2,6 +2,22 @@ import type { TRealEstateListing } from '@/data/listings'
 import { getAuthApiUrl } from './auth'
 import { fetchPropertySearch, type PropertySearchListing } from './propertySearch'
 
+export type PropertyMapMode = 'listings' | 'projects'
+export const normalizeMapMode = (value: string, hasProject = false): PropertyMapMode =>
+  value === 'projects' || (!value && hasProject) ? 'projects' : 'listings'
+
+export const projectCategoryLabel = (category: string, th: boolean) => {
+  const labels: Record<string, [string, string]> = {
+    housing_estate: ['โครงการบ้าน', 'Housing project'],
+    condominium: ['โครงการคอนโด', 'Condominium'],
+    commercial_complex: ['ห้าง / โครงการพาณิชย์', 'Mall / commercial project'],
+    mixed_use: ['โครงการมิกซ์ยูส', 'Mixed-use project'],
+    office_campus: ['กลุ่มอาคารสำนักงาน', 'Office campus'],
+    industrial_estate: ['นิคมอุตสาหกรรม', 'Industrial estate'],
+  }
+  return labels[category]?.[th ? 0 : 1] || (th ? 'โครงการอสังหาฯ' : 'Property project')
+}
+
 export type MapProject = {
   id: string
   slug: string

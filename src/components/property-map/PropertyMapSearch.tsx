@@ -12,7 +12,12 @@ import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/d
 import { useMapAreaLabel } from '@/hooks/useMapAreaLabel'
 import { useMapPreviewHeaderHeight } from '@/hooks/useMapPreviewHeaderHeight'
 import { useMapBottomSheet } from '@/hooks/useMobileSheets'
-import type { MapProject } from '@/lib/propertyMapProjects'
+import {
+  groupMapProjects,
+  validProjectLocation,
+  type MapProject,
+  type PropertyMapMode,
+} from '@/lib/propertyMapProjects'
 import {
   countMapCategories,
   defaultMapOfferTypes,
@@ -61,8 +66,10 @@ import MapOfferControls from './MapOfferControls'
 import MapPinPreview from './MapPinPreview'
 import MapPreviewPanel from './MapPreviewPanel'
 import MapProjectPanel from './MapProjectPanel'
+import MapProjectResults from './MapProjectResults'
 import MapResultCard from './MapResultCard'
 import MapSearchDetails from './MapSearchDetails'
+import MapViewControls from './MapViewControls'
 import { emptyPropertyMapFilters, type PropertyMapFilterState, type PropertyMapSort } from './PropertyMapFilterBar'
 import styles from './PropertyMapSearch.module.css'
 
@@ -95,6 +102,7 @@ export default function PropertyMapSearch({
   initialCategories = [],
   offerLayout = 'compact',
   initialProject = '',
+  initialMapMode = 'listings',
 }: {
   query?: string
   initialMapCenter?: { lat: number; lon: number }
@@ -103,9 +111,11 @@ export default function PropertyMapSearch({
   initialCategories?: string[]
   offerLayout?: 'compact' | 'classic'
   initialProject?: string
+  initialMapMode?: PropertyMapMode
 }) {
   const { locale } = usePreferences()
   const th = locale === 'th'
+  const [mapMode, setMapMode] = useState(initialMapMode)
   const [categories, setCategories] = useState(() => initialMapCategories(initialFilters, initialCategories))
   const [filters, setFilters] = useState<PropertyMapFilterState>(() => ({
     ...emptyPropertyMapFilters,
@@ -164,7 +174,8 @@ export default function PropertyMapSearch({
   }>({ key: '', rows: [], status: 'loading' })
   const requestKey = JSON.stringify({
     keyword,
-    categories: [...categories].sort(),
+    mapMode,
+    categories: mapMode === 'projects' ? [] : [...categories].sort(),
     offers: [...filters.offerTypes].sort(),
     min: filters.minPrice,
     max: filters.maxPrice,
@@ -255,8 +266,10 @@ export default function PropertyMapSearch({
       'area_min',
       'feature',
       'project',
+      'map_mode',
     ].forEach((key) => params.delete(key))
     if (keyword) params.set('q', keyword)
+    if (mapMode === 'projects') params.set('map_mode', 'projects')
     if (selectedProject) params.set('project', selectedProject.seed?.slug || selectedProject.id)
     categories.forEach((id) => params.append('category', id))
     mapOfferSearchValues(filters.offerTypes).forEach((offer) => params.append('offer_type', offer))
@@ -274,7 +287,7 @@ export default function PropertyMapSearch({
     }
     if (window.location.pathname === '/properties/map')
       window.history.replaceState(window.history.state, '', `/properties/map${params.size ? `?${params}` : ''}`)
-  }, [categories, center, filters, keyword, zoom, selectedProject])
+  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode])
 
   useEffect(() => {
     const container = resultsRef.current
@@ -283,6 +296,31 @@ export default function PropertyMapSearch({
 
   const matchingRows = useMemo(() => rows.filter((listing) => matchesMapDetails(listing, filters)), [rows, filters])
   const mapRows = useMemo(() => matchingRows.filter(hasMapCoordinates), [matchingRows])
+  const mapProjects = useMemo(
+    () =>
+      groupMapProjects(
+        matchingRows
+          .filter((row) => hasMapCoordinates(row) || validProjectLocation(row.project_latitude, row.project_longitude))
+          .map(toRealEstateListing)
+      ),
+    [matchingRows]
+  )
+  const displayedProjects = useMemo(
+    () =>
+      mapProjects
+        .filter(
+          ({ location }) =>
+            !area ||
+            (location.lat >= area.minLat &&
+              location.lat <= area.maxLat &&
+              location.lon >= area.minLon &&
+              location.lon <= area.maxLon)
+        )
+        .sort((a, b) =>
+          (th ? a.name : a.nameEn || a.name).localeCompare(th ? b.name : b.nameEn || b.name, th ? 'th' : 'en')
+        ),
+    [mapProjects, area, th]
+  )
   const mapListings = useMemo(
     () =>
       mapRows.map((listing) => {
@@ -383,7 +421,22 @@ export default function PropertyMapSearch({
     Number(Boolean(filters.minArea)) +
     filters.features.length
   const hasFilters =
-    categories.length > 0 || !isDefaultMapOffers(filters.offerTypes) || detailsCount > 0 || !!keyword || !!area
+    mapMode !== 'listings' ||
+    categories.length > 0 ||
+    !isDefaultMapOffers(filters.offerTypes) ||
+    detailsCount > 0 ||
+    !!keyword ||
+    !!area
+
+  const changeMapMode = (next: PropertyMapMode) => {
+    if (next === mapMode) return
+    setMapMode(next)
+    setSelectedProject(null)
+    setPreviewSelection(null)
+    setHoveredId('')
+    setMobilePanelOpen(false)
+    setMobileGroupOpen(false)
+  }
 
   const searchArea = useCallback((search: PropertyMapAreaSearch) => {
     setSelectedProject(null)
@@ -392,6 +445,7 @@ export default function PropertyMapSearch({
     return 0
   }, [])
   const reset = () => {
+    changeMapMode('listings')
     setSelectedProject(null)
     setCategories([])
     setFilters({ ...emptyPropertyMapFilters, offerTypes: [...defaultMapOfferTypes] })
@@ -465,7 +519,7 @@ export default function PropertyMapSearch({
         <header className={styles.categoryHeading} data-map-topbar>
           <div className={styles.brand} data-map-brand>
             <Logo className={styles.logo} />
-            {categories.length > 0 && (
+            {mapMode === 'listings' && categories.length > 0 && (
               <span className={styles.selectionSummary}>
                 {isLandOnlyMapSelection(categories)
                   ? th
@@ -519,87 +573,94 @@ export default function PropertyMapSearch({
                 <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
               </button>
               <div className={styles.headerActions}>
-                <button
-                  type="button"
-                  data-map-land-shortcut
-                  aria-pressed={hasMapLandSelection(categories)}
-                  onClick={() => {
-                    toggleCategory(landMapCategoryIds[0])
-                    setMobileGroup('homes')
-                    setMobileGroupOpen(true)
-                  }}
-                  className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
-                >
-                  <LandPlot className="size-4" />
-                  {th ? 'ที่ดิน' : 'Land'}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={!categories.length}
-                  onClick={() => setCategories([])}
-                  className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
-                >
-                  {th ? 'ทุกหมวด' : 'All types'}
-                </button>
-                <button
-                  type="button"
-                  aria-expanded={categoriesOpen}
-                  aria-controls="map-category-options"
-                  onClick={() => {
-                    if (!categoriesOpen) {
-                      setMobilePanelOpen(false)
-                      if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
-                    }
-                    setCategoriesOpen(!categoriesOpen)
-                  }}
-                  className={styles.collapseCategoriesButton}
-                  aria-label={
-                    categoriesOpen
-                      ? th
-                        ? 'ย่อหมวดหมู่'
-                        : 'Collapse categories'
-                      : th
-                        ? 'แสดงหมวดหมู่'
-                        : 'Expand categories'
-                  }
-                >
-                  {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                </button>
+                {mapMode === 'listings' && (
+                  <>
+                    <button
+                      type="button"
+                      data-map-land-shortcut
+                      aria-pressed={hasMapLandSelection(categories)}
+                      onClick={() => {
+                        toggleCategory(landMapCategoryIds[0])
+                        setMobileGroup('homes')
+                        setMobileGroupOpen(true)
+                      }}
+                      className={`${styles.landShortcut} ${hasMapLandSelection(categories) ? styles.activeLandShortcut : ''}`}
+                    >
+                      <LandPlot className="size-4" />
+                      {th ? 'ที่ดิน' : 'Land'}
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={!categories.length}
+                      onClick={() => setCategories([])}
+                      className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
+                    >
+                      {th ? 'ทุกหมวด' : 'All types'}
+                    </button>
+                    <button
+                      type="button"
+                      aria-expanded={categoriesOpen}
+                      aria-controls="map-category-options"
+                      onClick={() => {
+                        if (!categoriesOpen) {
+                          setMobilePanelOpen(false)
+                          if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
+                        }
+                        setCategoriesOpen(!categoriesOpen)
+                      }}
+                      className={styles.collapseCategoriesButton}
+                      aria-label={
+                        categoriesOpen
+                          ? th
+                            ? 'ย่อหมวดหมู่'
+                            : 'Collapse categories'
+                          : th
+                            ? 'แสดงหมวดหมู่'
+                            : 'Expand categories'
+                      }
+                    >
+                      {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+                    </button>
+                  </>
+                )}
                 <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
               </div>
             </div>
           </div>
         </header>
-        <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
-          {mapCategoryGroups.map((group) => {
-            const Icon = groupIcons[group.code]
-            const count = categories.filter((id) => id.startsWith(`${group.code}:`)).length
-            return (
-              <button
-                type="button"
-                key={group.code}
-                data-map-group={group.code}
-                aria-pressed={mobileGroup === group.code}
-                aria-expanded={categoriesOpen && mobileGroup === group.code && mobileGroupOpen}
-                aria-controls={`map-category-group-${group.code}`}
-                onClick={() => {
-                  setMobileGroupOpen(mobileGroup !== group.code || !categoriesOpen || !mobileGroupOpen)
-                  setCategoriesOpen(true)
-                  setMobileGroup(group.code)
-                  setMobilePanelOpen(false)
-                  setPreviewSelection(null)
-                }}
-                className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
-              >
-                <Icon className="size-4 shrink-0" />
-                <span>{mobileGroupNames[group.code][th ? 0 : 1]}</span>
-                {count > 0 && <span className={styles.groupCount}>{count}</span>}
-                {mobileGroup === group.code && <ChevronDown className={styles.groupChevron} aria-hidden="true" />}
-              </button>
-            )
-          })}
-        </div>
-        {categoriesOpen && (
+        <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
+        {mapMode === 'listings' && (
+          <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
+            {mapCategoryGroups.map((group) => {
+              const Icon = groupIcons[group.code]
+              const count = categories.filter((id) => id.startsWith(`${group.code}:`)).length
+              return (
+                <button
+                  type="button"
+                  key={group.code}
+                  data-map-group={group.code}
+                  aria-pressed={mobileGroup === group.code}
+                  aria-expanded={categoriesOpen && mobileGroup === group.code && mobileGroupOpen}
+                  aria-controls={`map-category-group-${group.code}`}
+                  onClick={() => {
+                    setMobileGroupOpen(mobileGroup !== group.code || !categoriesOpen || !mobileGroupOpen)
+                    setCategoriesOpen(true)
+                    setMobileGroup(group.code)
+                    setMobilePanelOpen(false)
+                    setPreviewSelection(null)
+                  }}
+                  className={`${styles[group.code]} ${mobileGroup === group.code ? styles.activeTab : ''}`}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span>{mobileGroupNames[group.code][th ? 0 : 1]}</span>
+                  {count > 0 && <span className={styles.groupCount}>{count}</span>}
+                  {mobileGroup === group.code && <ChevronDown className={styles.groupChevron} aria-hidden="true" />}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {mapMode === 'listings' && categoriesOpen && (
           <div id="map-category-options">
             <div className={styles.groups}>
               {mapCategoryGroups.map((group) => {
@@ -741,6 +802,8 @@ export default function PropertyMapSearch({
             <LongdoPropertyMap
               apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
               listings={mapListings}
+              mapMode={mapMode}
+              projectMarkers={mapProjects}
               currentHoverID={previewListing?.id || hoveredId}
               previewListingId={previewListing?.id}
               onMarkerSelect={selectMapMarker}
@@ -791,7 +854,13 @@ export default function PropertyMapSearch({
         {!panelOpen && (
           <button type="button" onClick={togglePanel} className={styles.openPanel}>
             <List className="size-4" />
-            {th ? `ดูประกาศ (${displayed.length})` : `Listings (${displayed.length})`}
+            {mapMode === 'projects'
+              ? th
+                ? `ดูโครงการ (${displayedProjects.length})`
+                : `Projects (${displayedProjects.length})`
+              : th
+                ? `ดูประกาศ (${displayed.length})`
+                : `Listings (${displayed.length})`}
           </button>
         )}
 
@@ -803,7 +872,15 @@ export default function PropertyMapSearch({
           data-project-open={Boolean(selectedProject)}
           className={styles.results}
           onPointerDownCapture={dismissMobilePreview}
-          aria-label={th ? 'ประกาศที่ค้นพบ' : 'Property results'}
+          aria-label={
+            mapMode === 'projects'
+              ? th
+                ? 'โครงการที่ค้นพบ'
+                : 'Project results'
+              : th
+                ? 'ประกาศที่ค้นพบ'
+                : 'Property results'
+          }
         >
           {selectedProject ? (
             <MapProjectPanel
@@ -820,6 +897,21 @@ export default function PropertyMapSearch({
                 setHoveredId(listing.id)
                 setMobilePanelOpen(false)
               }}
+            />
+          ) : mapMode === 'projects' ? (
+            <MapProjectResults
+              projects={displayedProjects}
+              heading={th ? 'โครงการทั้งหมด' : 'All projects'}
+              areaLabel={mapAreaText}
+              loading={loading}
+              failed={failed}
+              expanded={mobilePanelOpen}
+              th={th}
+              onToggle={toggleMobilePanel}
+              onCollapse={togglePanel}
+              onChoose={selectMapProject}
+              onRetry={() => setRetry((value) => value + 1)}
+              onClearArea={area ? () => setArea(null) : undefined}
             />
           ) : (
             <div className={styles.resultsList}>

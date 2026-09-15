@@ -2,7 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
-import { groupMapProjects, type MapProject } from '@/lib/propertyMapProjects'
+import { groupMapProjects, type MapProject, type PropertyMapMode } from '@/lib/propertyMapProjects'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -220,7 +220,7 @@ export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selec
         : 'All project listings'
   const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
   return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}">
-    <a href="/properties/map?project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
+    <a href="/properties/map?map_mode=projects&amp;project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
       <span class="mapx-project-label"><span>${escapeHtml(name)}</span><small>${isThai ? 'โครงการ · ดูประกาศ' : 'Project · View listings'}</small></span>
       <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
     </a>
@@ -247,6 +247,8 @@ interface Props {
   onMarkerSelect?: (id: string) => void
   onProjectSelect?: (project: MapProject) => void
   selectedProjectId?: string
+  mapMode?: PropertyMapMode
+  projectMarkers?: MapProject[]
   onMapInteraction?: () => void
   onMapBackgroundTap?: () => void
   previewListingId?: string
@@ -272,6 +274,8 @@ const LongdoPropertyMap = ({
   onMarkerSelect,
   onProjectSelect,
   selectedProjectId = '',
+  mapMode = 'listings',
+  projectMarkers,
   onMapInteraction,
   onMapBackgroundTap,
   previewListingId = '',
@@ -325,8 +329,10 @@ const LongdoPropertyMap = ({
     [searchSourceListings]
   )
   const listingsById = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings])
-  const projects = useMemo(() => (onProjectSelect ? groupMapProjects(listings) : []), [listings, onProjectSelect])
-  const projectListingIds = useMemo(() => new Set(projects.flatMap((project) => project.listingIds)), [projects])
+  const projects = useMemo(
+    () => (mapMode === 'projects' ? (projectMarkers ?? groupMapProjects(listings)) : []),
+    [listings, mapMode, projectMarkers]
+  )
 
   const applyMarkerDeclutter = useCallback(() => {
     const map = mapRef.current
@@ -939,7 +945,7 @@ const LongdoPropertyMap = ({
     const nextMarkers: LongdoOverlay[] = []
     listings.forEach((listing, index) => {
       if (!isValidLocation(locations[index])) return
-      if (projectListingIds.has(listing.id)) return
+      if (mapMode === 'projects') return
       const active = listing.id === currentHoverIDRef.current
       const marker = new longdo.Marker(locations[index], {
         clickable: true,
@@ -978,17 +984,7 @@ const LongdoPropertyMap = ({
     scheduleMarkerDeclutter()
     const settleTimers = [100, 500, 1500, 4000].map((delay) => window.setTimeout(scheduleMarkerDeclutter, delay))
     return () => settleTimers.forEach((timer) => window.clearTimeout(timer))
-  }, [
-    displayPrices,
-    isThai,
-    listings,
-    locations,
-    mapReady,
-    scheduleMarkerDeclutter,
-    onMarkerSelect,
-    projectListingIds,
-    projects,
-  ])
+  }, [displayPrices, isThai, listings, locations, mapReady, scheduleMarkerDeclutter, onMarkerSelect, mapMode, projects])
 
   useEffect(() => {
     if (!areaSearchRequestId || !mapReady || !onSearchArea) return
