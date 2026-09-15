@@ -39,7 +39,8 @@ test('project mode ranks all registered project types before places and deduplic
       ? json({ projects: [...projects, projects[0], { name_th: 'Missing identity' }] })
       : json({ data: [{ w: 'Sathorn Road' }, { w: ' sathorn road ' }, { w: '' }] })
   )
-  const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', true, signal())
+  const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', signal())
+  assert.equal(suggestions[0].label, 'The Address Sathorn')
   assert.deepEqual(plain(suggestions.map((row) => row.kind)), ['project', 'project', 'project', 'place', 'place'])
   assert.deepEqual(plain(suggestions.slice(0, 3).map((row) => row.project.project_category)), [
     'condominium',
@@ -60,7 +61,7 @@ test('listing mode searches places only and honors a stale provider keyword', as
     urls.push(url)
     return json({ meta: { keyword: 'previous' }, data: [{ w: 'Wrong place' }] })
   })
-  assert.equal((await m.fetchMapSearchSuggestions('current', 'listings', 'test', true, signal())).length, 0)
+  assert.equal((await m.fetchMapSearchSuggestions('current', 'listings', 'test', signal())).length, 0)
   assert.equal(urls.length, 1)
   assert.ok(urls[0].startsWith('https://search.longdo.com/'))
 })
@@ -72,7 +73,7 @@ test('either source can fail without hiding results from the other', async () =>
       if (isProject === (failedSource === 'projects')) throw new Error('Unavailable')
       return json(isProject ? { projects: [project('address')] } : { data: [{ w: 'Sathorn Road' }] })
     })
-    const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', false, signal())
+    const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', signal())
     assert.ok(
       suggestions.some((row) => (failedSource === 'places' ? row.kind === 'project' : row.label === 'Sathorn Road'))
     )
@@ -107,7 +108,7 @@ test('aborted search cannot return late project, suggestion or geocoding results
       kind === 'projects'
         ? m.searchMapProjects('old', controller.signal)
         : kind === 'suggestions'
-          ? m.fetchMapSearchSuggestions('old', 'projects', 'test', true, controller.signal)
+          ? m.fetchMapSearchSuggestions('old', 'projects', 'test', controller.signal)
           : m.searchMapPlace('old', 'test', true, controller.signal)
     controller.abort()
     release()

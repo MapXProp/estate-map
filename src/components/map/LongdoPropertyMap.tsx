@@ -212,7 +212,7 @@ export type PropertyMapViewport = {
 }
 
 export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean) => {
-  const name = isThai ? project.name : project.nameEn || project.name
+  const name = project.nameEn || project.name
   const label = isThai ? 'ดูประกาศทั้งหมดในโครงการ' : 'View all listings in this project'
   const count = project.listingCount ?? project.listingIds.length
   const countLabel =
@@ -716,7 +716,7 @@ const LongdoPropertyMap = ({
       setIsSuggesting(true)
       setSearchMessage('')
       try {
-        const result = await fetchMapSearchSuggestions(keyword, mapMode, apiKey, isThai, controller.signal)
+        const result = await fetchMapSearchSuggestions(keyword, mapMode, apiKey, controller.signal)
         if (controller.signal.aborted) return
         setSuggestions(result)
         setActiveSuggestionIndex(-1)
@@ -776,7 +776,7 @@ const LongdoPropertyMap = ({
           project = preferredMapProject(keyword, matches)
           if (!project && matches.length > 1) {
             setSuggestions([
-              ...matches.map((item) => projectSearchSuggestion(item, isThai)),
+              ...matches.map(projectSearchSuggestion),
               { kind: 'place', label: keyword, direct: true },
             ])
             setSearchMessage(
@@ -799,7 +799,7 @@ const LongdoPropertyMap = ({
             router.push(
               `/properties/map?map_mode=projects&project=${encodeURIComponent(project.slug || project.public_project_id)}`
             )
-          setSearchText(isThai ? project.name_th || project.name_en : project.name_en || project.name_th)
+          setSearchText(project.name_en || project.name_th)
           setIsSearchFocused(false)
           searchInputRef.current?.blur()
           return

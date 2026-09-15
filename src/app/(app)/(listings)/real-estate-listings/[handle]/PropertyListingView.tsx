@@ -48,8 +48,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
       caption: item.title || item.alt_text,
     }))
   const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
-  const projectDisplayName = isThai ? listing.project_name : listing.project_name_en || listing.project_name
-  const projectAlternateName = isThai ? listing.project_name_en : listing.project_name
+  const projectDisplayName = listing.project_name_en || listing.project_name
   const price = formatPrice(listing, isThai, formatCurrencyFrom)
   const formatRetailAmount = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const retailTerms =
@@ -208,18 +207,14 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 />
               </div>
             </div>
-            {listing.project_name ? (
+            {projectDisplayName ? (
               <Link
-                href={getPropertyMapSearchUrl(listing.project_name_en || listing.project_name)}
+                href={getPropertyMapSearchUrl(projectDisplayName)}
+                data-listing-project-name
                 className="mt-4 flex w-fit items-start gap-2 rounded-2xl bg-[#edf5f1] px-3.5 py-2.5 font-sarabun text-sm text-[#176b50] transition hover:bg-[#e2efe9] dark:bg-emerald-950 dark:text-emerald-200"
               >
                 <Building2 className="mt-0.5 size-4.5 shrink-0" />
-                <span>
-                  <span className="font-semibold">{projectDisplayName}</span>
-                  {projectAlternateName && projectAlternateName !== projectDisplayName ? (
-                    <span className="ms-1.5 text-xs opacity-75">({projectAlternateName})</span>
-                  ) : null}
-                </span>
+                <span className="font-semibold">{projectDisplayName}</span>
               </Link>
             ) : null}
             {fullAddress ? (

@@ -11,9 +11,9 @@ export const mapSearchName = (value: string) =>
     .toLocaleLowerCase()
     .replace(/[^\p{L}\p{N}\p{M}]/gu, '')
 
-export const projectSearchSuggestion = (project: MapProjectDetails, th: boolean): MapSearchSuggestion => ({
+export const projectSearchSuggestion = (project: MapProjectDetails): MapSearchSuggestion => ({
   kind: 'project',
-  label: th ? project.name_th || project.name_en : project.name_en || project.name_th,
+  label: project.name_en || project.name_th,
   project,
 })
 
@@ -46,7 +46,6 @@ export async function fetchMapSearchSuggestions(
   query: string,
   mode: PropertyMapMode,
   apiKey: string,
-  th: boolean,
   signal: AbortSignal
 ): Promise<MapSearchSuggestion[]> {
   const places = async (): Promise<MapSearchSuggestion[]> => {
@@ -73,7 +72,7 @@ export async function fetchMapSearchSuggestions(
   const locations = results[1].status === 'fulfilled' ? results[1].value : []
   if (mode === 'projects' && !locations.some((item) => mapSearchName(item.label) === mapSearchName(query)))
     locations.push({ kind: 'place', label: query, direct: true })
-  return [...projects.map((project) => projectSearchSuggestion(project, th)), ...locations]
+  return [...projects.map(projectSearchSuggestion), ...locations]
 }
 
 export async function searchMapPlace(query: string, apiKey: string, th: boolean, signal: AbortSignal) {

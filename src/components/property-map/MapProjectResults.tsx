@@ -119,7 +119,7 @@ export default function MapProjectResults({
                 : project.category === 'commercial_complex'
                   ? ShoppingBag
                   : Building2
-            const name = th ? project.name : project.nameEn || project.name
+            const name = project.nameEn || project.name
             return (
               <button
                 type="button"

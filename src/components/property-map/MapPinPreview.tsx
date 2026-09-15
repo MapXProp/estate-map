@@ -40,7 +40,7 @@ export default function MapPinPreview({
   const { locale, formatCurrencyFrom } = usePreferences()
   const th = locale === 'th'
   const title = th ? listing.title : listing.titleEn || listing.title
-  const headline = (th ? listing.projectName : listing.projectNameEn || listing.projectName) || title
+  const headline = listing.projectNameEn || listing.projectName || title
   const [images, setImages] = useState(() => getMapPreviewImages(listing.featuredImage, listing.galleryImgs))
   const [imageIndex, setImageIndex] = useState(0)
   const [galleryOpen, setGalleryOpen] = useState(false)
