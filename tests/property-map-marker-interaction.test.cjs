@@ -65,6 +65,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
           : this.root || this
     }
     querySelectorAll(selector) {
+      if (selector.includes('aria-controls="map-property-preview"')) return [this]
       if (this.isMap && selector.includes('data-mapx-project-marker')) return projectRoots
       return this.isMap && selector.includes('data-mapx-price-marker') ? markerRoots : []
     }
@@ -535,33 +536,31 @@ test('a two-pin spider has at most 84px wings instead of 132px', () => {
   assert.ok(offsets.every((point) => Math.hypot(point.x, point.y) <= 84))
 })
 
-test('price opens details immediately and preserves camera when opening and closing the modal', () => {
+test('price opens the same preview as the dot without navigating or changing the camera', () => {
   for (const width of [390, 820, 1440]) {
     const h = harness(width)
     const event = h.click('price')
     assert.ok(event.prevented && event.stopped)
     assert.deepEqual(h.selected, [listing.id])
     h.render({ previewListingId: listing.id, currentHoverID: listing.id })
-    assert.equal(h.navigation[0][0], '/real-estate-listings/land-sutthisan')
-    assert.equal(h.navigation[0][1].scroll, false)
-    h.changePath('/real-estate-listings/land-sutthisan')
-    h.changePath('/properties/map')
+    assert.equal(h.navigation.length, 0)
+    h.render({ previewListingId: '', currentHoverID: '' })
     assert.deepEqual(h.calls, [])
   }
 })
 
-test('dot then price follows the same two-stage flow and modified clicks keep native link behavior', () => {
+test('pressing the selected price keeps its preview open and modified clicks retain native links', () => {
   const h = harness(820)
   h.click('dot')
   h.render({ previewListingId: listing.id, currentHoverID: listing.id })
   h.click('price')
   assert.deepEqual(h.selected, [listing.id])
-  assert.equal(h.navigation.length, 1)
+  assert.equal(h.navigation.length, 0)
   for (const options of [{ ctrlKey: true }, { metaKey: true }, { button: 1 }]) {
     const event = h.click('price', options)
     assert.equal(event.prevented, false)
   }
-  assert.equal(h.navigation.length, 1)
+  assert.equal(h.navigation.length, 0)
   assert.deepEqual(h.calls, [])
 })
 
@@ -577,7 +576,9 @@ test('dot and price are separate accessible links, escape content and preserve n
   )
   assert.equal((html.match(/<a\s/g) || []).length, 2)
   assert.match(html, /data-mapx-marker-link="true"[\s\S]*aria-expanded="true"/)
-  assert.match(html, /data-mapx-quick-view="true"[\s\S]*aria-haspopup="dialog"/)
+  assert.match(html, /data-mapx-quick-view="true"[\s\S]*aria-expanded="true"/)
+  assert.equal((html.match(/aria-controls="map-property-preview"/g) || []).length, 2)
+  assert.doesNotMatch(html, /aria-haspopup="dialog"/)
   assert.match(html, /class="mapx-price-pill">315,000,000 บาท<\/span>/)
   assert.doesNotMatch(html, /\stitle=|<svg/)
   assert.ok(!html.includes('<script>'))
@@ -624,7 +625,7 @@ test('touch map interaction callback waits for a completed primary gesture witho
   assert.deepEqual(h.calls, [])
 })
 
-test('native touch selects and activates a dot, then opens its price once even when the SDK suppresses clicks', () => {
+test('native touch on dot then price keeps one preview even when the SDK suppresses clicks', () => {
   for (const width of [390, 820]) {
     const h = harness(width, 12)
     assert.equal(h.markerRoot.dataset.mapxLabelVisible, 'false')
@@ -642,22 +643,20 @@ test('native touch selects and activates a dot, then opens its price once even w
     h.pointer('pointerup', 'price')
     assert.equal(h.click('price', { detail: 1 }).prevented, true, 'a compatibility click is consumed')
     h.render()
-    assert.equal(h.navigation.length, 1)
-    assert.equal(h.navigation[0][0], '/real-estate-listings/land-sutthisan')
-    assert.equal(h.navigation[0][1].scroll, false)
+    assert.equal(h.navigation.length, 0)
     assert.deepEqual(h.selected, [listing.id])
     assert.deepEqual(h.calls, [], 'tap activation never pans or zooms the map')
     assert.equal(h.api.location(), center)
   }
 })
 
-test('native taps on an already-visible price open details directly without requiring a dot tap', () => {
+test('native taps on an already-visible price select the preview without navigating', () => {
   const h = harness(390)
   h.pointer('pointerdown', 'price')
   h.pointer('pointerup', 'price')
   h.render()
   assert.deepEqual(h.selected, [listing.id])
-  assert.equal(h.navigation.length, 1)
+  assert.equal(h.navigation.length, 0)
   assert.deepEqual(h.calls, [])
 })
 
@@ -687,15 +686,25 @@ test('touch de-duplication keeps keyboard and subsequent mouse clicks usable; un
   h.pointer('pointerup', 'price')
   h.render()
   h.click('price', { detail: 0 })
-  assert.equal(h.navigation.length, 2, 'keyboard activation is never suppressed')
+  assert.equal(h.selected.length, 2, 'keyboard activation is never suppressed')
   h.pointer('pointerdown', 'price', { pointerType: 'mouse' })
   h.click('price', { detail: 1 })
-  assert.equal(h.navigation.length, 3, 'mouse activation works immediately after touch')
+  assert.equal(h.selected.length, 3, 'mouse activation works immediately after touch')
   h.pointer('pointerdown', 'price')
   h.pointer('pointerup', 'price')
   h.unmount()
   h.render()
-  assert.equal(h.navigation.length, 3)
+  assert.equal(h.selected.length, 3)
+  assert.equal(h.navigation.length, 0)
+})
+
+test('maps without a preview handler keep their normal listing navigation', () => {
+  const h = harness(1440)
+  h.render({ onMarkerSelect: undefined })
+  h.click('dot')
+  assert.equal(h.navigation[0][0], '/real-estate-listings/land-sutthisan')
+  assert.equal(h.navigation[0][1].scroll, false)
+  assert.deepEqual(h.selected, [])
 })
 
 test('a background tap closes the mobile preview after the gesture completes without moving the map', () => {

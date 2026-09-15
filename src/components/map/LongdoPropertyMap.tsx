@@ -149,7 +149,7 @@ export const getMarkerHtml = (
   const imageHtml = imageUrl
     ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
-  const detailsLabel = isThai ? 'ดูรายละเอียด' : 'View details'
+  const previewLabel = isThai ? 'ดูรูปและราคา' : 'Preview photos and price'
 
   return `
   <div
@@ -162,7 +162,7 @@ export const getMarkerHtml = (
     <a
       href="${listingPath}"
       data-mapx-marker-link="true"
-      aria-label="${dockedPreview ? (isThai ? 'ดูรูปและราคา ' : 'Preview photos and price ') : ''}${escapeHtml(title)}"
+      aria-label="${dockedPreview ? `${previewLabel} ` : ''}${escapeHtml(title)}"
       ${dockedPreview ? `aria-controls="map-property-preview" aria-expanded="${previewSelected}"` : ''}
       class="mapx-price-marker-link"
       style="position:relative;display:block;color:inherit;text-decoration:none;outline:none;"
@@ -183,8 +183,9 @@ export const getMarkerHtml = (
       data-mapx-quick-view="true"
       class="mapx-price-details-link"
       style="color:inherit;text-decoration:none;"
-      aria-haspopup="dialog"
-      aria-label="${detailsLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
+      aria-controls="map-property-preview"
+      aria-expanded="${previewSelected}"
+      aria-label="${previewLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
     ><span class="mapx-price-pill">${escapeHtml(price)}</span></a>`
         : ''
     }
@@ -497,9 +498,9 @@ const LongdoPropertyMap = ({
 
     mapContainer.querySelectorAll<HTMLElement>('[data-mapx-price-marker="true"]').forEach((root) => {
       root.classList.toggle('is-active', root.dataset.mapxListingId === currentHoverID)
-      root
-        .querySelector('[aria-controls="map-property-preview"]')
-        ?.setAttribute('aria-expanded', String(root.dataset.mapxListingId === previewListingId))
+      root.querySelectorAll('[aria-controls="map-property-preview"]').forEach((link) => {
+        link.setAttribute('aria-expanded', String(root.dataset.mapxListingId === previewListingId))
+      })
     })
     mapContainer.querySelectorAll<HTMLElement>('[data-mapx-project-marker]').forEach((root) => {
       const selected =
@@ -568,13 +569,11 @@ const LongdoPropertyMap = ({
         return
       }
       const markerId = link.closest<HTMLElement>('[data-mapx-price-marker="true"]')?.dataset.mapxListingId
-      if (markerId && link.dataset.mapxMarkerLink === 'true' && onMarkerSelect) {
-        onMarkerSelect(markerId)
+      if (markerId && onMarkerSelect) {
+        if (previewListingIdRef.current !== markerId) onMarkerSelect(markerId)
         return
       }
       rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}${window.location.hash}`)
-      // Keep the selected preview behind the modal when opening an already-visible price.
-      if (markerId && onMarkerSelect && previewListingIdRef.current !== markerId) onMarkerSelect(markerId)
       router.push(link.getAttribute('href') || link.href, { scroll: false })
     }
     let tap: {
