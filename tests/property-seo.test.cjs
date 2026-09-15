@@ -21,6 +21,17 @@ const catalog = load('src/lib/propertyCatalog.ts', { './seo': seo })
 const sitemap = load('src/lib/propertySitemap.ts', { './seo': seo, './propertyCatalog': catalog })
 const detailSeo = load('src/lib/propertyListingSeo.ts', { './seo': seo, './propertyCatalog': catalog, '@/data/propertyTaxonomy': taxonomy })
 const plain = value => JSON.parse(JSON.stringify(value))
+test('editorial listing SEO is used for metadata with safe text and falls back when absent', () => {
+  const listing = { title: 'ชื่อประกาศ', property_type_code: 'land', offer_type: 'sale', offer_amount: 89697000,
+    land_area_sqm: 87551.2, currency: 'THB', district: 'ไทรน้อย', province: 'นนทบุรี', category_details: {} }
+  assert.equal(detailSeo.getListingSeoTitle(listing), 'ชื่อประกาศ')
+  assert.match(detailSeo.getListingSeoDescription(listing), /89,697,000/)
+  const edited = { ...listing, category_details: { seo_title_th: '<b>ขายที่ดินไทรน้อย</b>', seo_description_th: 'ที่ดิน 54 ไร่ ราคา 89,697,000 บาท มีบ่อน้ำ 2 บ่อ' } }
+  assert.equal(detailSeo.getListingSeoTitle(edited), 'ขายที่ดินไทรน้อย')
+  assert.equal(detailSeo.getListingSeoDescription(edited), edited.category_details.seo_description_th)
+  assert.equal(listing.title, 'ชื่อประกาศ')
+  assert.equal(detailSeo.getListingSeoTitle({ ...listing, category_details: { seo_title_th: 7 } }), listing.title)
+})
 const inventory = Array.from({ length: 100 }, (_, index) => ({
   id: index + 1, slug: `land-${index + 1}`, title: `ที่ดิน ${index + 1}`, property_type_code: 'land',
   province: index < 97 ? 'กรุงเทพมหานคร' : 'ภูเก็ต', offer_type: 'sale', sale_price: 1000000,

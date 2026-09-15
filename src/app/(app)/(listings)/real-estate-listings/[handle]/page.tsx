@@ -23,6 +23,7 @@ import {
   getListingImages,
   getListingPath,
   getListingSeoDescription,
+  getListingSeoTitle,
   getListingStructuredData,
 } from '@/lib/propertyListingSeo'
 import { fetchPropertyListingDetail } from '@/lib/propertySearch'
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ handle: s
   if (databaseListing) {
     const propertyType = getPropertyType(databaseListing.property_type_code)
     return createPageMetadata({
-      title: databaseListing.title,
+      title: getListingSeoTitle(databaseListing),
       description: getListingSeoDescription(databaseListing),
       path: getListingPath(databaseListing.slug || handle),
       keywords: [

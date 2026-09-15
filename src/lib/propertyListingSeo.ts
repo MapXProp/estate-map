@@ -31,7 +31,13 @@ export const getListingSection = (listing: PropertyListingDetail) => {
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0
 const priceOnRequest = (listing: PropertyListingDetail) =>
   listing.event?.price_on_request || listing.category_details?.price_on_request === true
+export const getListingSeoTitle = (listing: PropertyListingDetail) => {
+  const title = listing.category_details?.seo_title_th
+  return typeof title === 'string' && title.trim() ? cleanSeoText(title, 100) : listing.title
+}
 export const getListingSeoDescription = (listing: PropertyListingDetail) => {
+  const description = listing.category_details?.seo_description_th
+  if (typeof description === 'string' && description.trim()) return cleanSeoText(description)
   const offer =
     ({ sale: 'ขาย', rent: 'ให้เช่า', sublease: 'ให้เช่าช่วง', business_transfer: 'เซ้ง' } as Record<string, string>)[
       listing.offer_type
