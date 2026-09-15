@@ -466,6 +466,13 @@ export default function PropertyMapSearch({
     detailsCount > 0 ||
     !!keyword ||
     (!!area && !automaticAreaSearch)
+  const categorySelectionLabel = categories.length
+    ? th
+      ? `${countMapCategories(categories)} หมวด`
+      : `${countMapCategories(categories)} selected`
+    : th
+      ? 'ทุกหมวด'
+      : 'All types'
 
   const changeMapMode = (next: PropertyMapMode) => {
     if (next === mapMode) return
@@ -619,40 +626,36 @@ export default function PropertyMapSearch({
             </div>
             <div className={styles.headerActions}>
               {mapMode === 'listings' && (
-                <>
-                  <button
-                    type="button"
-                    aria-pressed={!categories.length}
-                    onClick={() => setCategories([])}
-                    className={`${styles.allCategoriesButton} ${!categories.length ? 'bg-[#176b50] text-white' : 'text-[#176b50] hover:bg-[#edf6f1] dark:text-emerald-400'}`}
-                  >
-                    {th ? 'ทุกหมวด' : 'All types'}
-                  </button>
-                  <button
-                    type="button"
-                    aria-expanded={categoriesOpen}
-                    aria-controls="map-category-options"
-                    onClick={() => {
-                      if (!categoriesOpen) {
-                        setMobilePanelOpen(false)
-                        if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
-                      }
-                      setCategoriesOpen(!categoriesOpen)
-                    }}
-                    className={styles.collapseCategoriesButton}
-                    aria-label={
-                      categoriesOpen
-                        ? th
-                          ? 'ย่อหมวดหมู่'
-                          : 'Collapse categories'
-                        : th
-                          ? 'แสดงหมวดหมู่'
-                          : 'Expand categories'
+                <button
+                  type="button"
+                  data-map-categories-toggle
+                  aria-expanded={categoriesOpen}
+                  aria-controls="map-category-options"
+                  onClick={() => {
+                    if (!categoriesOpen) {
+                      setMobilePanelOpen(false)
+                      if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
                     }
-                  >
-                    {categoriesOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-                  </button>
-                </>
+                    setCategoriesOpen(!categoriesOpen)
+                  }}
+                  className={styles.allCategoriesButton}
+                  aria-label={`${
+                    categoriesOpen
+                      ? th
+                        ? 'ย่อหมวดหมู่'
+                        : 'Collapse categories'
+                      : th
+                        ? 'แสดงหมวดหมู่'
+                        : 'Expand categories'
+                  }: ${categorySelectionLabel}`}
+                >
+                  <span>{categorySelectionLabel}</span>
+                  {categoriesOpen ? (
+                    <ChevronUp className="size-4" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="size-4" aria-hidden="true" />
+                  )}
+                </button>
               )}
             </div>
           </div>
@@ -819,6 +822,13 @@ export default function PropertyMapSearch({
                 )
               })}
             </div>
+            {categories.length > 0 && (
+              <div className={styles.categoryPanelActions}>
+                <button type="button" data-map-clear-categories onClick={() => setCategories([])}>
+                  {th ? 'กลับไปดูทุกหมวด' : 'Show all types'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>

@@ -160,15 +160,44 @@
   white-space: nowrap;
 }
 .allCategoriesButton {
-  min-height: 40px;
+  display: inline-flex;
+  min-height: 44px;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 0 13px;
   border-radius: 12px;
+  background: #176b50;
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
-.collapseCategoriesButton,
+.allCategoriesButton:hover,
+.allCategoriesButton[aria-expanded='true'] {
+  background: #125a43;
+}
+.categoryPanelActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+.categoryPanelActions button {
+  min-height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: #176b50;
+  font-size: 12px;
+  cursor: pointer;
+}
+.categoryPanelActions button:hover {
+  background: #edf6f1;
+}
+.categoryPanelActions button:focus-visible {
+  outline: 2px solid #176b50;
+  outline-offset: 2px;
+}
 .accountButton,
 .resetButton {
   display: grid;
@@ -179,7 +208,6 @@
   border-radius: 12px;
   cursor: pointer;
 }
-.collapseCategoriesButton:hover,
 .accountButton:hover,
 .resetButton:not(:disabled):hover {
   background: #edf6f1;
@@ -877,6 +905,7 @@
     width: clamp(76px, 20vw, 96px);
   }
   .headerActions,
+  .categoryPanelActions,
   .accountControl {
     display: none;
   }
@@ -1213,7 +1242,6 @@
     padding-inline: 8px;
     font-size: 11px;
   }
-  .collapseCategoriesButton,
   .accountButton {
     width: 32px;
   }
@@ -1356,7 +1384,7 @@
   color: #c1cfc5;
   background: #171c19;
 }
-:global(.dark) .collapseCategoriesButton:hover,
+:global(.dark) .categoryPanelActions button:hover,
 :global(.dark) .accountButton:hover,
 :global(.dark) .resetButton:hover,
 :global(.dark) .detailsButton:hover,
@@ -1372,6 +1400,7 @@
   border-color: #68b98a;
 }
 :global(.dark) .selectionSummary,
+:global(.dark) .categoryPanelActions button,
 :global(.dark) .mobileAllCategories {
   color: #a6b9ad;
 }
