@@ -457,6 +457,10 @@ test('a project replaces coincident price pins with one accessible building mark
     assert.equal(h.navigation.length, 0)
     assert.equal(h.selected.length, 0)
     assert.deepEqual(h.calls, [])
+    const overlayCount = h.overlays.length
+    h.render({ selectedProjectId: 'project-a' })
+    h.render({ selectedProjectId: '' })
+    assert.equal(h.overlays.length, overlayCount, 'selection highlights existing project pins without rebuilding overlays')
     h.pointer('pointerdown', 'project')
     h.pointer('pointerup', 'project')
     h.click('project', { detail: 1 })

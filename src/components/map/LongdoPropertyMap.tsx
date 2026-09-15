@@ -219,7 +219,7 @@ export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selec
         ? 'ประกาศทั้งหมดในโครงการ'
         : 'All project listings'
   const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
-  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" class="mapx-project-marker${selected ? ' is-selected' : ''}">
+  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}">
     <a href="/properties/map?project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
       <span class="mapx-project-label"><span>${escapeHtml(name)}</span><small>${isThai ? 'โครงการ · ดูประกาศ' : 'Project · View listings'}</small></span>
       <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
@@ -297,6 +297,7 @@ const LongdoPropertyMap = ({
   const declutterMarkersRef = useRef<() => void>(() => undefined)
   const currentHoverIDRef = useRef(currentHoverID)
   const previewListingIdRef = useRef(previewListingId)
+  const selectedProjectIdRef = useRef(selectedProjectId)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -475,6 +476,7 @@ const LongdoPropertyMap = ({
   useEffect(() => {
     currentHoverIDRef.current = currentHoverID
     previewListingIdRef.current = previewListingId
+    selectedProjectIdRef.current = selectedProjectId
 
     const mapContainer = placeholderRef.current
     if (!mapContainer) return
@@ -485,8 +487,15 @@ const LongdoPropertyMap = ({
         .querySelector('[aria-controls="map-property-preview"]')
         ?.setAttribute('aria-expanded', String(root.dataset.mapxListingId === previewListingId))
     })
+    mapContainer.querySelectorAll<HTMLElement>('[data-mapx-project-marker]').forEach((root) => {
+      const selected =
+        Boolean(selectedProjectId) &&
+        (root.dataset.mapxProjectId === selectedProjectId || root.dataset.mapxProjectSlug === selectedProjectId)
+      root.classList.toggle('is-selected', selected)
+      root.querySelector('[data-mapx-project-link]')?.setAttribute('aria-expanded', String(selected))
+    })
     scheduleMarkerDeclutter()
-  }, [currentHoverID, previewListingId, scheduleMarkerDeclutter])
+  }, [currentHoverID, previewListingId, selectedProjectId, scheduleMarkerDeclutter])
 
   useEffect(
     () => () => {
@@ -957,7 +966,7 @@ const LongdoPropertyMap = ({
           html: getProjectMarkerHtml(
             project,
             isThai,
-            project.id === selectedProjectId || project.slug === selectedProjectId
+            project.id === selectedProjectIdRef.current || project.slug === selectedProjectIdRef.current
           ),
           offset: { x: 0, y: 0 },
         },
@@ -979,7 +988,6 @@ const LongdoPropertyMap = ({
     onMarkerSelect,
     projectListingIds,
     projects,
-    selectedProjectId,
   ])
 
   useEffect(() => {
