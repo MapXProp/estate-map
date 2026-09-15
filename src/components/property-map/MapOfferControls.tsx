@@ -2,11 +2,11 @@
 
 import type { OfferTypeCode } from '@/data/propertyTaxonomy'
 import { toggleMapOffer } from '@/lib/propertyMapSearch'
-import { Check, House, KeyRound, type LucideIcon } from 'lucide-react'
+import { Banknote, Check, KeyRound, type LucideIcon } from 'lucide-react'
 import styles from './MapOfferControls.module.css'
 
 const options: Array<{ value: OfferTypeCode; th: string; en: string; icon: LucideIcon }> = [
-  { value: 'sale', th: 'ซื้อ', en: 'Buy', icon: House },
+  { value: 'sale', th: 'ซื้อ', en: 'Buy', icon: Banknote },
   { value: 'rent', th: 'เช่า', en: 'Rent', icon: KeyRound },
 ]
 
