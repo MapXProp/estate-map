@@ -506,6 +506,8 @@
 }
 .canvas {
   --map-panel-width: 500px;
+  --map-search-row-width: min(700px, calc(100% - 400px));
+  --map-search-row-center: 50%;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -726,14 +728,13 @@
 .locationSearch {
   position: absolute;
   top: calc(var(--map-navigation-height, 0px) + 14px);
-  left: 50%;
+  left: calc(var(--map-search-row-center) - var(--map-search-row-width) / 2);
   z-index: 30;
-  width: min(540px, calc(100% - 40px));
-  transform: translateX(-50%);
+  width: calc(var(--map-search-row-width) - 152px);
 }
-.panelVisible .locationSearch {
-  left: calc(50% + var(--map-panel-width) / 2 + 5px);
-  width: min(540px, calc(100% - var(--map-panel-width) - 80px));
+.panelVisible {
+  --map-search-row-center: calc(50% + var(--map-panel-width) / 2 + 5px);
+  --map-search-row-width: min(700px, calc(100% - var(--map-panel-width) - 80px));
 }
 .zoomControls {
   position: absolute;
@@ -744,12 +745,10 @@
 .areaControl {
   position: absolute;
   z-index: 20;
-  top: calc(var(--map-navigation-height, 0px) + 76px);
-  left: 50%;
-  transform: translateX(-50%);
-}
-.panelVisible .areaControl {
-  left: calc(50% + var(--map-panel-width) / 2 + 5px);
+  top: calc(var(--map-navigation-height, 0px) + 14px);
+  left: calc(var(--map-search-row-center) + var(--map-search-row-width) / 2);
+  width: 144px;
+  transform: translateX(-100%);
 }
 .openPanel {
   position: absolute;
@@ -769,6 +768,13 @@
   font-weight: 600;
 }
 @media (min-width: 1024px) {
+  .areaControl button {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 16px;
+    white-space: nowrap;
+    box-shadow: 0 8px 28px #123f322e;
+  }
   .canvas[data-map-preview-open='true'] .results {
     display: none;
   }
