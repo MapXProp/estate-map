@@ -27,9 +27,9 @@
   flex-shrink: 0;
   gap: 3px;
   padding: 3px;
-  border: 1px solid #dbe7df;
+  border: 1px solid #e1e3e5;
   border-radius: 12px;
-  background: #f2f7f4;
+  background: #f3f4f5;
 }
 .mapViewSwitch button {
   display: flex;
@@ -39,17 +39,24 @@
   gap: 6px;
   padding: 0 14px;
   border-radius: 9px;
-  color: #577064;
+  color: #63676c;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
+.mapViewSwitch button:not([aria-pressed='true']):hover {
+  background: #e8eaec;
+  color: #272a2e;
+}
 .mapViewSwitch button[aria-pressed='true'] {
   color: #fff;
-  background: #176b50;
-  box-shadow: 0 1px 3px #173e2920;
+  background: #292d32;
+  box-shadow: 0 1px 3px #15181c1a;
 }
-.mapViewSwitch button:focus-visible,
+.mapViewSwitch button:focus-visible {
+  outline: 2px solid #63676c;
+  outline-offset: 2px;
+}
 .projectResult:focus-visible {
   outline: 2px solid #176b50;
   outline-offset: 2px;
@@ -751,6 +758,23 @@
   width: 144px;
   transform: translateX(-100%);
 }
+.autoAreaStatus {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e1e3e5;
+  border-radius: 16px;
+  background: #fff;
+  color: #41474c;
+  box-shadow: 0 8px 28px #123f322e;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .openPanel {
   position: absolute;
   z-index: 25;
@@ -902,6 +926,12 @@
     --mobile-panel-ceiling: 68px;
     --mobile-panel-height: calc(100% - var(--map-navigation-height, 0px) - var(--mobile-panel-ceiling));
     --mobile-panel-peek: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+  .autoAreaStatus {
+    min-height: 44px;
+    border-radius: 999px;
+    gap: 5px;
+    padding-inline: 8px;
   }
   .previewPanel {
     z-index: 40;
@@ -1317,11 +1347,24 @@
   background: #252b26;
 }
 :global(.dark) .mapViewSwitch {
-  border-color: #3c443d;
-  background: #252b26;
+  border-color: #44484d;
+  background: #202428;
 }
 :global(.dark) .mapViewSwitch button:not([aria-pressed='true']) {
-  color: #a6b9ad;
+  color: #b6bac0;
+}
+:global(.dark) .mapViewSwitch button:not([aria-pressed='true']):hover {
+  color: #fff;
+  background: #363b41;
+}
+:global(.dark) .mapViewSwitch button[aria-pressed='true'] {
+  color: #25292e;
+  background: #e5e7eb;
+}
+:global(.dark) .autoAreaStatus {
+  border-color: #44484d;
+  background: #202428;
+  color: #d7dade;
 }
 :global(.dark) .mapViewBar {
   border-color: #324037;

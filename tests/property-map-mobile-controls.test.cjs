@@ -71,6 +71,7 @@ function harness(width) {
       '@/lib/propertyMapSearch': model,
       '@/lib/propertyMapProjects': projects,
       '@/hooks/useMapAreaLabel': { useMapAreaLabel: () => 'สาทร · กรุงเทพมหานคร' },
+      '@/hooks/useMapAutoAreaSearch': { useMapAutoAreaSearch: () => false },
       '@/hooks/useMobileSheets': {
         useMapBottomSheet: (_snap, _previewId, onSnap) => {
           onSheetSnap = onSnap

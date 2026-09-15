@@ -10,6 +10,7 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { toRealEstateListing } from '@/data/listings'
 import { getOfferType, type DiscoveryChannelCode, type OfferTypeCode } from '@/data/propertyTaxonomy'
 import { useMapAreaLabel } from '@/hooks/useMapAreaLabel'
+import { useMapAutoAreaSearch } from '@/hooks/useMapAutoAreaSearch'
 import { useMapPreviewHeaderHeight } from '@/hooks/useMapPreviewHeaderHeight'
 import { useMapBottomSheet } from '@/hooks/useMobileSheets'
 import {
@@ -151,6 +152,19 @@ export default function PropertyMapSearch({
   const [zoom, setZoom] = useState(initialMapZoom || 12)
   // Keep the observed viewport separate from the camera commands passed as initialCenter/Zoom.
   const [viewport, setViewport] = useState<PropertyMapViewport | undefined>()
+  const applyAutomaticArea = useCallback((bounds: PropertyMapBounds) => {
+    setArea((previous) =>
+      previous &&
+      previous.minLat === bounds.minLat &&
+      previous.maxLat === bounds.maxLat &&
+      previous.minLon === bounds.minLon &&
+      previous.maxLon === bounds.maxLon
+        ? previous
+        : bounds
+    )
+    setViewportDirty(false)
+  }, [])
+  const automaticAreaSearch = useMapAutoAreaSearch(viewport, applyAutomaticArea)
   const areaName = useMapAreaLabel(viewport?.center, viewport?.zoom || zoom, th ? 'th' : 'en')
   const searchSummary = mapSearchSummary(categories, filters.offerTypes, th)
   const mapAreaText = areaName
@@ -426,7 +440,7 @@ export default function PropertyMapSearch({
     !isDefaultMapOffers(filters.offerTypes) ||
     detailsCount > 0 ||
     !!keyword ||
-    !!area
+    (!!area && !automaticAreaSearch)
 
   const changeMapMode = (next: PropertyMapMode) => {
     if (next === mapMode) return
@@ -450,7 +464,7 @@ export default function PropertyMapSearch({
     setCategories([])
     setFilters({ ...emptyPropertyMapFilters, offerTypes: [...defaultMapOfferTypes] })
     setKeyword('')
-    setArea(null)
+    setArea(automaticAreaSearch ? viewport?.bounds || null : null)
   }
   const toggleCategory = (id: string) => setCategories((previous) => toggleMapCategory(previous, id))
   const togglePanel = () => {
@@ -845,17 +859,39 @@ export default function PropertyMapSearch({
           )}
         </div>
         <div ref={areaControlRef} className={styles.areaControl} data-map-area-control>
-          <button
-            type="button"
-            data-map-area-search
-            aria-label={th ? 'ค้นหาประกาศในบริเวณแผนที่นี้' : 'Search listings in this map area'}
-            onClick={() => setAreaRequestId((value) => value + 1)}
-            className={`flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-semibold shadow-md ${viewportDirty ? 'border-[#176b50] bg-[#176b50] text-white' : 'border-[#dbe7df] bg-white text-[#176b50]'}`}
-          >
-            <MapPin className="size-4" />
-            <span className={styles.desktopAreaLabel}>{th ? 'ค้นหาบริเวณนี้' : 'Search this area'}</span>
-            <span className={styles.mobileAreaLabel}>{th ? 'บริเวณนี้' : 'This area'}</span>
-          </button>
+          {automaticAreaSearch ? (
+            <div
+              data-map-auto-search
+              data-pending={viewportDirty}
+              role="status"
+              title={
+                th
+                  ? 'อัปเดตรายการอัตโนมัติเมื่อหยุดเลื่อนแผนที่'
+                  : 'Results update automatically after the map stops moving'
+              }
+              className={styles.autoAreaStatus}
+            >
+              {viewportDirty ? (
+                <LoaderCircle className="size-4 motion-safe:animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              <span className={styles.desktopAreaLabel}>{th ? 'ค้นหาอัตโนมัติ' : 'Auto search'}</span>
+              <span className={styles.mobileAreaLabel}>{th ? 'อัตโนมัติ' : 'Auto search'}</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-map-area-search
+              aria-label={th ? 'ค้นหาประกาศในบริเวณแผนที่นี้' : 'Search listings in this map area'}
+              onClick={() => setAreaRequestId((value) => value + 1)}
+              className={`flex min-h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-semibold shadow-md ${viewportDirty ? 'border-[#176b50] bg-[#176b50] text-white' : 'border-[#dbe7df] bg-white text-[#176b50]'}`}
+            >
+              <MapPin className="size-4" />
+              <span className={styles.desktopAreaLabel}>{th ? 'ค้นหาบริเวณนี้' : 'Search this area'}</span>
+              <span className={styles.mobileAreaLabel}>{th ? 'บริเวณนี้' : 'This area'}</span>
+            </button>
+          )}
         </div>
         {!panelOpen && (
           <button type="button" onClick={togglePanel} className={styles.openPanel}>
@@ -917,7 +953,7 @@ export default function PropertyMapSearch({
               onCollapse={togglePanel}
               onChoose={selectMapProject}
               onRetry={() => setRetry((value) => value + 1)}
-              onClearArea={area ? () => setArea(null) : undefined}
+              onClearArea={area && !automaticAreaSearch ? () => setArea(null) : undefined}
             />
           ) : (
             <div className={styles.resultsList}>
@@ -995,7 +1031,7 @@ export default function PropertyMapSearch({
                       <PanelLeftClose className="size-4" />
                     </button>
                   </div>
-                  {(keyword || area) && (
+                  {(keyword || (area && !automaticAreaSearch)) && (
                     <div className={`${styles.resultsTags} mt-2 flex flex-wrap gap-1.5`}>
                       {keyword && (
                         <button
@@ -1007,7 +1043,7 @@ export default function PropertyMapSearch({
                           <X className="size-3 shrink-0" />
                         </button>
                       )}
-                      {area && (
+                      {area && !automaticAreaSearch && (
                         <button
                           type="button"
                           onClick={() => setArea(null)}
@@ -1103,10 +1139,29 @@ export default function PropertyMapSearch({
                       </p>
                       <button
                         type="button"
-                        onClick={area ? () => setArea(null) : reset}
+                        onClick={
+                          area && automaticAreaSearch
+                            ? () => {
+                                setCenter(viewport?.center)
+                                setZoom(Math.max(1, (viewport?.zoom || zoom) - 2))
+                              }
+                            : area
+                              ? () => setArea(null)
+                              : reset
+                        }
                         className="mt-5 min-h-11 rounded-xl bg-[#176b50] px-5 text-sm font-semibold text-white"
                       >
-                        {area ? (th ? 'ดูทุกบริเวณ' : 'Show all areas') : th ? 'ล้างตัวกรอง' : 'Clear filters'}
+                        {area && automaticAreaSearch
+                          ? th
+                            ? 'ขยายพื้นที่ค้นหา'
+                            : 'Search a wider area'
+                          : area
+                            ? th
+                              ? 'ดูทุกบริเวณ'
+                              : 'Show all areas'
+                            : th
+                              ? 'ล้างตัวกรอง'
+                              : 'Clear filters'}
                       </button>
                     </div>
                   )}

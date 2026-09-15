@@ -204,7 +204,12 @@ export const getMarkerHtml = (
   </div>`
 }
 
-export type PropertyMapViewport = { center: LongdoLocation; zoom: number; initial?: boolean }
+export type PropertyMapViewport = {
+  center: LongdoLocation
+  zoom: number
+  bounds?: PropertyMapBounds
+  initial?: boolean
+}
 
 export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean) => {
   const name = isThai ? project.name : project.nameEn || project.name
@@ -842,7 +847,7 @@ const LongdoPropertyMap = ({
       declutterMarkersRef.current()
       window.setTimeout(() => declutterMarkersRef.current(), 180)
       if (viewportEventsEnabledRef.current) {
-        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom() })
+        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom(), bounds: map.bound() })
       }
     }
 
@@ -851,7 +856,7 @@ const LongdoPropertyMap = ({
       setMapReady(true)
       enableViewportEventsTimer = setTimeout(() => {
         viewportEventsEnabledRef.current = true
-        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom(), initial: true })
+        onViewportChangeRef.current?.({ center: map.location(), zoom: map.zoom(), bounds: map.bound(), initial: true })
       }, 600)
     })
     map.Event.bind('location', notifyViewportChange)
