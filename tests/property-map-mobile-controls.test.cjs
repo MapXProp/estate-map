@@ -205,6 +205,51 @@ test('mobile starts folded, keeps all tabs reachable and folds without clearing 
   }
 })
 
+test('project search opens exact project listings and its pin independently of the overview filters', () => {
+  const h = harness(1440)
+  h.nodes((node) => node.type === 'test-map-view-controls')[0].props.onModeChange('projects')
+  h.render()
+  h.nodes((node) => node.type === 'test-offers')[0].props.onChange(['rent'])
+  h.render()
+  const project = {
+    public_project_id: 'project-1',
+    slug: 'project-one',
+    name_th: 'โครงการหนึ่ง',
+    name_en: 'Project One',
+    project_category: 'housing_estate',
+    latitude: 14.1,
+    longitude: 101.2,
+    listing_count: 2,
+  }
+  h.map().onProjectSearchSelect(project)
+  h.render()
+  const panel = h.nodes((node) => node.type === 'test-project-panel')[0]
+  assert.equal(panel.props.identifier, 'project-1')
+  assert.equal(h.map().selectedProjectId, 'project-1')
+  assert.equal(h.map().projectMarkers[0].id, 'project-1')
+  assert.equal(h.map().initialCenter.lat, 14.1)
+  assert.equal(h.map().initialZoom, 17)
+  assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['rent'])
+})
+
+test('a searched project without coordinates opens its listings without inventing a map position', () => {
+  const h = harness(390)
+  h.nodes((node) => node.type === 'test-map-view-controls')[0].props.onModeChange('projects')
+  h.render()
+  h.map().onProjectSearchSelect({
+    public_project_id: 'project-no-point',
+    slug: 'no-point',
+    name_th: 'โครงการ',
+    name_en: '',
+    project_category: 'housing_estate',
+  })
+  h.render()
+  assert.equal(h.nodes((node) => node.type === 'test-project-panel')[0].props.identifier, 'project-no-point')
+  assert.equal(h.map().initialCenter, h.center)
+  assert.equal(h.map().initialZoom, 15)
+  assert.equal(h.map().projectMarkers.length, 0)
+})
+
 test('tabs reopen after location search has collapsed the entire category section', () => {
   const h = harness(390)
   h.click(h.tab('rooms'))

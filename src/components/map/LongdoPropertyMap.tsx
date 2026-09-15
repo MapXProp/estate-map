@@ -2,9 +2,23 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
-import { groupMapProjects, type MapProject, type PropertyMapMode } from '@/lib/propertyMapProjects'
+import {
+  fetchMapSearchSuggestions,
+  preferredMapProject,
+  projectSearchSuggestion,
+  searchMapPlace,
+  searchMapProjects,
+  type MapSearchSuggestion,
+} from '@/lib/propertyMapLocationSearch'
+import {
+  groupMapProjects,
+  projectCategoryLabel,
+  type MapProject,
+  type MapProjectDetails,
+  type PropertyMapMode,
+} from '@/lib/propertyMapProjects'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
-import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { Building2, House, LoaderCircle, MapPin, Search, ShoppingBag, X, ZoomIn, ZoomOut } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import Script from 'next/script'
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -58,20 +72,6 @@ type LongdoNamespace = {
       clickable?: boolean
     }
   ) => LongdoOverlay
-}
-
-type LongdoSuggestion = {
-  w: string
-  d?: string
-  s?: string
-}
-
-type LongdoSearchResult = {
-  name: string
-  address?: string
-  lat: number
-  lon: number
-  type?: string
 }
 
 declare global {
@@ -251,6 +251,7 @@ interface Props {
   onLocationSearch?: (location: LongdoLocation, label: string) => void
   onMarkerSelect?: (id: string) => void
   onProjectSelect?: (project: MapProject) => void
+  onProjectSearchSelect?: (project: MapProjectDetails) => void
   selectedProjectId?: string
   mapMode?: PropertyMapMode
   projectMarkers?: MapProject[]
@@ -278,6 +279,7 @@ const LongdoPropertyMap = ({
   onLocationSearch,
   onMarkerSelect,
   onProjectSelect,
+  onProjectSearchSelect,
   selectedProjectId = '',
   mapMode = 'listings',
   projectMarkers,
@@ -310,7 +312,8 @@ const LongdoPropertyMap = ({
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState('')
-  const [suggestions, setSuggestions] = useState<LongdoSuggestion[]>([])
+  const [suggestions, setSuggestions] = useState<MapSearchSuggestion[]>([])
+  const searchRequestRef = useRef<AbortController | null>(null)
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isSuggesting, setIsSuggesting] = useState(false)
@@ -713,18 +716,21 @@ const LongdoPropertyMap = ({
       setIsSuggesting(true)
       setSearchMessage('')
       try {
-        const params = new URLSearchParams({ keyword, limit: '7', key: apiKey })
-        const response = await fetch(`https://search.longdo.com/mapsearch/json/suggest?${params}`, {
-          signal: controller.signal,
-        })
-        if (!response.ok) throw new Error('Longdo suggest request failed')
-        const result = (await response.json()) as { meta?: { keyword?: string }; data?: LongdoSuggestion[] }
-        if (result.meta?.keyword && result.meta.keyword !== keyword) return
-        setSuggestions(result.data || [])
+        const result = await fetchMapSearchSuggestions(keyword, mapMode, apiKey, isThai, controller.signal)
+        if (controller.signal.aborted) return
+        setSuggestions(result)
         setActiveSuggestionIndex(-1)
-        if (!result.data?.length) setSearchMessage('ไม่พบคำแนะนำ ลองระบุเขต จังหวัด หรือชื่อสถานที่')
+        if (!result.length)
+          setSearchMessage(
+            isThai
+              ? 'ไม่พบคำแนะนำ ลองระบุเขต จังหวัด หรือชื่อสถานที่'
+              : 'No suggestions. Try a district, city or place name.'
+          )
       } catch (error) {
-        if ((error as Error).name !== 'AbortError') setSearchMessage('ค้นหาคำแนะนำไม่สำเร็จ กรุณาลองอีกครั้ง')
+        if (!controller.signal.aborted && (error as Error).name !== 'AbortError')
+          setSearchMessage(
+            isThai ? 'ค้นหาคำแนะนำไม่สำเร็จ กรุณาลองอีกครั้ง' : 'Suggestions unavailable. Please try again.'
+          )
       } finally {
         if (!controller.signal.aborted) setIsSuggesting(false)
       }
@@ -734,29 +740,75 @@ const LongdoPropertyMap = ({
       clearTimeout(timer)
       controller.abort()
     }
-  }, [apiKey, isSearchFocused, searchText])
+  }, [apiKey, isSearchFocused, searchText, mapMode, isThai])
+
+  useEffect(() => {
+    searchRequestRef.current?.abort()
+    setIsSearching(false)
+    setSuggestions([])
+    setActiveSuggestionIndex(-1)
+    setSearchMessage('')
+    return () => searchRequestRef.current?.abort()
+  }, [mapMode])
 
   const searchLocation = useCallback(
-    async (rawKeyword: string) => {
+    async (rawKeyword: string, suggestion?: MapSearchSuggestion) => {
       const keyword = rawKeyword.trim()
       const map = mapRef.current
       const longdo = window.longdo
       if (!keyword || !map || !longdo) return
 
+      searchRequestRef.current?.abort()
+      const controller = new AbortController()
+      searchRequestRef.current = controller
       setSearchText(keyword)
       setSuggestions([])
+      setActiveSuggestionIndex(-1)
       setIsSearching(true)
       setSearchMessage('')
       try {
-        const params = new URLSearchParams({ keyword, limit: '8', locale: 'th', key: apiKey })
-        const response = await fetch(`https://search.longdo.com/mapsearch/json/search?${params}`)
-        if (!response.ok) throw new Error('Longdo search request failed')
-        const result = (await response.json()) as { data?: LongdoSearchResult[] }
-        const place = result.data?.find(
-          (item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lon))
-        )
+        let project = suggestion?.kind === 'project' ? suggestion.project : undefined
+        if (mapMode === 'projects' && !suggestion) {
+          const matches = await searchMapProjects(keyword, controller.signal).catch((error) => {
+            if (controller.signal.aborted) throw error
+            return []
+          })
+          project = preferredMapProject(keyword, matches)
+          if (!project && matches.length > 1) {
+            setSuggestions([
+              ...matches.map((item) => projectSearchSuggestion(item, isThai)),
+              { kind: 'place', label: keyword, direct: true },
+            ])
+            setSearchMessage(
+              isThai
+                ? 'เลือกโครงการที่ต้องการ หรือค้นหาสถานที่ด้วยคำนี้'
+                : 'Choose a project or search places with this name.'
+            )
+            setIsSearchFocused(true)
+            return
+          }
+        }
+        controller.signal.throwIfAborted()
+        if (project) {
+          if (searchMarkerRef.current) {
+            map.Overlays.remove(searchMarkerRef.current)
+            searchMarkerRef.current = null
+          }
+          if (onProjectSearchSelect) onProjectSearchSelect(project)
+          else
+            router.push(
+              `/properties/map?map_mode=projects&project=${encodeURIComponent(project.slug || project.public_project_id)}`
+            )
+          setSearchText(isThai ? project.name_th || project.name_en : project.name_en || project.name_th)
+          setIsSearchFocused(false)
+          searchInputRef.current?.blur()
+          return
+        }
+        const place = await searchMapPlace(keyword, apiKey, isThai, controller.signal)
         if (!place) {
-          setSearchMessage('ไม่พบสถานที่นี้ ลองเพิ่มชื่อเขตหรือจังหวัด')
+          setSearchMessage(
+            isThai ? 'ไม่พบสถานที่นี้ ลองเพิ่มชื่อเขตหรือจังหวัด' : 'Place not found. Try adding a district or city.'
+          )
           setIsSearchFocused(true)
           return
         }
@@ -784,13 +836,14 @@ const LongdoPropertyMap = ({
           router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false })
         }
       } catch {
-        setSearchMessage('ค้นหาสถานที่ไม่สำเร็จ กรุณาลองอีกครั้ง')
+        if (controller.signal.aborted) return
+        setSearchMessage(isThai ? 'ค้นหาสถานที่ไม่สำเร็จ กรุณาลองอีกครั้ง' : 'Search unavailable. Please try again.')
         setIsSearchFocused(true)
       } finally {
-        setIsSearching(false)
+        if (!controller.signal.aborted) setIsSearching(false)
       }
     },
-    [apiKey, pathname, router]
+    [apiKey, pathname, router, mapMode, isThai, onProjectSearchSelect]
   )
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -807,10 +860,12 @@ const LongdoPropertyMap = ({
     if (event.key === 'Enter') {
       event.preventDefault()
       const suggestion = suggestions[activeSuggestionIndex]
-      void searchLocation(suggestion?.w || searchText)
+      void searchLocation(suggestion?.label || searchText, suggestion)
       return
     }
     if (event.key === 'Escape') {
+      searchRequestRef.current?.abort()
+      setIsSearching(false)
       setSuggestions([])
       setIsSearchFocused(false)
       searchInputRef.current?.blur()
@@ -1368,18 +1423,39 @@ const LongdoPropertyMap = ({
               type="text"
               inputMode="search"
               enterKeyHint="search"
+              maxLength={120}
               role="combobox"
-              aria-label="ค้นหาสถานที่บนแผนที่"
+              aria-label={
+                mapMode === 'projects'
+                  ? isThai
+                    ? 'ค้นหาโครงการหรือสถานที่บนแผนที่'
+                    : 'Search projects or places on the map'
+                  : isThai
+                    ? 'ค้นหาสถานที่บนแผนที่'
+                    : 'Search places on the map'
+              }
               aria-autocomplete="list"
               aria-expanded={isSearchFocused && (suggestions.length > 0 || !!searchMessage)}
               aria-controls="longdo-location-suggestions"
               aria-activedescendant={
                 activeSuggestionIndex >= 0 ? `longdo-location-suggestion-${activeSuggestionIndex}` : undefined
               }
-              placeholder="ค้นหาเขต ย่าน ถนน หรือสถานที่"
+              placeholder={
+                mapMode === 'projects'
+                  ? isThai
+                    ? 'ค้นหาชื่อห้าง โครงการ หมู่บ้าน หรือสถานที่'
+                    : 'Search malls, projects, housing estates or places'
+                  : isThai
+                    ? 'ค้นหาเขต ย่าน ถนน หรือสถานที่'
+                    : 'Search districts, neighborhoods, roads or places'
+              }
               className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0"
               onChange={(event) => {
+                searchRequestRef.current?.abort()
+                setIsSearching(false)
                 setSearchText(event.target.value)
+                setSuggestions([])
+                setActiveSuggestionIndex(-1)
                 setSearchMessage('')
               }}
               onFocus={() => {
@@ -1389,16 +1465,22 @@ const LongdoPropertyMap = ({
               onKeyDown={handleSearchKeyDown}
             />
             {(isSuggesting || isSearching) && (
-              <LoaderCircle className="ms-2 size-4 shrink-0 animate-spin text-[#176b50]" aria-label="กำลังค้นหา" />
+              <LoaderCircle
+                className="ms-2 size-4 shrink-0 animate-spin text-[#176b50]"
+                aria-label={isThai ? 'กำลังค้นหา' : 'Searching'}
+              />
             )}
             {searchText && !isSuggesting && !isSearching && (
               <button
                 type="button"
-                aria-label="ล้างคำค้น"
+                aria-label={isThai ? 'ล้างคำค้น' : 'Clear search'}
                 className="ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
                 onClick={() => {
+                  searchRequestRef.current?.abort()
+                  setIsSearching(false)
                   setSearchText('')
                   setSuggestions([])
+                  setActiveSuggestionIndex(-1)
                   setSearchMessage('')
                   searchInputRef.current?.focus()
                 }}
@@ -1412,32 +1494,62 @@ const LongdoPropertyMap = ({
             <div
               id="longdo-location-suggestions"
               role="listbox"
-              className="mt-2 overflow-hidden rounded-2xl border border-[#dfe9e5] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,63,50,0.2)]"
+              aria-label={isThai ? 'ผลค้นหาแนะนำ' : 'Search suggestions'}
+              className="mt-2 max-h-[min(360px,45dvh)] overflow-y-auto overscroll-contain rounded-2xl border border-[#dfe9e5] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,63,50,0.2)]"
             >
-              {suggestions.map((suggestion, index) => (
-                <button
-                  id={`longdo-location-suggestion-${index}`}
-                  key={`${suggestion.w}-${index}`}
-                  type="button"
-                  role="option"
-                  aria-selected={index === activeSuggestionIndex}
-                  className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
-                    index === activeSuggestionIndex
-                      ? 'bg-[#edf6f1] text-[#124d3c]'
-                      : 'text-neutral-700 hover:bg-neutral-50'
-                  }`}
-                  onMouseEnter={() => setActiveSuggestionIndex(index)}
-                  onClick={() => void searchLocation(suggestion.w)}
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf6f1] text-[#176b50]">
-                    <MapPin className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{suggestion.w}</span>
-                    <span className="block text-xs text-neutral-400">สถานที่จาก Longdo Map</span>
-                  </span>
-                </button>
-              ))}
+              {suggestions.map((suggestion, index) => {
+                const project = suggestion.kind === 'project' ? suggestion.project : undefined
+                const Icon = project
+                  ? project.project_category === 'housing_estate'
+                    ? House
+                    : project.project_category === 'commercial_complex'
+                      ? ShoppingBag
+                      : Building2
+                  : MapPin
+                const description = project
+                  ? [
+                      projectCategoryLabel(project.project_category, isThai),
+                      project.district || project.province,
+                      typeof project.listing_count === 'number'
+                        ? `${project.listing_count} ${isThai ? 'ประกาศ' : 'listings'}`
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : suggestion.kind === 'place' && suggestion.direct
+                    ? isThai
+                      ? 'ค้นหาสถานที่ด้วยคำนี้'
+                      : 'Search places with this name'
+                    : isThai
+                      ? 'สถานที่'
+                      : 'Place'
+                return (
+                  <button
+                    id={`longdo-location-suggestion-${index}`}
+                    key={project?.public_project_id || `${suggestion.label}-${index}`}
+                    data-map-search-result={suggestion.kind}
+                    data-map-search-project={project?.public_project_id}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeSuggestionIndex}
+                    className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
+                      index === activeSuggestionIndex
+                        ? 'bg-[#edf6f1] text-[#124d3c]'
+                        : 'text-neutral-700 hover:bg-neutral-50'
+                    }`}
+                    onMouseEnter={() => setActiveSuggestionIndex(index)}
+                    onClick={() => void searchLocation(suggestion.label, suggestion)}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf6f1] text-[#176b50]">
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold">{suggestion.label}</span>
+                      <span className="block text-xs text-neutral-500">{description}</span>
+                    </span>
+                  </button>
+                )
+              })}
               {searchMessage && <p className="px-3 py-3 text-sm text-neutral-500">{searchMessage}</p>}
             </div>
           )}

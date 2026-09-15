@@ -39,6 +39,27 @@ export type MapProjectDetails = {
   province: string
   latitude?: number
   longitude?: number
+  aliases?: string[]
+  listing_count?: number
+}
+
+export function mapProjectSearchSeed(project: MapProjectDetails, fallback?: MapProject): MapProject | undefined {
+  const location = validProjectLocation(project.latitude, project.longitude)
+    ? { lat: project.latitude!, lon: project.longitude! }
+    : fallback?.id === project.public_project_id
+      ? fallback.location
+      : undefined
+  if (!location) return undefined
+  return {
+    id: project.public_project_id,
+    slug: project.slug,
+    name: project.name_th,
+    nameEn: project.name_en,
+    category: project.project_category,
+    location,
+    listingIds: fallback?.id === project.public_project_id ? fallback.listingIds : [],
+    listingCount: project.listing_count,
+  }
 }
 
 export const validProjectLocation = (lat: unknown, lon: unknown): boolean =>

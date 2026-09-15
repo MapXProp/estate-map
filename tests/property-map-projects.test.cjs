@@ -34,6 +34,19 @@ test('map links default to listings while project deep links select project mode
   assert.equal(normalizeMapMode('unknown'), 'listings')
 })
 
+test('searched project pins use official coordinates or matching membership only', () => {
+  const m = model()
+  const details = { public_project_id: 'project-a', name_th: 'A', latitude: 14, longitude: 101 }
+  const fallback = { id: 'project-b', location: { lat: 13, lon: 100 }, listingIds: ['wrong-unit'] }
+  assert.deepEqual(plain(m.mapProjectSearchSeed(details, fallback).location), { lat: 14, lon: 101 })
+  assert.deepEqual(plain(m.mapProjectSearchSeed(details, fallback).listingIds), [])
+  assert.equal(m.mapProjectSearchSeed({ ...details, latitude: undefined }, fallback), undefined)
+  assert.equal(
+    m.mapProjectSearchSeed({ ...details, latitude: undefined }, { ...fallback, id: 'project-a' }).location,
+    fallback.location
+  )
+})
+
 test('one project view includes condos, housing estates, malls and every other registered project type', () => {
   const categories = [
     'condominium',

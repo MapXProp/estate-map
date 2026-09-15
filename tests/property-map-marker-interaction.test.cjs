@@ -149,6 +149,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom }) },
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
     '@/lib/propertyMapProjects': projectContext.exports,
+    '@/lib/propertyMapLocationSearch': {},
     'next/navigation': { usePathname: () => pathname, useRouter: () => router },
     'next/script': { default: 'sdk-script' },
   }

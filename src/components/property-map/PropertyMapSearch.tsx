@@ -15,8 +15,10 @@ import { useMapPreviewHeaderHeight } from '@/hooks/useMapPreviewHeaderHeight'
 import { useMapBottomSheet } from '@/hooks/useMobileSheets'
 import {
   groupMapProjects,
+  mapProjectSearchSeed,
   validProjectLocation,
   type MapProject,
+  type MapProjectDetails,
   type PropertyMapMode,
 } from '@/lib/propertyMapProjects'
 import {
@@ -316,6 +318,13 @@ export default function PropertyMapSearch({
       ),
     [matchingRows]
   )
+  const projectMarkers = useMemo(
+    () =>
+      selectedProject?.seed && !mapProjects.some((project) => project.id === selectedProject.id)
+        ? [...mapProjects, selectedProject.seed]
+        : mapProjects,
+    [mapProjects, selectedProject]
+  )
   const displayedProjects = useMemo(
     () =>
       mapProjects
@@ -401,6 +410,25 @@ export default function PropertyMapSearch({
       if (window.matchMedia('(max-width: 1023px)').matches) setCategoriesOpen(false)
     },
     [setMobilePanelOpen]
+  )
+  const selectSearchedProject = useCallback(
+    (project: MapProjectDetails) => {
+      const seed = mapProjectSearchSeed(
+        project,
+        mapProjects.find((item) => item.id === project.public_project_id)
+      )
+      if (seed) {
+        setCenter(seed.location)
+        setZoom(17)
+      }
+      setSelectedProject({ id: project.public_project_id, seed })
+      setPreviewSelection(null)
+      setHoveredId('')
+      setPanelOpen(true)
+      setMobilePanelOpen(true)
+      setMobileGroupOpen(false)
+    },
+    [mapProjects, setMobilePanelOpen]
   )
   const closeMapProject = () => {
     const id = selectedProject?.seed?.id || selectedProject?.id
@@ -807,11 +835,12 @@ export default function PropertyMapSearch({
               apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
               listings={mapListings}
               mapMode={mapMode}
-              projectMarkers={mapProjects}
+              projectMarkers={projectMarkers}
               currentHoverID={previewListing?.id || hoveredId}
               previewListingId={previewListing?.id}
               onMarkerSelect={selectMapMarker}
               onProjectSelect={selectMapProject}
+              onProjectSearchSelect={selectSearchedProject}
               selectedProjectId={selectedProject?.id}
               onMapInteraction={collapseCategories}
               onMapBackgroundTap={dismissMobilePreview}
