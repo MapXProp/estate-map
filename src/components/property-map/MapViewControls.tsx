@@ -28,6 +28,11 @@ export default function MapViewControls({
         <button
           type="button"
           data-map-mode="projects"
+          title={
+            th
+              ? 'ดูโครงการบ้าน คอนโด ห้าง และโครงการประเภทอื่น'
+              : 'View housing projects, condos, malls and other projects'
+          }
           aria-pressed={mode === 'projects'}
           onClick={() => onModeChange('projects')}
         >
@@ -35,11 +40,6 @@ export default function MapViewControls({
           {th ? 'ดูโครงการ' : 'Projects'}
         </button>
       </div>
-      {mode === 'projects' && (
-        <span className={styles.mapViewHint}>
-          {th ? 'บ้าน · คอนโด · ห้าง · ทุกโครงการ' : 'Houses · condos · malls · all projects'}
-        </span>
-      )}
     </div>
   )
 }

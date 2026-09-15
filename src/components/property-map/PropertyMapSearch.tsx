@@ -531,6 +531,7 @@ export default function PropertyMapSearch({
               </span>
             )}
           </div>
+          <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
           <div className={styles.toolbar} data-map-search-controls data-offer-layout={offerLayout}>
             <MapOfferControls
               value={filters.offerTypes}
@@ -628,7 +629,6 @@ export default function PropertyMapSearch({
             </div>
           </div>
         </header>
-        <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
         {mapMode === 'listings' && (
           <div className={styles.mobileTabs} aria-label={th ? 'กลุ่มหมวด' : 'Category groups'}>
             {mapCategoryGroups.map((group) => {

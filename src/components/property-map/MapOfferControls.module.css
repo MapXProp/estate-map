@@ -1,8 +1,6 @@
 .controls {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: center;
-  color: #516057;
+  flex-shrink: 0;
+  color: #435f50;
 }
 .primary {
   display: flex;
@@ -14,19 +12,20 @@
   justify-content: center;
   gap: 5px;
   min-height: 44px;
-  min-width: 52px;
+  min-width: 60px;
   padding: 0 10px;
-  border: 1px solid #e2e7e3;
+  border: 1px solid #cddbd2;
   border-radius: 10px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
 .primary button[aria-pressed='true'] {
-  background: #e7eee8;
-  border-color: #ccd8cf;
-  color: #405b49;
+  background: #176b50;
+  border-color: #176b50;
+  color: #fff;
+  box-shadow: 0 2px 5px #173e291a;
 }
 .check {
   display: grid;
@@ -44,32 +43,30 @@
   opacity: 0;
 }
 [aria-pressed='true'] > .check {
-  background: #617968;
-  border-color: #617968;
-  color: #fff;
+  background: #fff;
+  border-color: #fff;
+  color: #176b50;
 }
 [aria-pressed='true'] > .check svg {
   opacity: 1;
 }
 .primary button:hover {
-  background: #edf2ed;
+  background: #edf6f1;
+}
+.primary button[aria-pressed='true']:hover {
+  background: #12563f;
+  border-color: #12563f;
 }
 .primary button:focus-visible {
-  outline: 2px solid #687e6d;
+  outline: 2px solid #176b50;
   outline-offset: 2px;
 }
 @media (max-width: 639px) {
   .primary button {
+    min-width: 52px;
     padding-inline: 7px;
     font-size: 12px;
     gap: 4px;
-  }
-}
-@media (max-width: 359px) {
-  .primary button {
-    min-width: 44px;
-    padding-inline: 2px;
-    gap: 2px;
   }
 }
 :global(.dark) .controls {
@@ -79,16 +76,21 @@
   border-color: #485b4d;
 }
 :global(.dark) .primary button[aria-pressed='true'] {
-  background: #334b3b;
-  color: #dcebe0;
+  background: #237f59;
+  border-color: #32986d;
+  color: #fff;
 }
 :global(.dark) .check {
   border-color: #7c9382;
   background: #24342a;
 }
 :global(.dark) [aria-pressed='true'] > .check {
-  background: #617968;
+  background: #fff;
+  border-color: #fff;
 }
 :global(.dark) .primary button:hover {
   background: #304337;
+}
+:global(.dark) .primary button[aria-pressed='true']:hover {
+  background: #299467;
 }
