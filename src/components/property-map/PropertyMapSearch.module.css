@@ -27,9 +27,9 @@
   flex-shrink: 0;
   gap: 3px;
   padding: 3px;
-  border: 1px solid #e1e3e5;
+  border: 1px solid #dbe7df;
   border-radius: 12px;
-  background: #f3f4f5;
+  background: #f2f7f4;
 }
 .mapViewSwitch button {
   display: flex;
@@ -39,22 +39,22 @@
   gap: 6px;
   padding: 0 14px;
   border-radius: 9px;
-  color: #63676c;
+  color: #577064;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 .mapViewSwitch button:not([aria-pressed='true']):hover {
-  background: #e8eaec;
-  color: #272a2e;
+  background: #e7f0ea;
+  color: #176b50;
 }
 .mapViewSwitch button[aria-pressed='true'] {
   color: #fff;
-  background: #292d32;
-  box-shadow: 0 1px 3px #15181c1a;
+  background: #176b50;
+  box-shadow: 0 1px 3px #173e2920;
 }
 .mapViewSwitch button:focus-visible {
-  outline: 2px solid #63676c;
+  outline: 2px solid #176b50;
   outline-offset: 2px;
 }
 .projectResult:focus-visible {
@@ -1347,19 +1347,15 @@
   background: #252b26;
 }
 :global(.dark) .mapViewSwitch {
-  border-color: #44484d;
-  background: #202428;
+  border-color: #3c443d;
+  background: #252b26;
 }
 :global(.dark) .mapViewSwitch button:not([aria-pressed='true']) {
-  color: #b6bac0;
+  color: #a6b9ad;
 }
 :global(.dark) .mapViewSwitch button:not([aria-pressed='true']):hover {
   color: #fff;
-  background: #363b41;
-}
-:global(.dark) .mapViewSwitch button[aria-pressed='true'] {
-  color: #25292e;
-  background: #e5e7eb;
+  background: #304337;
 }
 :global(.dark) .autoAreaStatus {
   border-color: #44484d;

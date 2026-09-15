@@ -6,7 +6,7 @@
   gap: 6px;
 }
 .primary button {
-  --offer-ink: #b63f2b;
+  --offer-ink: #405b49;
   position: relative;
   display: flex;
   align-items: center;
@@ -15,10 +15,10 @@
   min-height: 44px;
   min-width: 72px;
   padding: 0 12px;
-  border: 1px solid #e8e3e1;
+  border: 1px solid #e2e7e3;
   border-radius: 14px;
   background: #fff;
-  color: #686c69;
+  color: #516057;
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
@@ -29,8 +29,8 @@
     color 150ms ease;
 }
 .primary button[aria-pressed='true'] {
-  border-color: #efd0c9;
-  background: #fff1ee;
+  border-color: #ccd8cf;
+  background: #e7eee8;
   color: var(--offer-ink);
 }
 .offerIcon {
@@ -47,7 +47,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--offer-ink);
+  background: #617968;
   color: #fff;
   opacity: 0;
 }
@@ -59,15 +59,15 @@
   opacity: 1;
 }
 .primary button:hover {
-  border-color: #e6d8d4;
-  background: #faf6f5;
+  border-color: #ccd8cf;
+  background: #edf2ed;
 }
 .primary button[aria-pressed='true']:hover {
-  border-color: #e9bfb6;
-  background: #ffe7e2;
+  border-color: #ccd8cf;
+  background: #edf2ed;
 }
 .primary button:focus-visible {
-  outline: 2px solid var(--offer-ink);
+  outline: 2px solid #687e6d;
   outline-offset: 3px;
 }
 @media (max-width: 639px) {
@@ -92,17 +92,18 @@
 }
 :global(.dark) .primary button:not([aria-pressed='true']) {
   background: #1f2621;
-  border-color: #3e4941;
+  border-color: #485b4d;
   color: #a9b7ae;
 }
 :global(.dark) .primary button[aria-pressed='true'] {
-  background: #332623;
-  border-color: #604038;
-  color: #f1b4a6;
+  background: #334b3b;
+  border-color: #485b4d;
+  color: #dcebe0;
 }
 :global(.dark) .primary button:hover {
-  border-color: #745148;
+  border-color: #7c9382;
+  background: #304337;
 }
 :global(.dark) .primary button[aria-pressed='true']:hover {
-  background: #3c2924;
+  background: #304337;
 }
