@@ -3,6 +3,7 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import ListingViewCount from '@/components/ListingViewCount'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -82,6 +83,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
             </h2>
           </div>
           {renderTienIch()}
+          <ListingViewCount listingId={data.publicListingId} initialCount={data.viewCount} />
           <p className="line-clamp-2 text-sm text-neutral-500 dark:text-neutral-400">
             {isThai ? data.address : data.addressEn || data.address}
           </p>

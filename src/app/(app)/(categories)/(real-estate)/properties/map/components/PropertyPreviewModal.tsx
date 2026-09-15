@@ -1,6 +1,7 @@
 'use client'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
+import ListingViewCount from '@/components/ListingViewCount'
 import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import sheetStyles from '@/components/property-map/MobileSheet.module.css'
@@ -177,6 +178,11 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
                   <div className="mx-auto max-w-4xl py-7">
                     <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[#176b50]">
                       <span className="rounded-full bg-[#edf6f1] px-3 py-1.5">{category}</span>
+                      <ListingViewCount
+                        listingId={listing.public_listing_id}
+                        initialCount={listing.view_count}
+                        source="map_modal"
+                      />
                     </div>
                     <h1 className="mt-3 text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-white">
                       {title}

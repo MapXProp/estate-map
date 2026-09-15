@@ -1,6 +1,7 @@
 'use client'
 
 import ListingImageFallback from '@/components/ListingImageFallback'
+import ListingViewCount from '@/components/ListingViewCount'
 import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
@@ -199,6 +200,12 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
                   {title}
                 </h1>
+                <ListingViewCount
+                  listingId={listing.public_listing_id}
+                  initialCount={listing.view_count}
+                  source="listing_page"
+                  className="mt-2"
+                />
               </div>
             </div>
             {listing.project_name ? (

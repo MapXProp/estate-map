@@ -4,6 +4,7 @@ import PropertyDescription from '@/components/PropertyDescription'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
@@ -222,6 +223,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </div>
             </div>
 
+            <ListingViewCount
+              listingId={listing.public_listing_id}
+              initialCount={listing.view_count}
+              source="listing_page"
+              className="order-3 mt-3 min-[744px]:order-none"
+            />
             <section className="order-3 mt-5 grid grid-cols-2 gap-3 min-[744px]:order-none min-[744px]:mt-7 sm:grid-cols-4">
               {factCards.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-neutral-200 bg-white p-4">

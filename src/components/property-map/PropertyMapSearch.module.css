@@ -704,11 +704,11 @@
     bottom: auto;
     left: 0;
     width: auto;
-    height: var(--mobile-preview-height, 154px);
+    height: min(224px, max(204px, calc(var(--mobile-preview-height, 154px) + 48px)), 38dvh);
     border: 0;
     border-bottom: 1px solid #dbe7df;
-    border-radius: 0 0 16px 16px;
-    box-shadow: 0 4px 12px #153b251a;
+    border-radius: 0 0 22px 22px;
+    box-shadow: 0 8px 20px #153b2524;
   }
   .search[data-map-mobile-preview='true'] .categories,
   .canvas[data-map-preview-open='true'] .locationSearch,

@@ -2,6 +2,7 @@
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
@@ -112,6 +113,12 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </span>
             </div>
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
+            <ListingViewCount
+              listingId={listing.public_listing_id}
+              initialCount={listing.view_count}
+              source="listing_page"
+              className="mt-2"
+            />
             <div className="mt-2 flex items-start justify-between gap-4">
               <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
                 {title}

@@ -1198,6 +1198,10 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
 
   return {
     id: `real-estate-listing://${listing.id}`,
+    publicListingId: listing.public_listing_id,
+    viewCount: listing.view_count || 0,
+    projectName: listing.project_name || '',
+    projectNameEn: listing.project_name_en || listing.project_name || '',
     title: listing.title,
     titleEn: listing.title_en || listing.title,
     handle: listing.slug || listing.public_listing_id,

@@ -52,6 +52,7 @@ export type PropertySearchIntent = {
 }
 
 export type PropertySearchListing = {
+  view_count?: number
   id: number
   public_listing_id: string
   slug: string
@@ -168,6 +169,7 @@ export type PropertyEventRound = {
 }
 
 export type PropertyListingDetail = {
+  view_count?: number
   id: number
   public_listing_id: string
   slug: string

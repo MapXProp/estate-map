@@ -1,5 +1,6 @@
 'use client'
 
+import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import type { TRealEstateListing } from '@/data/listings'
 import { getPropertyType, offerTypes } from '@/data/propertyTaxonomy'
@@ -10,12 +11,16 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/re
 import {
   ArrowLeft,
   ArrowUpRight,
+  Bath,
+  BedDouble,
   ChevronLeft,
   ChevronRight,
   Images,
+  LandPlot,
   LoaderCircle,
   MapPin,
   Maximize2,
+  Ruler,
   X,
 } from 'lucide-react'
 import Image from 'next/image'
@@ -35,6 +40,7 @@ export default function MapPinPreview({
   const { locale, formatCurrencyFrom } = usePreferences()
   const th = locale === 'th'
   const title = th ? listing.title : listing.titleEn || listing.title
+  const headline = (th ? listing.projectName : listing.projectNameEn || listing.projectName) || title
   const [images, setImages] = useState(() => getMapPreviewImages(listing.featuredImage, listing.galleryImgs))
   const [imageIndex, setImageIndex] = useState(0)
   const [galleryOpen, setGalleryOpen] = useState(false)
@@ -63,6 +69,43 @@ export default function MapPinPreview({
       } as Record<string, string>
     )[listing.priceUnit || ''] || ''
   const facts = th ? listing.metadataSummary : listing.metadataSummaryEn
+  const quickFacts = [
+    ...(listing.bedrooms > 0
+      ? [
+          {
+            icon: BedDouble,
+            text: String(listing.bedrooms),
+            label: th ? `${listing.bedrooms} ห้องนอน` : `${listing.bedrooms} bedrooms`,
+          },
+        ]
+      : []),
+    ...(listing.bathrooms > 0
+      ? [
+          {
+            icon: Bath,
+            text: String(listing.bathrooms),
+            label: th ? `${listing.bathrooms} ห้องน้ำ` : `${listing.bathrooms} bathrooms`,
+          },
+        ]
+      : []),
+    ...((listing.landAreaSqm || 0) > 0
+      ? [
+          {
+            icon: LandPlot,
+            text: `${((listing.landAreaSqm || 0) / 4).toLocaleString(th ? 'th-TH' : 'en-US', { maximumFractionDigits: 1 })} ${th ? 'ตร.ว.' : 'sq.wah'}`,
+            label: th ? 'ขนาดที่ดิน' : 'Land area',
+          },
+        ]
+      : (listing.usableAreaSqm || 0) > 0
+        ? [
+            {
+              icon: Ruler,
+              text: `${listing.usableAreaSqm!.toLocaleString(th ? 'th-TH' : 'en-US', { maximumFractionDigits: 1 })} ${th ? 'ตร.ม.' : 'sq.m.'}`,
+              label: th ? 'พื้นที่ใช้สอย' : 'Floor area',
+            },
+          ]
+        : []),
+  ]
   const changeImage = (direction: number) =>
     setImageIndex((index) => stepMapPreviewImage(index, direction, images.length))
 
@@ -74,6 +117,10 @@ export default function MapPinPreview({
     void fetchPropertyListingDetail(listing.handle, controller.signal)
       .then((detail) => {
         if (controller.signal.aborted) return
+        if (!detail) {
+          setStatus('error')
+          return
+        }
         const photos = getMapPreviewGallery(detail, listing.handle)
         setImages(photos)
         setImageIndex((index) => Math.max(0, Math.min(index, photos.length - 1)))
@@ -106,7 +153,7 @@ export default function MapPinPreview({
         src={activeImage}
         alt={`${title} · ${th ? 'รูป' : 'Photo'} ${imageIndex + 1}`}
         fill
-        sizes={fullscreen ? '100vw' : '(min-width: 1024px) 500px, (min-width: 560px) 160px, 30vw'}
+        sizes={fullscreen ? '100vw' : '(min-width: 1024px) 500px, (min-width: 560px) 210px, 38vw'}
         className={styles.image}
         onError={() => setFailedImages((previous) => [...previous, activeImage])}
       />
@@ -206,6 +253,14 @@ export default function MapPinPreview({
             )}
           </button>
           {arrows}
+          <ListingViewCount
+            listingId={listing.publicListingId}
+            initialCount={listing.viewCount}
+            source="map_preview"
+            enabled={status === 'ready'}
+            compact
+            className={styles.views}
+          />
           <span className={styles.counter} aria-live="polite">
             <Images className="size-3.5" />
             {images.length ? `${imageIndex + 1} / ${images.length}` : '0'}
@@ -227,9 +282,19 @@ export default function MapPinPreview({
             {price}
             <span>{period}</span>
           </p>
-          <h2 id="map-preview-heading" tabIndex={-1} ref={headingRef} className={styles.title}>
-            {title}
+          <h2 id="map-preview-heading" tabIndex={-1} ref={headingRef} className={styles.title} title={title}>
+            {headline}
           </h2>
+          {quickFacts.length > 0 && (
+            <div className={styles.quickFacts} data-map-preview-facts>
+              {quickFacts.map(({ icon: Icon, text, label }) => (
+                <span key={label} title={label} aria-label={`${label}: ${text}`}>
+                  <Icon aria-hidden="true" />
+                  {text}
+                </span>
+              ))}
+            </div>
+          )}
           <p className={styles.address}>{th ? listing.address : listing.addressEn || listing.address}</p>
           {facts && <p className={styles.facts}>{facts}</p>}
           {status === 'error' && (

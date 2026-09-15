@@ -72,6 +72,7 @@ function modal(galleryOpen = false) {
     ...common,
     react: { ...React, useState: (initial) => [stateIndex++ === 0 ? galleryOpen : initial, () => {}] },
     '@/components/BtnLikeIcon': { default: () => React.createElement('button', null, 'Save') },
+    '@/components/ListingViewCount': { default: () => null },
     '@/components/PropertyDescription': { default: Description },
     '@/components/property-map/PropertyPreviewContactCard': { default: Contact },
     '@/components/property-map/MobileSheet.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },

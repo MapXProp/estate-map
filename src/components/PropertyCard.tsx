@@ -1,6 +1,7 @@
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
 import ListingImageFallback from '@/components/ListingImageFallback'
+import ListingViewCount from '@/components/ListingViewCount'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -232,7 +233,7 @@ const PropertyCard: FC<Props> = ({
         <div
           className={clsx('w-14 border-b border-neutral-100 dark:border-neutral-800', compactMobile && 'max-lg:hidden')}
         ></div>
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}>
               {' '}
@@ -244,6 +245,7 @@ const PropertyCard: FC<Props> = ({
               <StartRating reviewCount={reviewCount} point={reviewStart} />
             </span>
           )}
+          <ListingViewCount listingId={data.publicListingId} initialCount={data.viewCount} />
         </div>
       </div>
     )

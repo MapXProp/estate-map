@@ -62,6 +62,7 @@ test('full gallery excludes videos and rejects unrelated or unavailable listing 
 test('preview renders photos, price, area and a separate details link; missing photos remain usable', () => {
   const styles = new Proxy({}, { get: (_, key) => String(key) })
   const Preview = load('src/components/property-map/MapPinPreview.tsx', {
+    '@/components/ListingViewCount': { default: () => null },
     react: React,
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
