@@ -215,9 +215,9 @@ export default function MapSearchDetails({
             <button
               type="button"
               onClick={onClose}
-              className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-neutral-900 px-5 font-semibold text-white shadow-sm transition hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 active:scale-[0.99] dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+              className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 active:scale-[0.99] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
             >
-              <Search className="size-[18px]" aria-hidden="true" />
+              <Search className="size-4" aria-hidden="true" />
               {th ? 'ดูผลลัพธ์' : 'Show results'}
             </button>
           </footer>
