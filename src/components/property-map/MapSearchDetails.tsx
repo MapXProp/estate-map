@@ -152,7 +152,7 @@ export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }
                           }
                           onPointerDown={(event) => event.preventDefault()}
                           onClick={() => update(activePrice, next)}
-                          className="min-h-11 rounded-xl border border-neutral-200 bg-neutral-50/60 px-2.5 text-xs text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                          className="min-h-11 rounded-xl border border-dashed border-neutral-300 bg-neutral-50/60 px-2.5 text-xs text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
                         >
                           {th ? `เติม ${suffix}` : `Add ${suffix}`}
                         </button>
