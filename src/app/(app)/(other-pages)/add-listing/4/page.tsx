@@ -25,10 +25,10 @@ import {
 } from '@/lib/listingDraft'
 import { trackListingFunnel } from '@/lib/listingFunnelAnalytics'
 import {
-  listingPhotoURLsFromOrder,
-  normalizeListingPhotoOrder,
-  replaceListingPhotoFileWithURL,
-} from '@/lib/listingPhotoOrder'
+  listingMediaURLsFromOrder,
+  normalizeListingMediaOrder,
+  replaceListingMediaFileWithURL,
+} from '@/lib/listingMediaOrder'
 import { storeListingPublishValidationIssue, validateListingDraftForPublish } from '@/lib/listingPublishValidation'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonSecondary from '@/shared/ButtonSecondary'
@@ -84,7 +84,9 @@ const Page = () => {
       photoUrls: string[],
       photoOrder: string[],
       videoUrls: string[],
+      videoOrder: string[],
       panoramaUrls: string[],
+      panoramaOrder: string[],
       floorPlanUrl: string,
       syncCloud = false
     ) => {
@@ -92,7 +94,9 @@ const Page = () => {
       replaceFormDataValues(formData, 'listingPhotoUrls[]', photoUrls)
       replaceFormDataValues(formData, 'listingPhotoOrder[]', photoOrder)
       replaceFormDataValues(formData, 'listingVideoUrls[]', videoUrls)
+      replaceFormDataValues(formData, 'listingVideoOrder[]', videoOrder)
       replaceFormDataValues(formData, 'listingPanoramaUrls[]', panoramaUrls)
+      replaceFormDataValues(formData, 'listingPanoramaOrder[]', panoramaOrder)
       formData.set('eventFloorPlanUrl', floorPlanUrl)
       formData.set('selectedFloorPlanCount', floorPlanUrl ? '1' : '0')
       const savedDraft = saveListingStep(3, formData, { resumeStep: 4 })
@@ -139,12 +143,24 @@ const Page = () => {
     let videoUrls = readValues(startingDraft['listingVideoUrls[]'])
     let panoramaUrls = readValues(startingDraft['listingPanoramaUrls[]'])
     let floorPlanUrls = readText(startingDraft.eventFloorPlanUrl) ? [readText(startingDraft.eventFloorPlanUrl)] : []
-    let photoOrder = normalizeListingPhotoOrder(
+    let photoOrder = normalizeListingMediaOrder(
       readValues(startingDraft['listingPhotoOrder[]']),
       photoUrls,
       pendingMedia.photos
     )
-    photoUrls = listingPhotoURLsFromOrder(photoOrder)
+    let videoOrder = normalizeListingMediaOrder(
+      readValues(startingDraft['listingVideoOrder[]']),
+      videoUrls,
+      pendingMedia.videos
+    )
+    let panoramaOrder = normalizeListingMediaOrder(
+      readValues(startingDraft['listingPanoramaOrder[]']),
+      panoramaUrls,
+      pendingMedia.panoramas
+    )
+    photoUrls = listingMediaURLsFromOrder(photoOrder)
+    videoUrls = listingMediaURLsFromOrder(videoOrder)
+    panoramaUrls = listingMediaURLsFromOrder(panoramaOrder)
     const watermarkLabel = readText(startingDraft.contactName).trim() || (isThai ? 'ผู้ลงประกาศ' : 'Listing owner')
     const missingFileCount =
       Math.max(0, readCount(startingDraft.selectedPhotoCount) - photoUrls.length - pendingMedia.photos.length) +
@@ -211,8 +227,14 @@ const Page = () => {
 
         const uploaded = await uploadListingMedia([file], mediaType, { watermarkLabel })
         if (pendingKey === 'photos' && uploaded[0]) {
-          photoOrder = replaceListingPhotoFileWithURL(photoOrder, file, uploaded[0])
-          urls = listingPhotoURLsFromOrder(photoOrder).slice(0, limit)
+          photoOrder = replaceListingMediaFileWithURL(photoOrder, file, uploaded[0])
+          urls = listingMediaURLsFromOrder(photoOrder).slice(0, limit)
+        } else if (pendingKey === 'videos' && uploaded[0]) {
+          videoOrder = replaceListingMediaFileWithURL(videoOrder, file, uploaded[0])
+          urls = listingMediaURLsFromOrder(videoOrder).slice(0, limit)
+        } else if (pendingKey === 'panoramas' && uploaded[0]) {
+          panoramaOrder = replaceListingMediaFileWithURL(panoramaOrder, file, uploaded[0])
+          urls = listingMediaURLsFromOrder(panoramaOrder).slice(0, limit)
         } else {
           urls = [...new Set([...urls, ...uploaded])].slice(0, limit)
         }
@@ -224,7 +246,15 @@ const Page = () => {
         if (pendingKey === 'videos') videoUrls = urls
         if (pendingKey === 'panoramas') panoramaUrls = urls
         if (pendingKey === 'floorPlans') floorPlanUrls = urls
-        await persistMedia(photoUrls, photoOrder, videoUrls, panoramaUrls, floorPlanUrls[0] || '')
+        await persistMedia(
+          photoUrls,
+          photoOrder,
+          videoUrls,
+          videoOrder,
+          panoramaUrls,
+          panoramaOrder,
+          floorPlanUrls[0] || ''
+        )
 
         setMediaProgress({
           phase: 'uploading',
@@ -243,9 +273,27 @@ const Page = () => {
       videoUrls = await uploadQueue(pendingMedia.videos, 'video', videoUrls, MAX_VIDEOS, 'videos')
       panoramaUrls = await uploadQueue(pendingMedia.panoramas, '360', panoramaUrls, MAX_PANORAMAS, 'panoramas')
       floorPlanUrls = await uploadQueue(pendingMedia.floorPlans, 'image', floorPlanUrls, 1, 'floorPlans')
+      await persistMedia(
+        photoUrls,
+        photoOrder,
+        videoUrls,
+        videoOrder,
+        panoramaUrls,
+        panoramaOrder,
+        floorPlanUrls[0] || ''
+      )
     } catch (error) {
       trackListingFunnel({ kind: 'error', stage: 'upload' }, startingDraft)
-      await persistMedia(photoUrls, photoOrder, videoUrls, panoramaUrls, floorPlanUrls[0] || '', true)
+      await persistMedia(
+        photoUrls,
+        photoOrder,
+        videoUrls,
+        videoOrder,
+        panoramaUrls,
+        panoramaOrder,
+        floorPlanUrls[0] || '',
+        true
+      )
       setFailure({
         stage: 'upload',
         message: getMediaUploadErrorMessage(error, isThai),

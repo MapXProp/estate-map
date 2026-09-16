@@ -7,6 +7,8 @@ import {
   initialListingMediaProgress,
   useListingFlowProgress,
 } from '@/components/add-listing/ListingFlowProgressContext'
+import ListingMediaGrid from '@/components/add-listing/ListingMediaGrid'
+import ListingMediaUpload from '@/components/add-listing/ListingMediaUpload'
 import { usePreferences, type AppCurrency } from '@/components/preferences/PreferencesProvider'
 import { getOfferType, type OfferTypeCode } from '@/data/propertyTaxonomy'
 import { getApiBaseUrl, getStoredUser } from '@/lib/auth'
@@ -22,12 +24,12 @@ import {
 } from '@/lib/listingDraft'
 import { showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
 import {
-  listingPhotoFileToken,
-  listingPhotoURLFromToken,
-  listingPhotoURLsFromOrder,
-  moveListingPhoto,
-  normalizeListingPhotoOrder,
-} from '@/lib/listingPhotoOrder'
+  listingMediaFileToken,
+  listingMediaURLFromToken,
+  listingMediaURLsFromOrder,
+  moveListingMedia,
+  normalizeListingMediaOrder,
+} from '@/lib/listingMediaOrder'
 import {
   consumeListingPublishValidationIssue,
   listingValidationMessage,
@@ -37,9 +39,7 @@ import {
 import Input from '@/shared/Input'
 import Select from '@/shared/Select'
 import {
-  ArrowLeftIcon,
   ArrowPathRoundedSquareIcon,
-  ArrowRightIcon,
   BanknotesIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
@@ -55,7 +55,6 @@ import {
   UserCircleIcon,
   VideoCameraIcon,
   ViewfinderCircleIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import Form from 'next/form'
 import { useRouter } from 'next/navigation'
@@ -151,6 +150,8 @@ const Page = () => {
   const [floorPlans, setFloorPlans] = useState<File[]>(() => pendingMedia.floorPlans)
   const [uploadedPhotoUrls, setUploadedPhotoUrls] = useState<string[]>([])
   const [photoOrder, setPhotoOrder] = useState<string[]>([])
+  const [videoOrder, setVideoOrder] = useState<string[]>([])
+  const [panoramaOrder, setPanoramaOrder] = useState<string[]>([])
   const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([])
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [uploadedFloorPlanUrl, setUploadedFloorPlanUrl] = useState('')
@@ -236,6 +237,8 @@ const Page = () => {
       )
       setUploadedPhotoUrls(readValues(savedDraft['listingPhotoUrls[]']))
       setPhotoOrder(readValues(savedDraft['listingPhotoOrder[]']))
+      setVideoOrder(readValues(savedDraft['listingVideoOrder[]']))
+      setPanoramaOrder(readValues(savedDraft['listingPanoramaOrder[]']))
       setUploadedVideoUrls(readValues(savedDraft['listingVideoUrls[]']))
       setUploadedPanoramaUrls(readValues(savedDraft['listingPanoramaUrls[]']))
       setUploadedFloorPlanUrl(readText(savedDraft.eventFloorPlanUrl))
@@ -292,22 +295,34 @@ const Page = () => {
 
   const previewUrls = useMemo(() => photos.map((photo) => URL.createObjectURL(photo)), [photos])
   const normalizedPhotoOrder = useMemo(
-    () => normalizeListingPhotoOrder(photoOrder, uploadedPhotoUrls, photos),
+    () => normalizeListingMediaOrder(photoOrder, uploadedPhotoUrls, photos),
     [photoOrder, photos, uploadedPhotoUrls]
   )
   const orderedPhotoPreviews = useMemo(
     () =>
       normalizedPhotoOrder.flatMap((token) => {
-        const uploadedURL = listingPhotoURLFromToken(token)
+        const uploadedURL = listingMediaURLFromToken(token)
         if (uploadedURL) return [{ token, url: resolveListingMediaUrl(uploadedURL) }]
 
-        const pendingIndex = photos.findIndex((photo) => listingPhotoFileToken(photo) === token)
-        return pendingIndex >= 0 && previewUrls[pendingIndex] ? [{ token, url: previewUrls[pendingIndex] }] : []
+        const pendingIndex = photos.findIndex((photo) => listingMediaFileToken(photo) === token)
+        return pendingIndex >= 0 && previewUrls[pendingIndex]
+          ? [{ token, url: previewUrls[pendingIndex], pending: true }]
+          : []
       }),
     [normalizedPhotoOrder, photos, previewUrls]
   )
   const videoPreviewUrls = useMemo(() => videos.map((video) => URL.createObjectURL(video)), [videos])
   const panoramaPreviewUrls = useMemo(() => panoramas.map((panorama) => URL.createObjectURL(panorama)), [panoramas])
+  const normalizedVideoOrder = useMemo(
+    () => normalizeListingMediaOrder(videoOrder, uploadedVideoUrls, videos),
+    [videoOrder, uploadedVideoUrls, videos]
+  )
+  const normalizedPanoramaOrder = useMemo(
+    () => normalizeListingMediaOrder(panoramaOrder, uploadedPanoramaUrls, panoramas),
+    [panoramaOrder, uploadedPanoramaUrls, panoramas]
+  )
+  const orderedVideoPreviews = mediaPreviews(normalizedVideoOrder, videos, videoPreviewUrls)
+  const orderedPanoramaPreviews = mediaPreviews(normalizedPanoramaOrder, panoramas, panoramaPreviewUrls)
   const pendingFloorPlanPreviewUrl = useMemo(
     () => (isTemporarySpace && floorPlans[0] ? URL.createObjectURL(floorPlans[0]) : ''),
     [floorPlans, isTemporarySpace]
@@ -421,35 +436,35 @@ const Page = () => {
     const token = normalizedPhotoOrder[index]
     if (!token) return
 
-    const uploadedURL = listingPhotoURLFromToken(token)
+    const uploadedURL = listingMediaURLFromToken(token)
     if (uploadedURL) {
       setUploadedPhotoUrls((current) => current.filter((url) => url !== uploadedURL))
     } else {
-      setPhotos((current) => current.filter((photo) => listingPhotoFileToken(photo) !== token))
+      setPhotos((current) => current.filter((photo) => listingMediaFileToken(photo) !== token))
     }
     setPhotoOrder((current) => current.filter((item) => item !== token))
   }
 
   const movePhotoTo = (fromIndex: number, toIndex: number) => {
-    setPhotoOrder(moveListingPhoto(normalizedPhotoOrder, fromIndex, toIndex))
+    setPhotoOrder(moveListingMedia(normalizedPhotoOrder, fromIndex, toIndex))
   }
 
   const removeVideo = (index: number) => {
-    if (index < uploadedVideoUrls.length) {
-      setUploadedVideoUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
-      return
-    }
-    const pendingIndex = index - uploadedVideoUrls.length
-    setVideos((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
+    const token = normalizedVideoOrder[index]
+    if (!token) return
+    const url = listingMediaURLFromToken(token)
+    if (url) setUploadedVideoUrls((current) => current.filter((item) => item !== url))
+    else setVideos((current) => current.filter((file) => listingMediaFileToken(file) !== token))
+    setVideoOrder(normalizedVideoOrder.filter((item) => item !== token))
   }
 
   const removePanorama = (index: number) => {
-    if (index < uploadedPanoramaUrls.length) {
-      setUploadedPanoramaUrls((current) => current.filter((_, itemIndex) => itemIndex !== index))
-      return
-    }
-    const pendingIndex = index - uploadedPanoramaUrls.length
-    setPanoramas((current) => current.filter((_, itemIndex) => itemIndex !== pendingIndex))
+    const token = normalizedPanoramaOrder[index]
+    if (!token) return
+    const url = listingMediaURLFromToken(token)
+    if (url) setUploadedPanoramaUrls((current) => current.filter((item) => item !== url))
+    else setPanoramas((current) => current.filter((file) => listingMediaFileToken(file) !== token))
+    setPanoramaOrder(normalizedPanoramaOrder.filter((item) => item !== token))
   }
 
   const removeFloorPlan = () => {
@@ -527,10 +542,12 @@ const Page = () => {
     formData.set('selectedPhotoCount', String(uploadedPhotoUrls.length + photos.length))
     formData.set('selectedVideoCount', String(uploadedVideoUrls.length + videos.length))
     formData.set('selectedPanoramaCount', String(uploadedPanoramaUrls.length + panoramas.length))
-    replaceFormDataValues(formData, 'listingPhotoUrls[]', listingPhotoURLsFromOrder(normalizedPhotoOrder))
+    replaceFormDataValues(formData, 'listingPhotoUrls[]', listingMediaURLsFromOrder(normalizedPhotoOrder))
     replaceFormDataValues(formData, 'listingPhotoOrder[]', normalizedPhotoOrder)
-    replaceFormDataValues(formData, 'listingVideoUrls[]', uploadedVideoUrls)
-    replaceFormDataValues(formData, 'listingPanoramaUrls[]', uploadedPanoramaUrls)
+    replaceFormDataValues(formData, 'listingVideoUrls[]', listingMediaURLsFromOrder(normalizedVideoOrder))
+    replaceFormDataValues(formData, 'listingVideoOrder[]', normalizedVideoOrder)
+    replaceFormDataValues(formData, 'listingPanoramaUrls[]', listingMediaURLsFromOrder(normalizedPanoramaOrder))
+    replaceFormDataValues(formData, 'listingPanoramaOrder[]', normalizedPanoramaOrder)
     formData.set('submissionKey', readText(draft?.submissionKey) || createListingSubmissionKey())
 
     // Save the current page before the final gate so validation always sees a
@@ -630,6 +647,23 @@ const Page = () => {
           if (publishValidationError) setPublishValidationError('')
         }}
       >
+        {(
+          [
+            ['listingPhotoOrder[]', normalizedPhotoOrder],
+            ['listingVideoOrder[]', normalizedVideoOrder],
+            ['listingPanoramaOrder[]', normalizedPanoramaOrder],
+            ['listingPhotoUrls[]', listingMediaURLsFromOrder(normalizedPhotoOrder)],
+            ['listingVideoUrls[]', listingMediaURLsFromOrder(normalizedVideoOrder)],
+            ['listingPanoramaUrls[]', listingMediaURLsFromOrder(normalizedPanoramaOrder)],
+          ] as [string, string[]][]
+        ).map(([name, values]) =>
+          (values.length ? values : ['']).map((value, index) => (
+            <input key={name + '-' + index} type="hidden" name={name} value={value} />
+          ))
+        )}
+        <input type="hidden" name="selectedPhotoCount" value={photoCount} />
+        <input type="hidden" name="selectedVideoCount" value={videoCount} />
+        <input type="hidden" name="selectedPanoramaCount" value={panoramaCount} />
         {isTemporarySpace ? (
           <EventDetailsPanel
             isThai={isThai}
@@ -694,202 +728,50 @@ const Page = () => {
         />
 
         <SectionCard icon={<PhotoIcon className="size-5" />} title={isThai ? 'รูปภาพของทรัพย์' : 'Property photos'}>
-          <label
-            className={`flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-8 text-center transition dark:border-neutral-700 dark:bg-neutral-950 ${
-              photoCount >= MAX_PHOTOS
-                ? 'cursor-not-allowed opacity-65'
-                : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 dark:hover:border-orange-700'
-            }`}
-          >
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
-              <PhotoIcon className="size-6" />
-            </span>
-            <span className="mt-4 font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {photoCount >= MAX_PHOTOS
-                ? isThai
-                  ? 'เพิ่มรูปครบแล้ว'
-                  : 'Photo limit reached'
-                : photoCount
-                  ? isThai
-                    ? 'เพิ่มรูปภาพ'
-                    : 'Add more photos'
-                  : isThai
-                    ? 'เลือกรูปภาพ'
-                    : 'Choose photos'}
-            </span>
-            <span className="mt-1 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
-              {isThai
-                ? `สูงสุด ${MAX_PHOTOS} รูป · ไม่เกิน 8 MB/รูป · รูปแรกเป็นภาพหน้าปก · ${photoCount}/${MAX_PHOTOS}`
-                : `Up to ${MAX_PHOTOS} photos · 8 MB each · first photo is the cover · ${photoCount}/${MAX_PHOTOS}`}
-            </span>
-            <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 font-sarabun text-[11px] font-medium text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-300">
-              {isThai
-                ? 'ใส่ชื่อผู้ลงประกาศและโลโก้ MapxProp ให้อัตโนมัติ'
-                : 'Publisher name and MapxProp watermark added automatically'}
-            </span>
-            <input
-              name="listingPhotos"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              disabled={photoCount >= MAX_PHOTOS || isUploading}
-              onChange={handlePhotos}
-              className="sr-only"
-            />
-          </label>
-
-          {orderedPhotoPreviews.length ? (
-            <div className="mt-4">
-              <p className="mb-3 font-sarabun text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                {isThai
-                  ? 'ใช้ลูกศรเพื่อจัดลำดับ หรือกด “ตั้งเป็นปก” · รูปที่ 1 จะแสดงเป็นภาพหน้าปก'
-                  : 'Use the arrows to reorder or choose “Make cover” · Photo 1 is the cover'}
-              </p>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 xl:grid-cols-5">
-              {orderedPhotoPreviews.map(({ token, url }, index) => (
-                <div
-                  key={token}
-                  className="relative aspect-square overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
-                  style={{ backgroundImage: `url(${url})` }}
-                  aria-label={isThai ? `รูปที่ ${index + 1}` : `Photo ${index + 1}`}
-                >
-                  <span className="m-2 inline-block rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] text-white">
-                    {index === 0
-                      ? isThai
-                        ? 'ภาพหน้าปก · 1'
-                        : 'Cover · 1'
-                      : isThai
-                        ? `รูป ${index + 1}`
-                        : `Photo ${index + 1}`}
-                  </span>
-                  <span className="pointer-events-none absolute top-[23.8%] left-[27.5%] flex w-[28%] -translate-x-1/2 flex-col items-center text-center text-[#f3f4f6] opacity-50">
-                    <span className="w-full truncate font-sans text-[6px] leading-none font-normal">
-                      {contactName.trim() || (isThai ? 'ชื่อผู้ลงประกาศ' : 'Publisher')}
-                    </span>
-                    <img src="/M5-dark-small.webp" alt="" className="mt-px w-[56.5%]" />
-                  </span>
-                  <span className="pointer-events-none absolute right-[6%] bottom-[6.6%] flex w-[22.3%] flex-col items-center text-center text-[#f3f4f6] opacity-[0.68]">
-                    <img src="/M5-dark-small.webp" alt="" className="w-full" />
-                    <span className="mt-0.5 font-sans text-[5px] leading-none font-normal">mapxprop.com</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    disabled={isUploading}
-                    className="absolute top-1 right-1 flex size-10 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={isThai ? `ลบรูปที่ ${index + 1}` : `Remove photo ${index + 1}`}
-                  >
-                    <XMarkIcon className="size-5" />
-                  </button>
-                  <span className="absolute bottom-7 left-1 flex items-center gap-1">
-                    {index > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => movePhotoTo(index, 0)}
-                        disabled={isUploading}
-                        className="flex size-8 items-center justify-center rounded-full bg-white/95 text-[#176b50] shadow-md ring-1 ring-black/10 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        aria-label={isThai ? `ตั้งรูปที่ ${index + 1} เป็นภาพหน้าปก` : `Make photo ${index + 1} the cover`}
-                        title={isThai ? 'ตั้งเป็นภาพหน้าปก' : 'Make cover'}
-                      >
-                        <PhotoIcon className="size-4" />
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => movePhotoTo(index, index - 1)}
-                      disabled={isUploading || index === 0}
-                      className="flex size-8 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label={isThai ? `เลื่อนรูปที่ ${index + 1} ไปทางซ้าย` : `Move photo ${index + 1} left`}
-                    >
-                      <ArrowLeftIcon className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => movePhotoTo(index, index + 1)}
-                      disabled={isUploading || index === orderedPhotoPreviews.length - 1}
-                      className="flex size-8 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label={isThai ? `เลื่อนรูปที่ ${index + 1} ไปทางขวา` : `Move photo ${index + 1} right`}
-                    >
-                      <ArrowRightIcon className="size-4" />
-                    </button>
-                  </span>
-                </div>
-              ))}
-              </div>
-            </div>
-          ) : null}
+          <ListingMediaUpload
+            kind="photo"
+            count={photoCount}
+            limit={MAX_PHOTOS}
+            isThai={isThai}
+            disabled={isUploading}
+            onChange={handlePhotos}
+          />
+          <p className="mt-2 font-sarabun text-[11px] text-neutral-500 dark:text-neutral-400">
+            {isThai
+              ? 'ใส่ชื่อผู้ลงประกาศและโลโก้ MapxProp ให้อัตโนมัติ'
+              : 'Publisher name and MapxProp watermark added automatically'}
+          </p>
+          <ListingMediaGrid
+            kind="photo"
+            items={orderedPhotoPreviews}
+            isThai={isThai}
+            disabled={isUploading}
+            publisherName={contactName}
+            onMove={movePhotoTo}
+            onRemove={removePhoto}
+          />
         </SectionCard>
 
         <SectionCard
           icon={<VideoCameraIcon className="size-5" />}
           title={isThai ? 'วิดีโอของทรัพย์ (ถ้ามี)' : 'Property videos (if any)'}
         >
-          <label
-            className={`flex items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition dark:border-neutral-700 dark:bg-neutral-950 ${
-              videoCount >= MAX_VIDEOS
-                ? 'cursor-not-allowed opacity-65'
-                : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50'
-            }`}
-          >
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
-              <VideoCameraIcon className="size-6" />
-            </span>
-            <span className="min-w-0">
-              <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                {videoCount >= MAX_VIDEOS
-                  ? isThai
-                    ? 'เพิ่มวิดีโอครบแล้ว'
-                    : 'Video limit reached'
-                  : videoCount
-                    ? isThai
-                      ? 'เพิ่มวิดีโอ'
-                      : 'Add more videos'
-                    : isThai
-                      ? 'เลือกวิดีโอ'
-                      : 'Choose videos'}
-              </span>
-              <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai
-                  ? 'เลือก 1 ไฟล์หรือหลายไฟล์พร้อมกันก็ได้ · ไม่เกิน 50 MB/ไฟล์'
-                  : 'Choose one or multiple files · up to 50 MB each'}{' '}
-                · MP4, WebM, MOV · {videoCount}/{MAX_VIDEOS}
-              </span>
-            </span>
-            <input
-              name="listingVideos"
-              type="file"
-              accept="video/mp4,video/webm,video/quicktime,.mov"
-              multiple
-              disabled={videoCount >= MAX_VIDEOS || isUploading}
-              onChange={handleVideos}
-              className="sr-only"
-            />
-          </label>
-
-          {uploadedVideoUrls.length || videoPreviewUrls.length ? (
-            <div className="mt-4 grid grid-cols-2 gap-3 min-[744px]:grid-cols-4">
-              {[...uploadedVideoUrls.map(resolveListingMediaUrl), ...videoPreviewUrls].map((url, index) => (
-                <div key={url} className="relative">
-                  <video
-                    src={url}
-                    controls
-                    preload="metadata"
-                    className="aspect-video w-full rounded-2xl bg-neutral-950 object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
-                    aria-label={isThai ? `วิดีโอที่ ${index + 1}` : `Video ${index + 1}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeVideo(index)}
-                    disabled={isUploading}
-                    className="absolute top-1 right-1 flex size-9 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={isThai ? `ลบวิดีโอที่ ${index + 1}` : `Remove video ${index + 1}`}
-                  >
-                    <XMarkIcon className="size-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : null}
+          <ListingMediaUpload
+            kind="video"
+            count={videoCount}
+            limit={MAX_VIDEOS}
+            isThai={isThai}
+            disabled={isUploading}
+            onChange={handleVideos}
+          />
+          <ListingMediaGrid
+            kind="video"
+            items={orderedVideoPreviews}
+            isThai={isThai}
+            disabled={isUploading}
+            onMove={(from, to) => setVideoOrder(moveListingMedia(normalizedVideoOrder, from, to))}
+            onRemove={removeVideo}
+          />
         </SectionCard>
 
         <details
@@ -913,73 +795,22 @@ const Page = () => {
             <ChevronDownIcon className="size-5 text-neutral-400 transition-transform group-open:rotate-180" />
           </summary>
           <div className="border-t border-neutral-100 px-5 pt-5 pb-6 sm:px-7 sm:pb-7 dark:border-neutral-800">
-            <label
-              className={`flex items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-neutral-50 p-5 transition dark:border-neutral-700 dark:bg-neutral-950 ${
-                panoramaCount >= MAX_PANORAMAS
-                  ? 'cursor-not-allowed opacity-65'
-                  : 'cursor-pointer hover:border-orange-400 hover:bg-orange-50/50'
-              }`}
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm dark:bg-neutral-800">
-                <ViewfinderCircleIcon className="size-6" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {panoramaCount >= MAX_PANORAMAS
-                    ? isThai
-                      ? 'เพิ่มภาพ 360° ครบแล้ว'
-                      : '360° photo limit reached'
-                    : panoramaCount
-                      ? isThai
-                        ? 'เพิ่มภาพ 360°'
-                        : 'Add more 360° photos'
-                      : isThai
-                        ? 'เลือกภาพ 360°'
-                        : 'Choose 360° photos'}
-                </span>
-                <span className="mt-1 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-                  {isThai
-                    ? 'เลือก 1 รูปหรือหลายรูปพร้อมกันก็ได้ · ไม่เกิน 15 MB/รูป'
-                    : 'Choose one or multiple photos · up to 15 MB each'}{' '}
-                  · JPG, PNG, WebP · {panoramaCount}/{MAX_PANORAMAS}
-                </span>
-              </span>
-              <input
-                name="listingPanoramas"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                disabled={panoramaCount >= MAX_PANORAMAS || isUploading}
-                onChange={handlePanoramas}
-                className="sr-only"
-              />
-            </label>
-
-            {uploadedPanoramaUrls.length || panoramaPreviewUrls.length ? (
-              <div className="mt-4 grid grid-cols-2 gap-3 min-[744px]:grid-cols-4">
-                {[...uploadedPanoramaUrls.map(resolveListingMediaUrl), ...panoramaPreviewUrls].map((url, index) => (
-                  <div
-                    key={url}
-                    className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-cover bg-center ring-1 ring-neutral-200 dark:ring-neutral-700"
-                    style={{ backgroundImage: `url(${url})` }}
-                    aria-label={isThai ? `ภาพ 360 ที่ ${index + 1}` : `360 photo ${index + 1}`}
-                  >
-                    <span className="absolute right-2 bottom-2 rounded-full bg-neutral-950/75 px-2 py-1 font-sarabun text-[10px] font-semibold text-white">
-                      360°
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removePanorama(index)}
-                      disabled={isUploading}
-                      className="absolute top-1 right-1 flex size-10 items-center justify-center rounded-full bg-white/95 text-neutral-700 shadow-md ring-1 ring-black/10 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label={isThai ? `ลบภาพ 360° ที่ ${index + 1}` : `Remove 360° photo ${index + 1}`}
-                    >
-                      <XMarkIcon className="size-5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <ListingMediaUpload
+              kind="panorama"
+              count={panoramaCount}
+              limit={MAX_PANORAMAS}
+              isThai={isThai}
+              disabled={isUploading}
+              onChange={handlePanoramas}
+            />
+            <ListingMediaGrid
+              kind="panorama"
+              items={orderedPanoramaPreviews}
+              isThai={isThai}
+              disabled={isUploading}
+              onMove={(from, to) => setPanoramaOrder(moveListingMedia(normalizedPanoramaOrder, from, to))}
+              onRemove={removePanorama}
+            />
           </div>
         </details>
 
@@ -1995,3 +1826,12 @@ const offersFromLegacy = (value: string): OfferTypeCode[] => {
   return isOfferTypeCode(value) ? [value] : ['rent']
 }
 export default Page
+
+function mediaPreviews(order: string[], files: File[], previews: string[]) {
+  return order.flatMap((token) => {
+    const url = listingMediaURLFromToken(token)
+    if (url) return [{ token, url: resolveListingMediaUrl(url) }]
+    const index = files.findIndex((file) => listingMediaFileToken(file) === token)
+    return index >= 0 && previews[index] ? [{ token, url: previews[index], pending: true }] : []
+  })
+}

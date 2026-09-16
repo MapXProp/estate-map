@@ -169,9 +169,9 @@ function submissionHarness(options = {}) {
       },
     },
     '@/lib/listingFunnelAnalytics': { trackListingFunnel: (action, current) => record(win, action, current) },
-    '@/lib/listingPhotoOrder': {
-      normalizeListingPhotoOrder: (_order, urls) => urls,
-      listingPhotoURLsFromOrder: (urls) => urls,
+    '@/lib/listingMediaOrder': {
+      normalizeListingMediaOrder: (_order, urls) => urls,
+      listingMediaURLsFromOrder: (urls) => urls,
     },
     '@/lib/listingPublishValidation': { validateListingDraftForPublish: () => options.validation || null, storeListingPublishValidationIssue() {} },
     '@/shared/ButtonPrimary': {}, '@/shared/ButtonSecondary': {}, '@heroicons/react/24/outline': {},
