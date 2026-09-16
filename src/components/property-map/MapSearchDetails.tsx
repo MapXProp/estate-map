@@ -45,12 +45,7 @@ export default function MapSearchDetails({
       <div className="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-5">
         <DialogPanel className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl bg-white text-neutral-900 shadow-2xl sm:rounded-3xl dark:bg-neutral-900 dark:text-neutral-100">
           <header className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-100 px-5 py-5 sm:px-6 dark:border-neutral-800">
-            <div>
-              <DialogTitle className="text-xl font-semibold">{th ? 'ปรับตัวกรอง' : 'Refine your search'}</DialogTitle>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                {th ? 'เลือกให้ตรงกับพื้นที่ที่คุณมองหา' : 'Find a space that fits your needs'}
-              </p>
-            </div>
+            <DialogTitle className="text-xl font-semibold">{th ? 'ปรับตัวกรอง' : 'Refine your search'}</DialogTitle>
             <button
               type="button"
               onClick={onClose}
@@ -66,14 +61,9 @@ export default function MapSearchDetails({
                 <span className={sectionIconClassName}>
                   <Banknote className="size-5" aria-hidden="true" />
                 </span>
-                <div>
-                  <h3 id="map-filter-price-heading" className="font-semibold">
-                    {th ? 'ราคา' : 'Price'}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                    {th ? 'ราคาขาย / ค่าเช่าตามเงื่อนไขประกาศ' : 'Sale price or rent for the listing’s billing period'}
-                  </p>
-                </div>
+                <h3 id="map-filter-price-heading" className="font-semibold">
+                  {th ? 'ราคา' : 'Price'}
+                </h3>
               </div>
               <div>
                 <div className="grid grid-cols-2 gap-3">
