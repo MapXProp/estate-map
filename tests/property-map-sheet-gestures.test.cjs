@@ -323,6 +323,7 @@ function hookHarness(kind, config = {}) {
     minPrice: '', maxPrice: '', minArea: '', bedrooms: 0, bathrooms: 0, features: [],
   }
   let filterValue = { ...emptyFilters, ...config.filters }
+  const filterEvents = []
   const filtersModule = kind === 'filters' ? load('src/components/property-map/MapSearchDetails.tsx', h.globals, {
     react: hooks,
     'react/jsx-runtime': require('react/jsx-runtime'),
@@ -352,8 +353,8 @@ function hookHarness(kind, config = {}) {
     result =
       filtersModule ? filtersModule.MapSearchDetailsSheet({
         open: true, value: filterValue,
-        onChange: (next) => { filterValue = next; render() },
-        onClose: () => { closed++ },
+        onChange: (next) => { filterValue = next; filterEvents.push('apply'); render() },
+        onClose: () => { closed++; filterEvents.push('close') },
       }) : photo ? photo({
         images: Array.from({ length: config.imageCount || 7 }, (_, index) => `/photo-${index}.jpg`),
         title: 'Property', isThai: true, activeImage: 0,
@@ -409,10 +410,12 @@ function hookHarness(kind, config = {}) {
     photoPinch: () => photoTouch('touchstart', [touch, { clientX: 200, clientY: 350 }]),
     photoButton: (label) => photoNode((node) => node.type === 'button' && node.props['aria-label'] === label),
     filterValue: () => filterValue,
+    filterEvents,
     filterNode: photoNode,
+    priceField: (key) => photoNode((node) => node.props['data-map-price-field'] === key).props,
     focusPrice: (key) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onFocus(); render() },
     blurPrice: (key) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onBlur(); render() },
-    typePrice: (key, text) => photoNode((node) => node.props['data-map-price-field'] === key).props.onChange({ target: { value: text } }),
+    typePrice: (key, text) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onChange({ target: { value: text } }); render() },
     filterVisible: (open) => filtersModule.default({ open, onClose() {}, onChange() {}, value: filterValue }),
     clickFilter: (predicate) => { photoNode(predicate).props.onClick(); render() },
     get closed() {
@@ -706,50 +709,94 @@ test('reading filters, editing prices and tapping quick-fill actions do not star
   }
 })
 
-test('price presets target the selected bound and zeros are appended only on request', () => {
+test('exactly four suffix shortcuts edit the selected bound while prices stay pending until dismissal', () => {
   const h = hookHarness('filters')
-  const preset = (amount) => (node) => node.props['data-map-price-preset'] === amount
-  const zeros = (node) => node.props['data-map-price-zeros']
-  h.clickFilter(preset(60000))
-  assert.equal(h.filterValue().maxPrice, '60000')
-  assert.equal(h.filterValue().minPrice, '')
-  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'maxPrice').props.value, '60,000')
+  const suffix = (text) => (node) => node.props['data-map-price-suffix'] === text
+  const shortcuts = h.filterNode((node) => node.props['data-map-price-shortcuts'])
+  assert.deepEqual(Array.from(shortcuts.props.children[1].props.children, (node) => node.props['data-map-price-suffix']), ['00', '000', '50', '500'])
+  h.typePrice('maxPrice', '60')
+  h.clickFilter(suffix('000'))
+  assert.equal(h.priceField('maxPrice').value, '60,000')
   h.focusPrice('minPrice')
   h.typePrice('minPrice', '20')
-  assert.equal(h.filterValue().minPrice, '20', 'typing alone never adds zeroes')
-  h.clickFilter(zeros)
-  assert.equal(h.filterValue().minPrice, '20000')
-  assert.equal(h.filterValue().maxPrice, '60000')
+  assert.equal(h.priceField('minPrice').value, '20', 'typing alone never adds zeroes')
+  h.clickFilter(suffix('00'))
+  assert.equal(h.priceField('minPrice').value, '2000')
+  h.typePrice('minPrice', '20')
+  h.clickFilter(suffix('50'))
+  assert.equal(h.priceField('minPrice').value, '2050')
+  h.typePrice('minPrice', '20')
+  h.clickFilter(suffix('500'))
+  assert.equal(h.priceField('minPrice').value, '20500')
+  assert.equal(h.priceField('maxPrice').value, '60,000')
   h.blurPrice('minPrice')
-  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'minPrice').props.value, '20,000')
+  assert.equal(h.priceField('minPrice').value, '20,500')
   h.focusPrice('minPrice')
-  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'minPrice').props.value, '20000', 'editing keeps stable raw digits')
+  assert.equal(h.priceField('minPrice').value, '20500', 'editing keeps stable raw digits')
   h.typePrice('minPrice', '300,000')
-  assert.equal(h.filterValue().minPrice, '300000')
+  assert.equal(h.priceField('minPrice').value, '300000')
   assert.ok(h.filterNode((node) => node.props.role === 'alert'), 'invalid ranges remain visible')
   h.typePrice('minPrice', '')
-  assert.equal(h.filterNode(zeros).props.disabled, true)
+  assert.equal(h.filterNode(suffix('000')).props.disabled, true)
+  assert.equal(h.filterNode(suffix('50')).props.disabled, false)
   h.typePrice('minPrice', '1234567890')
-  assert.equal(h.filterNode(zeros).props.disabled, true, 'large amounts cannot silently be truncated')
+  assert.equal(h.filterNode(suffix('000')).props.disabled, true, 'large amounts cannot silently be truncated')
+  assert.equal(h.filterNode(suffix('00')).props.disabled, false)
+  assert.equal(h.filterValue().minPrice, '')
+  assert.equal(h.filterValue().maxPrice, '')
+  assert.deepEqual(h.filterEvents, [], 'editing does not trigger map filtering')
   h.unmount()
 })
 
 test('price shortcuts keep input focus, preserve reset scope and remount a fresh sheet on reopen', () => {
   const h = hookHarness('filters', { filters: { offerTypes: ['rent'], bedrooms: 2, features: ['verified'] } })
-  const preset = h.filterNode((node) => node.props['data-map-price-preset'] === 20000)
+  const shortcut = h.filterNode((node) => node.props['data-map-price-suffix'] === '500')
   let prevented = false
-  preset.props.onPointerDown({ preventDefault() { prevented = true } })
+  shortcut.props.onPointerDown({ preventDefault() { prevented = true } })
   assert.ok(prevented, 'quick fills do not dismiss and reopen the mobile keyboard')
-  h.clickFilter((node) => node.props['data-map-price-preset'] === 20000)
+  h.clickFilter((node) => node.props['data-map-price-suffix'] === '500')
   h.clickFilter((node) => node.type === 'button' && Array.isArray(node.props.children) && node.props.children.includes('ล้างค่า'))
   assert.equal(h.filterValue().maxPrice, '')
-  assert.equal(h.filterValue().bedrooms, 0)
-  assert.deepEqual(h.filterValue().features, [])
-  assert.deepEqual(h.filterValue().offerTypes, ['rent'])
+  assert.equal(h.filterValue().bedrooms, 2, 'reset remains pending until dismissal')
+  assert.deepEqual(h.filterValue().features, ['verified'])
   assert.equal(h.filterVisible(false), null, 'closing unmounts local gesture/timer state')
   assert.equal(typeof h.filterVisible(true).type, 'function')
   h.clickFilter((node) => node.type === 'button' && Array.isArray(node.props.children) && node.props.children.includes('ดูผลลัพธ์'))
   h.advance(260)
   assert.equal(h.closed, 1)
+  assert.equal(h.filterValue().bedrooms, 0)
+  assert.deepEqual(h.filterValue().features, [])
+  assert.deepEqual(h.filterValue().offerTypes, ['rent'])
+  assert.deepEqual(h.filterEvents, ['apply', 'close'])
   h.unmount()
+})
+
+test('swiping, closing, backdrop/Escape and results all apply the latest draft before closing', () => {
+  for (const action of ['swipe', 'close', 'dialog', 'results', 'desktop-close']) {
+    const h = hookHarness('filters', { width: action === 'desktop-close' ? 1440 : 390 })
+    h.focusPrice('maxPrice')
+    h.typePrice('maxPrice', '60')
+    h.clickFilter((node) => node.props['data-map-price-suffix'] === '000')
+    assert.equal(h.filterValue().maxPrice, '')
+    if (action === 'swipe') {
+      h.start(h.handle)
+      h.move(0, 450, 250)
+      h.end()
+    } else if (action === 'dialog') {
+      h.filterNode((node) => node.type === 'test-dialog').props.onClose()
+    } else {
+      h.clickFilter((node) => node.type === 'button' && (action === 'results'
+        ? Array.isArray(node.props.children) && node.props.children.includes('ดูผลลัพธ์')
+        : node.props['aria-label'] === 'ปิดตัวกรอง'))
+    }
+    h.advance(260)
+    assert.equal(h.closed, 1, action)
+    assert.equal(h.filterValue().maxPrice, '60000', action)
+    assert.deepEqual(h.filterEvents, ['apply', 'close'], action)
+    const saved = h.filterValue()
+    h.unmount()
+    const reopened = hookHarness('filters', { filters: saved })
+    assert.equal(reopened.priceField('maxPrice').value, '60,000')
+    reopened.unmount()
+  }
 })

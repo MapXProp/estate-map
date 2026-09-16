@@ -8,7 +8,7 @@ const context = { exports: {} }
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapPriceInput.ts'), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, context)
-const { cleanMapPriceInput, formatMapPriceInput, appendMapPriceZeros, getMapPricePresets, formatMapPricePreset } = context.exports
+const { cleanMapPriceInput, formatMapPriceInput, appendMapPriceSuffix, mapPriceSuffixes } = context.exports
 
 test('prices retain raw baht values while formatted/pasted amounts stay readable', () => {
   assert.equal(cleanMapPriceInput('60,000 บาท'), '60000')
@@ -18,22 +18,24 @@ test('prices retain raw baht values while formatted/pasted amounts stay readable
   assert.equal(cleanMapPriceInput('123456789012345'), '123456789012')
 })
 
-test('adding zeros is explicit and never invents or truncates a price', () => {
-  assert.equal(appendMapPriceZeros('20'), '20000')
-  assert.equal(appendMapPriceZeros('60'), '60000')
-  assert.equal(appendMapPriceZeros('20000'), '20000000')
-  assert.equal(appendMapPriceZeros('999999999'), '999999999000')
-  for (const value of ['', '0', '000', '9999999999', '999999999999'])
-    assert.equal(appendMapPriceZeros(value), value)
+test('the four shortcuts append digits instead of replacing or adding to an amount', () => {
+  assert.deepEqual(Array.from(mapPriceSuffixes), ['00', '000', '50', '500'])
+  assert.equal(appendMapPriceSuffix('20', '00'), '2000')
+  assert.equal(appendMapPriceSuffix('60', '000'), '60000')
+  assert.equal(appendMapPriceSuffix('20', '50'), '2050')
+  assert.equal(appendMapPriceSuffix('20', '500'), '20500')
+  assert.equal(appendMapPriceSuffix('', '50'), '50')
+  assert.equal(appendMapPriceSuffix('', '500'), '500')
 })
 
-test('rent, purchase and mixed searches get explicit presets without changing their currency or billing period', () => {
-  assert.deepEqual(Array.from(getMapPricePresets(['rent'])), [10000, 20000, 30000, 60000])
-  assert.deepEqual(Array.from(getMapPricePresets(['rent', 'sublease'])), [10000, 20000, 30000, 60000])
-  assert.deepEqual(Array.from(getMapPricePresets(['sale'])), [1000000, 3000000, 5000000, 10000000])
-  for (const offers of [[], ['sale', 'rent']])
-    assert.deepEqual(Array.from(getMapPricePresets(offers)), [20000, 60000, 1000000, 3000000])
-  assert.equal(formatMapPricePreset(20000, true), '20,000')
-  assert.equal(formatMapPricePreset(1000000, true), '1 ล้าน')
-  assert.equal(formatMapPricePreset(1000000, false), '1M')
+test('shortcuts never fill only zeros or truncate an amount past the 12-digit limit', () => {
+  for (const suffix of ['00', '000'])
+    for (const value of ['', '0', '000']) assert.equal(appendMapPriceSuffix(value, suffix), value)
+  for (const suffix of mapPriceSuffixes) {
+    const boundary = '9'.repeat(12 - suffix.length)
+    assert.equal(appendMapPriceSuffix(boundary, suffix), `${boundary}${suffix}`)
+    const tooLong = `${boundary}9`
+    assert.equal(appendMapPriceSuffix(tooLong, suffix), tooLong)
+    assert.equal(appendMapPriceSuffix('20,000', suffix), '20,000')
+  }
 })

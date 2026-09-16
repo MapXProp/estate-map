@@ -3,11 +3,10 @@
 import sheetStyles from '@/components/property-map/MobileSheet.module.css'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import {
-  appendMapPriceZeros,
+  appendMapPriceSuffix,
   cleanMapPriceInput,
   formatMapPriceInput,
-  formatMapPricePreset,
-  getMapPricePresets,
+  mapPriceSuffixes,
 } from '@/lib/propertyMapPriceInput'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
@@ -36,18 +35,20 @@ type Props = {
 }
 
 export default function MapSearchDetails(props: Props) {
-  // Every opening gets fresh drag/timer state; filter values stay in the map page.
+  // Each opening starts a fresh draft and gesture state using the applied map filters.
   return props.open ? <MapSearchDetailsSheet {...props} /> : null
 }
 
-export function MapSearchDetailsSheet({ onClose, value, onChange }: Props) {
+export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }: Props) {
   const { locale } = usePreferences()
   const th = locale === 'th'
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose)
+  const [value, setValue] = useState(initialValue)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => {
+    onChange(value)
+    onClose()
+  })
   const [activePrice, setActivePrice] = useState<'minPrice' | 'maxPrice'>('maxPrice')
   const [editingPrice, setEditingPrice] = useState<'minPrice' | 'maxPrice' | null>(null)
-  const pricePresets = getMapPricePresets(value.offerTypes)
-  const appendedPrice = appendMapPriceZeros(value[activePrice])
   const activePriceLabel = th
     ? activePrice === 'minPrice'
       ? 'ราคาต่ำสุด'
@@ -56,7 +57,7 @@ export function MapSearchDetailsSheet({ onClose, value, onChange }: Props) {
       ? 'Minimum price'
       : 'Maximum price'
   const update = <K extends keyof PropertyMapFilterState>(key: K, next: PropertyMapFilterState[K]) =>
-    onChange({ ...value, [key]: next })
+    setValue({ ...value, [key]: next })
   const inputClassName =
     'h-12 w-full rounded-2xl border-neutral-200 bg-neutral-50/70 text-base font-normal text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-700 focus:bg-white focus:ring-neutral-700 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-100 dark:focus:border-neutral-300 dark:focus:bg-neutral-800 dark:focus:ring-neutral-300'
   const sectionClassName = 'border-t border-neutral-200 pt-5 dark:border-neutral-700'
@@ -136,35 +137,27 @@ export function MapSearchDetailsSheet({ onClose, value, onChange }: Props) {
                     {th ? `ใส่เร็ว: ${activePriceLabel}` : `Quick fill: ${activePriceLabel}`}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {pricePresets.map((amount) => (
-                      <button
-                        key={amount}
-                        type="button"
-                        data-map-price-preset={amount}
-                        aria-label={`${activePriceLabel} ${formatMapPriceInput(String(amount))} ${th ? 'บาท' : 'THB'}`}
-                        aria-pressed={value[activePrice] === String(amount)}
-                        onPointerDown={(event) => event.preventDefault()}
-                        onClick={() => update(activePrice, String(amount))}
-                        className={`min-h-11 rounded-xl border px-2.5 text-xs transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 ${value[activePrice] === String(amount) ? 'border-neutral-700 bg-white text-neutral-900 dark:border-neutral-300 dark:bg-neutral-800 dark:text-neutral-100' : 'border-neutral-200 bg-neutral-50/60 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800'}`}
-                      >
-                        {formatMapPricePreset(amount, th)}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      data-map-price-zeros
-                      disabled={appendedPrice === value[activePrice]}
-                      aria-label={
-                        th
-                          ? `เติมศูนย์สามหลักใน${activePriceLabel}`
-                          : `Append three zeros to ${activePriceLabel.toLowerCase()}`
-                      }
-                      onPointerDown={(event) => event.preventDefault()}
-                      onClick={() => update(activePrice, appendedPrice)}
-                      className="min-h-11 rounded-xl border border-dashed border-neutral-300 px-2.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                    >
-                      {th ? 'เติม 000' : 'Add 000'}
-                    </button>
+                    {mapPriceSuffixes.map((suffix) => {
+                      const next = appendMapPriceSuffix(value[activePrice], suffix)
+                      return (
+                        <button
+                          key={suffix}
+                          type="button"
+                          data-map-price-suffix={suffix}
+                          disabled={next === value[activePrice]}
+                          aria-label={
+                            th
+                              ? `เติม ${suffix} ต่อท้าย${activePriceLabel}`
+                              : `Append ${suffix} to ${activePriceLabel.toLowerCase()}`
+                          }
+                          onPointerDown={(event) => event.preventDefault()}
+                          onClick={() => update(activePrice, next)}
+                          className="min-h-11 rounded-xl border border-neutral-200 bg-neutral-50/60 px-2.5 text-xs text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                        >
+                          {th ? `เติม ${suffix}` : `Add ${suffix}`}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
                 {value.minPrice && value.maxPrice && Number(value.minPrice) > Number(value.maxPrice) && (
@@ -287,7 +280,7 @@ export function MapSearchDetailsSheet({ onClose, value, onChange }: Props) {
             <button
               type="button"
               className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg text-sm text-neutral-500 transition hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100"
-              onClick={() => onChange({ ...emptyPropertyMapFilters, offerTypes: value.offerTypes })}
+              onClick={() => setValue({ ...emptyPropertyMapFilters, offerTypes: value.offerTypes })}
             >
               <RotateCcw className="size-4" aria-hidden="true" />
               {th ? 'ล้างค่า' : 'Reset'}
