@@ -1,6 +1,7 @@
 'use client'
 
 import sheetStyles from '@/components/property-map/MobileSheet.module.css'
+import { useGalleryQuickClose } from '@/hooks/useGalleryQuickClose'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { stepMapPreviewImage } from '@/lib/propertyMapPreview'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -23,11 +24,17 @@ export default function PropertyPhotoGallery({
   const [activeImage, setActiveImage] = useState<number | null>(null)
   const touchRef = useRef<{ x: number; y: number } | null>(null)
   const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, activeImage === null)
+  const quickClose = useGalleryQuickClose()
+  const quickCloseVisible = quickClose.visible && activeImage === null
+  const closeGallery = () => {
+    quickClose.hide()
+    dismiss()
+  }
   const changeImage = (direction: number) =>
     setActiveImage((index) => stepMapPreviewImage(index ?? 0, direction, images.length))
 
   return (
-    <Dialog open onClose={dismiss} className="relative z-[90]">
+    <Dialog open onClose={closeGallery} className="relative z-[90]">
       <DialogBackdrop
         ref={backdropRef}
         className={`${sheetStyles.modalBackdrop} fixed inset-0 bg-neutral-950/75 backdrop-blur-[2px]`}
@@ -36,7 +43,7 @@ export default function PropertyPhotoGallery({
         <DialogPanel
           ref={panelRef}
           data-property-photo-gallery
-          className={`${sheetStyles.modalPanel} flex max-h-[calc(100dvh-1rem)] w-full max-w-[1540px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-3xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900`}
+          className={`${sheetStyles.modalPanel} relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[1540px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-3xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900`}
         >
           <header
             data-sheet-drag-handle
@@ -53,7 +60,7 @@ export default function PropertyPhotoGallery({
             </div>
             <button
               type="button"
-              onClick={dismiss}
+              onClick={closeGallery}
               aria-label={isThai ? 'ปิดแกลเลอรี' : 'Close gallery'}
               className="flex size-11 shrink-0 items-center justify-center rounded-full border border-neutral-200 text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
             >
@@ -62,6 +69,7 @@ export default function PropertyPhotoGallery({
           </header>
           <div
             data-sheet-scroll
+            onScroll={quickClose.onScroll}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-50 p-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] sm:p-3 lg:p-4 dark:bg-neutral-950/60"
           >
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 sm:gap-2.5 lg:gap-3 xl:grid-cols-3">
@@ -69,7 +77,10 @@ export default function PropertyPhotoGallery({
                 <button
                   key={`${image}-${index}`}
                   type="button"
-                  onClick={() => setActiveImage(index)}
+                  onClick={() => {
+                    quickClose.hide()
+                    setActiveImage(index)
+                  }}
                   aria-label={
                     isThai
                       ? `เปิดรูปที่ ${index + 1} จาก ${images.length}`
@@ -92,6 +103,18 @@ export default function PropertyPhotoGallery({
               ))}
             </div>
           </div>
+          <button
+            type="button"
+            data-property-gallery-quick-close
+            onClick={closeGallery}
+            aria-label={isThai ? 'ปิดแกลเลอรี' : 'Close gallery'}
+            aria-hidden={!quickCloseVisible}
+            tabIndex={quickCloseVisible ? 0 : -1}
+            className={`absolute bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-20 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-5 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97] sm:right-5 sm:bottom-5 sm:left-auto sm:translate-x-0 motion-reduce:transition-none dark:border-neutral-700 dark:bg-neutral-800/96 dark:text-neutral-100 ${quickCloseVisible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+          >
+            <X className="size-4" aria-hidden="true" />
+            {isThai ? 'ปิด' : 'Close'}
+          </button>
         </DialogPanel>
       </div>
 

@@ -76,6 +76,7 @@ function modal(galleryOpen = false, activeImage = null, gestures = []) {
     '@/components/PropertyDescription': { default: Description },
     '@/components/property-map/PropertyPreviewContactCard': { default: Contact },
     '@/components/property-map/MobileSheet.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
+    '@/hooks/useGalleryQuickClose': { useGalleryQuickClose: () => ({ visible: false, hide() {}, onScroll() {} }) },
     '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose, enabled) => {
       gestures.push({ onClose, enabled })
       return { panelRef: () => {}, backdropRef: () => {}, dismiss: onClose }
