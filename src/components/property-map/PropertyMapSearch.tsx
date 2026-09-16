@@ -615,7 +615,7 @@ export default function PropertyMapSearch({
                   <SlidersHorizontal className="size-4" />
                   <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
                   {detailsCount > 0 && (
-                    <span className={`${styles.detailsCount} rounded-full bg-[#176b50] px-1.5 text-[10px] text-white`}>
+                    <span className={`${styles.detailsCount} rounded-full bg-neutral-900 px-1.5 text-[10px] text-white dark:bg-neutral-100 dark:text-neutral-900`}>
                       {detailsCount}
                     </span>
                   )}

@@ -22,9 +22,9 @@ export default function MapSearchDetails({
     onChange({ ...value, [key]: next })
   return (
     <Dialog open={open} onClose={onClose} className="relative z-[70]">
-      <DialogBackdrop className="fixed inset-0 bg-[#102b22]/45 backdrop-blur-sm" />
+      <DialogBackdrop className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm" />
       <div className="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-5">
-        <DialogPanel className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-7 dark:bg-neutral-900">
+        <DialogPanel className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 text-neutral-900 shadow-2xl sm:rounded-3xl sm:p-7 dark:bg-neutral-900 dark:text-neutral-100">
           <div className="flex items-center justify-between gap-4">
             <DialogTitle className="text-xl font-semibold">
               {th ? 'งบประมาณและรายละเอียด' : 'Budget & details'}
@@ -33,7 +33,7 @@ export default function MapSearchDetails({
               type="button"
               onClick={onClose}
               aria-label={th ? 'ปิดตัวกรอง' : 'Close filters'}
-              className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="grid size-11 shrink-0 place-items-center rounded-full hover:bg-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:hover:bg-neutral-800"
             >
               <X className="size-5" />
             </button>
@@ -52,7 +52,7 @@ export default function MapSearchDetails({
                     value={value[key]}
                     onChange={(event) => update(key, event.target.value.replace(/\D/g, '').slice(0, 12))}
                     placeholder={th ? 'ไม่จำกัด' : 'Any'}
-                    className="mt-1.5 h-12 w-full rounded-xl border-neutral-200 bg-transparent focus:border-[#176b50] focus:ring-[#176b50] dark:border-neutral-700"
+                    className="mt-1.5 h-12 w-full rounded-xl border-neutral-200 bg-transparent text-neutral-900 focus:border-neutral-900 focus:ring-neutral-900 dark:border-neutral-700 dark:text-neutral-100 dark:focus:border-neutral-300 dark:focus:ring-neutral-300"
                   />
                 </label>
               ))}
@@ -82,7 +82,7 @@ export default function MapSearchDetails({
                       type="button"
                       aria-pressed={value[key] === number}
                       onClick={() => update(key, number)}
-                      className={`min-h-11 flex-1 rounded-xl border text-sm ${value[key] === number ? 'border-[#176b50] bg-[#176b50] text-white' : 'border-neutral-200 dark:border-neutral-700'}`}
+                      className={`min-h-11 flex-1 rounded-xl border text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 ${value[key] === number ? 'border-neutral-900 bg-neutral-900 font-semibold text-white hover:bg-neutral-800 dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200' : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:border-neutral-500 dark:hover:bg-neutral-800'}`}
                     >
                       {number ? `${number}+` : th ? 'ทุกแบบ' : 'Any'}
                     </button>
@@ -97,7 +97,7 @@ export default function MapSearchDetails({
                 value={value.minArea}
                 onChange={(event) => update('minArea', event.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder={th ? 'ไม่จำกัด' : 'Any'}
-                className="mt-2 h-12 w-full rounded-xl border-neutral-200 bg-transparent focus:border-[#176b50] focus:ring-[#176b50] dark:border-neutral-700"
+                className="mt-2 h-12 w-full rounded-xl border-neutral-200 bg-transparent focus:border-neutral-900 focus:ring-neutral-900 dark:border-neutral-700 dark:focus:border-neutral-300 dark:focus:ring-neutral-300"
               />
             </label>
             {(
@@ -119,7 +119,7 @@ export default function MapSearchDetails({
                         : [...value.features, key]
                     )
                   }
-                  className="size-5 rounded border-neutral-300 text-[#176b50] focus:ring-[#176b50]"
+                  className="size-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-500 dark:border-neutral-600 dark:focus:ring-offset-neutral-900"
                 />
                 {th ? nameTh : nameEn}
               </label>
@@ -128,7 +128,7 @@ export default function MapSearchDetails({
           <div className="mt-6 flex items-center justify-between gap-4 border-t border-neutral-100 pt-5 dark:border-neutral-800">
             <button
               type="button"
-              className="min-h-11 text-sm underline underline-offset-4"
+              className="min-h-11 rounded text-sm underline underline-offset-4 hover:text-neutral-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:hover:text-neutral-300"
               onClick={() => onChange({ ...emptyPropertyMapFilters, offerTypes: value.offerTypes })}
             >
               {th ? 'ล้างรายละเอียด' : 'Reset details'}
@@ -136,7 +136,7 @@ export default function MapSearchDetails({
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 rounded-xl bg-[#176b50] px-6 font-semibold text-white"
+              className="min-h-11 rounded-xl bg-neutral-900 px-6 font-semibold text-white hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               {th ? 'ดูผลลัพธ์' : 'Show results'}
             </button>
