@@ -136,7 +136,7 @@ export function initialMapCategories(filters: Partial<PropertyMapFilterState>, c
 // Keep other types tied to their channel; shared property types search across channels.
 export function mapCategoryQueries(categories: string[]): PropertySearchOptions[] {
   const selected = new Set(normalizeMapCategories(categories))
-  if (!selected.size) return [{}]
+  if (!selected.size || selected.size === validMapCategoryIds.size) return [{}]
   const sharedTypes = sharedMapTypes.filter((_, index) => sharedCategorySets[index].some((id) => selected.has(id)))
   const queries: PropertySearchOptions[] = mapCategoryGroups.flatMap((group) => {
     const options = group.options.filter((item) => selected.has(item.id) && !sharedCategoryIds.has(item.id))
@@ -187,7 +187,7 @@ export function mapSearchSummary(categories: string[], offers: OfferTypeCode[], 
         labels.set(option.propertyType || option.spaceType, th ? option.nameTh : option.nameEn)
     })
   )
-  const names = [...labels.values()]
+  const names = selected.size === validMapCategoryIds.size ? [] : [...labels.values()]
   const types = names.length
     ? names.slice(0, 2).join(' / ') +
       (names.length > 2 ? (th ? ` และอีก ${names.length - 2} ประเภท` : ` +${names.length - 2} types`) : '')

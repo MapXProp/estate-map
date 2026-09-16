@@ -39,6 +39,7 @@ import {
   setMapCategorySection,
   toggleMapCategory,
   toggleMapCategoryGroup,
+  validMapCategoryIds,
 } from '@/lib/propertyMapSearch'
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import type { SheetSnap } from '@/lib/verticalSheetGesture'
@@ -476,7 +477,9 @@ export default function PropertyMapSearch({
     detailsCount > 0 ||
     !!keyword ||
     (!!area && !automaticAreaSearch)
-  const categorySelectionLabel = categories.length
+  const allCategoriesSelected = [...validMapCategoryIds].every((id) => categories.includes(id))
+  const selectAllCategories = () => setCategories([...validMapCategoryIds])
+  const categorySelectionLabel = categories.length && !allCategoriesSelected
     ? th
       ? `${countMapCategories(categories)} หมวด`
       : `${countMapCategories(categories)} selected`
@@ -638,36 +641,51 @@ export default function PropertyMapSearch({
                   <RotateCcw className="size-3.5" aria-hidden="true" />
                   <span>{th ? 'เริ่มใหม่' : 'Reset'}</span>
                 </button>
-                <button
-                  type="button"
-                  data-map-categories-toggle
-                  aria-expanded={categoriesOpen}
-                  aria-controls="map-category-options"
-                  onClick={() => {
-                    if (!categoriesOpen) {
-                      setMobilePanelOpen(false)
-                      if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
-                    }
-                    setCategoriesOpen(!categoriesOpen)
-                  }}
-                  className={styles.allCategoriesButton}
-                  aria-label={`${
-                    categoriesOpen
-                      ? th
-                        ? 'ย่อหมวดหมู่'
-                        : 'Collapse categories'
-                      : th
-                        ? 'แสดงหมวดหมู่'
-                        : 'Expand categories'
-                  }: ${categorySelectionLabel}`}
+                <div
+                  className={styles.categoryActions}
+                  role="group"
+                  aria-label={th ? 'เลือกหมวดและเปิดปิดแผงหมวดหมู่' : 'Category selection and panel controls'}
                 >
-                  <span>{categorySelectionLabel}</span>
-                  {categoriesOpen ? (
-                    <ChevronUp className="size-4" aria-hidden="true" />
-                  ) : (
-                    <ChevronDown className="size-4" aria-hidden="true" />
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    data-map-select-all-categories
+                    aria-pressed={allCategoriesSelected}
+                    aria-label={th ? 'เลือกทุกหมวด' : 'Select all categories'}
+                    onClick={selectAllCategories}
+                    className={styles.allCategoriesButton}
+                  >
+                    {allCategoriesSelected ? (th ? 'ทุกหมวด' : 'All types') : th ? 'เลือกทุกหมวด' : 'Select all types'}
+                  </button>
+                  <button
+                    type="button"
+                    data-map-categories-toggle
+                    aria-expanded={categoriesOpen}
+                    aria-controls="map-category-options"
+                    onClick={() => {
+                      if (!categoriesOpen) {
+                        setMobilePanelOpen(false)
+                        if (window.matchMedia('(max-width: 1023px)').matches) setPreviewSelection(null)
+                      }
+                      setCategoriesOpen(!categoriesOpen)
+                    }}
+                    className={styles.categoriesToggle}
+                    aria-label={`${
+                      categoriesOpen
+                        ? th
+                          ? 'ย่อหมวดหมู่'
+                          : 'Collapse categories'
+                        : th
+                          ? 'แสดงหมวดหมู่'
+                          : 'Expand categories'
+                    }: ${categorySelectionLabel}`}
+                  >
+                    {categoriesOpen ? (
+                      <ChevronUp className="size-4" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -730,10 +748,10 @@ export default function PropertyMapSearch({
                       <button
                         type="button"
                         className={styles.mobileAllCategories}
-                        aria-pressed={!categories.length}
-                        onClick={() => setCategories([])}
+                        aria-pressed={allCategoriesSelected}
+                        onClick={selectAllCategories}
                       >
-                        {th ? 'ทุกหมวด' : 'All types'}
+                        {th ? 'เลือกทุกหมวด' : 'Select all types'}
                       </button>
                       <button
                         type="button"

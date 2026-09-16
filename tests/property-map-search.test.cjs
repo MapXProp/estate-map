@@ -74,6 +74,21 @@ test('existing channel/type links select the corresponding visible chips', () =>
   assert.deepEqual(plain(model().initialMapCategories({}, ['invalid', 'homes:land'])), ['homes:land', 'business:land'])
 })
 
+test('selecting every category searches all properties once and restores filtering when one is deselected', () => {
+  const api = model()
+  const all = [...api.validMapCategoryIds]
+  assert.deepEqual(plain(api.mapCategoryQueries(all)), [{}])
+  assert.equal(api.mapSearchSummary(all, ['rent'], true), 'หาเช่า อสังหาฯ ทุกประเภท')
+  assert.equal(api.mapSearchSummary(all, ['sale'], false), 'Buying all property types')
+  const partial = api.toggleMapCategory(all, 'business:office')
+  const queries = plain(api.mapCategoryQueries(partial))
+  assert.notDeepEqual(queries, [{}])
+  const business = queries.find((query) => query.discoveryChannel === 'business')
+  assert.ok(business.propertyTypes.length > 0)
+  assert.ok(!business.propertyTypes.includes('office'))
+  assert.deepEqual(plain(api.mapCategoryQueries(api.toggleMapCategory(partial, 'business:office'))), [{}])
+})
+
 test('business sections keep land with buildings and expose all 18 choices once', () => {
   const business = model().mapCategoryGroups.find((group) => group.code === 'business')
   assert.deepEqual(plain(business.sections.map((section) => [section.id, section.options.length])), [

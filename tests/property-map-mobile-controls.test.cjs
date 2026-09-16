@@ -297,7 +297,51 @@ test('folding and reopening desktop categories never requests a map resize or ch
   }
 })
 
-test('automatic mobile search replaces the manual button while the all-types action preserves offer filters', () => {
+test('select-all and the disclosure arrow operate independently and preserve the other filters and camera', () => {
+  for (const width of [1024, 1440, 1920]) {
+    const h = harness(width)
+    const filters = () => h.nodes((node) => node.type === 'test-filters')[0].props
+    filters().onChange({ ...filters().value, offerTypes: ['rent'], minPrice: '20000', bedrooms: 2 })
+    h.render()
+    h.click(h.data('data-map-category', 'homes:condo'))
+    const all = () => h.data('data-map-select-all-categories', true)
+    const arrow = () => h.data('data-map-categories-toggle', true)
+    const assertAllSelected = () => {
+      const chips = h.nodes((node) => node.props?.['data-map-category'])
+      assert.equal(chips.length, model.validMapCategoryIds.size)
+      assert.ok(chips.every((node) => node.props['aria-pressed']))
+    }
+    assert.equal(all().props['aria-expanded'], undefined)
+    assert.equal(all().props['aria-pressed'], false)
+    h.click(all())
+    assert.equal(arrow().props['aria-expanded'], true)
+    assert.equal(all().props['aria-pressed'], true)
+    assertAllSelected()
+    h.click(arrow())
+    assert.equal(arrow().props['aria-expanded'], false)
+    assert.equal(all().props['aria-pressed'], true)
+    h.click(arrow())
+    assertAllSelected()
+
+    // Selecting all also works while folded, without opening the panel.
+    h.click(h.data('data-map-category', 'business:office'))
+    h.click(arrow())
+    h.click(all())
+    assert.equal(arrow().props['aria-expanded'], false)
+    assert.equal(all().props['aria-pressed'], true)
+    h.click(arrow())
+    assertAllSelected()
+    h.click(all())
+    assertAllSelected()
+    assert.deepEqual(Array.from(filters().value.offerTypes), ['rent'])
+    assert.equal(filters().value.minPrice, '20000')
+    assert.equal(filters().value.bedrooms, 2)
+    assert.equal(h.map().initialCenter, h.center)
+    assert.equal(h.map().initialZoom, 15)
+  }
+})
+
+test('automatic mobile search replaces the manual button while selecting all checks every category and preserves offers', () => {
   const h = harness(390)
   h.click(h.tab('business'))
   h.click(h.data('data-map-category', 'business:office'))
@@ -308,7 +352,9 @@ test('automatic mobile search replaces the manual button while the all-types act
   assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], true)
   const allTypes = h.nodes((node) => node.props?.className === 'mobileAllCategories')[2]
   h.click(allTypes)
-  assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], false)
+  assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], true)
+  assert.ok(h.nodes((node) => node.props?.['data-map-category']).every((node) => node.props['aria-pressed']))
+  assert.equal(h.tab('business').props['aria-expanded'], true)
   const offers = h.nodes((node) => node.type === 'test-offers')[0].props.value
   assert.deepEqual(Array.from(offers), ['sale', 'rent'])
 })

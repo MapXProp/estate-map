@@ -159,23 +159,37 @@
   gap: 8px;
   white-space: nowrap;
 }
-.allCategoriesButton {
+.categoryActions {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #176b50;
+  color: #fff;
+}
+.allCategoriesButton,
+.categoriesToggle {
   display: inline-flex;
   min-height: 44px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 13px;
-  border-radius: 12px;
-  background: #176b50;
-  color: #fff;
+  color: inherit;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
+.allCategoriesButton {
+  padding: 0 13px;
+  border-radius: 12px 0 0 12px;
+}
+.categoriesToggle {
+  width: 44px;
+  border-left: 1px solid #ffffff38;
+  border-radius: 0 12px 12px 0;
+}
 .allCategoriesButton:hover,
-.allCategoriesButton[aria-expanded='true'] {
+.categoriesToggle:hover,
+.categoriesToggle[aria-expanded='true'] {
   background: #125a43;
 }
 .categoryPanelActions {
@@ -907,7 +921,7 @@
   .logo {
     width: clamp(76px, 20vw, 96px);
   }
-  .allCategoriesButton,
+  .categoryActions,
   .categoryPanelActions,
   .accountControl {
     display: none;
@@ -1239,11 +1253,6 @@
   }
   .headerActions {
     gap: 4px;
-  }
-  .allCategoriesButton {
-    gap: 4px;
-    padding-inline: 8px;
-    font-size: 11px;
   }
   .accountButton {
     width: 32px;
