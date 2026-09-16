@@ -318,6 +318,22 @@ function hookHarness(kind, config = {}) {
     '@/hooks/useGalleryQuickClose': {},
     '@/lib/propertyMapPreview': {},
   }).FullPhotoDialog : null
+  const emptyFilters = {
+    discoveryChannels: [], offerTypes: [], propertyTypes: [], spaceTypes: [],
+    minPrice: '', maxPrice: '', minArea: '', bedrooms: 0, bathrooms: 0, features: [],
+  }
+  let filterValue = { ...emptyFilters, ...config.filters }
+  const filtersModule = kind === 'filters' ? load('src/components/property-map/MapSearchDetails.tsx', h.globals, {
+    react: hooks,
+    'react/jsx-runtime': require('react/jsx-runtime'),
+    'lucide-react': require('lucide-react'),
+    '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogBackdrop: 'test-backdrop', DialogTitle: 'test-title' },
+    '@/components/property-map/MobileSheet.module.css': { default: {} },
+    '@/hooks/useMobileSheets': hook,
+    '@/lib/propertyMapPriceInput': load('src/lib/propertyMapPriceInput.ts', {}),
+    '../preferences/PreferencesProvider': { usePreferences: () => ({ locale: config.locale || 'th' }) },
+    './PropertyMapFilterBar': { emptyPropertyMapFilters: emptyFilters },
+  }) : null
   function photoNode(predicate) {
     let found
     function visit(node) {
@@ -334,7 +350,11 @@ function hookHarness(kind, config = {}) {
   function render() {
     cursor = 0
     result =
-      photo ? photo({
+      filtersModule ? filtersModule.MapSearchDetailsSheet({
+        open: true, value: filterValue,
+        onChange: (next) => { filterValue = next; render() },
+        onClose: () => { closed++ },
+      }) : photo ? photo({
         images: Array.from({ length: config.imageCount || 7 }, (_, index) => `/photo-${index}.jpg`),
         title: 'Property', isThai: true, activeImage: 0,
         changeImage: (direction) => photoChanges.push(direction),
@@ -351,9 +371,14 @@ function hookHarness(kind, config = {}) {
   }
   render()
   const backdrop = new ElementStub()
-  if (photo) {
-    assert.equal(photoPanel().props['data-sheet-scroll'], true)
-    h.root.attrs['data-sheet-scroll'] = ''
+  if (photo || filtersModule) {
+    if (photo) {
+      assert.equal(photoPanel().props['data-sheet-scroll'], true)
+      h.root.attrs['data-sheet-scroll'] = ''
+    } else {
+      assert.equal(photoNode((node) => node.type === 'header').props['data-sheet-drag-handle'], true)
+      assert.ok(photoNode((node) => node.props['data-sheet-scroll']))
+    }
     photoPanel().props.ref(h.root)
     photoNode((node) => node.type === 'test-backdrop').props.ref(backdrop)
   } else {
@@ -383,6 +408,13 @@ function hookHarness(kind, config = {}) {
     photoCancel: () => photoTouch('touchcancel', []),
     photoPinch: () => photoTouch('touchstart', [touch, { clientX: 200, clientY: 350 }]),
     photoButton: (label) => photoNode((node) => node.type === 'button' && node.props['aria-label'] === label),
+    filterValue: () => filterValue,
+    filterNode: photoNode,
+    focusPrice: (key) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onFocus(); render() },
+    blurPrice: (key) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onBlur(); render() },
+    typePrice: (key, text) => photoNode((node) => node.props['data-map-price-field'] === key).props.onChange({ target: { value: text } }),
+    filterVisible: (open) => filtersModule.default({ open, onClose() {}, onChange() {}, value: filterValue }),
+    clickFilter: (predicate) => { photoNode(predicate).props.onClick(); render() },
     get closed() {
       return closed
     },
@@ -636,4 +668,88 @@ test('full-photo dismissal respects reduced motion and desktop controls', () => 
   desktop.photoButton('กลับไปแกลเลอรี').props.onClick()
   assert.equal(desktop.closed, 1)
   desktop.unmount()
+})
+
+test('filters can be pulled closed from the slim header or content at the top without changing filter values', () => {
+  for (const fromHeader of [true, false]) {
+    const h = hookHarness('filters', { filters: { maxPrice: '60000', bedrooms: 2, features: ['pets_allowed'] } })
+    const before = h.filterValue()
+    h.start(fromHeader ? h.handle : h.content)
+    assert.equal(h.move(0, 450, 250).prevented, true)
+    assert.equal(h.root.properties.get('--sheet-offset'), '142.5px')
+    h.end()
+    assert.equal(h.closed, 0)
+    h.advance(260)
+    assert.equal(h.closed, 1)
+    assert.equal(h.filterValue(), before)
+    h.unmount()
+  }
+})
+
+test('reading filters, editing prices and tapping quick-fill actions do not start a dismiss gesture', () => {
+  for (const kind of ['scrolled', 'input', 'quick-fill', 'short', 'pinch']) {
+    const h = hookHarness('filters')
+    let target = h.content
+    if (kind === 'scrolled') h.scroller.scrollTop = 100
+    if (kind === 'input') target = new ElementStub('input', {}, h.scroller)
+    if (kind === 'quick-fill') {
+      assert.equal(h.filterNode((node) => node.props['data-map-price-shortcuts']).props['data-sheet-no-drag'], true)
+      target = new ElementStub('button', { 'data-sheet-no-drag': '' }, h.scroller)
+    }
+    h.start(target)
+    h.move(0, kind === 'short' ? 330 : 450, 400)
+    if (kind === 'pinch') h.root.dispatch('touchstart', target, { touches: [{}, {}] })
+    h.end(120)
+    h.advance(300)
+    assert.equal(h.closed, 0, kind)
+    h.unmount()
+  }
+})
+
+test('price presets target the selected bound and zeros are appended only on request', () => {
+  const h = hookHarness('filters')
+  const preset = (amount) => (node) => node.props['data-map-price-preset'] === amount
+  const zeros = (node) => node.props['data-map-price-zeros']
+  h.clickFilter(preset(60000))
+  assert.equal(h.filterValue().maxPrice, '60000')
+  assert.equal(h.filterValue().minPrice, '')
+  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'maxPrice').props.value, '60,000')
+  h.focusPrice('minPrice')
+  h.typePrice('minPrice', '20')
+  assert.equal(h.filterValue().minPrice, '20', 'typing alone never adds zeroes')
+  h.clickFilter(zeros)
+  assert.equal(h.filterValue().minPrice, '20000')
+  assert.equal(h.filterValue().maxPrice, '60000')
+  h.blurPrice('minPrice')
+  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'minPrice').props.value, '20,000')
+  h.focusPrice('minPrice')
+  assert.equal(h.filterNode((node) => node.props['data-map-price-field'] === 'minPrice').props.value, '20000', 'editing keeps stable raw digits')
+  h.typePrice('minPrice', '300,000')
+  assert.equal(h.filterValue().minPrice, '300000')
+  assert.ok(h.filterNode((node) => node.props.role === 'alert'), 'invalid ranges remain visible')
+  h.typePrice('minPrice', '')
+  assert.equal(h.filterNode(zeros).props.disabled, true)
+  h.typePrice('minPrice', '1234567890')
+  assert.equal(h.filterNode(zeros).props.disabled, true, 'large amounts cannot silently be truncated')
+  h.unmount()
+})
+
+test('price shortcuts keep input focus, preserve reset scope and remount a fresh sheet on reopen', () => {
+  const h = hookHarness('filters', { filters: { offerTypes: ['rent'], bedrooms: 2, features: ['verified'] } })
+  const preset = h.filterNode((node) => node.props['data-map-price-preset'] === 20000)
+  let prevented = false
+  preset.props.onPointerDown({ preventDefault() { prevented = true } })
+  assert.ok(prevented, 'quick fills do not dismiss and reopen the mobile keyboard')
+  h.clickFilter((node) => node.props['data-map-price-preset'] === 20000)
+  h.clickFilter((node) => node.type === 'button' && Array.isArray(node.props.children) && node.props.children.includes('ล้างค่า'))
+  assert.equal(h.filterValue().maxPrice, '')
+  assert.equal(h.filterValue().bedrooms, 0)
+  assert.deepEqual(h.filterValue().features, [])
+  assert.deepEqual(h.filterValue().offerTypes, ['rent'])
+  assert.equal(h.filterVisible(false), null, 'closing unmounts local gesture/timer state')
+  assert.equal(typeof h.filterVisible(true).type, 'function')
+  h.clickFilter((node) => node.type === 'button' && Array.isArray(node.props.children) && node.props.children.includes('ดูผลลัพธ์'))
+  h.advance(260)
+  assert.equal(h.closed, 1)
+  h.unmount()
 })
