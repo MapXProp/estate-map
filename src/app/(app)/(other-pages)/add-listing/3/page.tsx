@@ -23,6 +23,7 @@ import {
   type ListingDraftValue,
 } from '@/lib/listingDraft'
 import { showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
+import { listingMediaFileIssue } from '@/lib/listingMediaFormats'
 import {
   listingMediaFileToken,
   listingMediaURLFromToken,
@@ -156,6 +157,9 @@ const Page = () => {
   const [uploadedPanoramaUrls, setUploadedPanoramaUrls] = useState<string[]>([])
   const [uploadedFloorPlanUrl, setUploadedFloorPlanUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [mediaSelectionErrors, setMediaSelectionErrors] = useState<Partial<Record<'image' | 'video' | '360', string>>>(
+    {}
+  )
   const [publishValidationError, setPublishValidationError] = useState('')
   const uploadLockRef = useRef(false)
   const initialPreferredCurrencyRef = useRef(preferredCurrency)
@@ -386,22 +390,36 @@ const Page = () => {
     : ''
   const secondStepSummary = draft ? buildSecondStepSummary(draft, listingSummary?.location || '', isThai) : ''
 
+  const selectMediaFiles = (event: ChangeEvent<HTMLInputElement>, kind: 'image' | 'video' | '360') => {
+    const files = Array.from(event.target.files || [])
+    const invalid = files.filter((file) => listingMediaFileIssue(file, kind))
+    const first = invalid[0]
+    const reason = first ? listingMediaFileIssue(first, kind) : null
+    setMediaSelectionErrors((current) => ({
+      ...current,
+      [kind]: first
+        ? isThai
+          ? `${first.name}${invalid.length > 1 ? ` และอีก ${invalid.length - 1} ไฟล์` : ''}: ${reason === 'file_too_large' ? 'ไฟล์ว่างหรือใหญ่เกินขนาดที่รองรับ' : 'ยังไม่รองรับไฟล์ประเภทนี้'} เลือกไฟล์ใหม่ได้เลย`
+          : `${first.name}${invalid.length > 1 ? ` and ${invalid.length - 1} more` : ''}: ${reason === 'file_too_large' ? 'empty or too large' : 'unsupported format'}. Choose another file.`
+        : '',
+    }))
+    return files.filter((file) => !listingMediaFileIssue(file, kind))
+  }
+
   const handlePhotos = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
+    const selected = selectMediaFiles(event, 'image')
     setPhotos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_PHOTOS - uploadedPhotoUrls.length)))
     event.target.value = ''
   }
 
   const handleVideos = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || []).filter((file) =>
-      ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type)
-    )
+    const selected = selectMediaFiles(event, 'video')
     setVideos((current) => appendUniqueFiles(current, selected, Math.max(0, MAX_VIDEOS - uploadedVideoUrls.length)))
     event.target.value = ''
   }
 
   const handlePanoramas = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'))
+    const selected = selectMediaFiles(event, '360')
     setPanoramas((current) =>
       appendUniqueFiles(current, selected, Math.max(0, MAX_PANORAMAS - uploadedPanoramaUrls.length))
     )
@@ -735,12 +753,8 @@ const Page = () => {
             isThai={isThai}
             disabled={isUploading}
             onChange={handlePhotos}
+            error={mediaSelectionErrors.image}
           />
-          <p className="mt-2 font-sarabun text-[11px] text-neutral-500 dark:text-neutral-400">
-            {isThai
-              ? 'ใส่ชื่อผู้ลงประกาศและโลโก้ MapxProp ให้อัตโนมัติ'
-              : 'Publisher name and MapxProp watermark added automatically'}
-          </p>
           <ListingMediaGrid
             kind="photo"
             items={orderedPhotoPreviews}
@@ -763,6 +777,7 @@ const Page = () => {
             isThai={isThai}
             disabled={isUploading}
             onChange={handleVideos}
+            error={mediaSelectionErrors.video}
           />
           <ListingMediaGrid
             kind="video"
@@ -802,6 +817,7 @@ const Page = () => {
               isThai={isThai}
               disabled={isUploading}
               onChange={handlePanoramas}
+              error={mediaSelectionErrors['360']}
             />
             <ListingMediaGrid
               kind="panorama"
@@ -1019,7 +1035,7 @@ const SectionCard = ({
         <h2 className="font-sarabun text-lg font-semibold text-neutral-900 dark:text-neutral-50">{title}</h2>
       </div>
     </div>
-    <div className="mt-6">{children}</div>
+    <div className="mt-4 sm:mt-6">{children}</div>
   </section>
 )
 

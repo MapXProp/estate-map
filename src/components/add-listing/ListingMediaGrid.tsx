@@ -41,12 +41,12 @@ export default function ListingMediaGrid({ kind, items, isThai, disabled, publis
   }
 
   return (
-    <div className="mt-4" data-listing-media-grid={kind}>
-      <p className="mb-3 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
+    <div className="mt-3 sm:mt-4" data-listing-media-grid={kind}>
+      <p className="mb-2 font-sarabun text-xs text-neutral-500 sm:mb-3 dark:text-neutral-400">
         {isThai ? 'กดลูกศรเพื่อเรียงลำดับ' : 'Use the arrows to reorder'}
         {kind === 'photo' && (isThai ? ' · รูปแรกเป็นหน้าปก' : ' · First photo is the cover')}
       </p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
         {items.map(({ token, url, pending }, index) => (
           <div
             key={token}

@@ -18,7 +18,8 @@ function load(file, imports = {}, globals = {}) {
 const plain = value => JSON.parse(JSON.stringify(value))
 const order = load('src/lib/listingMediaOrder.ts', { './listingPhotoOrder': load('src/lib/listingPhotoOrder.ts') })
 const taxonomy = load('src/data/propertyTaxonomy.ts')
-const draftLib = load('src/lib/listingDraft.ts', { '@/data/propertyTaxonomy': taxonomy, './auth': {}, './listingImageWatermark': {} })
+const formats = load('src/lib/listingMediaFormats.ts')
+const draftLib = load('src/lib/listingDraft.ts', { '@/data/propertyTaxonomy': taxonomy, './auth': {}, './listingImageWatermark': {}, './listingMediaFormats': formats })
 const jsx = { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) }
 function nodes(tree, predicate) {
   if (!tree || typeof tree !== 'object') return []
@@ -59,6 +60,7 @@ function step3Fixture(options = {}) {
     '@/lib/listingDraft': { getListingDraft: () => draft, getListingDraftSummary: () => ({}), createListingSubmissionKey: () => 'fixture', saveListingStep(_step, data) { for (const key of new Set(data.keys())) draft[key] = key.endsWith('[]') ? data.getAll(key).filter(Boolean) : data.get(key); return draft } },
     '@/lib/listingFormValidation': { validateListingForm: () => true },
     '@/lib/listingMediaOrder': order,
+    '@/lib/listingMediaFormats': formats,
     '@/lib/listingPublishValidation': { consumeListingPublishValidationIssue: () => null, validateListingDraftForPublish: () => null },
     '@/shared/Input': { default: 'input' }, '@/shared/Select': { default: 'select' }, '../FormItem': { default: 'form-item' },
   }, { requestAnimationFrame: fn => { fn(); return 1 }, cancelAnimationFrame() {}, URL: { createObjectURL: f => `blob:${f.name}`, revokeObjectURL() {} }, sessionStorage: { removeItem() {} } })
@@ -108,6 +110,18 @@ test('adding files appends without disturbing the chosen order, deduplicates and
     while (h.grid(kind).items.length) { h.grid(kind).onRemove(0); h.render() }
     assert.deepEqual(h.snapshot().getAll(`listing${field}Order[]`), [''])
     assert.deepEqual(h.snapshot().getAll(`listing${field}Urls[]`), [''])
+  }
+})
+
+test('selection accepts additional image/video formats and missing MIME types, while reporting rejected files', () => {
+  for (const [kind, names] of [['photo', ['a.AVIF','b.GIF','c.BMP','d.JFIF']], ['video', ['a.M4V','b.MOV','c.MP4','d.WEBM']], ['panorama', ['a.avif','b.bmp','c.gif']]]) {
+    const h = step3Fixture()
+    h.upload(kind).onChange({ target: { files: [...names.map(name => file(name, '')), file('not-media.pdf', 'application/pdf')], value: 'selected' } })
+    h.render()
+    assert.ok(h.upload(kind).error.includes('not-media.pdf'))
+    assert.equal(h.grid(kind).items.length, names.length + (kind === 'photo' ? 1 : 0))
+    h.upload(kind).onChange({ target: { files: [file('empty', '')], value: '' } }); h.render()
+    assert.ok(h.upload(kind).error.includes('empty'))
   }
 })
 

@@ -10,7 +10,8 @@ import {
   normalizeUseCasesForUsage,
 } from '@/data/propertyTaxonomy'
 import { fetchWithAuthRetry, getAuthApiUrl, getStoredUser } from './auth'
-import { applyListingImageWatermark } from './listingImageWatermark'
+import { applyListingImageWatermark, prepareListingPanorama } from './listingImageWatermark'
+import { listingMediaFileIssue, listingMediaMaxBytes, listingMediaMimeType } from './listingMediaFormats'
 
 export const LISTING_DRAFT_KEY = 'mapxprop_listing_draft'
 export const LISTING_SUBMISSION_RESULT_KEY = 'mapxprop_listing_submission_result'
@@ -657,29 +658,31 @@ export const uploadListingMedia = async (
 ) => {
   const urls: string[] = []
   const limit = mediaType === 'image' ? 10 : 4
-  const maxBytes = mediaType === 'video' ? 50 * 1024 * 1024 : mediaType === '360' ? 15 * 1024 * 1024 : 8 * 1024 * 1024
-  const allowedTypes =
-    mediaType === 'video'
-      ? new Set(['video/mp4', 'video/webm', 'video/quicktime'])
-      : new Set(['image/jpeg', 'image/png', 'image/webp'])
+  const maxBytes = listingMediaMaxBytes(mediaType)
 
   for (const file of files.slice(0, limit)) {
-    if (file.size <= 0 || file.size > maxBytes) {
-      throw new ListingMediaUploadError('file_too_large', file.name, 'Media file is too large')
-    }
-    if (file.type && !allowedTypes.has(file.type.toLowerCase())) {
-      throw new ListingMediaUploadError('unsupported_format', file.name, 'Unsupported media file format')
-    }
+    const issue = listingMediaFileIssue(file, mediaType)
+    if (issue)
+      throw new ListingMediaUploadError(
+        issue,
+        file.name,
+        issue === 'file_too_large' ? 'Media file is too large or empty' : 'Unsupported media file format'
+      )
 
-    let preparedFile = file
-    if (mediaType === 'image') {
+    const mime = listingMediaMimeType(file, mediaType)
+    let preparedFile =
+      file.type === mime ? file : new File([file], file.name, { type: mime, lastModified: file.lastModified })
+    if (mediaType === 'image' || mediaType === '360') {
       try {
-        preparedFile = await applyListingImageWatermark(file, options.watermarkLabel || '')
+        preparedFile =
+          mediaType === 'image'
+            ? await applyListingImageWatermark(preparedFile, options.watermarkLabel || '')
+            : await prepareListingPanorama(preparedFile)
       } catch (error) {
         throw new ListingMediaUploadError(
           'upload_failed',
           file.name,
-          error instanceof Error ? error.message : 'Cannot prepare image watermark'
+          error instanceof Error ? error.message : 'Cannot prepare image'
         )
       }
     }

@@ -40,6 +40,7 @@ function setup(draft) {
       '@/data/propertyTaxonomy': taxonomy,
       './auth': {},
       './listingImageWatermark': {},
+      './listingMediaFormats': load('src/lib/listingMediaFormats.ts'),
     },
     { window: {}, localStorage: storage, sessionStorage: storage }
   )

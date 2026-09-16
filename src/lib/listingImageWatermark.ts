@@ -49,7 +49,12 @@ const loadImage = async (file: File): Promise<LoadedImage> => {
   const image = new Image()
   image.decoding = 'async'
   image.src = objectUrl
-  await image.decode()
+  try {
+    await image.decode()
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl)
+    throw error
+  }
 
   return {
     source: image,
@@ -100,7 +105,7 @@ const canvasToBlob = (canvas: HTMLCanvasElement, mimeType: string, quality?: num
 const encodeWatermarkedImage = async (canvas: HTMLCanvasElement, preferredType: string) => {
   const normalizedType = ['image/jpeg', 'image/png', 'image/webp'].includes(preferredType)
     ? preferredType
-    : 'image/jpeg'
+    : 'image/webp'
   let blob = await canvasToBlob(canvas, normalizedType, normalizedType === 'image/png' ? undefined : 0.92)
 
   if (blob.size <= MAX_UPLOAD_BYTES) return blob
@@ -196,6 +201,28 @@ export const applyListingImageWatermark = async (file: File, rawPublisherName: s
     if (blob.size > MAX_UPLOAD_BYTES) throw new Error('Watermarked image is too large')
 
     return new File([blob], watermarkedFileName(file.name, blob.type), {
+      type: blob.type,
+      lastModified: file.lastModified,
+    })
+  } finally {
+    loadedImage.release()
+  }
+}
+
+// Keep full panorama dimensions and omit the listing-photo watermark.
+// Browsers decode the additional raster formats; storage receives a standard still WebP/PNG.
+export const prepareListingPanorama = async (file: File) => {
+  if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type.toLowerCase())) return file
+  const loadedImage = await loadImage(file)
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = loadedImage.width
+    canvas.height = loadedImage.height
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Cannot prepare panorama')
+    context.drawImage(loadedImage.source, 0, 0)
+    const blob = await canvasToBlob(canvas, 'image/webp', 0.92)
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + extensionForMimeType(blob.type), {
       type: blob.type,
       lastModified: file.lastModified,
     })
