@@ -4,9 +4,9 @@ import TopNavPopoverBackdrop from '@/components/Header/TopNavPopoverBackdrop'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
+import LogoSvg from '@/shared/LogoSvg'
 import { CloseButton, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { BedDouble, Check, House, Store } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -22,7 +22,6 @@ const mobileSites = [
     iconTone: 'bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200',
     activeTone: 'border-transparent bg-[#f2f8f5] dark:border-transparent dark:bg-emerald-950/35',
     checkTone: 'bg-[#176b50] text-white dark:bg-emerald-200 dark:text-emerald-950',
-    dotTone: 'bg-[#176b50]',
   },
   {
     id: 'rooms',
@@ -35,7 +34,6 @@ const mobileSites = [
     iconTone: 'bg-[#EFF8FD] text-[#2D8FC7] dark:bg-[#102b3a] dark:text-[#8fd4f4]',
     activeTone: 'border-transparent bg-[#E0F2FC] dark:border-transparent dark:bg-[#102b3a]',
     checkTone: 'bg-[#2D8FC7] text-white dark:bg-[#8fd4f4] dark:text-[#102b3a]',
-    dotTone: 'bg-[#2D8FC7]',
   },
   {
     id: 'business',
@@ -48,7 +46,6 @@ const mobileSites = [
     iconTone: 'bg-[#FFF2EC] text-[#E65A2F] dark:bg-[#351B14] dark:text-[#FFC2AD]',
     activeTone: 'border-transparent bg-[#FFE7DC] dark:border-transparent dark:bg-[#351B14]',
     checkTone: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
-    dotTone: 'bg-[#E65A2F]',
   },
 ] as const
 
@@ -56,29 +53,17 @@ const MobilePropertyBrandMark = () => {
   const pathname = usePathname()
   const { locale, propertyZone, setPropertyZone } = usePreferences()
   const activeId = getPropertyZoneFromPathname(pathname) ?? propertyZone
-  const activeSite = mobileSites.find((site) => site.id === activeId) ?? mobileSites[0]
 
   return (
     <Popover className="group relative shrink-0">
       <PopoverButton
-        aria-label={locale === 'th' ? 'เลือกส่วนของเว็บไซต์' : 'Choose site section'}
-        className="relative grid size-9 shrink-0 place-items-center rounded-[13px] transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 data-open:shadow-[0_7px_20px_rgba(18,63,50,0.20)] data-open:ring-4 data-open:ring-[#176b50]/10"
+        data-mobile-mapxprop-logo
+        aria-label={locale === 'th' ? 'MapxProp เลือกส่วนของเว็บไซต์' : 'MapxProp, choose site section'}
+        className="relative flex min-h-11 w-[76px] shrink-0 items-center rounded-lg transition duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-none active:scale-95 min-[390px]:w-[84px]"
       >
-        <span className="grid size-9 place-items-center overflow-hidden rounded-[13px] border border-[#0d352a]/90 bg-[#123f32] shadow-[0_5px_14px_rgba(18,63,50,0.18)]">
-          <Image
-            src="/mapxprop-mobile-mark.png"
-            alt=""
-            width={34}
-            height={34}
-            sizes="34px"
-            className="size-[34px] translate-x-[0.5px] -translate-y-[0.5px] object-contain"
-            priority
-          />
+        <span className="block w-full">
+          <LogoSvg />
         </span>
-        <span
-          aria-hidden="true"
-          className={`absolute end-1 top-1 size-[7px] rounded-full shadow-sm ring-2 ring-[#F2EDE2] ${activeSite.dotTone}`}
-        />
       </PopoverButton>
 
       <TopNavPopoverBackdrop />
@@ -90,7 +75,7 @@ const MobilePropertyBrandMark = () => {
       >
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -top-[5px] left-[20px] z-20 size-[10px] rotate-45 border-t border-l border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
+          className="pointer-events-none absolute -top-[5px] left-[38px] z-20 size-[10px] rotate-45 border-t border-l border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
         />
 
         <div className="relative px-3 pt-2 pb-2">

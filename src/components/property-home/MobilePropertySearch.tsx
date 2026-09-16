@@ -2,11 +2,18 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
+import type { PropertyTypeCode } from '@/data/propertyTaxonomy'
+import {
+  getMobilePropertyMapSearchUrl,
+  mobilePropertyCategories,
+  type MobilePropertyCategory,
+} from '@/lib/mobilePropertySearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Banknote,
   BedDouble,
+  BriefcaseBusiness,
   Building,
   Building2,
   Check,
@@ -14,18 +21,18 @@ import {
   Factory,
   Hotel,
   House,
+  HousePlus,
   LandPlot,
   MapPin,
   Search,
   SlidersHorizontal,
   Store,
-  Tent,
   Warehouse,
   X,
 } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Slider from 'rc-slider'
-import { useEffect, useMemo, useState, type SVGProps } from 'react'
+import { useEffect, useMemo, useState, type ComponentType, type SVGProps } from 'react'
 import MobileProjectSearchDialog from './MobileProjectSearchDialog'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
@@ -42,12 +49,26 @@ const RowHouseIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
-const MallKioskIcon = (props: SVGProps<SVGSVGElement>) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M4 20.5v-16h16v16M2.5 20.5h19M7 8h10" />
-    <path d="m7 8 1 3 2-3 2 3 2-3 2 3 1-3M8 11v6.5h8V11M8 15h8" />
-  </svg>
-)
+const categoryIcons: Record<PropertyTypeCode, ComponentType<SVGProps<SVGSVGElement>>> = {
+  detached_house: House,
+  semi_detached_house: HousePlus,
+  townhouse: Building,
+  condo: Building2,
+  apartment: Hotel,
+  dormitory: BedDouble,
+  rental_room: BedDouble,
+  flat: Building,
+  serviced_apartment: Hotel,
+  monthly_hotel: Hotel,
+  shophouse: RowHouseIcon,
+  home_office: BriefcaseBusiness,
+  office: Building2,
+  retail_space: Store,
+  warehouse: Warehouse,
+  factory: Factory,
+  hotel_resort: Hotel,
+  land: LandPlot,
+}
 
 type BudgetPreset = {
   label: string
@@ -122,189 +143,6 @@ const propertyGroupTones: Record<
     activeIcon: 'bg-white/80 dark:bg-[#4A251C]',
   },
 }
-
-const propertyTypes = [
-  {
-    value: 'house',
-    label: 'บ้าน',
-    labelEn: 'House',
-    term: 'บ้าน',
-    termEn: 'house',
-    icon: House,
-    groups: ['homes'],
-  },
-  {
-    value: 'condo',
-    label: 'คอนโด',
-    labelEn: 'Condo',
-    term: 'คอนโด',
-    termEn: 'condo',
-    icon: Building2,
-    groups: ['homes', 'rooms'],
-  },
-  {
-    value: 'townhouse',
-    label: 'ทาวน์โฮม',
-    labelEn: 'Townhome',
-    term: 'ทาวน์โฮม',
-    termEn: 'townhome',
-    icon: Building,
-    groups: ['homes'],
-  },
-  {
-    value: 'dormitory',
-    label: 'หอพัก',
-    labelEn: 'Dorm',
-    term: 'หอพัก',
-    termEn: 'dorm',
-    icon: BedDouble,
-    groups: ['rooms'],
-  },
-  {
-    value: 'apartment',
-    label: 'อพาร์ตเมนต์',
-    labelEn: 'Apartment',
-    term: 'อพาร์ตเมนต์',
-    termEn: 'apartment',
-    icon: Hotel,
-    groups: ['rooms'],
-  },
-  {
-    value: 'rental_room',
-    label: 'ห้องเช่า',
-    labelEn: 'Rental room',
-    term: 'ห้องเช่า',
-    termEn: 'rental room',
-    icon: BedDouble,
-    groups: ['rooms'],
-  },
-  {
-    value: 'flat',
-    label: 'แฟลต',
-    labelEn: 'Flat',
-    term: 'แฟลต',
-    termEn: 'flat',
-    icon: Building,
-    groups: ['rooms'],
-  },
-  {
-    value: 'serviced_apartment',
-    label: 'เซอร์วิสอพาร์ตเมนต์',
-    labelEn: 'Serviced apartment',
-    term: 'เซอร์วิสอพาร์ตเมนต์',
-    termEn: 'serviced apartment',
-    icon: Hotel,
-    groups: ['rooms'],
-  },
-  {
-    value: 'monthly_hotel',
-    label: 'โรงแรมรายเดือน',
-    labelEn: 'Monthly hotel',
-    term: 'โรงแรมรายเดือน',
-    termEn: 'monthly hotel',
-    icon: Hotel,
-    groups: ['rooms'],
-  },
-  {
-    value: 'shophouse',
-    label: 'ตึกแถว',
-    labelEn: 'Shophouse',
-    term: 'ตึกแถว',
-    termEn: 'shophouse',
-    icon: RowHouseIcon,
-    groups: ['homes', 'business'],
-  },
-  {
-    value: 'retail_space',
-    label: 'พื้นที่ค้าขาย',
-    labelEn: 'Retail space',
-    term: 'พื้นที่ค้าขาย',
-    termEn: 'retail space',
-    icon: Store,
-    groups: ['business'],
-  },
-  {
-    value: 'rowhouse_shop',
-    label: 'ร้านค้าในตึกแถว',
-    labelEn: 'Shophouse shop',
-    term: 'ร้านค้าในตึกแถว',
-    termEn: 'shop in shophouse',
-    icon: RowHouseIcon,
-    groups: ['business'],
-  },
-  {
-    value: 'standalone_shop',
-    label: 'ร้านค้า Standalone',
-    labelEn: 'Standalone shop',
-    term: 'ร้านค้า standalone',
-    termEn: 'standalone shop',
-    icon: Store,
-    groups: ['business'],
-  },
-  {
-    value: 'market_stall',
-    label: 'ล็อคในตลาด',
-    labelEn: 'Market stall',
-    term: 'ล็อกในตลาด',
-    termEn: 'market stall',
-    icon: Tent,
-    groups: ['business'],
-  },
-  {
-    value: 'mall_kiosk',
-    label: 'ล็อคในห้าง',
-    labelEn: 'Mall kiosk',
-    term: 'ล็อกในห้าง',
-    termEn: 'mall kiosk',
-    icon: MallKioskIcon,
-    groups: ['commercial'],
-  },
-  {
-    value: 'office',
-    label: 'ออฟฟิศ',
-    labelEn: 'Office',
-    term: 'ออฟฟิศ',
-    termEn: 'office',
-    icon: Building2,
-    groups: ['business'],
-  },
-  {
-    value: 'warehouse',
-    label: 'โกดัง',
-    labelEn: 'Warehouse',
-    term: 'โกดัง',
-    termEn: 'warehouse',
-    icon: Warehouse,
-    groups: ['business'],
-  },
-  {
-    value: 'factory',
-    label: 'โรงงาน',
-    labelEn: 'Factory',
-    term: 'โรงงาน',
-    termEn: 'factory',
-    icon: Factory,
-    groups: ['business'],
-  },
-  {
-    value: 'hotel_resort',
-    label: 'โรงแรม / รีสอร์ต',
-    labelEn: 'Hotel / resort property',
-    term: 'โรงแรม รีสอร์ต',
-    termEn: 'hotel resort property',
-    icon: Hotel,
-    groups: ['business'],
-  },
-  {
-    value: 'land',
-    label: 'ที่ดิน',
-    labelEn: 'Land',
-    term: 'ที่ดิน',
-    termEn: 'land',
-    icon: LandPlot,
-    groups: ['homes', 'business'],
-  },
-] as const
 
 const createBudgetPreset = (label: string, labelEn: string, min: number, max: number): BudgetPreset => ({
   label,
@@ -414,7 +252,7 @@ const MobilePropertySearch = ({
   const [projectSearchOpen, setProjectSearchOpen] = useState(false)
   const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(activePropertyGroup)
   const [offerType, setOfferType] = useState<OfferType>(activePropertyGroup === 'rooms' ? 'rent' : '')
-  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<Array<(typeof propertyTypes)[number]>>([])
+  const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<MobilePropertyCategory[]>([])
   const [budget, setBudget] = useState<BudgetPreset | null>(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
   const [budgetOfferType, setBudgetOfferType] = useState<OfferType>('')
@@ -432,11 +270,11 @@ const MobilePropertySearch = ({
 
   const selectedOffer = useMemo(() => offerTypes.find((item) => item.value === offerType) ?? offerTypes[0], [offerType])
   const visiblePropertyTypes = useMemo(
-    () => propertyTypes.filter((property) => (property.groups as readonly PropertyGroup[]).includes(propertyGroup)),
+    () => mobilePropertyCategories.filter((property) => property.channel === propertyGroup),
     [propertyGroup]
   )
 
-  const togglePropertyType = (property: (typeof propertyTypes)[number]) => {
+  const togglePropertyType = (property: MobilePropertyCategory) => {
     setSelectedPropertyTypes((current) =>
       current.some((item) => item.value === property.value)
         ? current.filter((item) => item.value !== property.value)
@@ -504,29 +342,16 @@ const MobilePropertySearch = ({
     setBudgetOpen(false)
   }
 
-  const composeQuery = (input: string) => {
-    const cleanedInput = offerType
-      ? input
-          .replace(/(?:ให้เช่า|โอนกิจการ|ซื้อ|ขาย|เช่า|เซ้ง|\bbuy\b|\bsale\b|\brent\b|\btransfer\b)/gi, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-      : input.trim()
-    const terms = [
-      propertyGroup === 'rooms'
-        ? isThai
-          ? 'ห้องเช่ารายเดือน'
-          : 'monthly rental'
-        : propertyGroup === 'business'
-          ? isThai
-            ? 'พื้นที่ทำธุรกิจ'
-            : 'business space'
-          : '',
-      offerType ? (isThai ? selectedOffer.term : selectedOffer.termEn) : '',
-      ...selectedPropertyTypes.map((property) => (isThai ? property.term : property.termEn)),
-      budget ? (isThai ? budget.term : budget.termEn) : '',
-      cleanedInput,
-    ]
-    return terms.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+  const buildMapSearchUrl = (query: string) => {
+    const config = budgetConfigs[propertyGroup][offerType || 'sale']
+    return getMobilePropertyMapSearchUrl({
+      query,
+      channel: propertyGroup,
+      selectedCategories: selectedPropertyTypes.map((property) => property.value),
+      offerType,
+      minPrice: budget && budget.min > config.min ? budget.min : undefined,
+      maxPrice: budget && budget.max < config.max ? budget.max : undefined,
+    })
   }
 
   const hasQuickFilters = Boolean(offerType || selectedPropertyTypes.length || budget)
@@ -558,6 +383,7 @@ const MobilePropertySearch = ({
         <MobilePropertyBrandMark />
         <button
           type="button"
+          data-mobile-property-search-trigger
           onClick={() => setOpen(true)}
           className={`flex min-w-0 flex-1 items-center rounded-full border border-neutral-200 bg-white text-start transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 ${
             compactMapHeader && isMapResults
@@ -658,14 +484,15 @@ const MobilePropertySearch = ({
                 {propertyGroups.map((group) => {
                   const active = propertyGroup === group.value
                   const tone = propertyGroupTones[group.value]
-                  const selectedCount = selectedPropertyTypes.filter((property) =>
-                    (property.groups as readonly PropertyGroup[]).includes(group.value)
+                  const selectedCount = selectedPropertyTypes.filter(
+                    (property) => property.channel === group.value
                   ).length
 
                   return (
                     <button
                       key={group.value}
                       type="button"
+                      data-mobile-search-group={group.value}
                       onClick={() => {
                         setPropertyGroup(group.value)
                         setPropertyZone(group.value)
@@ -726,13 +553,14 @@ const MobilePropertySearch = ({
               </div>
               <div className="mt-2 grid grid-cols-4 gap-2 pt-1 pb-1">
                 {visiblePropertyTypes.map((property) => {
-                  const Icon = property.icon
+                  const Icon = categoryIcons[property.propertyType]
                   const active = selectedPropertyTypes.some((item) => item.value === property.value)
                   const tone = propertyGroupTones[propertyGroup]
                   return (
                     <button
                       key={property.value}
                       type="button"
+                      data-mobile-search-category={property.value}
                       onClick={() => togglePropertyType(property)}
                       aria-pressed={active}
                       className={`relative flex min-h-[78px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2 text-[11px] leading-tight font-semibold transition ${
@@ -753,7 +581,7 @@ const MobilePropertySearch = ({
                       >
                         <Icon className="size-[18px]" strokeWidth={1.8} />
                       </span>
-                      <span className="line-clamp-2">{isThai ? property.label : property.labelEn}</span>
+                      <span className="text-center">{isThai ? property.label : property.labelEn}</span>
                     </button>
                   )
                 })}
@@ -766,6 +594,7 @@ const MobilePropertySearch = ({
               </h2>
               <button
                 type="button"
+                data-mobile-search-budget
                 onClick={openBudget}
                 className={`mt-2 flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 text-start transition ${
                   offerType || budget
@@ -802,7 +631,8 @@ const MobilePropertySearch = ({
                 {isThai ? 'ทำเลที่ต้องการ?' : 'Where do you want to look?'}
               </div>
               <PropertySearchOmnibox
-                buildQuery={composeQuery}
+                buildSearchUrl={buildMapSearchUrl}
+                allowEmptyQuery
                 suggestionsMode="inline"
                 showSuggestionsOnEmpty={false}
                 placeholder={isThai ? 'จังหวัด เขต ย่าน หรือชื่อโครงการ' : 'Province, area, or project name'}
@@ -848,6 +678,7 @@ const MobilePropertySearch = ({
                         <button
                           key={offer.value || 'all'}
                           type="button"
+                          data-mobile-budget-offer={offer.value || 'all'}
                           onClick={() => chooseBudgetOffer(offer.value)}
                           className={`min-h-11 rounded-2xl px-2 text-sm font-semibold transition ${
                             active
@@ -894,6 +725,7 @@ const MobilePropertySearch = ({
                           <button
                             key={preset.term}
                             type="button"
+                            data-mobile-budget-preset={`${preset.min}-${preset.max}`}
                             onClick={() => setBudgetRange([preset.min, preset.max])}
                             className={`min-h-11 rounded-2xl border px-2.5 text-sm font-semibold transition ${
                               active
