@@ -240,7 +240,7 @@ export function FullPhotoDialog({
             </>
           )}
           <p className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 rounded-full bg-black/30 px-3 py-1.5 text-xs whitespace-nowrap text-white/60 lg:hidden">
-            {isThai ? 'รูดลงเพื่อกลับไปดูรูปทั้งหมด' : 'Swipe down to return to all photos'}
+            {isThai ? 'รูดลงเพื่อปิด' : 'Swipe down to close'}
           </p>
         </DialogPanel>
       </div>
