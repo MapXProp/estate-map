@@ -192,26 +192,6 @@
 .categoriesToggle[aria-expanded='true'] {
   background: #125a43;
 }
-.categoryPanelActions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 4px;
-}
-.categoryPanelActions button {
-  min-height: 32px;
-  padding: 0 8px;
-  border-radius: 8px;
-  color: #176b50;
-  font-size: 12px;
-  cursor: pointer;
-}
-.categoryPanelActions button:hover {
-  background: #edf6f1;
-}
-.categoryPanelActions button:focus-visible {
-  outline: 2px solid #176b50;
-  outline-offset: 2px;
-}
 .accountButton,
 .resetButton {
   display: grid;
@@ -922,7 +902,6 @@
     width: clamp(76px, 20vw, 96px);
   }
   .categoryActions,
-  .categoryPanelActions,
   .accountControl {
     display: none;
   }
@@ -1466,7 +1445,6 @@
   color: #e5e5e5;
   background: #171717;
 }
-:global(.dark) .categoryPanelActions button:hover,
 :global(.dark) .accountButton:hover,
 :global(.dark) .resetButton:hover {
   background: #2b4435;
@@ -1485,7 +1463,6 @@
   background: #262626;
 }
 :global(.dark) .selectionSummary,
-:global(.dark) .categoryPanelActions button,
 :global(.dark) .mobileAllCategories {
   color: #a6b9ad;
 }

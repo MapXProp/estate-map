@@ -852,13 +852,6 @@ export default function PropertyMapSearch({
                 )
               })}
             </div>
-            {categories.length > 0 && (
-              <div className={styles.categoryPanelActions}>
-                <button type="button" data-map-clear-categories onClick={() => setCategories([])}>
-                  {th ? 'กลับไปดูทุกหมวด' : 'Show all types'}
-                </button>
-              </div>
-            )}
           </div>
         )}
       </section>
