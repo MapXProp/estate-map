@@ -860,6 +860,7 @@ export default function PropertyMapSearch({
               onMapBackgroundTap={dismissMobilePreview}
               initialCenter={center}
               initialZoom={zoom}
+              initialSearchQuery={initialMapCenter || initialProject ? '' : query}
               exactCoordinates
               searchContainerClassName={styles.locationSearch}
               zoomControlsClassName={styles.zoomControls}
@@ -867,11 +868,11 @@ export default function PropertyMapSearch({
               onViewportChange={observeViewport}
               areaSearchRequestId={areaRequestId}
               onSearchArea={searchArea}
-              onLocationSearch={(location) => {
+              onLocationSearch={(location, _label, locationZoom) => {
                 setSelectedProject(null)
                 setPreviewSelection(null)
                 setCenter(location)
-                setZoom(15)
+                setZoom(locationZoom)
                 setKeyword('')
                 setArea(null)
                 setViewportDirty(true)

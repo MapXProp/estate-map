@@ -6,7 +6,7 @@ import {
   fetchMapSearchSuggestions,
   preferredMapProject,
   projectSearchSuggestion,
-  searchMapPlace,
+  resolveMapSearchPlace,
   searchMapProjects,
   type MapSearchSuggestion,
 } from '@/lib/propertyMapLocationSearch'
@@ -254,11 +254,12 @@ interface Props {
   resizeRequestId?: number
   initialCenter?: LongdoLocation
   initialZoom?: number
+  initialSearchQuery?: string
   exactCoordinates?: boolean
   searchContainerClassName?: string
   zoomControlsClassName?: string
   onLocationSearchFocus?: () => void
-  onLocationSearch?: (location: LongdoLocation, label: string) => void
+  onLocationSearch?: (location: LongdoLocation, label: string, zoom: number) => void
   onMarkerSelect?: (id: string) => void
   onProjectSelect?: (project: MapProject) => void
   onProjectSearchSelect?: (project: MapProjectDetails) => void
@@ -282,6 +283,7 @@ const LongdoPropertyMap = ({
   resizeRequestId = 0,
   initialCenter,
   initialZoom = 12,
+  initialSearchQuery = '',
   exactCoordinates = false,
   searchContainerClassName,
   zoomControlsClassName,
@@ -327,7 +329,8 @@ const LongdoPropertyMap = ({
   const selectedProjectIdRef = useRef(selectedProjectId)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
-  const [searchText, setSearchText] = useState('')
+  const [searchText, setSearchText] = useState(initialSearchQuery)
+  const initialSearchStartedRef = useRef('')
   const [suggestions, setSuggestions] = useState<MapSearchSuggestion[]>([])
   const searchRequestRef = useRef<AbortController | null>(null)
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
@@ -820,10 +823,7 @@ const LongdoPropertyMap = ({
           })
           project = preferredMapProject(keyword, matches)
           if (!project && matches.length > 1) {
-            setSuggestions([
-              ...matches.map(projectSearchSuggestion),
-              { kind: 'place', label: keyword, direct: true },
-            ])
+            setSuggestions([...matches.map(projectSearchSuggestion), { kind: 'place', label: keyword, direct: true }])
             setSearchMessage(
               isThai
                 ? 'เลือกโครงการที่ต้องการ หรือค้นหาสถานที่ด้วยคำนี้'
@@ -845,7 +845,7 @@ const LongdoPropertyMap = ({
           searchInputRef.current?.blur()
           return
         }
-        const place = await searchMapPlace(keyword, apiKey, isThai, controller.signal)
+        const place = await resolveMapSearchPlace(keyword, apiKey, isThai, controller.signal, mapMode !== 'projects')
         controller.signal.throwIfAborted()
         if (!place) {
           setSearchMessage(
@@ -857,7 +857,7 @@ const LongdoPropertyMap = ({
 
         const location = { lon: Number(place.lon), lat: Number(place.lat) }
         map.location(location, false)
-        map.zoom(15, false)
+        map.zoom(place.zoom, false)
         const marker = new longdo.Marker(location, {
           title: place.name || keyword,
           icon: { html: getSearchMarkerHtml(place.name || keyword), offset: { x: 0, y: 0 } },
@@ -870,7 +870,7 @@ const LongdoPropertyMap = ({
           timer: window.setTimeout(fadeSearchMarker, 4000),
           fading: false,
         }
-        onLocationSearchRef.current?.(location, place.name || keyword)
+        onLocationSearchRef.current?.(location, place.name || keyword, place.zoom)
         setSearchText(place.name || keyword)
         setIsSearchFocused(false)
         searchInputRef.current?.blur()
@@ -891,6 +891,18 @@ const LongdoPropertyMap = ({
     },
     [apiKey, pathname, router, mapMode, isThai, onProjectSearchSelect, clearSearchMarker, fadeSearchMarker]
   )
+
+  useEffect(() => {
+    const query = initialSearchQuery.trim()
+    if (!mapReady || !query || initialSearchStartedRef.current === query) return
+    // Header and mobile searches arrive before the map SDK is ready. Resolve
+    // them once through the same camera/marker flow as the map's own search.
+    const timer = window.setTimeout(() => {
+      initialSearchStartedRef.current = query
+      void searchLocation(query)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [initialSearchQuery, mapReady, searchLocation])
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' && suggestions.length) {
@@ -1459,8 +1471,7 @@ const LongdoPropertyMap = ({
         onWheelCapture={fadeSearchMarker}
         onDoubleClickCapture={fadeSearchMarker}
         onKeyDownCapture={(event) => {
-          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '='].includes(event.key))
-            fadeSearchMarker()
+          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '='].includes(event.key)) fadeSearchMarker()
         }}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />

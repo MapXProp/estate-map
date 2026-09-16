@@ -9,12 +9,20 @@ const source = ts.transpileModule(
   fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapLocationSearch.ts'), 'utf8'),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
 ).outputText
+const locationsContext = { exports: {} }
+vm.runInNewContext(
+  ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapLocations.ts'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  locationsContext
+)
 function model(fetch) {
   const context = {
     exports: {},
     URLSearchParams,
     fetch,
-    require: () => ({ getAuthApiUrl: (value) => '/apix/' + value }),
+    require: (id) =>
+      id === './propertyMapLocations' ? locationsContext.exports : { getAuthApiUrl: (value) => '/apix/' + value },
   }
   vm.runInNewContext(source, context)
   return context.exports
@@ -152,4 +160,82 @@ test('place fallback rejects empty, invalid and out-of-range coordinates and use
     lon: 100.54,
   })
   assert.equal(requested.searchParams.get('locale'), 'en')
+})
+
+test('province searches use a wide area view without depending on listings or a provider response', async () => {
+  const m = model(() => {
+    throw Error('No network needed for a known province')
+  })
+  for (const query of ['สุราษฎร์ธานี', 'Surat Thani', 'surat-thani']) {
+    const place = await m.resolveMapSearchPlace(query, 'test', true, signal())
+    assert.deepEqual(plain(place), { name: 'สุราษฎร์ธานี', address: '', lat: 9.1382, lon: 99.3217, zoom: 10 })
+  }
+})
+
+test('registered project names and aliases use their exact coordinates even if external geocoding has no match', async () => {
+  const mall = {
+    ...project('emsphere', 'commercial_complex'),
+    name_th: 'เอ็มสเฟียร์',
+    name_en: 'Emsphere',
+    display_name: 'Emsphere',
+    aliases: ['EM MARKET HALL'],
+    latitude: 13.732147,
+    longitude: 100.56654,
+  }
+  const m = model(async (url) => {
+    assert.ok(url.startsWith('/apix/projects?'), 'exact project does not need external geocoding')
+    return json({ projects: [mall] })
+  })
+  for (const query of ['EM MARKET HALL', 'Emsphere', 'เอ็มสเฟียร์']) {
+    const place = await m.resolveMapSearchPlace(query, 'test', true, signal())
+    assert.equal(place.name, 'Emsphere')
+    assert.equal(place.lat, mall.latitude)
+    assert.equal(place.lon, mall.longitude)
+    assert.equal(place.zoom, 16)
+  }
+})
+
+test('a partial project match does not hijack a district search, and project service failure still allows places', async () => {
+  for (const fail of [false, true]) {
+    const m = model(async (url) => {
+      if (url.startsWith('/apix/')) {
+        if (fail) throw Error('Project service unavailable')
+        return json({ projects: [{ ...project('address'), latitude: 14, longitude: 101 }] })
+      }
+      return json({ data: [{ name: 'เขตสาทร กรุงเทพมหานคร', lat: 13.71368, lon: 100.52715 }] })
+    })
+    const place = await m.resolveMapSearchPlace('สาทร', 'test', true, signal())
+    assert.equal(place.lat, 13.71368)
+    assert.equal(place.zoom, 13)
+  }
+})
+
+test('missing, ambiguous or invalid project coordinates fall back to place search without inventing coordinates', async () => {
+  for (const projects of [
+    [],
+    [project('missing')],
+    [{ ...project('bad'), latitude: NaN, longitude: 100 }],
+    [project('duplicate1'), project('duplicate2')],
+  ]) {
+    const m = model(async (url) => json(url.startsWith('/apix/') ? { projects } : { data: [] }))
+    assert.equal(await m.resolveMapSearchPlace('The Address Sathorn', 'test', true, signal()), undefined)
+  }
+})
+
+test('an aborted destination cannot continue to geocoding after a late project response', async () => {
+  let release,
+    count = 0
+  const controller = new AbortController()
+  const m = model(async () => {
+    count++
+    await new Promise((resolve) => {
+      release = resolve
+    })
+    return json({ projects: [] })
+  })
+  const pending = m.resolveMapSearchPlace('Old query', 'test', true, controller.signal)
+  controller.abort()
+  release()
+  await assert.rejects(pending, { name: 'AbortError' })
+  assert.equal(count, 1)
 })

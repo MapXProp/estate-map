@@ -162,7 +162,7 @@ const PropertySearchOmnibox = ({
         if (controller.signal.aborted) return
 
         let items = localItems
-        if (isHeader && Array.from(normalizedQuery).length >= 3) {
+        if (Array.from(normalizedQuery).length >= 3) {
           const localLocationCount = localItems.filter((item) => item.type === 'location').length
           const shouldUseLongdo = localLocationCount < 3 || externalLocationPattern.test(normalizedQuery)
 
@@ -325,6 +325,7 @@ const PropertySearchOmnibox = ({
         )}
         <input
           autoFocus={autoFocus}
+          enterKeyHint="search"
           value={query}
           onFocus={() => {
             setFocused(true)
@@ -338,15 +339,8 @@ const PropertySearchOmnibox = ({
             const nextQuery = event.target.value
             setQuery(nextQuery)
             setActiveIndex(-1)
-            if (isHeader) {
-              if (nextQuery.trim()) {
-                setSuggestions([])
-                setLoading(true)
-              } else {
-                setSuggestions(recentHeaderSuggestions(isThai))
-                setLoading(false)
-              }
-            }
+            setSuggestions(isHeader && !nextQuery.trim() ? recentHeaderSuggestions(isThai) : [])
+            setLoading(Boolean(nextQuery.trim()))
           }}
           onKeyDown={handleInputKeyDown}
           aria-label={isThai ? 'ค้นหาอสังหาริมทรัพย์' : 'Search properties'}

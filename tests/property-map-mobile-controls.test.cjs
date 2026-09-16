@@ -34,7 +34,7 @@ const model = load('src/lib/propertyMapSearch.ts', {
   },
 })
 
-function harness(width, locale = 'th') {
+function harness(width, locale = 'th', entryProps = {}) {
   const slots = []
   let cursor = 0,
     tree,
@@ -122,7 +122,7 @@ function harness(width, locale = 'th') {
   const center = { lat: 13.91, lon: 100.71 }
   function render() {
     cursor = 0
-    tree = component({ initialMapCenter: center, initialMapZoom: 15 })
+    tree = component({ initialMapCenter: center, initialMapZoom: 15, ...entryProps })
   }
   function nodes(predicate) {
     const found = []
@@ -169,6 +169,38 @@ function harness(width, locale = 'th') {
     },
   }
 }
+
+test('entry location search reaches the map on desktop and mobile and preserves selected filters when resolved', () => {
+  for (const width of [320, 390, 820, 1440]) {
+    const h = harness(width, 'th', {
+      query: 'สุราษฎร์ธานี',
+      initialMapCenter: undefined,
+      initialCategories: ['homes:condo'],
+      initialFilters: { offerTypes: ['rent'], minPrice: '20000', maxPrice: '60000' },
+    })
+    assert.equal(h.map().initialSearchQuery, 'สุราษฎร์ธานี')
+    h.map().onLocationSearch({ lat: 9.1382, lon: 99.3217 }, 'สุราษฎร์ธานี', 10)
+    h.render()
+    assert.equal(h.map().initialCenter.lat, 9.1382)
+    assert.equal(h.map().initialZoom, 10)
+    const filters = h.nodes((node) => node.type === 'test-filters')[0].props
+    const serialized = JSON.stringify(filters)
+    assert.match(serialized, /20000/)
+    assert.match(serialized, /60000/)
+    assert.deepEqual(Array.from(h.nodes((node) => node.type === 'test-offers')[0].props.value), ['rent'])
+    h.click(h.tab('homes'))
+    assert.equal(h.data('data-map-category', 'homes:condo').props['aria-pressed'], true)
+  }
+})
+
+test('explicit coordinates and project deep links do not trigger another location lookup', () => {
+  for (const entryProps of [
+    { query: 'saved query' },
+    { initialMapCenter: undefined, query: 'project name', initialProject: 'id' },
+  ]) {
+    assert.equal(harness(390, 'th', entryProps).map().initialSearchQuery, '')
+  }
+})
 
 test('one project switch hides listing categories, clears previews and preserves the camera and category selection', () => {
   const h = harness(390)
@@ -342,54 +374,66 @@ test('select-all and the disclosure arrow operate independently and preserve the
 })
 
 test('four category footer actions select their own sections, combine groups and reflect partial selection', () => {
-  for (const width of [390, 1440]) for (const locale of ['th', 'en']) {
-    const h = harness(width, locale)
-    if (width < 1024) h.click(h.tab('homes'))
-    const filters = () => h.nodes((node) => node.type === 'test-filters')[0].props
-    filters().onChange({ ...filters().value, offerTypes: ['rent'], minPrice: '20000', bedrooms: 2 })
-    h.render()
-    const actions = h.nodes((node) => node.props?.['data-map-section-group'])
-    assert.deepEqual(actions.map((node) => node.props.children[1].props.children), locale === 'th'
-      ? ['หาที่อยู่อาศัย', 'หาห้องเช่า', 'หาพื้นที่ธุรกิจ', 'หาพื้นที่ขายของ']
-      : ['Find a home', 'Find a rental', 'Find business space', 'Find retail space'])
-    assert.equal(h.nodes((node) => ['groupHeading', 'sectionToolbar'].includes(node.props?.className)).length, 0)
-    for (const section of h.nodes((node) => node.props?.['data-map-section'])) {
-      const [chips, footer] = section.props.children
-      const button = footer.props.children
-      assert.equal(footer.props.className, 'sectionAction')
-      assert.equal(button.props['aria-controls'], chips.props.id)
-      assert.equal(section.props['aria-labelledby'], button.props.id)
+  for (const width of [390, 1440])
+    for (const locale of ['th', 'en']) {
+      const h = harness(width, locale)
+      if (width < 1024) h.click(h.tab('homes'))
+      const filters = () => h.nodes((node) => node.type === 'test-filters')[0].props
+      filters().onChange({ ...filters().value, offerTypes: ['rent'], minPrice: '20000', bedrooms: 2 })
+      h.render()
+      const actions = h.nodes((node) => node.props?.['data-map-section-group'])
+      assert.deepEqual(
+        actions.map((node) => node.props.children[1].props.children),
+        locale === 'th'
+          ? ['หาที่อยู่อาศัย', 'หาห้องเช่า', 'หาพื้นที่ธุรกิจ', 'หาพื้นที่ขายของ']
+          : ['Find a home', 'Find a rental', 'Find business space', 'Find retail space']
+      )
+      assert.equal(h.nodes((node) => ['groupHeading', 'sectionToolbar'].includes(node.props?.className)).length, 0)
+      for (const section of h.nodes((node) => node.props?.['data-map-section'])) {
+        const [chips, footer] = section.props.children
+        const button = footer.props.children
+        assert.equal(footer.props.className, 'sectionAction')
+        assert.equal(button.props['aria-controls'], chips.props.id)
+        assert.equal(section.props['aria-labelledby'], button.props.id)
+      }
+      const action = (key) => h.data('data-map-section-group', key)
+      const select = (key) => {
+        const group = key.split(':')[0]
+        if (width < 1024 && !h.tab(group).props['aria-expanded']) h.click(h.tab(group))
+        h.click(action(key))
+      }
+      for (const key of ['homes:homes', 'rooms:rooms', 'business:retail']) select(key)
+      assert.equal(action('homes:homes').props['aria-pressed'], true)
+      assert.equal(action('rooms:rooms').props['aria-pressed'], true)
+      assert.equal(action('business:retail').props['aria-pressed'], true)
+      assert.equal(
+        action('business:buildings').props['aria-pressed'],
+        false,
+        'retail does not select the buildings section'
+      )
+      select('business:buildings')
+      assert.ok(h.nodes((node) => node.props?.['data-map-category']).every((node) => node.props['aria-pressed']))
+      for (const key of ['homes:homes', 'rooms:rooms', 'business:buildings', 'business:retail'])
+        assert.equal(action(key).props.children[0].type, require('lucide-react').Check)
+      select('business:retail')
+      assert.equal(action('business:retail').props['aria-pressed'], false)
+      for (const key of ['homes:homes', 'rooms:rooms', 'business:buildings'])
+        assert.equal(action(key).props['aria-pressed'], true, 'clearing retail preserves other groups')
+      if (width < 1024) h.click(h.tab('rooms'))
+      h.click(h.data('data-map-category', 'rooms:condo'))
+      assert.equal(
+        action('rooms:rooms').props['aria-pressed'],
+        false,
+        'partial selection does not claim the whole group is selected'
+      )
+      select('rooms:rooms')
+      assert.equal(action('rooms:rooms').props['aria-pressed'], true)
+      assert.deepEqual(Array.from(filters().value.offerTypes), ['rent'])
+      assert.equal(filters().value.minPrice, '20000')
+      assert.equal(filters().value.bedrooms, 2)
+      assert.equal(h.map().initialCenter, h.center)
+      assert.equal(h.map().initialZoom, 15)
     }
-    const action = (key) => h.data('data-map-section-group', key)
-    const select = (key) => {
-      const group = key.split(':')[0]
-      if (width < 1024 && !h.tab(group).props['aria-expanded']) h.click(h.tab(group))
-      h.click(action(key))
-    }
-    for (const key of ['homes:homes', 'rooms:rooms', 'business:retail']) select(key)
-    assert.equal(action('homes:homes').props['aria-pressed'], true)
-    assert.equal(action('rooms:rooms').props['aria-pressed'], true)
-    assert.equal(action('business:retail').props['aria-pressed'], true)
-    assert.equal(action('business:buildings').props['aria-pressed'], false, 'retail does not select the buildings section')
-    select('business:buildings')
-    assert.ok(h.nodes((node) => node.props?.['data-map-category']).every((node) => node.props['aria-pressed']))
-    for (const key of ['homes:homes', 'rooms:rooms', 'business:buildings', 'business:retail'])
-      assert.equal(action(key).props.children[0].type, require('lucide-react').Check)
-    select('business:retail')
-    assert.equal(action('business:retail').props['aria-pressed'], false)
-    for (const key of ['homes:homes', 'rooms:rooms', 'business:buildings'])
-      assert.equal(action(key).props['aria-pressed'], true, 'clearing retail preserves other groups')
-    if (width < 1024) h.click(h.tab('rooms'))
-    h.click(h.data('data-map-category', 'rooms:condo'))
-    assert.equal(action('rooms:rooms').props['aria-pressed'], false, 'partial selection does not claim the whole group is selected')
-    select('rooms:rooms')
-    assert.equal(action('rooms:rooms').props['aria-pressed'], true)
-    assert.deepEqual(Array.from(filters().value.offerTypes), ['rent'])
-    assert.equal(filters().value.minPrice, '20000')
-    assert.equal(filters().value.bedrooms, 2)
-    assert.equal(h.map().initialCenter, h.center)
-    assert.equal(h.map().initialZoom, 15)
-  }
 })
 
 test('map searching stays automatic and the four footer actions can select every category together', () => {
@@ -403,8 +447,7 @@ test('map searching stays automatic and the four footer actions can select every
   assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], true)
   for (const group of model.mapCategoryGroups) {
     if (!h.tab(group.code).props['aria-expanded']) h.click(h.tab(group.code))
-    for (const section of group.sections)
-      h.click(h.data('data-map-section-group', `${group.code}:${section.id}`))
+    for (const section of group.sections) h.click(h.data('data-map-section-group', `${group.code}:${section.id}`))
   }
   assert.equal(h.data('data-map-category', 'business:office').props['aria-pressed'], true)
   assert.ok(h.nodes((node) => node.props?.['data-map-category']).every((node) => node.props['aria-pressed']))

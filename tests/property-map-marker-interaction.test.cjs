@@ -21,7 +21,7 @@ const listing = {
   galleryImgs: [],
   priceAmount: 315000000,
 }
-function harness(width, initialZoom = 14, initialListings = [listing], projectsEnabled = false) {
+function harness(width, initialZoom = 14, initialListings = [listing], projectsEnabled = false, entryProps = {}) {
   const slots = [],
     effects = [],
     frames = new Map(),
@@ -160,7 +160,10 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
     '@/lib/propertyMapProjects': projectContext.exports,
     '@/lib/propertyMapLocationSearch': {
-      searchMapPlace: (...args) => searchPlace(...args),
+      resolveMapSearchPlace: async (...args) => {
+        const place = await searchPlace(...args)
+        return place ? { zoom: 15, ...place } : undefined
+      },
       searchMapProjects: async () => [],
       preferredMapProject: () => undefined,
     },
@@ -305,6 +308,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     onLocationSearch: () => {},
     onProjectSelect: projectsEnabled ? (project) => selectedProjects.push(project) : undefined,
     mapMode: projectsEnabled ? 'projects' : undefined,
+    ...entryProps,
   })
   visit(tree, (node) => {
     if (node.type === 'sdk-script') node.props.onReady()
@@ -389,6 +393,13 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     getSearchMarkerHtml: context.exports.getSearchMarkerHtml,
     getSearchMarker: () => overlays.findLast((overlay) => overlay.searchRoot && !removedOverlays.has(overlay)),
     searchText: () => findNode((node) => node.type === 'input').props.value,
+    searchMessage: () => {
+      const texts = []
+      visit(tree, (node) => {
+        if (typeof node.props?.children === 'string') texts.push(node.props.children)
+      })
+      return texts.join(' ')
+    },
     setSearchPlace: (fn) => {
       searchPlace = fn
     },
@@ -810,6 +821,69 @@ test('marker and price taps, controls, panning, pinching, cancellation and long 
     assert.equal(dismissed, 0, action)
     assert.deepEqual(h.calls, [], action)
   }
+})
+
+test('header and mobile entry queries move the ready map once, preserving the destination zoom and cue', async () => {
+  for (const width of [320, 390, 820, 1440]) {
+    const resolved = []
+    const h = harness(width, 12, [], false, {
+      initialSearchQuery: 'สุราษฎร์ธานี',
+      onLocationSearch: (...args) => resolved.push(args),
+    })
+    let requests = 0
+    h.setSearchPlace(async (keyword) => {
+      requests++
+      assert.equal(keyword, 'สุราษฎร์ธานี')
+      return { name: keyword, lat: 9.1382, lon: 99.3217, zoom: 10 }
+    })
+    assert.equal(requests, 0, 'waits for the SDK readiness effect before starting')
+    assert.equal(h.searchText(), 'สุราษฎร์ธานี')
+    h.advance(0)
+    await h.flushSearch()
+    assert.deepEqual(JSON.parse(JSON.stringify(resolved)), [[{ lon: 99.3217, lat: 9.1382 }, 'สุราษฎร์ธานี', 10]])
+    assert.equal(h.api.location().lat, 9.1382)
+    assert.equal(h.api.zoom(), 10)
+    assert.ok(h.getSearchMarker())
+    h.render({ listings: [listing], currentHoverID: listing.id })
+    h.advance(3999)
+    assert.equal(requests, 1, 'loading listings and parent rerenders cannot repeat the search')
+    assert.equal(h.getSearchMarker().searchRoot.style.opacity, '1')
+    h.advance(501)
+    assert.equal(h.getSearchMarker(), undefined)
+    assert.equal(h.api.location().lat, 9.1382)
+    h.unmount()
+  }
+})
+
+test('an unknown entry location keeps the query and explains failure without moving to an unrelated place', async () => {
+  const h = harness(390, 12, [], false, { initialSearchQuery: 'dfdf' })
+  h.setSearchPlace(async () => undefined)
+  h.advance(0)
+  await h.flushSearch()
+  assert.equal(h.searchText(), 'dfdf')
+  assert.match(h.searchMessage(), /ไม่พบสถานที่นี้/)
+  assert.equal(h.getSearchMarker(), undefined)
+  assert.equal(h.calls.filter((call) => call[0] === 'location').length, 0)
+  h.unmount()
+})
+
+test('a manual mobile search supersedes an unfinished entry query', async () => {
+  let release
+  const h = harness(390, 12, [], false, { initialSearchQuery: 'Old province' })
+  h.setSearchPlace((keyword) =>
+    keyword === 'Old province'
+      ? new Promise((resolve) => {
+          release = resolve
+        })
+      : Promise.resolve({ name: 'New place', lat: 18.78, lon: 98.98, zoom: 15 })
+  )
+  h.advance(0)
+  await h.search('New place')
+  release({ name: 'Old province', lat: 9, lon: 99, zoom: 10 })
+  await h.flushSearch()
+  assert.equal(h.api.location().lat, 18.78)
+  assert.equal(h.searchText(), 'New place')
+  h.unmount()
 })
 
 test('place search shows a small labelled red pin for 4 seconds, then fades without clearing the query or listings', async () => {

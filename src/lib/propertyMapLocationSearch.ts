@@ -1,4 +1,5 @@
 import { getAuthApiUrl } from './auth'
+import { getPropertyMapLocationPreset } from './propertyMapLocations'
 import type { MapProjectDetails, PropertyMapMode } from './propertyMapProjects'
 
 export type MapSearchSuggestion =
@@ -95,4 +96,61 @@ export async function searchMapPlace(query: string, apiKey: string, th: boolean,
   return place
     ? { name: place.name || query, address: place.address || '', lat: Number(place.lat), lon: Number(place.lon) }
     : undefined
+}
+
+// A province needs an area-level view, while a named project needs its own
+// registered coordinates (which may not exist in the external place index).
+export async function resolveMapSearchPlace(
+  query: string,
+  apiKey: string,
+  th: boolean,
+  signal: AbortSignal,
+  includeProjects = true
+) {
+  signal.throwIfAborted()
+  const preset = getPropertyMapLocationPreset(query)
+  if (preset)
+    return {
+      name: th ? preset.nameTh : preset.nameEn,
+      address: '',
+      lat: preset.latitude,
+      lon: preset.longitude,
+      zoom: preset.zoom,
+    }
+
+  if (includeProjects) {
+    const projects = await searchMapProjects(query, signal).catch((error) => {
+      if (signal.aborted) throw error
+      return []
+    })
+    signal.throwIfAborted()
+    const name = mapSearchName(query)
+    const exact = projects.filter((project) =>
+      [project.display_name, project.name_th, project.name_en, ...(project.aliases || [])].some(
+        (alias) => alias && mapSearchName(alias) === name
+      )
+    )
+    const project = exact.length === 1 ? exact[0] : undefined
+    if (
+      project &&
+      typeof project.latitude === 'number' &&
+      Number.isFinite(project.latitude) &&
+      Math.abs(project.latitude) <= 90 &&
+      typeof project.longitude === 'number' &&
+      Number.isFinite(project.longitude) &&
+      Math.abs(project.longitude) <= 180
+    )
+      return {
+        name: project.display_name || project.name_en || project.name_th,
+        address: [project.district, project.province].filter(Boolean).join(' '),
+        lat: project.latitude,
+        lon: project.longitude,
+        zoom: 16,
+      }
+  }
+
+  const place = await searchMapPlace(query, apiKey, th, signal)
+  if (!place) return undefined
+  const zoom = /^(?:จ\.|จังหวัด)/.test(place.name) ? 10 : /^(?:เขต|อ\.|อำเภอ)/.test(place.name) ? 13 : 15
+  return { ...place, zoom }
 }
