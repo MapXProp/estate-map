@@ -1,5 +1,4 @@
 .search {
-  --map-group-heading-size: 13px;
   position: relative;
   display: flex;
   flex: 1;
@@ -220,6 +219,8 @@
   padding-top: 8px;
 }
 .group {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 8px 12px 12px;
   border: 1px solid var(--category-border);
@@ -227,27 +228,32 @@
   border-radius: 14px;
   background: var(--category-wash);
 }
-.groupHeading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 32px;
-  font-size: var(--map-group-heading-size);
-  color: var(--category-ink);
-}
 .selectGroup {
-  min-height: 32px;
+  display: inline-flex;
+  min-height: 38px;
   flex-shrink: 0;
-  padding: 0 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 6px 14px;
+  border: 1px solid var(--category-border);
+  border-radius: 999px;
+  background: var(--category-wash);
   color: var(--category-ink);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
   cursor: pointer;
-  white-space: nowrap;
-  text-underline-offset: 4px;
+  text-align: center;
+  transition:
+    background 120ms,
+    border-color 120ms;
 }
-.selectGroup:hover {
-  text-decoration: underline;
+.selectGroup:hover,
+.selectGroup[aria-pressed='true'] {
+  border-color: var(--category-accent);
+  background: var(--category-soft);
 }
 .groupCount {
   border-radius: 999px;
@@ -257,7 +263,21 @@
   font-size: 10px;
 }
 .categorySections {
-  margin-top: 4px;
+  display: grid;
+  flex: 1;
+  min-height: 0;
+}
+.categorySection {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+.sectionAction {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: 10px;
 }
 .businessSections {
   display: grid;
@@ -268,40 +288,15 @@
   border-left: 1px solid var(--category-border);
   padding-left: 12px;
 }
-.sectionToolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0 8px;
-  min-height: 32px;
-}
 .selectGroup:focus-visible {
   outline: 2px solid var(--category-accent);
   outline-offset: 2px;
-  border-radius: 4px;
-}
-.subgroupHeading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  color: var(--category-ink);
-  font-size: var(--map-group-heading-size);
-  font-weight: 600;
-}
-.subgroupHeading > span {
-  margin-left: 3px;
-  font-size: 10px;
-  font-weight: 400;
-  opacity: 0.7;
 }
 .chips {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   gap: 6px;
-  margin-top: 4px;
 }
 .chip {
   display: inline-flex;
@@ -355,7 +350,6 @@
 .mobileTabs {
   display: none;
 }
-.mobileAllCategories,
 .mobileAreaLabel {
   display: none;
 }
@@ -810,16 +804,10 @@
   .groups {
     padding-top: 4px;
   }
-  .business > .groupHeading {
-    display: none;
-  }
-  .businessSections {
-    margin-top: 0;
-  }
 }
 @media (min-width: 1280px) {
   .groups {
-    /* Aim for 22 / 18 / 60 while leaving room for each group heading. */
+    /* Keep the four category zones readable across wide screens. */
     grid-template-columns: minmax(250px, 1.1fr) minmax(230px, 0.9fr) minmax(0, 3fr);
     gap: 10px;
   }
@@ -859,7 +847,7 @@
   }
 }
 @media (max-width: 1023px) {
-  .sectionToolbar .selectGroup {
+  .selectGroup {
     min-height: 44px;
   }
   .categories {
@@ -959,39 +947,7 @@
     padding: 4px 10px 10px;
   }
   .group.mobileActive {
-    display: block;
-  }
-  .groupHeading {
-    display: none;
-  }
-  .groupHeading > span {
-    display: none;
-  }
-  .mobileAllCategories {
-    display: block;
-    min-height: 44px;
-    padding: 0 2px;
-    color: #687d71;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .mobileAllCategories:focus-visible {
-    outline: 2px solid var(--category-accent);
-    outline-offset: 2px;
-  }
-  .homes > .groupHeading,
-  .homes > .groupHeading > span,
-  .rooms > .groupHeading,
-  .rooms > .groupHeading > span {
     display: flex;
-  }
-  .homes .mobileAllCategories,
-  .rooms .mobileAllCategories {
-    display: none;
-  }
-  .homes > .groupHeading .selectGroup,
-  .rooms > .groupHeading .selectGroup {
-    min-height: 44px;
   }
   .mobileTabs {
     display: flex;
@@ -1050,25 +1006,32 @@
     pointer-events: none;
   }
   .categorySections {
+    gap: 10px;
+  }
+  .chips {
     max-height: min(190px, 28dvh);
     overflow-y: auto;
     overscroll-behavior: contain;
-    margin-top: 0;
     gap: 6px;
     scrollbar-width: thin;
   }
-  .chips {
-    max-height: none;
-    gap: 6px;
-  }
   .businessSections {
     grid-template-columns: 1fr;
+    grid-auto-rows: max-content;
+    max-height: min(280px, 38dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .businessSections .chips {
+    max-height: none;
+    overflow: visible;
   }
   .businessSections > section:nth-child(2) {
     border-left: 0;
     border-top: 1px solid var(--category-border);
     padding-left: 0;
-    padding-top: 4px;
+    padding-top: 10px;
   }
   .chip {
     min-height: 40px;
@@ -1303,6 +1266,7 @@
   .offerFill,
   .offerCheck,
   .detailsButton,
+  .selectGroup,
   .mobileTabs button,
   .groupChevron {
     transition: none;
@@ -1312,7 +1276,7 @@
   }
 }
 @media (max-height: 600px) {
-  .categorySections {
+  .chips {
     max-height: 110px;
     overflow-y: auto;
   }
@@ -1462,8 +1426,7 @@
   border-color: #737373;
   background: #262626;
 }
-:global(.dark) .selectionSummary,
-:global(.dark) .mobileAllCategories {
+:global(.dark) .selectionSummary {
   color: #a6b9ad;
 }
 :global(.dark) .resetButton {

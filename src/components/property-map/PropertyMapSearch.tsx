@@ -38,7 +38,6 @@ import {
   matchesMapDetails,
   setMapCategorySection,
   toggleMapCategory,
-  toggleMapCategoryGroup,
   validMapCategoryIds,
 } from '@/lib/propertyMapSearch'
 import type { PropertySearchListing } from '@/lib/propertySearch'
@@ -103,6 +102,12 @@ const groupNames = {
   rooms: ['ห้องเช่ารายเดือน', 'Monthly stays'],
 }
 const mobileGroupNames = { homes: ['อาศัย', 'Homes'], rooms: ['ห้องเช่า', 'Rooms'], business: ['ธุรกิจ', 'Business'] }
+const sectionActionNames = {
+  homes: ['หาที่อยู่อาศัย', 'Find a home'],
+  rooms: ['หาห้องเช่า', 'Find a rental'],
+  buildings: ['หาพื้นที่ธุรกิจ', 'Find business space'],
+  retail: ['หาพื้นที่ขายของ', 'Find retail space'],
+} as const
 export default function PropertyMapSearch({
   query = '',
   initialMapCenter,
@@ -479,13 +484,14 @@ export default function PropertyMapSearch({
     (!!area && !automaticAreaSearch)
   const allCategoriesSelected = [...validMapCategoryIds].every((id) => categories.includes(id))
   const selectAllCategories = () => setCategories([...validMapCategoryIds])
-  const categorySelectionLabel = categories.length && !allCategoriesSelected
-    ? th
-      ? `${countMapCategories(categories)} หมวด`
-      : `${countMapCategories(categories)} selected`
-    : th
-      ? 'ทุกหมวด'
-      : 'All types'
+  const categorySelectionLabel =
+    categories.length && !allCategoriesSelected
+      ? th
+        ? `${countMapCategories(categories)} หมวด`
+        : `${countMapCategories(categories)} selected`
+      : th
+        ? 'ทุกหมวด'
+        : 'All types'
 
   const changeMapMode = (next: PropertyMapMode) => {
     if (next === mapMode) return
@@ -618,7 +624,9 @@ export default function PropertyMapSearch({
                   <SlidersHorizontal className="size-4" />
                   <span className={styles.detailsLabel}>{th ? 'ตัวกรอง' : 'Filters'}</span>
                   {detailsCount > 0 && (
-                    <span className={`${styles.detailsCount} rounded-full bg-neutral-900 px-1.5 text-[10px] text-white dark:bg-neutral-100 dark:text-neutral-900`}>
+                    <span
+                      className={`${styles.detailsCount} rounded-full bg-neutral-900 px-1.5 text-[10px] text-white dark:bg-neutral-100 dark:text-neutral-900`}
+                    >
                       {detailsCount}
                     </span>
                   )}
@@ -633,7 +641,9 @@ export default function PropertyMapSearch({
                   className={styles.resetButton}
                   data-map-reset
                   disabled={!hasFilters}
-                  aria-label={th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'}
+                  aria-label={
+                    th ? 'เริ่มใหม่ ล้างหมวดและตัวกรองทั้งหมด' : 'Start over, reset all categories and filters'
+                  }
                   title={
                     th ? 'ล้างหมวดและตัวกรอง กลับเป็นซื้อและเช่า' : 'Clear categories and filters, restore Buy and Rent'
                   }
@@ -729,8 +739,6 @@ export default function PropertyMapSearch({
           <div id="map-category-options">
             <div className={styles.groups}>
               {mapCategoryGroups.map((group) => {
-                const Icon = groupIcons[group.code]
-                const allSelected = group.options.every((item) => categories.includes(item.id))
                 return (
                   <fieldset
                     key={group.code}
@@ -739,80 +747,22 @@ export default function PropertyMapSearch({
                     className={`${styles.group} ${styles[group.code]} ${mobileGroup === group.code && mobileGroupOpen ? styles.mobileActive : ''}`}
                   >
                     <legend className="sr-only">{groupNames[group.code][th ? 0 : 1]}</legend>
-                    <div className={styles.groupHeading}>
-                      <span className="flex items-center gap-2 font-semibold">
-                        <Icon className="size-4" />
-                        {groupNames[group.code][th ? 0 : 1]}
-                        <span className="text-[10px] font-normal text-neutral-400">{group.options.length}</span>
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.mobileAllCategories}
-                        aria-pressed={allCategoriesSelected}
-                        onClick={selectAllCategories}
-                      >
-                        {th ? 'เลือกทุกหมวด' : 'Select all types'}
-                      </button>
-                      <button
-                        type="button"
-                        aria-pressed={allSelected}
-                        onClick={() => setCategories((previous) => toggleMapCategoryGroup(previous, group.code))}
-                        className={styles.selectGroup}
-                      >
-                        {allSelected ? (th ? 'ล้างกลุ่มนี้' : 'Clear group') : th ? 'เลือกทั้งกลุ่ม' : 'Select group'}
-                      </button>
-                    </div>
                     <div
                       className={`${styles.categorySections} ${group.code === 'business' ? styles.businessSections : ''}`}
                     >
                       {group.sections.map((section) => {
                         const sectionSelected = section.options.every((option) => categories.includes(option.id))
+                        const actionKey =
+                          group.code === 'business' ? (section.id === 'retail' ? 'retail' : 'buildings') : group.code
+                        const actionName = sectionActionNames[actionKey][th ? 0 : 1]
+                        const ActionIcon = section.id === 'retail' ? Store : groupIcons[group.code]
                         return (
                           <section
                             key={section.id}
                             data-map-section={section.id}
-                            aria-label={section.nameTh ? (th ? section.nameTh : section.nameEn) : undefined}
+                            className={styles.categorySection}
+                            aria-labelledby={`map-section-action-${group.code}-${section.id}`}
                           >
-                            {section.nameTh && (
-                              <div className={styles.sectionToolbar}>
-                                <h2 className={styles.subgroupHeading}>
-                                  {section.id === 'retail' ? (
-                                    <Store className="size-4 shrink-0" />
-                                  ) : (
-                                    <Building2 className="size-4 shrink-0" />
-                                  )}
-                                  {th ? section.nameTh : section.nameEn}
-                                  <span>{section.options.length}</span>
-                                </h2>
-                                <button
-                                  type="button"
-                                  className={styles.selectGroup}
-                                  data-map-section-action={sectionSelected ? 'clear' : 'select'}
-                                  data-map-section-group={`${group.code}:${section.id}`}
-                                  aria-pressed={sectionSelected}
-                                  aria-label={`${sectionSelected ? (th ? 'ล้างกลุ่มนี้' : 'Clear group') : th ? 'เลือกทั้งกลุ่ม' : 'Select group'}: ${th ? section.nameTh : section.nameEn}`}
-                                  aria-controls={`map-section-${group.code}-${section.id}`}
-                                  onClick={() =>
-                                    setCategories((previous) =>
-                                      setMapCategorySection(
-                                        previous,
-                                        group.code,
-                                        section.id,
-                                        !section.options.every((option) => previous.includes(option.id))
-                                      )
-                                    )
-                                  }
-                                >
-                                  {sectionSelected
-                                    ? th
-                                      ? 'ล้างกลุ่มนี้'
-                                      : 'Clear group'
-                                    : th
-                                      ? 'เลือกทั้งกลุ่ม'
-                                      : 'Select group'}
-                                </button>
-                              </div>
-                            )}
                             <div id={`map-section-${group.code}-${section.id}`} className={styles.chips}>
                               {section.options.map((option) => {
                                 const selected = categories.includes(option.id)
@@ -843,6 +793,35 @@ export default function PropertyMapSearch({
                                   </button>
                                 )
                               })}
+                            </div>
+                            <div className={styles.sectionAction}>
+                              <button
+                                id={`map-section-action-${group.code}-${section.id}`}
+                                type="button"
+                                className={styles.selectGroup}
+                                data-map-section-action={sectionSelected ? 'clear' : 'select'}
+                                data-map-section-group={`${group.code}:${section.id}`}
+                                aria-pressed={sectionSelected}
+                                aria-label={`${actionName}: ${sectionSelected ? (th ? 'ล้างการเลือกกลุ่มนี้' : 'Clear this group') : th ? 'เลือกทุกหมวดในกลุ่มนี้' : 'Select every type in this group'}`}
+                                aria-controls={`map-section-${group.code}-${section.id}`}
+                                onClick={() =>
+                                  setCategories((previous) =>
+                                    setMapCategorySection(
+                                      previous,
+                                      group.code,
+                                      section.id,
+                                      !section.options.every((option) => previous.includes(option.id))
+                                    )
+                                  )
+                                }
+                              >
+                                {sectionSelected ? (
+                                  <Check className="size-4 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+                                ) : (
+                                  <ActionIcon className="size-4 shrink-0" aria-hidden="true" />
+                                )}
+                                <span>{actionName}</span>
+                              </button>
                             </div>
                           </section>
                         )
