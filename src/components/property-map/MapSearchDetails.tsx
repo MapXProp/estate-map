@@ -61,16 +61,13 @@ export default function MapSearchDetails({
             </button>
           </header>
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
-            <section
-              aria-labelledby="map-filter-price-heading"
-              className="rounded-3xl bg-[#f6f5f2] p-4 sm:p-5 dark:bg-neutral-800/60"
-            >
+            <section aria-labelledby="map-filter-price-heading">
               <div className={sectionHeaderClassName}>
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-neutral-700 shadow-sm dark:bg-neutral-700 dark:text-neutral-200">
+                <span className={sectionIconClassName}>
                   <Banknote className="size-5" aria-hidden="true" />
                 </span>
                 <div>
-                  <h3 id="map-filter-price-heading" className="text-base font-semibold">
+                  <h3 id="map-filter-price-heading" className="font-semibold">
                     {th ? 'ราคา' : 'Price'}
                   </h3>
                   <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
@@ -79,24 +76,21 @@ export default function MapSearchDetails({
                 </div>
               </div>
               <div>
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {(['minPrice', 'maxPrice'] as const).map((key, index) => (
-                    <label
-                      key={key}
-                      className="block min-w-0 rounded-2xl border border-neutral-200/80 bg-white px-3 py-2.5 transition focus-within:border-neutral-700 focus-within:ring-1 focus-within:ring-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-neutral-300 dark:focus-within:ring-neutral-300"
-                    >
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <label key={key} className="block min-w-0 text-sm font-medium">
+                      <span>
                         {th ? (index ? 'ราคาสูงสุด' : 'ราคาต่ำสุด') : index ? 'Maximum price' : 'Minimum price'}
                       </span>
-                      <span className="relative mt-1 block">
+                      <span className="relative mt-2.5 block">
                         <input
                           inputMode="numeric"
                           value={value[key]}
                           onChange={(event) => update(key, event.target.value.replace(/\D/g, '').slice(0, 12))}
                           placeholder={th ? 'ไม่จำกัด' : 'Any'}
-                          className="h-9 w-full border-0 bg-transparent p-0 pe-9 text-base font-medium text-neutral-900 placeholder:font-normal placeholder:text-neutral-400 focus:ring-0 sm:text-lg dark:text-neutral-100"
+                          className={`${inputClassName} pe-12`}
                         />
-                        <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                        <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-normal text-neutral-500 dark:text-neutral-400">
                           {th ? 'บาท' : 'THB'}
                         </span>
                       </span>
