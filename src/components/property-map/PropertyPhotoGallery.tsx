@@ -110,7 +110,7 @@ export default function PropertyPhotoGallery({
             aria-label={isThai ? 'ปิดแกลเลอรี' : 'Close gallery'}
             aria-hidden={!quickCloseVisible}
             tabIndex={quickCloseVisible ? 0 : -1}
-            className={`absolute bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-20 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200 bg-white/96 px-5 text-sm font-semibold text-neutral-800 shadow-[0_8px_28px_rgba(15,23,42,0.16)] backdrop-blur-md transition duration-200 active:scale-[0.97] sm:right-5 sm:bottom-5 sm:left-auto sm:translate-x-0 motion-reduce:transition-none dark:border-neutral-700 dark:bg-neutral-800/96 dark:text-neutral-100 ${quickCloseVisible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+            className={`absolute bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-20 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200/60 bg-white/80 px-5 text-sm font-medium text-neutral-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm transition duration-200 hover:bg-white/95 focus-visible:bg-white/95 active:scale-[0.97] sm:right-5 sm:bottom-5 sm:left-auto sm:translate-x-0 motion-reduce:transition-none dark:border-neutral-700/60 dark:bg-neutral-800/80 dark:text-neutral-200 dark:hover:bg-neutral-800/95 dark:focus-visible:bg-neutral-800/95 ${quickCloseVisible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
           >
             <X className="size-4" aria-hidden="true" />
             {isThai ? 'ปิด' : 'Close'}
