@@ -82,7 +82,7 @@ export default function MapSearchDetails({
                       type="button"
                       aria-pressed={value[key] === number}
                       onClick={() => update(key, number)}
-                      className={`min-h-11 flex-1 rounded-xl border text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 ${value[key] === number ? 'border-neutral-900 bg-neutral-900 font-semibold text-white hover:bg-neutral-800 dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200' : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:border-neutral-500 dark:hover:bg-neutral-800'}`}
+                      className={`min-h-11 flex-1 rounded-xl border text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 ${value[key] === number ? 'border-neutral-900 bg-transparent text-neutral-900 hover:bg-neutral-50 dark:border-neutral-300 dark:text-neutral-100 dark:hover:bg-neutral-800' : 'border-neutral-200 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:hover:border-neutral-500 dark:hover:bg-neutral-800'}`}
                     >
                       {number ? `${number}+` : th ? 'ทุกแบบ' : 'Any'}
                     </button>
