@@ -2,7 +2,7 @@ export const cleanMapPriceInput = (value: string) => value.replace(/\D/g, '').sl
 
 export const formatMapPriceInput = (value: string) => (value ? Number(value).toLocaleString('en-US') : '')
 
-export const mapPriceSuffixes = ['00', '000', '50', '500'] as const
+export const mapPriceSuffixes = ['50', '500', '00', '000'] as const
 
 // Append digits, without truncating a larger amount or filling an empty field with only zeros.
 export const appendMapPriceSuffix = (value: string, suffix: (typeof mapPriceSuffixes)[number]) => {

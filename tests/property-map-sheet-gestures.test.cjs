@@ -713,7 +713,7 @@ test('exactly four suffix shortcuts edit the selected bound while prices stay pe
   const h = hookHarness('filters')
   const suffix = (text) => (node) => node.props['data-map-price-suffix'] === text
   const shortcuts = h.filterNode((node) => node.props['data-map-price-shortcuts'])
-  assert.deepEqual(Array.from(shortcuts.props.children[1].props.children, (node) => node.props['data-map-price-suffix']), ['00', '000', '50', '500'])
+  assert.deepEqual(Array.from(shortcuts.props.children[1].props.children, (node) => node.props['data-map-price-suffix']), ['50', '500', '00', '000'])
   h.typePrice('maxPrice', '60')
   h.clickFilter(suffix('000'))
   assert.equal(h.priceField('maxPrice').value, '60,000')

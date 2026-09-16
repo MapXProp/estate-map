@@ -19,7 +19,7 @@ test('prices retain raw baht values while formatted/pasted amounts stay readable
 })
 
 test('the four shortcuts append digits instead of replacing or adding to an amount', () => {
-  assert.deepEqual(Array.from(mapPriceSuffixes), ['00', '000', '50', '500'])
+  assert.deepEqual(Array.from(mapPriceSuffixes), ['50', '500', '00', '000'])
   assert.equal(appendMapPriceSuffix('20', '00'), '2000')
   assert.equal(appendMapPriceSuffix('60', '000'), '60000')
   assert.equal(appendMapPriceSuffix('20', '50'), '2050')
