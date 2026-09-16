@@ -16,7 +16,7 @@ function load(file, globals, imports = {}) {
   }
   vm.runInNewContext(
     ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
     }).outputText,
     context
   )
@@ -306,10 +306,40 @@ function hookHarness(kind, config = {}) {
     },
   }
   const hook = load('src/hooks/useMobileSheets.ts', h.globals, { react: hooks, '@/lib/verticalSheetGesture': h.engine })
+  const photoChanges = []
+  const photo = kind === 'photo' ? load('src/components/property-map/PropertyPhotoGallery.tsx', h.globals, {
+    react: hooks,
+    'react/jsx-runtime': require('react/jsx-runtime'),
+    'lucide-react': require('lucide-react'),
+    'next/image': { default: 'test-image' },
+    '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogBackdrop: 'test-backdrop', DialogTitle: 'test-title' },
+    '@/components/property-map/MobileSheet.module.css': { default: {} },
+    '@/hooks/useMobileSheets': hook,
+    '@/hooks/useGalleryQuickClose': {},
+    '@/lib/propertyMapPreview': {},
+  }).FullPhotoDialog : null
+  function photoNode(predicate) {
+    let found
+    function visit(node) {
+      if (Array.isArray(node)) return node.forEach(visit)
+      if (!node?.props) return
+      if (predicate(node)) found = node
+      visit(node.props.children)
+    }
+    visit(result)
+    assert.ok(found, 'full-photo control exists')
+    return found
+  }
+  const photoPanel = () => photoNode((node) => node.type === 'test-panel')
   function render() {
     cursor = 0
     result =
-      kind === 'modal'
+      photo ? photo({
+        images: Array.from({ length: config.imageCount || 7 }, (_, index) => `/photo-${index}.jpg`),
+        title: 'Property', isThai: true, activeImage: 0,
+        changeImage: (direction) => photoChanges.push(direction),
+        onClose: () => { closed++ },
+      }) : kind === 'modal'
         ? hook.useSwipeDismiss(() => {
             closed++
           }, enabled)
@@ -320,13 +350,39 @@ function hookHarness(kind, config = {}) {
     while (pending.length) pending.shift()()
   }
   render()
-  result.panelRef(h.root)
   const backdrop = new ElementStub()
-  result.backdropRef?.(backdrop)
+  if (photo) {
+    assert.equal(photoPanel().props['data-sheet-scroll'], true)
+    h.root.attrs['data-sheet-scroll'] = ''
+    photoPanel().props.ref(h.root)
+    photoNode((node) => node.type === 'test-backdrop').props.ref(backdrop)
+  } else {
+    result.panelRef(h.root)
+    result.backdropRef?.(backdrop)
+  }
   render()
+  const photoImage = new ElementStub('img', {}, h.root)
+  let touch = { clientX: 100, clientY: 300 }
+  const photoTouch = (type, touches, changedTouches = [touch], target = photoImage) => {
+    const event = h.root.dispatch(type, target, { touches, changedTouches })
+    const handler = { touchstart: 'onTouchStart', touchmove: 'onTouchMove', touchend: 'onTouchEnd', touchcancel: 'onTouchCancel' }[type]
+    photoPanel().props[handler]?.(event)
+    return event
+  }
   return {
     ...h,
     backdrop,
+    photoChanges,
+    photoStart: () => photoTouch('touchstart', [touch]),
+    photoMove: (dx, dy, ms = 40) => {
+      h.advance(ms)
+      touch = { clientX: 100 + dx, clientY: 300 + dy }
+      return photoTouch('touchmove', [touch])
+    },
+    photoEnd: (pause = 0) => { h.advance(pause); return photoTouch('touchend', []) },
+    photoCancel: () => photoTouch('touchcancel', []),
+    photoPinch: () => photoTouch('touchstart', [touch, { clientX: 200, clientY: 350 }]),
+    photoButton: (label) => photoNode((node) => node.type === 'button' && node.props['aria-label'] === label),
     get closed() {
       return closed
     },
@@ -493,4 +549,91 @@ test('selecting a property cancels an unfinished list expansion so it cannot cov
   h.advance(300)
   assert.equal(h.snap, 'peek')
   assert.equal(h.root.properties.has('--mobile-sheet-height'), false)
+})
+
+test('the full-size photo follows a downward pull and returns to its gallery after the exit animation', () => {
+  for (const imageCount of [1, 7]) {
+    const h = hookHarness('photo', { imageCount })
+    h.photoStart()
+    assert.equal(h.photoMove(2, 150, 250).prevented, true)
+    assert.equal(h.root.properties.get('--sheet-offset'), '142.5px')
+    assert.ok(Number(h.backdrop.properties.get('--sheet-backdrop')) < 1)
+    h.photoEnd()
+    assert.equal(h.closed, 0)
+    h.advance(260)
+    assert.equal(h.closed, 1)
+    assert.deepEqual(h.photoChanges, [])
+    assert.equal(h.root.dispatch('click', h.content).prevented, true)
+    h.unmount()
+  }
+})
+
+test('short, upward and cancelled photo pulls settle without closing or switching photos', () => {
+  for (const gesture of ['short', 'up', 'cancel', 'pinch']) {
+    const h = hookHarness('photo')
+    h.photoStart()
+    h.photoMove(0, gesture === 'up' ? -160 : gesture === 'short' ? 40 : 160, 400)
+    if (gesture === 'cancel') h.photoCancel()
+    if (gesture === 'pinch') h.photoPinch()
+    h.photoEnd(120)
+    h.advance(300)
+    assert.equal(h.closed, 0, gesture)
+    assert.deepEqual(h.photoChanges, [])
+    if (gesture !== 'up') assert.equal(h.root.properties.get('--sheet-offset'), '0px')
+    h.unmount()
+  }
+})
+
+test('horizontal photo gestures navigate once while downward gestures cannot turn into photo changes', () => {
+  for (const dx of [-80, 80]) {
+    const h = hookHarness('photo')
+    h.photoStart()
+    assert.equal(h.photoMove(dx, 3).prevented, undefined)
+    h.photoEnd()
+    assert.deepEqual(h.photoChanges, [dx < 0 ? 1 : -1])
+    h.advance(300)
+    assert.equal(h.closed, 0)
+    h.unmount()
+  }
+  const h = hookHarness('photo')
+  h.photoStart()
+  h.photoMove(0, 30, 200)
+  h.photoMove(150, 35, 200)
+  h.photoEnd(120)
+  h.advance(300)
+  assert.deepEqual(h.photoChanges, [], 'a vertical pull keeps its original intent')
+  assert.equal(h.closed, 0)
+  h.unmount()
+})
+
+test('full-photo controls remain clickable and unmounting cancels pending dismissal', () => {
+  const h = hookHarness('photo')
+  for (const label of ['กลับไปแกลเลอรี', 'รูปก่อนหน้า', 'รูปถัดไป'])
+    assert.equal(h.photoButton(label).props['data-sheet-no-drag'], true)
+  h.photoButton('รูปก่อนหน้า').props.onClick()
+  h.photoButton('รูปถัดไป').props.onClick()
+  assert.deepEqual(h.photoChanges, [-1, 1])
+  h.photoButton('กลับไปแกลเลอรี').props.onClick()
+  h.unmount()
+  h.advance(300)
+  assert.equal(h.closed, 0)
+  assert.equal(h.root.listeners.size, 0)
+})
+
+test('full-photo dismissal respects reduced motion and desktop controls', () => {
+  const reduced = hookHarness('photo', { reducedMotion: true })
+  reduced.photoStart()
+  reduced.photoMove(0, 150, 400)
+  reduced.photoEnd()
+  assert.equal(reduced.closed, 1)
+  assert.equal(reduced.jobs.size, 0)
+  reduced.unmount()
+  const desktop = hookHarness('photo', { width: 1440 })
+  desktop.photoStart()
+  desktop.photoMove(0, 150)
+  desktop.photoEnd()
+  assert.equal(desktop.closed, 0)
+  desktop.photoButton('กลับไปแกลเลอรี').props.onClick()
+  assert.equal(desktop.closed, 1)
+  desktop.unmount()
 })

@@ -812,7 +812,7 @@ test('marker and price taps, controls, panning, pinching, cancellation and long 
   }
 })
 
-test('place search shows a small labelled red pin for 3 seconds, then fades without clearing the query or listings', async () => {
+test('place search shows a small labelled red pin for 4 seconds, then fades without clearing the query or listings', async () => {
   for (const width of [390, 820, 1440]) {
     const h = harness(width)
     const name = 'ที่จอดรถ Pantip Suites Sathorn'
@@ -824,7 +824,7 @@ test('place search shows a small labelled red pin for 3 seconds, then fades with
     assert.equal(marker.location.lat, 13.723)
     assert.equal(marker.location.lon, 100.542)
     assert.equal(h.api.zoom(), 15)
-    h.advance(2999)
+    h.advance(3999)
     assert.equal(marker.searchRoot.style.opacity, '1')
     h.advance(1)
     assert.equal(marker.searchRoot.style.opacity, '0')
@@ -898,12 +898,12 @@ test('a replacement search owns its full timer even when the previous marker was
   const h = harness(1440)
   await h.search('สาทร')
   const first = h.getSearchMarker()
-  h.advance(3100)
+  h.advance(4100)
   await h.search('สาทร')
   const second = h.getSearchMarker()
   assert.notEqual(first, second)
   assert.ok(h.removedOverlays.has(first))
-  h.advance(2999)
+  h.advance(3999)
   assert.equal(h.getSearchMarker(), second)
   assert.equal(second.searchRoot.style.opacity, '1')
   h.advance(501)
@@ -944,7 +944,7 @@ test('reduced motion keeps the same reading time and removes the cue without ani
   const h = harness(390)
   h.reduceMotion()
   await h.search('สาทร')
-  h.advance(2999)
+  h.advance(3999)
   assert.ok(h.getSearchMarker())
   h.advance(1)
   assert.equal(h.getSearchMarker(), undefined)

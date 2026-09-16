@@ -867,7 +867,7 @@ const LongdoPropertyMap = ({
         searchMarkerRef.current = {
           overlay: marker,
           map,
-          timer: window.setTimeout(fadeSearchMarker, 3000),
+          timer: window.setTimeout(fadeSearchMarker, 4000),
           fading: false,
         }
         onLocationSearchRef.current?.(location, place.name || keyword)

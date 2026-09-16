@@ -77,7 +77,7 @@ function modal(galleryOpen = false, activeImage = null, gestures = []) {
     '@/components/property-map/PropertyPreviewContactCard': { default: Contact },
     '@/components/property-map/MobileSheet.module.css': { default: new Proxy({}, { get: (_, key) => String(key) }) },
     '@/hooks/useGalleryQuickClose': { useGalleryQuickClose: () => ({ visible: false, hide() {}, onScroll() {} }) },
-    '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose, enabled) => {
+    '@/hooks/useMobileSheets': { useSwipeDismiss: (onClose, enabled = true) => {
       gestures.push({ onClose, enabled })
       return { panelRef: () => {}, backdropRef: () => {}, dismiss: onClose }
     } },
@@ -119,7 +119,7 @@ test('opening gallery makes every photo available with lazy loading, including p
 })
 
 test('only the visible gallery can be pulled closed; full-size viewing suspends both underlying sheets', () => {
-  for (const [open, image, enabled] of [[false, null, [true]], [true, null, [false, true]], [true, 28, [false, false]]]) {
+  for (const [open, image, enabled] of [[false, null, [true]], [true, null, [false, true]], [true, 28, [false, false, true]]]) {
     const gestures = []
     const html = renderToStaticMarkup(React.createElement(modal(open, image, gestures), { listing: fixture }))
     assert.deepEqual(gestures.map(g => g.enabled), enabled)

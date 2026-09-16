@@ -87,7 +87,7 @@ function harness(isThai = true) {
       }
       now = until; render()
     },
-    backToGrid() { one((node) => node.type === 'test-dialog' && node.props.open === true && node.props.className.includes('100')).props.onClose(); render() },
+    backToGrid() { one((node) => typeof node.type === 'function' && 'activeImage' in node.props).props.onClose(); render() },
     unmount() { cleanups.forEach((cleanup) => cleanup?.()) },
   }
 }

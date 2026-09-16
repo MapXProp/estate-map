@@ -22,7 +22,6 @@ export default function PropertyPhotoGallery({
   onClose: () => void
 }) {
   const [activeImage, setActiveImage] = useState<number | null>(null)
-  const touchRef = useRef<{ x: number; y: number } | null>(null)
   const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, activeImage === null)
   const quickClose = useGalleryQuickClose()
   const quickCloseVisible = quickClose.visible && activeImage === null
@@ -110,7 +109,7 @@ export default function PropertyPhotoGallery({
             aria-label={isThai ? 'ปิดแกลเลอรี' : 'Close gallery'}
             aria-hidden={!quickCloseVisible}
             tabIndex={quickCloseVisible ? 0 : -1}
-            className={`absolute bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-20 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200/60 bg-white/80 px-5 text-sm font-medium text-neutral-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm transition duration-200 hover:bg-white/95 focus-visible:bg-white/95 active:scale-[0.97] sm:right-5 sm:bottom-5 sm:left-auto sm:translate-x-0 motion-reduce:transition-none dark:border-neutral-700/60 dark:bg-neutral-800/80 dark:text-neutral-200 dark:hover:bg-neutral-800/95 dark:focus-visible:bg-neutral-800/95 ${quickCloseVisible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
+            className={`absolute bottom-[max(4.5rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 z-20 flex min-h-11 min-w-24 -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border border-neutral-200/60 bg-white/80 px-5 text-sm font-medium text-neutral-700 shadow-[0_4px_16px_rgba(15,23,42,0.08)] backdrop-blur-sm transition duration-200 hover:bg-white/95 focus-visible:bg-white/95 active:scale-[0.97] motion-reduce:transition-none sm:right-5 sm:bottom-5 sm:left-auto sm:translate-x-0 dark:border-neutral-700/60 dark:bg-neutral-800/80 dark:text-neutral-200 dark:hover:bg-neutral-800/95 dark:focus-visible:bg-neutral-800/95 ${quickCloseVisible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'}`}
           >
             <X className="size-4" aria-hidden="true" />
             {isThai ? 'ปิด' : 'Close'}
@@ -118,82 +117,133 @@ export default function PropertyPhotoGallery({
         </DialogPanel>
       </div>
 
-      <Dialog open={activeImage !== null} onClose={() => setActiveImage(null)} className="relative z-[100]">
-        <DialogBackdrop className="fixed inset-0 bg-black" />
-        <div className="fixed inset-0 flex items-center justify-center sm:p-3 lg:p-5">
-          <DialogPanel
-            data-property-full-photo
-            className="relative size-full max-w-[1500px] touch-pan-y"
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                event.preventDefault()
-                changeImage(event.key === 'ArrowLeft' ? -1 : 1)
-              }
-            }}
-            onTouchStart={(event) => {
-              const touch = event.touches[0]
-              touchRef.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null
-            }}
-            onTouchCancel={() => {
+      {activeImage !== null && (
+        <FullPhotoDialog
+          images={images}
+          title={title}
+          isThai={isThai}
+          activeImage={activeImage}
+          changeImage={changeImage}
+          onClose={() => setActiveImage(null)}
+        />
+      )}
+    </Dialog>
+  )
+}
+
+// Mount the single-photo viewer only while open so each visit gets fresh gesture/timer state.
+export function FullPhotoDialog({
+  images,
+  title,
+  isThai,
+  activeImage,
+  changeImage,
+  onClose,
+}: {
+  images: string[]
+  title: string
+  isThai: boolean
+  activeImage: number
+  changeImage: (direction: number) => void
+  onClose: () => void
+}) {
+  const touchRef = useRef<{ x: number; y: number; horizontal: boolean | null } | null>(null)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose)
+
+  return (
+    <Dialog open onClose={dismiss} className="relative z-[100]">
+      <DialogBackdrop ref={backdropRef} className={`${sheetStyles.modalBackdrop} fixed inset-0 bg-black`} />
+      <div className="fixed inset-0 flex items-center justify-center sm:p-3 lg:p-5">
+        <DialogPanel
+          ref={panelRef}
+          data-property-full-photo
+          data-sheet-scroll
+          className={`${sheetStyles.modalPanel} relative size-full max-w-[1500px] touch-pan-y`}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+              event.preventDefault()
+              changeImage(event.key === 'ArrowLeft' ? -1 : 1)
+            }
+          }}
+          onTouchStart={(event) => {
+            const touch = event.touches[0]
+            touchRef.current =
+              event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY, horizontal: null } : null
+          }}
+          onTouchMove={(event) => {
+            const start = touchRef.current
+            if (event.touches.length !== 1) {
               touchRef.current = null
-            }}
-            onTouchEnd={(event) => {
-              const start = touchRef.current
-              touchRef.current = null
-              if (!start || event.touches.length || images.length < 2) return
-              const touch = event.changedTouches[0]
-              const dx = touch.clientX - start.x
-              if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(touch.clientY - start.y) * 1.5)
-                changeImage(dx < 0 ? 1 : -1)
-            }}
+              return
+            }
+            if (!start || start.horizontal !== null) return
+            const touch = event.touches[0]
+            const dx = Math.abs(touch.clientX - start.x)
+            const dy = Math.abs(touch.clientY - start.y)
+            if (Math.max(dx, dy) >= 8) start.horizontal = dx > dy * 1.5
+          }}
+          onTouchCancel={() => {
+            touchRef.current = null
+          }}
+          onTouchEnd={(event) => {
+            const start = touchRef.current
+            touchRef.current = null
+            if (!start || start.horizontal === false || event.touches.length || images.length < 2) return
+            const touch = event.changedTouches[0]
+            const dx = touch.clientX - start.x
+            if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(touch.clientY - start.y) * 1.5)
+              changeImage(dx < 0 ? 1 : -1)
+          }}
+        >
+          <DialogTitle className="sr-only">{isThai ? 'รูปภาพขนาดใหญ่' : 'Full size photo'}</DialogTitle>
+          <Image
+            src={images[activeImage]}
+            alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${activeImage + 1}`}
+            fill
+            priority
+            sizes="100vw"
+            className="object-contain"
+            draggable={false}
+          />
+          <span className="absolute top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
+            {activeImage + 1} / {images.length}
+          </span>
+          <button
+            type="button"
+            onClick={dismiss}
+            data-sheet-no-drag
+            aria-label={isThai ? 'กลับไปแกลเลอรี' : 'Back to gallery'}
+            className="absolute top-[max(0.5rem,env(safe-area-inset-top))] right-[max(0.5rem,env(safe-area-inset-right))] flex size-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
           >
-            <DialogTitle className="sr-only">{isThai ? 'รูปภาพขนาดใหญ่' : 'Full size photo'}</DialogTitle>
-            {activeImage !== null && (
-              <>
-                <Image
-                  src={images[activeImage]}
-                  alt={`${title} ${isThai ? 'รูปที่' : 'image'} ${activeImage + 1}`}
-                  fill
-                  priority
-                  sizes="100vw"
-                  className="object-contain"
-                />
-                <span className="absolute top-[max(0.5rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-sm">
-                  {activeImage + 1} / {images.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveImage(null)}
-                  aria-label={isThai ? 'กลับไปแกลเลอรี' : 'Back to gallery'}
-                  className="absolute top-[max(0.5rem,env(safe-area-inset-top))] right-[max(0.5rem,env(safe-area-inset-right))] flex size-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                >
-                  <X className="size-6" />
-                </button>
-                {images.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => changeImage(-1)}
-                      aria-label={isThai ? 'รูปก่อนหน้า' : 'Previous image'}
-                      className="absolute top-1/2 left-[max(0.5rem,env(safe-area-inset-left))] flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                    >
-                      <ChevronLeft className="size-7" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => changeImage(1)}
-                      aria-label={isThai ? 'รูปถัดไป' : 'Next image'}
-                      className="absolute top-1/2 right-[max(0.5rem,env(safe-area-inset-right))] flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
-                    >
-                      <ChevronRight className="size-7" />
-                    </button>
-                  </>
-                )}
-              </>
-            )}
-          </DialogPanel>
-        </div>
-      </Dialog>
+            <X className="size-6" />
+          </button>
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => changeImage(-1)}
+                data-sheet-no-drag
+                aria-label={isThai ? 'รูปก่อนหน้า' : 'Previous image'}
+                className="absolute top-1/2 left-[max(0.5rem,env(safe-area-inset-left))] flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+              >
+                <ChevronLeft className="size-7" />
+              </button>
+              <button
+                type="button"
+                onClick={() => changeImage(1)}
+                data-sheet-no-drag
+                aria-label={isThai ? 'รูปถัดไป' : 'Next image'}
+                className="absolute top-1/2 right-[max(0.5rem,env(safe-area-inset-right))] flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/60"
+              >
+                <ChevronRight className="size-7" />
+              </button>
+            </>
+          )}
+          <p className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 rounded-full bg-black/30 px-3 py-1.5 text-xs whitespace-nowrap text-white/60 lg:hidden">
+            {isThai ? 'รูดลงเพื่อกลับไปดูรูปทั้งหมด' : 'Swipe down to return to all photos'}
+          </p>
+        </DialogPanel>
+      </div>
     </Dialog>
   )
 }
