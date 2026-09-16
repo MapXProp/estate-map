@@ -91,6 +91,15 @@ const escapeHtml = (value: string | number) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;')
 
+export const getSearchMarkerHtml = (label: string) => `
+  <div data-mapx-search-marker="true" class="mapx-search-marker" role="img" aria-label="${escapeHtml(label)}">
+    <span class="mapx-search-marker-label" aria-hidden="true">${escapeHtml(label)}</span>
+    <svg class="mapx-search-marker-pin" aria-hidden="true" width="22" height="30" viewBox="0 0 22 30">
+      <path d="M11 0C5 0 0 4.9 0 11c0 8 11 19 11 19s11-11 11-19C22 4.9 17 0 11 0Z" fill="#ef0000"/>
+      <circle cx="11" cy="10.5" r="4" fill="white"/>
+    </svg>
+  </div>`
+
 const getListingLocation = (listing: TRealEstateListing): LongdoLocation => ({
   lon: listing.map.lng,
   lat: listing.map.lat,
@@ -301,7 +310,13 @@ const LongdoPropertyMap = ({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const mapRef = useRef<LongdoMapInstance | null>(null)
   const listingMarkersRef = useRef<LongdoOverlay[]>([])
-  const searchMarkerRef = useRef<LongdoOverlay | null>(null)
+  const searchMarkerRef = useRef<{
+    overlay: LongdoOverlay
+    map: LongdoMapInstance
+    timer: number
+    fading: boolean
+  } | null>(null)
+  const searchMarkerGestureRef = useRef<{ pointerId: number; x: number; y: number } | null>(null)
   const onViewportChangeRef = useRef(onViewportChange)
   const onLocationSearchRef = useRef(onLocationSearch)
   const viewportEventsEnabledRef = useRef(false)
@@ -342,6 +357,34 @@ const LongdoPropertyMap = ({
     () => (mapMode === 'projects' ? (projectMarkers ?? groupMapProjects(listings)) : []),
     [listings, mapMode, projectMarkers]
   )
+
+  const clearSearchMarker = useCallback(() => {
+    const cue = searchMarkerRef.current
+    if (!cue) return
+    window.clearTimeout(cue.timer)
+    cue.map.Overlays.remove(cue.overlay)
+    searchMarkerRef.current = null
+  }, [])
+
+  const fadeSearchMarker = useCallback(() => {
+    const cue = searchMarkerRef.current
+    if (!cue || cue.fading) return
+    window.clearTimeout(cue.timer)
+    cue.fading = true
+    const element = placeholderRef.current?.querySelector<HTMLElement>('[data-mapx-search-marker="true"]')
+    if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      clearSearchMarker()
+      return
+    }
+    element.style.opacity = '0'
+    cue.timer = window.setTimeout(() => {
+      if (searchMarkerRef.current === cue) clearSearchMarker()
+    }, 500)
+  }, [clearSearchMarker])
+
+  useEffect(() => {
+    if (previewListingId || selectedProjectId) fadeSearchMarker()
+  }, [previewListingId, selectedProjectId, fadeSearchMarker])
 
   const applyMarkerDeclutter = useCallback(() => {
     const map = mapRef.current
@@ -562,6 +605,7 @@ const LongdoPropertyMap = ({
       return link && placeholderRef.current?.contains(link) ? link : null
     }
     const activateMarker = (link: HTMLAnchorElement) => {
+      fadeSearchMarker()
       if (link.dataset.mapxProjectLink === 'true' && onProjectSelect) {
         const projectId = link.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId
         const project = projects.find((item) => item.id === projectId)
@@ -678,7 +722,7 @@ const LongdoPropertyMap = ({
       document.removeEventListener('pointercancel', pointerCancel, true)
       document.removeEventListener('click', handleListingLink, true)
     }
-  }, [onMarkerSelect, onProjectSelect, projects, router])
+  }, [onMarkerSelect, onProjectSelect, projects, router, fadeSearchMarker])
 
   useEffect(() => {
     const container = placeholderRef.current
@@ -743,12 +787,13 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     searchRequestRef.current?.abort()
+    clearSearchMarker()
     setIsSearching(false)
     setSuggestions([])
     setActiveSuggestionIndex(-1)
     setSearchMessage('')
     return () => searchRequestRef.current?.abort()
-  }, [mapMode])
+  }, [mapMode, clearSearchMarker])
 
   const searchLocation = useCallback(
     async (rawKeyword: string, suggestion?: MapSearchSuggestion) => {
@@ -758,6 +803,7 @@ const LongdoPropertyMap = ({
       if (!keyword || !map || !longdo) return
 
       searchRequestRef.current?.abort()
+      clearSearchMarker()
       const controller = new AbortController()
       searchRequestRef.current = controller
       setSearchText(keyword)
@@ -789,10 +835,6 @@ const LongdoPropertyMap = ({
         }
         controller.signal.throwIfAborted()
         if (project) {
-          if (searchMarkerRef.current) {
-            map.Overlays.remove(searchMarkerRef.current)
-            searchMarkerRef.current = null
-          }
           if (onProjectSearchSelect) onProjectSearchSelect(project)
           else
             router.push(
@@ -804,6 +846,7 @@ const LongdoPropertyMap = ({
           return
         }
         const place = await searchMapPlace(keyword, apiKey, isThai, controller.signal)
+        controller.signal.throwIfAborted()
         if (!place) {
           setSearchMessage(
             isThai ? 'ไม่พบสถานที่นี้ ลองเพิ่มชื่อเขตหรือจังหวัด' : 'Place not found. Try adding a district or city.'
@@ -813,16 +856,20 @@ const LongdoPropertyMap = ({
         }
 
         const location = { lon: Number(place.lon), lat: Number(place.lat) }
-        if (searchMarkerRef.current) map.Overlays.remove(searchMarkerRef.current)
-        const marker = new longdo.Marker(location, {
-          title: place.name || keyword,
-          detail: place.address || 'ตำแหน่งที่ค้นหา',
-          clickable: true,
-        })
-        searchMarkerRef.current = marker
-        map.Overlays.add(marker)
         map.location(location, false)
         map.zoom(15, false)
+        const marker = new longdo.Marker(location, {
+          title: place.name || keyword,
+          icon: { html: getSearchMarkerHtml(place.name || keyword), offset: { x: 0, y: 0 } },
+          clickable: false,
+        })
+        map.Overlays.add(marker)
+        searchMarkerRef.current = {
+          overlay: marker,
+          map,
+          timer: window.setTimeout(fadeSearchMarker, 3000),
+          fading: false,
+        }
         onLocationSearchRef.current?.(location, place.name || keyword)
         setSearchText(place.name || keyword)
         setIsSearchFocused(false)
@@ -842,7 +889,7 @@ const LongdoPropertyMap = ({
         if (!controller.signal.aborted) setIsSearching(false)
       }
     },
-    [apiKey, pathname, router, mapMode, isThai, onProjectSearchSelect]
+    [apiKey, pathname, router, mapMode, isThai, onProjectSearchSelect, clearSearchMarker, fadeSearchMarker]
   )
 
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -919,12 +966,12 @@ const LongdoPropertyMap = ({
     return () => {
       if (enableViewportEventsTimer) clearTimeout(enableViewportEventsTimer)
       viewportEventsEnabledRef.current = false
+      clearSearchMarker()
       map.Overlays.clear()
       listingMarkersRef.current = []
-      searchMarkerRef.current = null
       mapRef.current = null
     }
-  }, [sdkReady])
+  }, [sdkReady, clearSearchMarker])
 
   useEffect(() => {
     const map = mapRef.current
@@ -1081,6 +1128,10 @@ const LongdoPropertyMap = ({
       className={`relative size-full overflow-hidden bg-[#eef3f0] ${exactCoordinates ? 'mapx-exact-coordinates' : ''}`}
     >
       <style>{`
+        .mapx-search-marker { position: relative; width: 0; height: 0; pointer-events: none; opacity: 1; transition: opacity 500ms ease-out; font-family: Sarabun,Arial,sans-serif; }
+        .mapx-search-marker-label { position: absolute; bottom: 35px; left: 0; transform: translateX(-50%); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; width: max-content; max-width: min(240px,70vw); padding: 6px 12px; border: 1px solid #f3b5b5; border-radius: 16px; background: #fff7f7; color: #b91c1c; box-shadow: 0 2px 8px #7f1d1d18; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
+        .mapx-search-marker-pin { position: absolute; bottom: 0; left: -11px; filter: drop-shadow(0 1px 2px #7f1d1d30); }
+        @media (prefers-reduced-motion: reduce) { .mapx-search-marker { transition: none; } }
         .mapx-project-marker { position: relative; width: 44px; height: 44px; transform: translate(-50%,-50%); font-family: Sarabun,Arial,sans-serif; z-index: 920; }
         .mapx-project-link { position: relative; display: grid; width: 44px; height: 44px; place-items: center; text-decoration: none !important; color: #176b50 !important; border-radius: 50%; }
         .mapx-project-pin { position: relative; display: grid; width: 32px; height: 32px; place-items: center; border: 2px solid #176b50; border-radius: 11px; background: white; box-shadow: 0 3px 10px #123f3230; }
@@ -1347,6 +1398,10 @@ const LongdoPropertyMap = ({
         }}
         onPointerDownCapture={(event) => {
           const primaryPress = event.isPrimary && event.button === 0
+          searchMarkerGestureRef.current = primaryPress
+            ? { pointerId: event.pointerId, x: event.clientX, y: event.clientY }
+            : null
+          if (!event.isPrimary) fadeSearchMarker()
           singlePointerGestureRef.current = primaryPress && event.pointerType !== 'mouse'
           if (primaryPress && event.pointerType === 'mouse') onMapInteraction?.()
           const target = event.target
@@ -1366,11 +1421,20 @@ const LongdoPropertyMap = ({
           placeholderRef.current?.focus({ preventScroll: true })
         }}
         onPointerMoveCapture={(event) => {
+          const gesture = searchMarkerGestureRef.current
+          if (
+            gesture?.pointerId === event.pointerId &&
+            Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 6
+          ) {
+            searchMarkerGestureRef.current = null
+            fadeSearchMarker()
+          }
           const tap = backgroundTapRef.current
           if (tap?.pointerId === event.pointerId && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 10)
             tap.moved = true
         }}
         onPointerUpCapture={(event) => {
+          searchMarkerGestureRef.current = null
           // Mouse presses already folded on pointer down. Wait for touch gestures to finish so pinching stays stable.
           if (singlePointerGestureRef.current && event.isPrimary && event.button === 0 && onMapInteraction)
             window.requestAnimationFrame(onMapInteraction)
@@ -1388,8 +1452,15 @@ const LongdoPropertyMap = ({
           singlePointerGestureRef.current = false
         }}
         onPointerCancelCapture={() => {
+          searchMarkerGestureRef.current = null
           backgroundTapRef.current = null
           singlePointerGestureRef.current = false
+        }}
+        onWheelCapture={fadeSearchMarker}
+        onDoubleClickCapture={fadeSearchMarker}
+        onKeyDownCapture={(event) => {
+          if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '='].includes(event.key))
+            fadeSearchMarker()
         }}
         aria-label="แผนที่ประกาศอสังหาริมทรัพย์"
       />
@@ -1452,6 +1523,7 @@ const LongdoPropertyMap = ({
               className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0"
               onChange={(event) => {
                 searchRequestRef.current?.abort()
+                clearSearchMarker()
                 setIsSearching(false)
                 setSearchText(event.target.value)
                 setSuggestions([])
@@ -1477,6 +1549,7 @@ const LongdoPropertyMap = ({
                 className="ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
                 onClick={() => {
                   searchRequestRef.current?.abort()
+                  clearSearchMarker()
                   setIsSearching(false)
                   setSearchText('')
                   setSuggestions([])
@@ -1568,6 +1641,7 @@ const LongdoPropertyMap = ({
             disabled={!mapReady}
             onClick={() => {
               const map = mapRef.current
+              fadeSearchMarker()
               if (map) map.zoom(Math.min(map.zoom() + 1, 20), true)
             }}
           >
@@ -1581,6 +1655,7 @@ const LongdoPropertyMap = ({
             disabled={!mapReady}
             onClick={() => {
               const map = mapRef.current
+              fadeSearchMarker()
               if (map) map.zoom(Math.max(map.zoom() - 1, 1), true)
             }}
           >

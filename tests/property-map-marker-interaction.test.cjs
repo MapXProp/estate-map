@@ -30,14 +30,20 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     navigation = [],
     selected = [],
     selectedProjects = [],
-    overlays = []
+    overlays = [],
+    removedOverlays = new Set(),
+    timers = new Map()
   let cursor = 0,
     dirty = false,
     tree,
     frameId = 0,
     pathname = '/properties/map',
     props,
-    api
+    api,
+    now = 0,
+    timerId = 0,
+    reducedMotion = false,
+    searchPlace = async (keyword) => ({ name: keyword, lat: 13.723, lon: 100.542 })
   const equal = (a, b) => a && b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]))
   class Element {
     constructor(link = null) {
@@ -69,7 +75,9 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       if (this.isMap && selector.includes('data-mapx-project-marker')) return projectRoots
       return this.isMap && selector.includes('data-mapx-price-marker') ? markerRoots : []
     }
-    querySelector() {
+    querySelector(selector) {
+      if (this.isMap && selector.includes('data-mapx-search-marker'))
+        return overlays.findLast((overlay) => overlay.searchRoot && !removedOverlays.has(overlay))?.searchRoot || null
       return this
     }
     getBoundingClientRect() {
@@ -81,6 +89,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     addEventListener() {}
     removeEventListener() {}
     focus() {}
+    blur() {}
     setAttribute(name, value) {
       this.attributes[name] = value
     }
@@ -150,7 +159,11 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom }) },
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
     '@/lib/propertyMapProjects': projectContext.exports,
-    '@/lib/propertyMapLocationSearch': {},
+    '@/lib/propertyMapLocationSearch': {
+      searchMapPlace: (...args) => searchPlace(...args),
+      searchMapProjects: async () => [],
+      preferredMapProject: () => undefined,
+    },
     'next/navigation': { usePathname: () => pathname, useRouter: () => router },
     'next/script': { default: 'sdk-script' },
   }
@@ -161,9 +174,12 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       return frameId
     },
     cancelAnimationFrame: (id) => frames.delete(id),
-    setTimeout: () => 1,
-    clearTimeout() {},
-    matchMedia: () => ({ matches: width < 1024 }),
+    setTimeout: (callback, delay) => {
+      timers.set(++timerId, { callback, at: now + delay })
+      return timerId
+    },
+    clearTimeout: (id) => timers.delete(id),
+    matchMedia: (query) => ({ matches: query.includes('prefers-reduced-motion') ? reducedMotion : width < 1024 }),
     addEventListener() {},
     removeEventListener() {},
     longdo: {
@@ -181,9 +197,17 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
           this.Overlays = {
             add(marker) {
               overlays.push(marker)
+              if (marker.options?.icon?.html.includes('data-mapx-search-marker')) {
+                marker.searchRoot = new Element()
+                marker.searchRoot.style.opacity = '1'
+              }
             },
-            remove() {},
-            clear() {},
+            remove(marker) {
+              removedOverlays.add(marker)
+            },
+            clear() {
+              overlays.forEach((marker) => removedOverlays.add(marker))
+            },
           }
           this.location = (...args) => {
             if (args.length) {
@@ -218,6 +242,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     Element,
     Node: Element,
     URLSearchParams,
+    AbortController,
     setTimeout: () => 1,
     clearTimeout() {},
     ResizeObserver: class {
@@ -277,6 +302,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     initialZoom,
     exactCoordinates: true,
     onMarkerSelect: (id) => selected.push(id),
+    onLocationSearch: () => {},
     onProjectSelect: projectsEnabled ? (project) => selectedProjects.push(project) : undefined,
     mapMode: projectsEnabled ? 'projects' : undefined,
   })
@@ -316,6 +342,24 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     return event
   }
   let pointerTime = 100
+  function findNode(predicate) {
+    let found
+    visit(tree, (node) => {
+      if (predicate(node)) found = node
+    })
+    assert.ok(found, 'expected control exists')
+    return found
+  }
+  async function flushSearch() {
+    for (let turn = 0; turn < 10; turn++) await Promise.resolve()
+    render()
+  }
+  async function search(keyword) {
+    findNode((node) => node.type === 'input').props.onChange({ target: { value: keyword } })
+    render()
+    findNode((node) => node.type === 'input').props.onKeyDown({ key: 'Enter', preventDefault() {} })
+    await flushSearch()
+  }
   function pointer(type, action = 'dot', options = {}) {
     const event = {
       target: linkTarget(action),
@@ -339,6 +383,33 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     selected,
     selectedProjects,
     overlays,
+    removedOverlays,
+    search,
+    flushSearch,
+    getSearchMarkerHtml: context.exports.getSearchMarkerHtml,
+    getSearchMarker: () => overlays.findLast((overlay) => overlay.searchRoot && !removedOverlays.has(overlay)),
+    searchText: () => findNode((node) => node.type === 'input').props.value,
+    setSearchPlace: (fn) => {
+      searchPlace = fn
+    },
+    reduceMotion: () => {
+      reducedMotion = true
+    },
+    button: (label) => findNode((node) => node.type === 'button' && node.props['aria-label'] === label).props.onClick(),
+    surfaceEvent: (event, options = {}) =>
+      findNode((node) => node.props?.['data-map-marker-surface'] !== undefined).props[event](options),
+    advance: (duration) => {
+      const end = now + duration
+      for (;;) {
+        const next = [...timers].filter(([, timer]) => timer.at <= end).sort((a, b) => a[1].at - b[1].at)[0]
+        if (!next) break
+        now = next[1].at
+        timers.delete(next[0])
+        next[1].callback()
+      }
+      now = end
+      render()
+    },
     getProjectMarkerHtml: context.exports.getProjectMarkerHtml,
     click,
     pointer,
@@ -739,4 +810,143 @@ test('marker and price taps, controls, panning, pinching, cancellation and long 
     assert.equal(dismissed, 0, action)
     assert.deepEqual(h.calls, [], action)
   }
+})
+
+test('place search shows a small labelled red pin for 3 seconds, then fades without clearing the query or listings', async () => {
+  for (const width of [390, 820, 1440]) {
+    const h = harness(width)
+    const name = 'ที่จอดรถ Pantip Suites Sathorn'
+    await h.search(name)
+    const marker = h.getSearchMarker()
+    assert.ok(marker, `search marker appears at width ${width}`)
+    assert.equal(marker.options.clickable, false, 'the temporary cue does not open another popup')
+    assert.match(marker.options.icon.html, /ที่จอดรถ Pantip Suites Sathorn/)
+    assert.equal(marker.location.lat, 13.723)
+    assert.equal(marker.location.lon, 100.542)
+    assert.equal(h.api.zoom(), 15)
+    h.advance(2999)
+    assert.equal(marker.searchRoot.style.opacity, '1')
+    h.advance(1)
+    assert.equal(marker.searchRoot.style.opacity, '0')
+    assert.equal(h.getSearchMarker(), marker, 'overlay remains while opacity fades')
+    h.advance(500)
+    assert.equal(h.getSearchMarker(), undefined)
+    assert.equal(h.searchText(), name, 'search context survives cue dismissal')
+    assert.ok(h.overlays.filter((item) => !item.searchRoot).every((item) => !h.removedOverlays.has(item)))
+    h.unmount()
+  }
+})
+
+test('red location labels escape remote place names in both accessible and visible content', () => {
+  const html = harness(390).getSearchMarkerHtml('เขต <img src=x onerror=alert(1)> & "ชื่อ"')
+  assert.doesNotMatch(html, /<img/)
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt; &amp; &quot;ชื่อ&quot;/)
+  assert.match(html, /role="img" aria-label=/)
+})
+
+test('drag, pinch, wheel, zoom controls and listing selection fade a search cue immediately', async () => {
+  const interactions = [
+    (h) => {
+      h.startMapGesture({ pointerType: 'mouse' })
+      h.moveMapGesture({ clientX: 120 })
+    },
+    (h) => {
+      h.startMapGesture({ pointerType: 'touch', action: 'dot' })
+      h.moveMapGesture({ clientY: 220 })
+    },
+    (h) => h.startMapGesture({ pointerType: 'touch', pointerId: 2, isPrimary: false }),
+    (h) => h.surfaceEvent('onWheelCapture'),
+    (h) => h.surfaceEvent('onDoubleClickCapture'),
+    (h) => h.surfaceEvent('onKeyDownCapture', { key: '+' }),
+    (h) => h.button('ขยายแผนที่'),
+    (h) => h.button('ย่อแผนที่'),
+    (h) => h.click('price'),
+    (h) => h.click('dot', { detail: 0 }),
+    (h) => h.render({ previewListingId: listing.id }),
+    (h) => h.render({ selectedProjectId: 'selected-project' }),
+  ]
+  for (const interact of interactions) {
+    const h = harness(390)
+    await h.search('สาทร')
+    const marker = h.getSearchMarker()
+    h.advance(100)
+    interact(h)
+    assert.equal(marker.searchRoot.style.opacity, '0')
+    h.advance(300)
+    h.surfaceEvent('onWheelCapture')
+    h.advance(200)
+    assert.equal(h.getSearchMarker(), undefined, 'repeated interactions cannot postpone removal')
+    assert.equal(h.searchText(), 'สาทร')
+    h.unmount()
+  }
+})
+
+test('camera updates and tiny pointer movements keep the place label readable', async () => {
+  const h = harness(390)
+  await h.search('สาทร')
+  const marker = h.getSearchMarker()
+  h.render({ initialCenter: { lat: 13.723, lon: 100.542 }, initialZoom: 15, resizeRequestId: 1 })
+  h.startMapGesture()
+  h.moveMapGesture({ clientX: 102, clientY: 201 })
+  h.finishMapGesture()
+  h.advance(1000)
+  assert.equal(marker.searchRoot.style.opacity, '1')
+  h.unmount()
+})
+
+test('a replacement search owns its full timer even when the previous marker was fading', async () => {
+  const h = harness(1440)
+  await h.search('สาทร')
+  const first = h.getSearchMarker()
+  h.advance(3100)
+  await h.search('สาทร')
+  const second = h.getSearchMarker()
+  assert.notEqual(first, second)
+  assert.ok(h.removedOverlays.has(first))
+  h.advance(2999)
+  assert.equal(h.getSearchMarker(), second)
+  assert.equal(second.searchRoot.style.opacity, '1')
+  h.advance(501)
+  assert.equal(h.getSearchMarker(), undefined)
+  h.unmount()
+})
+
+test('clearing, switching modes and unmounting remove the search cue and cancel its timers', async () => {
+  for (const dismiss of [(h) => h.button('ล้างคำค้น'), (h) => h.render({ mapMode: 'projects' }), (h) => h.unmount()]) {
+    const h = harness(390)
+    await h.search('สาทร')
+    const marker = h.getSearchMarker()
+    dismiss(h)
+    assert.ok(h.removedOverlays.has(marker))
+    h.advance(10000)
+    assert.equal(h.getSearchMarker(), undefined)
+  }
+})
+
+test('stale search responses cannot restore an old cue or overwrite a newer place name', async () => {
+  const h = harness(390)
+  const pending = new Map()
+  h.setSearchPlace((keyword) => new Promise((resolve) => pending.set(keyword, resolve)))
+  await h.search('เก่า')
+  await h.search('ใหม่')
+  pending.get('ใหม่')({ name: 'ชื่อใหม่', lat: 13.8, lon: 100.6 })
+  await h.flushSearch()
+  const marker = h.getSearchMarker()
+  pending.get('เก่า')({ name: 'ชื่อเก่า', lat: 13.7, lon: 100.5 })
+  await h.flushSearch()
+  assert.equal(h.getSearchMarker(), marker)
+  assert.equal(h.searchText(), 'ชื่อใหม่')
+  assert.equal(marker.location.lat, 13.8)
+  h.unmount()
+})
+
+test('reduced motion keeps the same reading time and removes the cue without animation', async () => {
+  const h = harness(390)
+  h.reduceMotion()
+  await h.search('สาทร')
+  h.advance(2999)
+  assert.ok(h.getSearchMarker())
+  h.advance(1)
+  assert.equal(h.getSearchMarker(), undefined)
+  h.unmount()
 })
