@@ -45,33 +45,42 @@ export default function MapResultCard({
               ? '/งาน'
               : '/event'
             : ''
+  const category = th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'
+  const offer = th ? listing.offer : offerTypes.find((item) => item.nameTh === listing.offer)?.nameEn || listing.offer
   return (
     <article
       onMouseEnter={() => onHover(listing.id)}
       onMouseLeave={() => onHover('')}
       onFocus={() => onHover(listing.id)}
       onBlur={() => onHover('')}
-      className="group rounded-2xl border border-transparent p-3 transition focus-within:border-[#176b50] hover:border-[#d4e7dd] hover:bg-[#f5faf7] dark:hover:bg-neutral-800"
+      className={`group rounded-2xl border transition focus-within:border-[#176b50] hover:border-[#a9cbbb] ${compact ? 'border-transparent p-3 hover:bg-[#f5faf7] dark:hover:bg-neutral-800' : 'overflow-hidden border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900'}`}
     >
       <Link
         href={`/real-estate-listings/${encodeURIComponent(listing.handle)}`}
         scroll={false}
         onClick={() => rememberPropertyResultsLocation(`${window.location.pathname}${window.location.search}`)}
-        className="flex gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-[#176b50]"
+        className={`flex rounded-lg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176b50] ${compact ? 'gap-3' : 'flex-col'}`}
       >
         <div
-          className={`relative shrink-0 overflow-hidden rounded-xl bg-[#e9f0eb] ${compact ? 'size-[88px]' : 'h-[108px] w-[112px]'}`}
+          className={`relative shrink-0 overflow-hidden bg-[#e9f0eb] ${compact ? 'size-[88px] rounded-xl' : 'aspect-[16/10] w-full'}`}
         >
           {listing.featuredImage ? (
             <Image
               src={listing.featuredImage}
               alt=""
               fill
-              sizes="112px"
-              className="object-cover transition duration-300 group-hover:scale-105"
+              sizes={
+                compact ? '88px' : '(min-width: 1024px) 474px, (min-width: 640px) calc(50vw - 18px), calc(100vw - 24px)'
+              }
+              className="object-cover"
             />
           ) : (
             <MapPin className="absolute inset-0 m-auto size-8 text-[#699580]" />
+          )}
+          {!compact && (
+            <span className="absolute top-2.5 left-2.5 max-w-[calc(100%_-_20px)] truncate rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
+              {category} · {offer}
+            </span>
           )}
           {listing.isMapPromoted && (
             <span className="absolute bottom-1.5 left-1.5 rounded-md bg-white/95 px-1.5 py-0.5 text-[10px] text-[#176b50]">
@@ -79,32 +88,19 @@ export default function MapResultCard({
             </span>
           )}
         </div>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <p className="text-[11px] font-medium text-[#568170] dark:text-emerald-400">
-            {!compact && (
-              <>
-                {th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'}{' '}
-                ·{' '}
-              </>
-            )}
-            {th ? listing.offer : offerTypes.find((offer) => offer.nameTh === listing.offer)?.nameEn || listing.offer}
-          </p>
+        <div className={`flex min-w-0 flex-1 flex-col ${compact ? '' : 'px-3 pt-3'}`}>
+          {compact && <p className="text-[11px] font-medium text-[#568170] dark:text-emerald-400">{offer}</p>}
           <h3
             className={
               compact
                 ? 'order-2 mt-1 truncate text-xs text-neutral-600 dark:text-neutral-300'
-                : 'mt-1 line-clamp-2 text-sm leading-5 font-semibold text-neutral-900 dark:text-white'
+                : 'order-2 mt-1.5 line-clamp-2 text-sm leading-5 font-medium text-neutral-900 dark:text-white'
             }
           >
             {title}
           </h3>
-          {!compact && (
-            <p className="mt-1 truncate text-xs text-neutral-500">
-              {th ? listing.address : listing.addressEn || listing.address}
-            </p>
-          )}
           <p
-            className={`${compact ? 'order-1 mt-1' : 'mt-2'} text-base leading-5 font-bold text-[#176b50] dark:text-emerald-400`}
+            className={`order-1 text-base leading-6 font-semibold text-[#176b50] dark:text-emerald-400 ${compact ? 'mt-1' : ''}`}
           >
             {price}
             <span className="ms-0.5 text-[11px] font-normal">{period}</span>
@@ -116,9 +112,9 @@ export default function MapResultCard({
           )}
         </div>
       </Link>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className={`flex items-center justify-between gap-2 ${compact ? 'mt-2' : 'px-3 pt-1 pb-2'}`}>
         {!compact && (
-          <p className="truncate text-[11px] text-neutral-500">
+          <p className="min-w-0 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
             {th ? listing.metadataSummary : listing.metadataSummaryEn}
           </p>
         )}
@@ -126,10 +122,10 @@ export default function MapResultCard({
           <button
             type="button"
             onClick={onLocate}
-            className="flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-medium text-[#176b50] hover:bg-[#e4f1e9] dark:text-emerald-400 dark:hover:bg-neutral-700"
+            className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-[#176b50] hover:bg-[#e4f1e9] dark:text-emerald-400 dark:hover:bg-neutral-700"
             aria-label={`${th ? 'ดูตำแหน่ง' : 'Locate'} ${title}`}
           >
-            <Maximize2 className="size-3" />
+            <Maximize2 className="size-3.5" />
             {th ? 'ดูตำแหน่ง' : 'Locate'}
           </button>
         )}

@@ -767,12 +767,13 @@
 .openPanel {
   position: absolute;
   z-index: 25;
-  top: calc(var(--map-navigation-height, 0px) + 6px);
-  left: 18px;
+  top: calc(var(--map-navigation-height, 0px) + 14px);
+  left: calc(var(--map-search-row-center) - var(--map-search-row-width) / 2 - 8px);
+  transform: translateX(-100%);
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 46px;
+  min-height: 48px;
   border: 1px solid #dbe7df;
   border-radius: 14px;
   padding: 0 16px;
@@ -780,6 +781,7 @@
   box-shadow: 0 4px 16px #153b251a;
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 @media (min-width: 1024px) {
   .areaControl button {
@@ -1301,6 +1303,7 @@
   }
   .canvas[data-map-floating-layout='true'] .openPanel {
     top: calc(var(--map-navigation-height, 0px) + 14px);
+    left: calc(50% - var(--map-centered-search-width) / 2 - 8px);
   }
 }
 @media (min-width: 1024px) {

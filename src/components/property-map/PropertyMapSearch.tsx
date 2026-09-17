@@ -922,15 +922,22 @@ export default function PropertyMapSearch({
           )}
         </div>
         {!panelOpen && (
-          <button type="button" data-map-open-results onClick={togglePanel} className={styles.openPanel}>
+          <button
+            type="button"
+            data-map-open-results
+            aria-expanded={false}
+            aria-controls={mapMode === 'projects' ? 'map-project-results-content' : 'map-results-content'}
+            onClick={togglePanel}
+            className={styles.openPanel}
+          >
             <List className="size-4" />
             {mapMode === 'projects'
               ? th
                 ? `ดูโครงการ (${displayedProjects.length})`
                 : `Projects (${displayedProjects.length})`
               : th
-                ? `ดูประกาศ (${displayed.length})`
-                : `Listings (${displayed.length})`}
+                ? `ดู ${displayed.length} ประกาศ`
+                : `View ${displayed.length} listings`}
           </button>
         )}
 
@@ -1006,7 +1013,7 @@ export default function PropertyMapSearch({
                 <span className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-neutral-300" aria-hidden="true" />
                 <span className={styles.sheetSummaryRow}>
                   <span className={styles.sheetSummary} data-map-search-summary title={searchSummary}>
-                    {searchSummary}
+                    {th ? `${displayed.length} ประกาศ` : `${displayed.length} listings`}
                   </span>
                   <span className={styles.mobilePanelAction}>
                     {mobilePanelOpen ? (th ? 'ดูแผนที่' : 'View map') : th ? 'ดูประกาศ' : 'View listings'}
@@ -1020,7 +1027,7 @@ export default function PropertyMapSearch({
                   </span>
                   <span className={styles.sheetCount}>
                     {loading && <LoaderCircle className="size-3 animate-spin" />}
-                    {th ? `${displayed.length} ประกาศ` : `${displayed.length} listings`}
+                    {loading && (th ? 'กำลังโหลด' : 'Loading')}
                   </span>
                 </span>
               </button>
@@ -1054,7 +1061,7 @@ export default function PropertyMapSearch({
                       type="button"
                       onClick={togglePanel}
                       aria-label={th ? 'ย่อแผงประกาศ' : 'Collapse listings'}
-                      className="hidden size-9 shrink-0 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 lg:grid dark:hover:bg-neutral-800"
+                      className="hidden size-11 shrink-0 place-items-center rounded-full text-neutral-500 hover:bg-neutral-100 lg:grid dark:hover:bg-neutral-800"
                     >
                       <PanelLeftClose className="size-4" />
                     </button>
@@ -1103,7 +1110,7 @@ export default function PropertyMapSearch({
                 <div
                   ref={resultsRef}
                   data-sheet-scroll
-                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
+                  className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
                   aria-busy={loading}
                 >
                   {failed && (
@@ -1124,12 +1131,15 @@ export default function PropertyMapSearch({
                     </p>
                   )}
                   {loading && !displayed.length && (
-                    <div className="space-y-4 p-3" role="status">
+                    <div className="grid gap-3 sm:max-lg:grid-cols-2" role="status">
                       <span className="sr-only">{th ? 'กำลังโหลดประกาศ' : 'Loading listings'}</span>
                       {[0, 1, 2].map((item) => (
-                        <div key={item} className="flex animate-pulse gap-3">
-                          <div className="h-28 w-28 shrink-0 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
-                          <div className="flex-1 space-y-3 py-2">
+                        <div
+                          key={item}
+                          className="animate-pulse overflow-hidden rounded-2xl border border-neutral-100 dark:border-neutral-800"
+                        >
+                          <div className="aspect-[16/10] w-full bg-neutral-100 dark:bg-neutral-800" />
+                          <div className="space-y-3 p-3">
                             <div className="h-3 w-2/3 rounded bg-neutral-100 dark:bg-neutral-800" />
                             <div className="h-4 rounded bg-neutral-100 dark:bg-neutral-800" />
                             <div className="h-3 rounded bg-neutral-100 dark:bg-neutral-800" />
@@ -1139,19 +1149,21 @@ export default function PropertyMapSearch({
                       ))}
                     </div>
                   )}
-                  {displayed.slice(0, visibleCount).map((listing) => (
-                    <MapResultCard
-                      key={listing.id}
-                      listing={listing}
-                      onHover={setHoveredId}
-                      onLocate={() => {
-                        setCenter({ lat: listing.map.lat, lon: listing.map.lng })
-                        setZoom(17)
-                        setHoveredId(listing.id)
-                        setMobilePanelOpen(false)
-                      }}
-                    />
-                  ))}
+                  <div className="grid gap-3 sm:max-lg:grid-cols-2" data-map-listing-cards>
+                    {displayed.slice(0, visibleCount).map((listing) => (
+                      <MapResultCard
+                        key={listing.id}
+                        listing={listing}
+                        onHover={setHoveredId}
+                        onLocate={() => {
+                          setCenter({ lat: listing.map.lat, lon: listing.map.lng })
+                          setZoom(17)
+                          setHoveredId(listing.id)
+                          setMobilePanelOpen(false)
+                        }}
+                      />
+                    ))}
+                  </div>
                   {!loading && !failed && !invalidPrice && !displayed.length && (
                     <div className="px-5 py-10 text-center">
                       <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#edf6f1] text-[#176b50]">
