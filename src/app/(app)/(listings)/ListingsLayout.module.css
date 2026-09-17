@@ -1,0 +1,17 @@
+.canvas:has([data-listing-tone]) {
+  background: #f6f7f8;
+}
+
+:global(.dark) .canvas:has([data-listing-tone]) {
+  background: #151818;
+}
+
+@media (max-width: 743px) {
+  .canvas:has([data-listing-tone]) {
+    background: #fff;
+  }
+
+  :global(.dark) .canvas:has([data-listing-tone]) {
+    background: #202423;
+  }
+}

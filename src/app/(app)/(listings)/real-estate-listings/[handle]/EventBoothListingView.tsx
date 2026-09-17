@@ -20,6 +20,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
+import styles from './PropertyListingView.module.css'
 
 const formatThaiDate = (value: string) =>
   new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }).format(
@@ -36,18 +37,14 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
   const province = isThai ? listing.province : listing.province_en || listing.province
   const event = listing.event!
   const image = listing.media.find((media) => media.is_primary) || listing.media[0]
-  const fullAddress = [address, subdistrict, district, province, listing.postal_code]
-    .filter(Boolean)
-    .join(' ')
+  const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
   const lineHandle = listing.line_id.replace(/^@/, '')
   const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
   const isVerifiedOrganizer = event.organizer_verification_status === 'verified'
   const isContactOrganizer = listing.offer_type === 'contact_organizer' || event.price_on_request
   const temporarySpaceDays = Number(listing.category_details.temporary_space_duration_days) || 0
-  const fixedPrice = listing.offer_amount
-    ? formatCurrencyFrom(listing.offer_amount, listing.currency)
-    : ''
+  const fixedPrice = listing.offer_amount ? formatCurrencyFrom(listing.offer_amount, listing.currency) : ''
   const formatCost = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const rentalTerms = [
     ...(listing.deposit_amount !== undefined ? [{ label: 'ค่ามัดจำ', value: formatCost(listing.deposit_amount) }] : []),
@@ -77,11 +74,11 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
         : 'ให้เช่า'
 
   return (
-    <div className="pb-24 min-[744px]:pb-0">
+    <div data-listing-tone="business" className={`${styles.surface} pb-24 min-[744px]:pb-0`}>
       <main className="mx-auto max-w-screen-xl px-4 py-5 min-[744px]:py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 min-[900px]:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)] min-[1100px]:gap-12">
           <div className="min-w-0">
-            <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-[#f6f7f5] shadow-sm">
+            <div className={`${styles.eventPoster} overflow-hidden`}>
               {image ? (
                 <Image
                   src={image.url}
@@ -103,7 +100,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </p>
           </div>
 
-          <div className="min-w-0">
+          <div className={`${styles.eventContent} min-w-0`}>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-[#fff1eb] px-3 py-1 text-sm font-medium text-[#d94721]">
                 พื้นที่ออกบูธ
@@ -141,7 +138,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </span>
             </div>
 
-            <div className="mt-6 rounded-3xl border border-[#dce9e4] bg-[#f4f9f7] p-5">
+            <div className={styles.eventPrice}>
               <p className="text-sm text-neutral-500">
                 {isContactOrganizer ? 'การรับราคาและรายละเอียด' : 'ค่าเช่าพื้นที่ชั่วคราว'}
               </p>
@@ -170,7 +167,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               ) : null}
             </div>
 
-            <section className="mt-8">
+            <section className={styles.section}>
               <div className="flex items-center gap-2">
                 <CalendarDays className="size-5 text-[#176b50]" />
                 <h2 className="text-xl font-semibold">กำหนดการจัดงาน</h2>
@@ -194,7 +191,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </section>
 
             <section className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-neutral-200 p-5">
+              <div className={styles.featureCard}>
                 <div className="flex items-center gap-2 font-semibold">
                   <Store className="size-5 text-[#176b50]" /> สินค้าที่เปิดรับ
                 </div>
@@ -206,7 +203,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                   ))}
                 </div>
               </div>
-              <div className="rounded-3xl border border-neutral-200 p-5">
+              <div className={styles.featureCard}>
                 <div className="flex items-center gap-2 font-semibold">
                   <Users className="size-5 text-[#176b50]" /> กลุ่มลูกค้า
                 </div>
@@ -218,7 +215,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </div>
             </section>
 
-            <section className="mt-6 rounded-3xl border border-[#f0dfce] bg-[#fffaf4] p-5">
+            <section className={styles.section}>
               <div className="flex items-center gap-2 font-semibold">
                 <CircleHelp className="size-5 text-[#d66a22]" /> ข้อมูลที่ควรสอบถามผู้จัดงาน
               </div>
@@ -237,7 +234,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               )}
             </section>
 
-            <section className="mt-8 rounded-3xl bg-[#123f32] p-6 text-white">
+            <section className={`${styles.eventContact} mt-8 rounded-3xl p-6 text-white`}>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm text-white/70">ผู้ประสานงาน</p>
                 {isVerifiedOrganizer && (

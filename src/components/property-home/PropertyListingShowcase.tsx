@@ -581,11 +581,24 @@ const PropertyListingShowcase = ({
       <div className="container">
         <div className={`${compact ? 'mb-6' : 'mb-8'} flex flex-col justify-between gap-5 lg:flex-row lg:items-end`}>
           <div>
-            <p className="mb-2 text-sm font-semibold tracking-wide text-[#176b50] dark:text-emerald-300">
+            <p
+              data-discovery-accent
+              className="mb-2 text-sm font-semibold tracking-wide text-[#176b50] dark:text-emerald-300"
+            >
               {isThai ? 'อัปเดตล่าสุด' : 'Recently updated'}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {isThai ? 'ประกาศใหม่และน่าสนใจ' : 'New and notable listings'}
+              {mode === 'rooms'
+                ? isThai
+                  ? 'ห้องเช่าใหม่และน่าสนใจ'
+                  : 'Find your next room'
+                : mode === 'business'
+                  ? isThai
+                    ? 'พื้นที่ใหม่สำหรับธุรกิจคุณ'
+                    : 'New spaces for your business'
+                  : isThai
+                    ? 'ประกาศใหม่และน่าสนใจ'
+                    : 'New and notable listings'}
             </h2>
           </div>
 

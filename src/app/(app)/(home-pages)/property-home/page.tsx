@@ -2,6 +2,8 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ChannelDiscoveryHero from '@/components/property-home/ChannelDiscoveryHero'
+import PropertyDiscovery from '@/components/property-home/PropertyDiscovery'
+import discoveryStyles from '@/components/property-home/PropertyDiscovery.module.css'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
@@ -283,6 +285,7 @@ const PropertyHomePrototype = ({
   const mode = propertySiteModeFromPathname(pathname)
   const { locale, setPropertyZone } = usePreferences()
   const isThai = locale === 'th'
+  const isChannelHomepage = pathname === '/homes' || pathname === '/rooms' || pathname === '/business'
   const isMainLanding = mode === 'all'
   // Keep the compact discovery banner ready to restore later, but hide it on
   // the three channel landing pages so new listings become the first content.
@@ -390,7 +393,10 @@ const PropertyHomePrototype = ({
   })
 
   return (
-    <main className="overflow-hidden bg-white dark:bg-neutral-900">
+    <main
+      data-discovery-channel={mode}
+      className={`overflow-hidden ${isChannelHomepage ? discoveryStyles.page : 'bg-white dark:bg-neutral-900'}`}
+    >
       {isMainLanding ? (
         <section className="container pt-3 sm:pt-6 lg:pt-10">
           <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
@@ -547,23 +553,37 @@ const PropertyHomePrototype = ({
         </section>
       ) : null}
 
-      {!isMainLanding && <ChannelDiscoveryHero mode={mode} offerType={offerType} />}
+      {isChannelHomepage && mode !== 'all' ? (
+        <PropertyDiscovery key={mode} mode={mode} />
+      ) : (
+        !isMainLanding && <ChannelDiscoveryHero mode={mode} offerType={offerType} />
+      )}
 
-      <PropertyListingShowcase
-        mode={mode}
-        compact={!isMainLanding}
-        initialListings={initialListings}
-        offerType={offerType}
-      />
+      <div className={isChannelHomepage ? discoveryStyles.listings : undefined}>
+        <PropertyListingShowcase
+          mode={mode}
+          compact={!isMainLanding}
+          initialListings={initialListings}
+          offerType={offerType}
+        />
+      </div>
 
-      <section className="container pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-10 lg:pb-12">
+      <section
+        className={`container ${isChannelHomepage ? discoveryStyles.locations : 'pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-10 lg:pb-12'}`}
+      >
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">
           <div>
-            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
+            <p data-discovery-accent className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
               {isThai ? 'สำรวจจากทำเล' : 'Explore by location'}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {isThai ? 'เมืองที่คนกำลังค้นหา' : 'Cities people are searching'}
+              {isChannelHomepage
+                ? isThai
+                  ? 'ค้นพบทำเลที่เป็นคุณ'
+                  : 'Find a place that feels like you'
+                : isThai
+                  ? 'เมืองที่คนกำลังค้นหา'
+                  : 'Cities people are searching'}
             </h2>
           </div>
           <Link
@@ -574,30 +594,68 @@ const PropertyHomePrototype = ({
           </Link>
         </div>
 
-        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+        <div
+          className={
+            isChannelHomepage
+              ? discoveryStyles.locationGrid
+              : 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden'
+          }
+        >
           {locations.map((location) => (
             <Link
               key={location.name}
               href={getPropertyMapLocationHref(location.slug, mode === 'all' ? undefined : mode)}
-              className="group relative w-[78vw] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-3xl bg-neutral-200 sm:w-auto sm:max-w-none"
+              className={
+                isChannelHomepage
+                  ? discoveryStyles.locationCard
+                  : 'group relative w-[78vw] max-w-[320px] shrink-0 snap-start overflow-hidden rounded-3xl bg-neutral-200 sm:w-auto sm:max-w-none'
+              }
             >
-              <div className="relative aspect-[4/3]">
+              <div className={isChannelHomepage ? discoveryStyles.locationFrame : 'relative aspect-[4/3]'}>
                 <Image
                   fill
                   src={location.image}
                   alt={isThai ? `อสังหาริมทรัพย์ใน${location.name}` : `Property in ${location.nameEn}`}
-                  sizes="(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 25vw"
-                  className="object-cover transition duration-500 group-hover:scale-105"
+                  sizes={
+                    isChannelHomepage
+                      ? '(max-width: 639px) 100vw, 50vw'
+                      : '(max-width: 640px) 78vw, (max-width: 1024px) 50vw, 25vw'
+                  }
+                  className={
+                    isChannelHomepage
+                      ? discoveryStyles.locationPhoto
+                      : 'object-cover transition duration-500 group-hover:scale-105'
+                  }
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                  <p className="flex items-center gap-1.5 text-lg font-semibold">
-                    <MapPin className="size-5" /> {isThai ? location.name : location.nameEn}
-                  </p>
+                <div
+                  className={
+                    isChannelHomepage
+                      ? discoveryStyles.locationOverlay
+                      : 'absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent'
+                  }
+                />
+                <div
+                  className={
+                    isChannelHomepage ? discoveryStyles.locationText : 'absolute inset-x-0 bottom-0 p-5 text-white'
+                  }
+                >
+                  {isChannelHomepage && (
+                    <span>
+                      <MapPin size={12} aria-hidden="true" /> {isThai ? 'สำรวจทำเล' : 'Explore the area'}
+                    </span>
+                  )}
+                  <h3 className="flex items-center gap-1.5 text-lg font-semibold">
+                    {!isChannelHomepage && <MapPin className="size-5" />} {isThai ? location.name : location.nameEn}
+                  </h3>
                   <p className="mt-1 text-sm text-white/75">
                     {isThai ? 'ดูประกาศในพื้นที่' : 'Explore listings in this area'}
                   </p>
                 </div>
+                {isChannelHomepage && (
+                  <span className={discoveryStyles.locationArrow}>
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </span>
+                )}
               </div>
             </Link>
           ))}
@@ -611,10 +669,12 @@ const PropertyHomePrototype = ({
         </Link>
       </section>
 
-      <section className="container pt-10 pb-8 sm:pt-12 lg:pt-14">
+      <section
+        className={`container ${isChannelHomepage ? discoveryStyles.pathSection : 'pt-10 pb-8 sm:pt-12 lg:pt-14'}`}
+      >
         <div className="mb-7 flex items-end justify-between gap-5">
           <div>
-            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
+            <p data-discovery-accent className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
               {isThai ? 'เลือกตามสิ่งที่ต้องการจริง' : 'Start with what you really need'}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
@@ -657,7 +717,7 @@ const PropertyHomePrototype = ({
       <section className="bg-[#f5f7f4] py-16 sm:py-20 lg:py-24 dark:bg-neutral-950/60">
         <div className="container">
           <div className="mx-auto mb-9 max-w-2xl text-center">
-            <p className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
+            <p data-discovery-accent className="mb-2 text-sm font-semibold text-[#176b50] dark:text-emerald-300">
               {isThai ? 'ไม่ต้องรู้ชื่อประเภททรัพย์ก่อนก็ได้' : 'You do not need to know the property category'}
             </p>
             <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">

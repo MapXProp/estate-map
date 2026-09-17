@@ -18,6 +18,7 @@ import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
+  Banknote,
   Building2,
   ChevronDown,
   ExternalLink,
@@ -130,13 +131,17 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   ]
 
   return (
-    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[1100px]:pb-0">
+    <div
+      {...listingAnalyticsAttributes(listing, 'listing_page')}
+      data-listing-tone="homes"
+      className={`${styles.surface} pb-24 min-[1100px]:pb-0`}
+    >
       <main
         data-property-listing-page
         className={`${styles.page} -mx-4 max-w-screen-xl px-3 min-[744px]:mx-auto min-[744px]:px-0 sm:px-5`}
       >
         <h1 className="sr-only">{title}</h1>
-        <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
+        <div className={`${styles.mobileIdentity} px-1 pt-2 pb-4 min-[744px]:hidden`}>
           <div className="mb-1.5 flex min-h-10 items-center justify-between gap-3">
             <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium">
               <span className="text-[#176b50]">{propertyOffersLabel(prices, isThai)}</span>
@@ -159,7 +164,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             {title}
           </p>
           {fullAddress && (
-            <div className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
+            <div data-listing-address className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
               <div className="min-w-0">
                 <span>{fullAddress}</span>
@@ -246,7 +251,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   {title}
                 </p>
                 {fullAddress && (
-                  <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
+                  <div
+                    data-listing-address
+                    className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base"
+                  >
                     <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                     <div className="min-w-0">
                       <span>{fullAddress}</span>
@@ -279,7 +287,11 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               source="listing_page"
               className="order-3 mt-3 min-[744px]:order-none"
             />
-            <section className={`${styles.facts} order-3 min-[744px]:order-none`}>
+            <section
+              id="listing-overview"
+              aria-label={isThai ? 'ข้อมูลสำคัญ' : 'Key facts'}
+              className={`${styles.facts} order-3 min-[744px]:order-none`}
+            >
               {factCards.map((item) => (
                 <div key={item.label} className={`${styles.fact} bg-white`}>
                   <item.icon className="size-5 text-[#176b50]" aria-hidden="true" />
@@ -290,7 +302,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             </section>
 
             {hasContacts && (
-              <details className="group order-2 mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden">
+              <details
+                className={`${styles.mobileContact} group order-2 mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden`}
+              >
                 <summary className="flex cursor-pointer list-none items-center gap-3 p-3 select-none [&::-webkit-details-marker]:hidden">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
                     {isOwnerDirect ? <UserRoundCheck className="size-4.5" /> : <Building2 className="size-4.5" />}
@@ -315,8 +329,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </details>
             )}
 
-            <section className="order-1 mt-6 min-[744px]:order-none min-[744px]:mt-10 min-[744px]:border-t min-[744px]:border-neutral-200 min-[744px]:pt-8">
-              <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">รายละเอียดที่ดิน</h2>
+            <section id="listing-description" className={`${styles.section} order-1 min-[744px]:order-none`}>
+              <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">
+                {isThai ? 'รายละเอียดที่ดิน' : 'Land details'}
+              </h2>
               <PropertyDescription
                 text={description}
                 collapsible
@@ -326,14 +342,18 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               />
             </section>
 
-            <ListingLocationSection listing={listing} isThai={isThai} className="order-4 mt-8 min-[744px]:order-none" />
+            <ListingLocationSection
+              listing={listing}
+              isThai={isThai}
+              className={`${styles.section} order-4 min-[744px]:order-none`}
+            />
 
             {featureCards.items.length > 0 && (
-              <section className="order-5 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
+              <section className={`${styles.section} order-5 min-[744px]:order-none`}>
                 <h2 className="text-2xl font-semibold text-neutral-950">{featureCards.heading}</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {featureCards.items.map((item) => (
-                    <div key={item.title} className="rounded-2xl bg-[#f4f8f6] p-5">
+                    <div key={item.title} className={styles.featureCard}>
                       <h3 className="font-semibold text-[#123f32]">{item.title}</h3>
                       <p className="mt-2 text-sm leading-6 text-neutral-600">{item.body}</p>
                     </div>
@@ -343,7 +363,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             )}
 
             {listing.transaction_terms.length > 0 && (
-              <section className="order-6 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
+              <section className={`${styles.section} order-6 min-[744px]:order-none`}>
                 <div>
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-neutral-950">
                     <WalletCards className="size-5 text-[#176b50]" /> ค่าใช้จ่ายและเงื่อนไข
@@ -362,15 +382,21 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
           <aside className={styles.sidebar}>
             <div id="contact-owner-desktop" data-listing-contact-card className={`${styles.contactCard} bg-white`}>
-              <p className="text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <PropertyPrices prices={prices} variant="detail" className="text-neutral-950" />
+              <div className={styles.pricePanel}>
+                <p className={styles.priceLabel}>
+                  <Banknote aria-hidden="true" />
+                  {isThai ? 'ราคาประกาศ' : 'Listing price'}
+                </p>
+                <PropertyPrices prices={prices} variant="detail" />
                 {pricePerSquareWah ? (
-                  <p className="text-sm font-medium text-[#71817b]">เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.</p>
+                  <p className={styles.priceNote}>
+                    {isThai ? 'เฉลี่ย' : 'Average'} {formattedPricePerSquareWah}/{isThai ? 'ตร.ว.' : 'sq.wah'}
+                  </p>
                 ) : null}
               </div>
-              <div className="my-5 border-t border-neutral-200" />
-              <ListingContactDetails listing={listing} isThai={isThai} />
+              <div className={styles.contactBody}>
+                <ListingContactDetails listing={listing} isThai={isThai} />
+              </div>
             </div>
           </aside>
         </div>

@@ -15,6 +15,7 @@ import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { getPropertyPrices, propertyOffersLabel, propertyPricesText } from '@/lib/propertyPrices'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
+  Banknote,
   Bath,
   BedDouble,
   Building2,
@@ -64,6 +65,12 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
   const projectDisplayName = listing.project_display_name || listing.project_name_en || listing.project_name
   const prices = getPropertyPrices(listing)
+  const listingTone =
+    propertyType?.groupCode === 'commercial' || propertyType?.groupCode === 'mixed_use'
+      ? 'business'
+      : prices.length === 1 && prices[0].offerType === 'rent'
+        ? 'rooms'
+        : 'homes'
   const price = propertyPricesText(prices, isThai, formatCurrencyFrom)
   const formatRetailAmount = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const retailTerms =
@@ -172,7 +179,11 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   ]
 
   return (
-    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[1100px]:pb-0">
+    <div
+      {...listingAnalyticsAttributes(listing, 'listing_page')}
+      data-listing-tone={listingTone}
+      className={`${styles.surface} pb-24 min-[1100px]:pb-0`}
+    >
       <main
         data-property-listing-page
         className={`${styles.page} -mx-4 max-w-screen-xl px-3 min-[744px]:mx-auto min-[744px]:px-0 sm:px-5`}
@@ -249,7 +260,10 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 </Link>
               ) : null}
               {fullAddress ? (
-                <div className="mt-3 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
+                <div
+                  data-listing-address
+                  className="mt-3 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300"
+                >
                   <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                   <div className="min-w-0">
                     <span className="min-[744px]:hidden">{fullAddress}</span>
@@ -328,7 +342,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             <ListingLocationSection listing={listing} isThai={isThai} className={`${styles.section} mt-8`} />
 
             {listing.amenities.length ? (
-              <section className="mt-10 border-t border-neutral-200 pt-8 dark:border-neutral-800">
+              <section className={styles.section}>
                 <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
                   {isThai ? 'จุดเด่นและสิ่งอำนวยความสะดวก' : 'Features & amenities'}
                 </h2>
@@ -352,11 +366,21 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               data-listing-contact-card
               className={`${styles.contactCard} bg-white dark:bg-neutral-900`}
             >
-              <p className="font-sarabun text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              <PropertyPrices prices={prices} variant="detail" className="mt-2 text-neutral-950 dark:text-white" />
-              <RetailTerms items={retailTerms} />
-              <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
-              <ListingContactDetails listing={listing} isThai={isThai} />
+              <div className={styles.pricePanel}>
+                <p className={styles.priceLabel}>
+                  <Banknote aria-hidden="true" />
+                  {isThai ? 'ราคาประกาศ' : 'Listing price'}
+                </p>
+                <PropertyPrices prices={prices} variant="detail" />
+              </div>
+              <div className={styles.contactBody}>
+                {retailTerms.length > 0 && (
+                  <div className="mb-5">
+                    <RetailTerms items={retailTerms} />
+                  </div>
+                )}
+                <ListingContactDetails listing={listing} isThai={isThai} />
+              </div>
             </div>
           </aside>
         </div>
