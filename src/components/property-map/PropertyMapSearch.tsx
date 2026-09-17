@@ -597,6 +597,7 @@ export default function PropertyMapSearch({
       <section
         ref={categoriesRef}
         data-map-navigation
+        data-top-nav-boundary
         inert={phonePreview && Boolean(previewListing)}
         className={styles.categories}
         aria-label={th ? 'หมวดอสังหาริมทรัพย์' : 'Property categories'}

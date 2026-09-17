@@ -137,3 +137,8 @@ export function propertyPricesText(
     )
     .join('\n')
 }
+
+// Map pins identify rental prices by their period and keep the exact amount visible.
+export function propertyPinPricesText(prices: PropertyPrice[], th: boolean, format: PropertyAmountFormatter) {
+  return prices.map((price) => propertyPriceText(price, th, format)).join('\n')
+}

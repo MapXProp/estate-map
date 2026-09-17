@@ -113,13 +113,18 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
   }, [autoHideEnabled])
 
   if (!autoHideEnabled) {
-    return <div className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">{children}</div>
+    return (
+      <div data-top-nav-boundary className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">
+        {children}
+      </div>
+    )
   }
 
   return (
     <div className="relative z-20 h-16 min-[744px]:hidden">
       <div
         ref={headerRef}
+        data-top-nav-boundary
         onFocusCapture={() => {
           modeRef.current = 'visible'
           setMode('visible')

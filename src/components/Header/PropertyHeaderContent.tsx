@@ -34,7 +34,7 @@ const SearchFirstHeader = () => {
   return (
     <header className={styles.header} data-property-header-layout="search-first">
       <div className="container">
-        <div className={styles.row}>
+        <div className={styles.row} data-top-nav-boundary>
           <Logo href={`/${siteMode}`} className={styles.logo} />
           <div className={styles.category}>
             <PropertySiteSwitcher compact />

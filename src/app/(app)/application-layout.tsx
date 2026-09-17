@@ -28,7 +28,10 @@ const ApplicationLayout: React.FC<Props> = ({
   return (
     <Aside.Provider>
       {/* Compact desktop header starts at iPad mini portrait width (744px). */}
-      <div className={`${stickyDesktopHeader ? 'sticky top-0' : 'relative'} z-40 hidden min-[744px]:block`}>
+      <div
+        data-top-nav-boundary
+        className={`${stickyDesktopHeader ? 'sticky top-0' : 'relative'} z-40 hidden min-[744px]:block`}
+      >
         {header ? header : <Header />}
       </div>
       {/* Keep the mobile search header for phones only. */}

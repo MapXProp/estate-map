@@ -1,6 +1,6 @@
 'use client'
 
-import { getMapListingPrices, propertyPricesText } from '@/lib/propertyPrices'
+import { getMapListingPrices, propertyPinPricesText, propertyPricesText } from '@/lib/propertyPrices'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
@@ -148,7 +148,8 @@ export const getMarkerHtml = (
   active: boolean,
   isThai: boolean,
   dockedPreview: boolean,
-  previewSelected: boolean
+  previewSelected: boolean,
+  pinPrice = price
 ) => {
   const background = active ? '#123f32' : '#ffffff'
   const color = active ? '#ffffff' : '#173f34'
@@ -161,9 +162,9 @@ export const getMarkerHtml = (
     ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
   const previewLabel = isThai ? 'ดูรูปและราคา' : 'Preview photos and price'
-  const priceLines = price.split('\n')
+  const priceLines = pinPrice.split('\n')
   const priceHtml =
-    priceLines.length > 1 ? priceLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('') : escapeHtml(price)
+    priceLines.length > 1 ? priceLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('') : escapeHtml(pinPrice)
   const priceClass = `mapx-price-pill${priceLines.length > 1 ? ' mapx-dual-price' : ''}`
 
   return `
@@ -355,13 +356,22 @@ const LongdoPropertyMap = ({
       listings.map((listing) => {
         const prices = getMapListingPrices(listing)
         if (listing.prices || prices.length > 1)
-          return propertyPricesText(prices, isThai, formatCurrencyFrom, prices.length > 1)
+          return {
+            label: propertyPricesText(prices, isThai, formatCurrencyFrom),
+            pin: propertyPinPricesText(prices, isThai, formatCurrencyFrom),
+          }
         if (typeof listing.priceAmount === 'number' && listing.priceAmount > 0) {
-          return `${formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)}${formatPricePeriod(listing.priceUnit, isThai)}`
+          const price = `${formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)}${formatPricePeriod(listing.priceUnit, isThai)}`
+          return { label: price, pin: price }
         }
-        if (!listing.priceLabel) return listing.price
-        if (isThai) return listing.priceLabel
-        return listing.priceLabel === 'ติดต่อผู้จัดงาน' ? 'Contact organizer' : 'Price on request'
+        const price = !listing.priceLabel
+          ? listing.price
+          : isThai
+            ? listing.priceLabel
+            : listing.priceLabel === 'ติดต่อผู้จัดงาน'
+              ? 'Contact organizer'
+              : 'Price on request'
+        return { label: price, pin: price }
       }),
     [formatCurrencyFrom, isThai, listings]
   )
@@ -1091,11 +1101,12 @@ const LongdoPropertyMap = ({
         icon: {
           html: getMarkerHtml(
             listing,
-            displayPrices[index],
+            displayPrices[index].label,
             active,
             isThai,
             Boolean(onMarkerSelect),
-            listing.id === previewListingIdRef.current
+            listing.id === previewListingIdRef.current,
+            displayPrices[index].pin
           ),
           // The exact coordinate is the bottom tip of the marker, never the price label.
           offset: { x: 0, y: 0 },

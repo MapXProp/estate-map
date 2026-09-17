@@ -75,7 +75,7 @@ test('single offers and day/week/event rentals retain their periods; zero, missi
   )
 })
 
-test('map prices use compact millions only for dual offers while full prices retain currency conversion and rent units', () => {
+test('formatted prices retain currency conversion and rental units with optional compact text', () => {
   const prices = api.getPropertyPrices(city)
   assert.equal(
     api.propertyPricesText(prices, true, preferences().formatCurrencyFrom, true),
@@ -90,6 +90,21 @@ test('map prices use compact millions only for dual offers while full prices ret
     return `$${(value / 35).toFixed(2)}`
   }
   assert.equal(api.propertyPricesText(prices, false, converted), 'Sale $340000.00\nRent $1857.14/mo')
+})
+
+test('map pin text preserves exact amounts and rental periods without sale or rent prefixes', () => {
+  const prices = api.getPropertyPrices(city)
+  const before = plain(prices)
+  assert.equal(api.propertyPinPricesText(prices, true, preferences().formatCurrencyFrom), '11,900,000 บาท\n65,000 บาท/เดือน')
+  assert.equal(api.propertyPinPricesText(prices, false, value => `$${value.toLocaleString('en-US')}`), '$11,900,000\n$65,000/mo')
+  assert.equal(api.propertyPinPricesText(api.filterPropertyPrices(prices, ['rent']), true, preferences().formatCurrencyFrom), '65,000 บาท/เดือน')
+  assert.equal(api.propertyPinPricesText(api.filterPropertyPrices(prices, ['sale']), true, preferences().formatCurrencyFrom), '11,900,000 บาท')
+  for (const [unit, expected] of [['day', '/วัน'], ['week', '/สัปดาห์'], ['event_period', '/งาน']]) {
+    const rental = api.getPropertyPrices({ offer_type: 'rent', offer_amount: 1500, offer_price_unit: unit })
+    assert.equal(api.propertyPinPricesText(rental, true, preferences().formatCurrencyFrom), `1,500 บาท${expected}`)
+  }
+  assert.equal(api.propertyPinPricesText(api.getPropertyPrices({ ...city, price_on_request: true }), true, preferences().formatCurrencyFrom), 'สอบถามราคา')
+  assert.deepEqual(plain(prices), before)
 })
 
 test('all card/detail/footer variants render both labeled full amounts in Thai and English without duplicate units', () => {

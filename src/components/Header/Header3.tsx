@@ -121,6 +121,7 @@ const Header3: FC<Header3Props> = ({ className, hasBorderBottom = true, initSear
       {/* The header here */}
       <header
         ref={headerInnerRef}
+        data-top-nav-boundary
         className={clsx(
           'relative z-20 w-full bg-white dark:bg-neutral-900',
           hasBorderBottom && 'border-b border-neutral-100 dark:border-neutral-700',

@@ -151,7 +151,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       }
     },
   }
-  const formatCurrencyFrom = () => '315,000,000 บาท'
+  const { formatCurrencyFrom } = require('./helpers/property-prices.cjs').preferences()
   const router = { push: (...args) => navigation.push(args) }
   const imports = {
     react: hooks,
@@ -742,16 +742,22 @@ test('dot and price are separate accessible links, escape content and preserve n
   assert.equal((legacy.match(/<a\s/g) || []).length, 1)
 })
 
-test('dual-price pills show labeled sale and monthly rent without changing the property links or escaping', () => {
+test('dual-price pins show exact unlabeled amounts while accessible text retains sale and rent', () => {
+  const prices = require('./helpers/property-prices.cjs').prices.getPropertyPrices({
+    sale_price: 11900000, rent_price_monthly: 65000,
+  })
   for (const width of [390, 1440]) {
-    const h = harness(width)
-    const html = h.getMarkerHtml(listing, 'ขาย 11.9 ล้านบาท\nเช่า 65,000 บาท/เดือน', true, true, true, true)
+    const h = harness(width, 14, [{ ...listing, prices }])
+    const html = h.overlays.findLast(marker => marker.options?.icon?.html.includes('data-mapx-price-marker')).options.icon.html
     assert.match(html, /class="mapx-price-pill mapx-dual-price"/)
-    assert.match(html, /<span>ขาย 11.9 ล้านบาท<\/span><span>เช่า 65,000 บาท\/เดือน<\/span>/)
+    assert.match(html, /<span>11,900,000 บาท<\/span><span>65,000 บาท\/เดือน<\/span>/)
+    assert.match(html, /aria-label="[^"]*ขาย 11,900,000 บาท\nเช่า 65,000 บาท\/เดือน"/)
+    assert.doesNotMatch(html, /11\.9|ล้าน|<span>ขาย|<span>เช่า/)
     assert.equal((html.match(/<a\s/g) || []).length, 2)
     assert.equal((html.match(/aria-controls="map-property-preview"/g) || []).length, 2)
-    const unsafe = h.getMarkerHtml(listing, 'ขาย <script>x</script>\nเช่า <img src=x>', false, true, true, false)
+    const unsafe = h.getMarkerHtml(listing, 'ขาย <script>x</script>\nเช่า <img src=x>', false, true, true, false, '<script>x</script>\n<img src=x>')
     assert.ok(!unsafe.includes('<script>') && !unsafe.includes('<img src=x>'))
+    h.unmount()
   }
 })
 
