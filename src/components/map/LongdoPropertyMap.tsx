@@ -1160,8 +1160,8 @@ const LongdoPropertyMap = ({
         .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
         .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #176b50; border-color: #176b50; color: white; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #176b50; border-color: #176b50; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #123f32; border-color: #123f32; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #123f32; border-color: #123f32; color: white; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
         div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
@@ -1456,7 +1456,7 @@ const LongdoPropertyMap = ({
             event.isPrimary &&
             event.button === 0 &&
             target instanceof Element &&
-            !target.closest('a,button,input,select,textarea,[data-mapx-price-marker]')
+            !target.closest('a,button,input,select,textarea,[data-mapx-price-marker],[data-mapx-project-marker]')
               ? {
                   pointerId: event.pointerId,
                   x: event.clientX,

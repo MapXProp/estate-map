@@ -60,8 +60,8 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       this.classList = { toggle: (name, active) => (active ? this.classes.add(name) : this.classes.delete(name)) }
     }
     closest(selector) {
-      if (selector === 'a,button,input,select,textarea,[data-mapx-price-marker]')
-        return this.link || (this.isControl ? this : null)
+      if (selector === 'a,button,input,select,textarea,[data-mapx-price-marker],[data-mapx-project-marker]')
+        return this.link || (this.isControl || this.dataset.mapxProjectId ? this : null)
       return selector === '[data-map-canvas]'
         ? this
         : selector.startsWith('a[')
@@ -317,6 +317,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   calls.length = 0
   function linkTarget(action, markerIndex = 0) {
     if (action === 'map') return new Element()
+    if (action === 'project-shell') return projectRoots[markerIndex]
     if (action === 'control') {
       const node = new Element()
       node.isControl = true
@@ -844,6 +845,35 @@ test('marker and price taps, controls, panning, pinching, cancellation and long 
     h.render()
     assert.equal(dismissed, 0, action)
     assert.deepEqual(h.calls, [], action)
+  }
+})
+
+test('project deselection receives only deliberate background taps on touch and mouse', () => {
+  const units = [{ ...listing, projectPublicId: 'project-a', projectSlug: 'project-a', projectName: 'Project A' }]
+  for (const width of [390, 820, 1440]) {
+    const pointerType = width < 1024 ? 'touch' : 'mouse'
+    for (const action of ['tap', 'project', 'project-shell', 'control', 'pan', 'pinch', 'cancel', 'hold', 'right-click']) {
+      const h = harness(width, 14, units, true)
+      let dismissed = 0
+      h.render({ selectedProjectId: 'project-a', onMapBackgroundTap: () => dismissed++ })
+      h.startMapGesture({
+        pointerType,
+        action: ['project', 'project-shell', 'control'].includes(action) ? action : 'map',
+        button: action === 'right-click' ? 2 : 0,
+      })
+      if (action === 'pan') {
+        h.moveMapGesture({ clientX: 150 })
+        h.moveMapGesture({ clientX: 100 })
+      }
+      if (action === 'pinch') h.startMapGesture({ pointerType, pointerId: 2, isPrimary: false })
+      if (action === 'cancel') h.cancelMapGesture()
+      h.finishMapGesture({ pointerType, timeStamp: action === 'hold' ? 1000 : 300 })
+      assert.equal(dismissed, 0, 'wait for the SDK to finish the pointer gesture')
+      h.render()
+      assert.equal(dismissed, action === 'tap' ? 1 : 0, `${width}px ${action}`)
+      assert.deepEqual(h.calls, [], 'deselection does not issue camera commands')
+      h.unmount()
+    }
   }
 })
 

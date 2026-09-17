@@ -549,6 +549,15 @@ export default function PropertyMapSearch({
     setPreviewSelection(null)
     setHoveredId('')
   }, [])
+  const dismissMapSelection = useCallback(() => {
+    setHoveredProjectId('')
+    if (selectedProject) {
+      setSelectedProject(null)
+      setHoveredId('')
+      setMobilePanelOpen(false)
+    }
+    dismissMobilePreview()
+  }, [selectedProject, setMobilePanelOpen, dismissMobilePreview])
   const { panelRef } = useMapBottomSheet(mobileSheetSnap, previewListing?.id || selectedProject?.id, (next) => {
     setMobileSheetSnap(next)
     if (next !== 'peek' && mobileViewport) setPreviewSelection(null)
@@ -863,7 +872,7 @@ export default function PropertyMapSearch({
               onProjectSearchSelect={selectSearchedProject}
               selectedProjectId={selectedProject?.id}
               onMapInteraction={collapseCategories}
-              onMapBackgroundTap={dismissMobilePreview}
+              onMapBackgroundTap={dismissMapSelection}
               initialCenter={center}
               initialZoom={zoom}
               initialSearchQuery={initialMapCenter || initialProject ? '' : query}

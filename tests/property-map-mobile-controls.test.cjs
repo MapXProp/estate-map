@@ -514,6 +514,51 @@ test('project overview and map markers share hover state without opening a proje
   assert.equal(h.nodes((node) => node.type === 'test-project-panel')[0].props.identifier, 'project-b')
 })
 
+test('background taps clear an active project on phones, tablets and desktop while preserving map context', () => {
+  for (const width of [320, 390, 820, 1440]) {
+    for (const fromDeepLink of [false, true]) {
+      const h = harness(width, 'th', {
+        initialMapMode: 'projects',
+        initialProject: fromDeepLink ? 'project-a' : undefined,
+        initialFilters: { offerTypes: ['rent'], minPrice: '20000', maxPrice: '60000' },
+      })
+      const project = { id: 'project-a', slug: 'project-a', location: { lat: 13.7, lon: 100.5 } }
+      if (!fromDeepLink) h.map().onProjectSelect(project)
+      h.render()
+      h.map().onProjectHover(project.id)
+      h.nodes((node) => node.type === 'test-project-panel')[0].props.onHover('listing-a')
+      h.render()
+      const filterValue = () => h.nodes((node) => node.type === 'test-filters')[0].props.value
+      const filtersBefore = JSON.stringify(filterValue())
+
+      h.data('data-map-navigation', true).props.onClickCapture()
+      h.data('data-map-results-panel', true).props.onPointerDownCapture()
+      h.map().onMapInteraction()
+      h.render()
+      assert.equal(h.map().selectedProjectId, project.id, 'panel controls and panning keep the project open')
+
+      h.map().onMapBackgroundTap()
+      h.render()
+      assert.equal(h.map().selectedProjectId, undefined)
+      assert.equal(h.map().hoveredProjectId, '')
+      assert.equal(h.map().currentHoverID, '')
+      assert.equal(h.nodes((node) => node.type === 'test-project-panel').length, 0)
+      assert.equal(h.nodes((node) => node.type === 'test-project-results').length, 1)
+      assert.equal(h.data('data-map-results-panel', true).props['data-project-open'], false)
+      assert.equal(h.data('data-map-results-panel', true).props['data-sheet-snap'], 'peek')
+      assert.match(h.data('data-map-canvas', true).props.className, /panelVisible/)
+      assert.equal(h.map().mapMode, 'projects')
+      assert.equal(h.map().initialCenter, h.center)
+      assert.equal(h.map().initialZoom, 15)
+      assert.equal(JSON.stringify(filterValue()), filtersBefore)
+
+      h.map().onProjectSelect({ ...project, id: 'project-b' })
+      h.render()
+      assert.equal(h.nodes((node) => node.type === 'test-project-panel')[0].props.identifier, 'project-b')
+    }
+  }
+})
+
 test('selection keeps the phone top sheet and anchors tablet/desktop previews inside the map', () => {
   for (const width of [320, 390, 820, 1440]) {
     const h = harness(width)
