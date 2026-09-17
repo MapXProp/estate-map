@@ -5,13 +5,10 @@ import PropertyPrices from '@/components/PropertyPrices'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import type { PropertyPrice } from '@/lib/propertyPrices'
 import { Button } from '@/shared/Button'
-import ButtonClose from '@/shared/ButtonClose'
 import T from '@/utils/getT'
 import { CloseButton, Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
 import { Squares2X2Icon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
-import { EmblaOptionsType } from 'embla-carousel'
-import useEmblaCarousel from 'embla-carousel-react'
 import {
   Bath,
   BedDouble,
@@ -33,6 +30,7 @@ import Image from 'next/image'
 import { type TouchEvent as ReactTouchEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import ListingGalleryPreview from './ListingGalleryPreview'
 import PanoramaViewer from './PanoramaViewer'
+import SinglePhotoViewer from './SinglePhotoViewer'
 
 type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
 type PropertyMediaFilter = 'all' | PropertyMediaType
@@ -431,112 +429,6 @@ const ProgressiveMediaSections = ({
     ))}
   </div>
 )
-
-const EmblaCarousel = ({
-  images,
-  option,
-  imageAlt,
-}: {
-  images: string[]
-  option: EmblaOptionsType
-  imageAlt: string
-}) => {
-  const [selectedIndex, setSelectedIndex] = useState(option.startIndex ?? 0)
-  const [emblaMainRef, emblaMainApi] = useEmblaCarousel({
-    ...option,
-    direction: process.env.NEXT_PUBLIC_THEME_DIR,
-  })
-  const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
-    ...option,
-    containScroll: 'keepSnaps',
-    dragFree: true,
-    direction: process.env.NEXT_PUBLIC_THEME_DIR,
-  })
-
-  const onThumbClick = useCallback(
-    (index: number) => {
-      if (!emblaMainApi || !emblaThumbsApi) return
-      emblaMainApi.scrollTo(index)
-    },
-    [emblaMainApi, emblaThumbsApi]
-  )
-
-  const onSelect = useCallback(() => {
-    if (!emblaMainApi || !emblaThumbsApi) return
-    setSelectedIndex(emblaMainApi.selectedScrollSnap())
-    emblaThumbsApi.scrollTo(emblaMainApi.selectedScrollSnap())
-  }, [emblaMainApi, emblaThumbsApi, setSelectedIndex])
-
-  useEffect(() => {
-    if (!emblaMainApi) return
-    emblaMainApi.on('select', onSelect).on('reInit', onSelect)
-    return () => {
-      emblaMainApi.off('select', onSelect).off('reInit', onSelect)
-    }
-  }, [emblaMainApi, onSelect])
-
-  return (
-    <div className="relative size-full embla">
-      <div className="embla__viewport relative mx-auto size-full overflow-hidden" ref={emblaMainRef}>
-        <div className="embla__container size-full">
-          {images.map((image, index) => (
-            <div
-              className="relative z-50 flex embla__slide basis-full items-center justify-center px-3 py-16 sm:px-10"
-              key={index}
-            >
-              <Image
-                alt={`${imageAlt} รูปที่ ${index + 1}`}
-                src={image}
-                width={1280}
-                height={853}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-                className="max-h-[calc(100dvh-8rem)] w-auto max-w-full object-contain"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="absolute top-2.5 right-2.5 z-50 sm:top-4 sm:right-4">
-            <CloseButton as={ButtonClose}>
-              <span className="sr-only">Close</span>
-            </CloseButton>
-          </div>
-          <div className="absolute top-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-white/12 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
-            {selectedIndex + 1} / {images.length}
-          </div>
-        </div>
-      </div>
-
-      <div className="embla-thumbs fixed inset-x-0 bottom-5 z-10 hidden sm:block">
-        <div className="embla-thumbs__viewport mx-auto max-w-28" ref={emblaThumbsRef}>
-          <div className="embla-thumbs__container flex">
-            {images.map((image, index) => (
-              <div
-                key={index}
-                className={clsx(
-                  'relative flex aspect-5/3 w-24 shrink-0 items-center justify-center transition-[transform,filter] duration-300 ease-in-out',
-                  index === selectedIndex
-                    ? 'z-10 scale-125 overflow-hidden rounded-md brightness-100'
-                    : 'brightness-50 hover:brightness-75'
-                )}
-                onClick={() => onThumbClick(index)}
-              >
-                <Image
-                  alt={`${imageAlt} ภาพย่อที่ ${index + 1}`}
-                  src={image}
-                  fill
-                  sizes="100px"
-                  className={'object-cover'}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const MobilePhotoGallery = ({
   images,
@@ -1322,11 +1214,8 @@ const HeaderGallery = ({
 
         {/* Full-screen container to center the panel */}
         <div className="fixed inset-0 flex w-screen items-center justify-center">
-          <DialogPanel
-            transition
-            className="relative mx-auto h-full w-full max-w-7xl flex-1 transition data-closed:opacity-0"
-          >
-            <EmblaCarousel images={images} option={{ startIndex, slidesToScroll: 1 }} imageAlt={galleryImageAlt} />
+          <DialogPanel className="relative mx-auto h-full w-full max-w-7xl flex-1">
+            <SinglePhotoViewer images={images} initialIndex={startIndex} imageAlt={galleryImageAlt} />
           </DialogPanel>
         </div>
       </Dialog>
