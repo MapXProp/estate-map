@@ -5,12 +5,15 @@ const vm = require('node:vm')
 const { test } = require('node:test')
 const ts = require('typescript')
 
-function harness(variant) {
+function harness(variant, options = {}) {
   const slots = [],
     effects = [],
     timers = new Map(),
     navigation = [],
-    lookups = []
+    lookups = [],
+    localLookups = [],
+    scrollCalls = [],
+    viewportListeners = new Map()
   let cursor = 0,
     timerId = 0,
     tree,
@@ -50,12 +53,19 @@ function harness(variant) {
     'lucide-react': require('lucide-react'),
     'next/navigation': { useRouter: () => ({ push: (url) => navigation.push(url) }) },
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th' }) },
-    '@/lib/propertyRecentLocations': { getPropertyRecentLocations: () => [], savePropertyRecentLocation() {} },
+    '@/lib/propertyRecentLocations': {
+      getPropertyRecentLocations: () => options.recentLocations || [],
+      savePropertyRecentLocation() {},
+    },
     '@/lib/propertyRecentSearches': { getPropertyRecentSearches: () => [], savePropertyRecentSearch() {} },
     '@/lib/propertySearch': {
-      fetchPropertySearchSuggestions: async () => [],
+      fetchPropertySearchSuggestions: async (query, signal, config) => {
+        localLookups.push({ query, config })
+        return options.local ? options.local(query, signal) : []
+      },
       fetchLongdoPropertyLocationSuggestions: async (query) => {
         lookups.push(query)
+        if (options.external) return options.external(query)
         return [
           { type: 'longdo', query: `${query} กรุงเทพมหานคร`, label: `${query} กรุงเทพมหานคร`, description: 'longdo' },
         ]
@@ -72,6 +82,15 @@ function harness(variant) {
         return timerId
       },
       clearTimeout: (id) => timers.delete(id),
+      requestAnimationFrame: (fn) => {
+        timers.set(++timerId, fn)
+        return timerId
+      },
+      cancelAnimationFrame: (id) => timers.delete(id),
+      visualViewport: {
+        addEventListener: (name, fn) => viewportListeners.set(name, fn),
+        removeEventListener: (name) => viewportListeners.delete(name),
+      },
     },
     document: { addEventListener() {}, removeEventListener() {} },
     require: (id) => {
@@ -98,7 +117,9 @@ function harness(variant) {
       onSubmitQuery: () => {
         closed++
       },
+      ...options.props,
     })
+    tree.props.ref.current = { scrollIntoView: (config) => scrollCalls.push(config) }
     while (effects.length) effects.shift()()
   }
   function nodes(predicate) {
@@ -127,6 +148,9 @@ function harness(variant) {
   return {
     navigation,
     lookups,
+    localLookups,
+    scrollCalls,
+    viewportListeners,
     nodes,
     render,
     input,
@@ -159,6 +183,57 @@ test('desktop and mobile both offer external locations; tapping one submits its 
     assert.equal(url.searchParams.get('offer_type'), 'rent')
     assert.equal(h.closed(), 1)
   }
+})
+
+test('mobile place autocomplete uses location scope, exposes local matches before external lookup completes and reveals suggestions above the keyboard', async () => {
+  let resolveExternal
+  const h = harness('hero', {
+    props: { suggestionScope: 'location', scrollSuggestionsIntoView: true, showSuggestionsOnEmpty: true },
+    local: async () => [{ type: 'location', label: 'สาทร', query: 'สาทร', description: 'district' }],
+    external: () =>
+      new Promise((resolve) => {
+        resolveExternal = resolve
+      }),
+  })
+  h.type('สาทร')
+  await h.suggestions()
+  assert.equal(h.localLookups[0].config.scope, 'location')
+  assert.equal(h.input()['aria-autocomplete'], 'list')
+  assert.equal(h.input()['aria-expanded'], true)
+  assert.ok(h.nodes((node) => node.props?.role === 'option').length > 0, 'local match is already tappable')
+  assert.ok(h.scrollCalls.length > 0)
+  h.viewportListeners.get('resize')()
+  assert.equal(h.scrollCalls.at(-1).block, 'start')
+  resolveExternal([{ type: 'longdo', label: 'สาทร ซอย 1', query: 'สาทร ซอย 1', description: 'longdo' }])
+  await h.suggestions()
+  const results = h.nodes((node) => node.props?.role === 'option')
+  results[1].props.onClick()
+  assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), 'สาทร ซอย 1')
+})
+
+test('mobile empty field shows recent places and stale autocomplete responses cannot replace a newer place', async () => {
+  let oldResolve
+  const h = harness('hero', {
+    props: { suggestionScope: 'location', showSuggestionsOnEmpty: true },
+    recentLocations: [{ query: 'อารีย์', label: 'อารีย์', searchedAt: 100 }],
+    local: (query) =>
+      query === 'สาทร'
+        ? new Promise((resolve) => {
+            oldResolve = resolve
+          })
+        : Promise.resolve([{ type: 'location', label: query, query, description: 'district' }]),
+  })
+  h.input().onFocus()
+  h.render()
+  assert.equal(h.nodes((node) => node.props?.role === 'option').length, 1)
+  h.type('สาทร')
+  await h.suggestions()
+  h.type('บางนา')
+  await h.suggestions()
+  oldResolve([{ type: 'location', label: 'สาทร', query: 'สาทร', description: 'district' }])
+  await h.suggestions()
+  h.nodes((node) => node.props?.role === 'option')[0].props.onClick()
+  assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), 'บางนา')
 })
 
 test('typing another place removes old clickable suggestions; direct submission preserves the new query and filters', async () => {

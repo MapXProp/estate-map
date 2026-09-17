@@ -3,6 +3,7 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import type { PropertyTypeCode } from '@/data/propertyTaxonomy'
+import { useMobileSearchViewport } from '@/hooks/useMobileSearchViewport'
 import {
   getMobilePropertyMapSearchUrl,
   mobilePropertyCategories,
@@ -22,6 +23,7 @@ import {
   Hotel,
   House,
   HousePlus,
+  KeyRound,
   LandPlot,
   MapPin,
   Search,
@@ -31,10 +33,10 @@ import {
   X,
 } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import Slider from 'rc-slider'
 import { useEffect, useMemo, useState, type ComponentType, type SVGProps } from 'react'
 import MobileProjectSearchDialog from './MobileProjectSearchDialog'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
+import MobileSearchBudgetSheet, { emptySearchBudget, type SearchBudget } from './MobileSearchBudgetSheet'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type OfferType = '' | 'sale' | 'rent'
@@ -69,41 +71,6 @@ const categoryIcons: Record<PropertyTypeCode, ComponentType<SVGProps<SVGSVGEleme
   hotel_resort: Hotel,
   land: LandPlot,
 }
-
-type BudgetPreset = {
-  label: string
-  labelEn: string
-  term: string
-  termEn: string
-  min: number
-  max: number
-}
-
-type BudgetOfferType = Exclude<OfferType, ''>
-
-type BudgetConfig = {
-  min: number
-  max: number
-  priceScale: number[]
-  presets: BudgetPreset[]
-}
-
-const saleHomePriceScale = [
-  0, 500_000, 1_000_000, 1_500_000, 2_000_000, 3_000_000, 5_000_000, 7_500_000, 10_000_000, 15_000_000, 20_000_000,
-  30_000_000, 50_000_000, 75_000_000, 100_000_000,
-]
-const saleLargePriceScale = [...saleHomePriceScale, 150_000_000, 200_000_000]
-const rentRoomPriceScale = [
-  0, 2_000, 3_000, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000,
-]
-const rentHomePriceScale = [0, 5_000, 7_500, 10_000, 15_000, 20_000, 30_000, 50_000, 75_000, 100_000, 200_000, 500_000]
-const rentBusinessPriceScale = [0, 5_000, 10_000, 20_000, 30_000, 50_000, 100_000, 200_000, 500_000, 1_000_000]
-
-const offerTypes: Array<{ value: OfferType; label: string; labelEn: string; term: string; termEn: string }> = [
-  { value: '', label: 'ทั้งหมด', labelEn: 'All', term: '', termEn: '' },
-  { value: 'rent', label: 'เช่า', labelEn: 'Rent', term: 'เช่า', termEn: 'rent' },
-  { value: 'sale', label: 'ซื้อ', labelEn: 'Buy', term: 'ซื้อ', termEn: 'buy' },
-]
 
 const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: string }> = [
   { value: 'homes', label: 'บ้าน คอนโด & ที่อยู่อาศัย', labelEn: 'Homes' },
@@ -144,85 +111,6 @@ const propertyGroupTones: Record<
   },
 }
 
-const createBudgetPreset = (label: string, labelEn: string, min: number, max: number): BudgetPreset => ({
-  label,
-  labelEn,
-  term: `${min}-${max}`,
-  termEn: `${min}-${max}`,
-  min,
-  max,
-})
-
-const budgetConfigs: Record<PropertyGroup, Record<BudgetOfferType, BudgetConfig>> = {
-  homes: {
-    sale: {
-      min: 0,
-      max: 100_000_000,
-      priceScale: saleHomePriceScale,
-      presets: [
-        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to 3M THB', 0, 3_000_000),
-        createBudgetPreset('3–5 ล้าน', '3–5M THB', 3_000_000, 5_000_000),
-        createBudgetPreset('5–10 ล้าน', '5–10M THB', 5_000_000, 10_000_000),
-        createBudgetPreset('10 ล้านขึ้นไป', '10M THB+', 10_000_000, 100_000_000),
-      ],
-    },
-    rent: {
-      min: 0,
-      max: 500_000,
-      priceScale: rentHomePriceScale,
-      presets: [
-        createBudgetPreset('ไม่เกิน 10,000', 'Up to 10K THB', 0, 10_000),
-        createBudgetPreset('10,000–20,000', '10–20K THB', 10_000, 20_000),
-        createBudgetPreset('20,000–50,000', '20–50K THB', 20_000, 50_000),
-        createBudgetPreset('50,000 ขึ้นไป', '50K THB+', 50_000, 500_000),
-      ],
-    },
-  },
-  rooms: {
-    sale: {
-      min: 0,
-      max: 100_000_000,
-      priceScale: saleHomePriceScale,
-      presets: [],
-    },
-    rent: {
-      min: 0,
-      max: 200_000,
-      priceScale: rentRoomPriceScale,
-      presets: [
-        createBudgetPreset('ไม่เกิน 5,000', 'Up to 5K THB', 0, 5_000),
-        createBudgetPreset('5,000–10,000', '5–10K THB', 5_000, 10_000),
-        createBudgetPreset('10,000–20,000', '10–20K THB', 10_000, 20_000),
-        createBudgetPreset('20,000 ขึ้นไป', '20K THB+', 20_000, 200_000),
-      ],
-    },
-  },
-  business: {
-    sale: {
-      min: 0,
-      max: 200_000_000,
-      priceScale: saleLargePriceScale,
-      presets: [
-        createBudgetPreset('ไม่เกิน 3 ล้าน', 'Up to 3M THB', 0, 3_000_000),
-        createBudgetPreset('3–10 ล้าน', '3–10M THB', 3_000_000, 10_000_000),
-        createBudgetPreset('10–30 ล้าน', '10–30M THB', 10_000_000, 30_000_000),
-        createBudgetPreset('30 ล้านขึ้นไป', '30M THB+', 30_000_000, 200_000_000),
-      ],
-    },
-    rent: {
-      min: 0,
-      max: 1_000_000,
-      priceScale: rentBusinessPriceScale,
-      presets: [
-        createBudgetPreset('ไม่เกิน 20,000', 'Up to 20K THB', 0, 20_000),
-        createBudgetPreset('20,000–50,000', '20–50K THB', 20_000, 50_000),
-        createBudgetPreset('50,000–200,000', '50–200K THB', 50_000, 200_000),
-        createBudgetPreset('200,000 ขึ้นไป', '200K THB+', 200_000, 1_000_000),
-      ],
-    },
-  },
-}
-
 const formatPrice = (value: number, isThai: boolean) => {
   if (value >= 1_000_000) {
     const millions = value / 1_000_000
@@ -249,14 +137,13 @@ const MobilePropertySearch = ({
   const mapQuery = searchParams.get('q')?.trim() || ''
   const activePropertyGroup: PropertyGroup = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const [open, setOpen] = useState(false)
+  const searchPanelRef = useMobileSearchViewport(open)
   const [projectSearchOpen, setProjectSearchOpen] = useState(false)
   const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(activePropertyGroup)
   const [offerType, setOfferType] = useState<OfferType>(activePropertyGroup === 'rooms' ? 'rent' : '')
   const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<MobilePropertyCategory[]>([])
-  const [budget, setBudget] = useState<BudgetPreset | null>(null)
+  const [budget, setBudget] = useState<SearchBudget>(emptySearchBudget)
   const [budgetOpen, setBudgetOpen] = useState(false)
-  const [budgetOfferType, setBudgetOfferType] = useState<OfferType>('')
-  const [budgetRange, setBudgetRange] = useState<[number, number]>([0, budgetConfigs[activePropertyGroup].sale.max])
 
   useEffect(() => {
     // Navigation changes are external to this persistent header, so reset its draft filters to the new route context.
@@ -264,11 +151,10 @@ const MobilePropertySearch = ({
     setPropertyGroup(activePropertyGroup)
     setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
     setSelectedPropertyTypes([])
-    setBudget(null)
+    setBudget(emptySearchBudget)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [activePropertyGroup])
 
-  const selectedOffer = useMemo(() => offerTypes.find((item) => item.value === offerType) ?? offerTypes[0], [offerType])
   const visiblePropertyTypes = useMemo(
     () => mobilePropertyCategories.filter((property) => property.channel === propertyGroup),
     [propertyGroup]
@@ -282,96 +168,30 @@ const MobilePropertySearch = ({
     )
   }
 
-  const openBudget = () => {
-    const config = budgetConfigs[propertyGroup][offerType || 'sale']
-    setBudgetOfferType(offerType)
-    setBudgetRange(budget && offerType ? [budget.min, budget.max] : [config.min, config.max])
-    setBudgetOpen(true)
-  }
-
-  const chooseBudgetOffer = (value: OfferType) => {
-    setBudgetOfferType(value)
-    if (!value) {
-      const config = budgetConfigs[propertyGroup].sale
-      setBudgetRange([config.min, config.max])
-      return
-    }
-    const config = budgetConfigs[propertyGroup][value]
-    setBudgetRange(offerType === value && budget ? [budget.min, budget.max] : [config.min, config.max])
-  }
-
-  const applyBudget = () => {
-    if (!budgetOfferType) {
-      setOfferType('')
-      setBudget(null)
-      setBudgetOpen(false)
-      return
-    }
-
-    const config = budgetConfigs[propertyGroup][budgetOfferType]
-    const [min, max] = budgetRange
-    const hasMin = min > config.min
-    const hasMax = max < config.max
-    let nextBudget: BudgetPreset | null = null
-
-    if (hasMin || hasMax) {
-      const label =
-        hasMin && hasMax
-          ? `${formatPrice(min, true)}–${formatPrice(max, true)}`
-          : hasMin
-            ? `ตั้งแต่ ${formatPrice(min, true)}`
-            : `ไม่เกิน ${formatPrice(max, true)}`
-      const labelEn =
-        hasMin && hasMax
-          ? `${formatPrice(min, false)}–${formatPrice(max, false)}`
-          : hasMin
-            ? `From ${formatPrice(min, false)}`
-            : `Up to ${formatPrice(max, false)}`
-      nextBudget = {
-        label,
-        labelEn,
-        term: hasMin && hasMax ? `${min}-${max}` : hasMin ? `ตั้งแต่ ${min}` : `ไม่เกิน ${max}`,
-        termEn: hasMin && hasMax ? `${min}-${max}` : hasMin ? `from ${min}` : `under ${max}`,
-        min,
-        max,
-      }
-    }
-
-    setOfferType(budgetOfferType)
-    setBudget(nextBudget)
-    setBudgetOpen(false)
-  }
+  const openBudget = () => setBudgetOpen(true)
 
   const buildMapSearchUrl = (query: string) => {
-    const config = budgetConfigs[propertyGroup][offerType || 'sale']
     return getMobilePropertyMapSearchUrl({
       query,
       channel: propertyGroup,
       selectedCategories: selectedPropertyTypes.map((property) => property.value),
       offerType,
-      minPrice: budget && budget.min > config.min ? budget.min : undefined,
-      maxPrice: budget && budget.max < config.max ? budget.max : undefined,
+      minPrice: budget.minPrice ? Number(budget.minPrice) : undefined,
+      maxPrice: budget.maxPrice ? Number(budget.maxPrice) : undefined,
     })
   }
 
-  const hasQuickFilters = Boolean(offerType || selectedPropertyTypes.length || budget)
-  const draftBudgetConfig = budgetConfigs[propertyGroup][budgetOfferType || 'sale']
-  const draftSliderValue: [number, number] = [
-    Math.max(0, draftBudgetConfig.priceScale.indexOf(budgetRange[0])),
-    Math.max(0, draftBudgetConfig.priceScale.indexOf(budgetRange[1])),
-  ]
-  const draftHasMin = budgetRange[0] > draftBudgetConfig.min
-  const draftHasMax = budgetRange[1] < draftBudgetConfig.max
-  const draftBudgetSummary =
-    draftHasMin && draftHasMax
-      ? `${formatPrice(budgetRange[0], isThai)} – ${formatPrice(budgetRange[1], isThai)}`
-      : draftHasMin
-        ? `${isThai ? 'ตั้งแต่' : 'From'} ${formatPrice(budgetRange[0], isThai)}`
-        : draftHasMax
-          ? `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(budgetRange[1], isThai)}`
-          : isThai
-            ? 'ไม่จำกัดงบ'
-            : 'Any budget'
+  const hasBudget = Boolean(budget.minPrice || budget.maxPrice)
+  const hasQuickFilters = Boolean(offerType || selectedPropertyTypes.length || hasBudget)
+  const offerLabel = offerType === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'
+  const budgetLabel =
+    budget.minPrice && budget.maxPrice
+      ? `${formatPrice(Number(budget.minPrice), isThai)}–${formatPrice(Number(budget.maxPrice), isThai)}`
+      : budget.minPrice
+        ? `${isThai ? 'ตั้งแต่' : 'From'} ${formatPrice(Number(budget.minPrice), isThai)}`
+        : budget.maxPrice
+          ? `${isThai ? 'ไม่เกิน' : 'Up to'} ${formatPrice(Number(budget.maxPrice), isThai)}`
+          : ''
 
   const openMapFilters = () => {
     window.dispatchEvent(new Event('mapx:open-property-filters'))
@@ -405,11 +225,11 @@ const MobilePropertySearch = ({
             <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
               {hasQuickFilters
                 ? [
-                    offerType ? (isThai ? selectedOffer.label : selectedOffer.labelEn) : null,
+                    offerType ? offerLabel : null,
                     selectedPropertyTypes.length
                       ? selectedPropertyTypes.map((property) => (isThai ? property.label : property.labelEn)).join(', ')
                       : null,
-                    budget ? (isThai ? budget.label : budget.labelEn) : null,
+                    budgetLabel || null,
                   ]
                     .filter(Boolean)
                     .join(' · ')
@@ -454,25 +274,29 @@ const MobilePropertySearch = ({
         )}
       </div>
 
-      <Dialog open={open} onClose={setOpen} className="relative z-[100] min-[744px]:hidden">
+      <Dialog
+        open={open}
+        onClose={() => {
+          if (!budgetOpen) setOpen(false)
+        }}
+        className="relative z-[100] min-[744px]:hidden"
+      >
         <DialogPanel
+          ref={searchPanelRef}
           transition
-          className="fixed inset-0 flex h-[100dvh] flex-col overflow-hidden bg-[#f4f5f6] text-neutral-950 transition duration-200 dark:bg-neutral-950 dark:text-white data-closed:translate-y-8 data-closed:opacity-0"
+          className="fixed inset-x-0 top-[var(--search-viewport-top,0px)] flex h-[var(--search-viewport-height,100dvh)] flex-col overflow-hidden bg-[#f4f5f6] text-neutral-950 transition duration-200 dark:bg-neutral-950 dark:text-white data-closed:translate-y-8 data-closed:opacity-0"
         >
           <div className="flex items-center justify-between border-b border-neutral-200/80 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
             <div>
               <DialogTitle className="text-lg font-semibold">
                 {isThai ? 'วันนี้กำลังมองหาอะไร?' : 'What are you looking for today?'}
               </DialogTitle>
-              <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {isThai ? 'เลือกเส้นทาง ประเภท งบประมาณ และทำเล' : 'Choose a path, property type, budget, and location'}
-              </p>
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label={isThai ? 'ปิด' : 'Close'}
-              className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
+              className="grid size-11 place-items-center rounded-full border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
             >
               <X className="size-5" />
             </button>
@@ -497,7 +321,7 @@ const MobilePropertySearch = ({
                         setPropertyGroup(group.value)
                         setPropertyZone(group.value)
                         setSelectedPropertyTypes([])
-                        setBudget(null)
+                        setBudget(emptySearchBudget)
                         setOfferType(group.value === 'rooms' ? 'rent' : '')
                       }}
                       aria-pressed={active}
@@ -543,7 +367,7 @@ const MobilePropertySearch = ({
                       setPropertyGroup(activePropertyGroup)
                       setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
                       setSelectedPropertyTypes([])
-                      setBudget(null)
+                      setBudget(emptySearchBudget)
                     }}
                     className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
                   >
@@ -588,40 +412,52 @@ const MobilePropertySearch = ({
               </div>
             </section>
 
-            <section className="mt-5">
-              <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                {isThai ? 'งบประมาณ' : 'Budget'}
-              </h2>
+            <section
+              className="mt-5 flex flex-wrap items-start gap-2"
+              aria-label={isThai ? 'ซื้อ เช่า และงบประมาณ' : 'Buy, rent and budget'}
+            >
+              <div
+                className="inline-flex shrink-0 gap-0.5 rounded-2xl border border-[#d8e5dd] bg-white p-1 dark:border-neutral-700 dark:bg-neutral-900"
+                role="group"
+                aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
+              >
+                {(['sale', 'rent'] as const)
+                  .filter((offer) => propertyGroup !== 'rooms' || offer === 'rent')
+                  .map((offer) => {
+                    const active = !offerType || offerType === offer
+                    const Icon = offer === 'sale' ? House : KeyRound
+                    return (
+                      <button
+                        key={offer}
+                        type="button"
+                        data-mobile-search-offer={offer}
+                        aria-pressed={active}
+                        onClick={() => {
+                          if (offerType !== offer) {
+                            setOfferType(offer)
+                            setBudget(emptySearchBudget)
+                          }
+                        }}
+                        className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium ${active ? 'bg-[#e5f0e9] text-[#123f32] ring-1 ring-[#c5dbcf] dark:bg-emerald-950 dark:text-emerald-200' : 'text-neutral-500 dark:text-neutral-400'}`}
+                      >
+                        <Icon className="size-4.5" strokeWidth={1.8} />
+                        {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
+                      </button>
+                    )
+                  })}
+              </div>
               <button
                 type="button"
                 data-mobile-search-budget
                 onClick={openBudget}
-                className={`mt-2 flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 text-start transition ${
-                  offerType || budget
-                    ? 'border-orange-300 bg-orange-50 text-orange-950 dark:border-orange-800 dark:bg-orange-950/30 dark:text-orange-100'
-                    : 'border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900'
-                }`}
+                className={`flex min-h-[54px] min-w-[116px] flex-1 items-center gap-2 rounded-2xl border bg-white px-3 text-start text-sm dark:bg-neutral-900 ${hasBudget ? 'border-neutral-800 dark:border-neutral-300' : 'border-neutral-200 dark:border-neutral-700'}`}
               >
-                <span className="grid size-9 place-items-center rounded-full bg-[#f7efe2] text-[#946728] dark:bg-amber-950/50 dark:text-amber-200">
-                  <Banknote className="size-4.5" />
-                </span>
+                <Banknote className="size-4.5 shrink-0 text-neutral-500" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold">
-                    {isThai ? selectedOffer.label : selectedOffer.labelEn}
-                    <span className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
-                    {budget ? (isThai ? budget.label : budget.labelEn) : isThai ? 'ไม่จำกัดงบ' : 'Any budget'}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                    {isThai
-                      ? 'เลือกทั้งหมด เช่า หรือซื้อ พร้อมกำหนดช่วงราคา'
-                      : 'Choose all, rent, or buy and set a price range'}
-                  </span>
+                  <span className="block font-medium">{isThai ? 'งบประมาณ' : 'Budget'}</span>
+                  {hasBudget && <span className="block py-1 text-xs leading-5">{budgetLabel}</span>}
                 </span>
-                {offerType || budget ? (
-                  <Check className="size-5 shrink-0 text-[#176b50] dark:text-emerald-300" strokeWidth={2.5} />
-                ) : (
-                  <ChevronRight className="size-5 shrink-0 text-neutral-400" />
-                )}
+                <ChevronRight className="size-4 shrink-0 text-neutral-400" />
               </button>
             </section>
 
@@ -634,7 +470,9 @@ const MobilePropertySearch = ({
                 buildSearchUrl={buildMapSearchUrl}
                 allowEmptyQuery
                 suggestionsMode="inline"
-                showSuggestionsOnEmpty={false}
+                suggestionScope="location"
+                scrollSuggestionsIntoView
+                showTypeLabels
                 placeholder={isThai ? 'จังหวัด เขต ย่าน หรือชื่อโครงการ' : 'Province, area, or project name'}
                 onSubmitQuery={() => setOpen(false)}
               />
@@ -642,194 +480,14 @@ const MobilePropertySearch = ({
           </div>
 
           {budgetOpen && (
-            <div className="fixed inset-0 z-[120] flex items-end" role="dialog" aria-modal="true">
-              <button
-                type="button"
-                aria-label={isThai ? 'ปิดงบประมาณ' : 'Close budget'}
-                onClick={() => setBudgetOpen(false)}
-                className="absolute inset-0 bg-neutral-950/30"
-              />
-              <div className="relative z-10 max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-[30px] bg-[#fbfcfb] px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl dark:bg-neutral-900">
-                <div className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{isThai ? 'งบประมาณ' : 'Budget'}</h2>
-                    <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      {isThai ? 'เลือกช่วงแนะนำ หรือเลื่อนราคาให้ตรงใจ' : 'Choose a range or fine-tune your own prices'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setBudgetOpen(false)}
-                    className="grid size-9 place-items-center rounded-full bg-neutral-100 dark:bg-neutral-800"
-                  >
-                    <X className="size-4.5" />
-                  </button>
-                </div>
-
-                <div
-                  className={`mt-4 grid gap-1.5 rounded-[20px] border border-[#d6e4df] bg-[#f1f7f4] p-1.5 dark:border-emerald-900/70 dark:bg-emerald-950/25 ${propertyGroup === 'rooms' ? 'grid-cols-1' : 'grid-cols-3'}`}
-                >
-                  {offerTypes
-                    .filter((offer) => propertyGroup !== 'rooms' || offer.value === 'rent')
-                    .map((offer) => {
-                      const active = budgetOfferType === offer.value
-                      return (
-                        <button
-                          key={offer.value || 'all'}
-                          type="button"
-                          data-mobile-budget-offer={offer.value || 'all'}
-                          onClick={() => chooseBudgetOffer(offer.value)}
-                          className={`min-h-11 rounded-2xl px-2 text-sm font-semibold transition ${
-                            active
-                              ? 'bg-[#176b50] text-white shadow-[0_7px_18px_rgba(23,107,80,0.18)] dark:bg-emerald-200 dark:text-emerald-950'
-                              : 'text-neutral-500 active:bg-white/80 dark:text-neutral-400 dark:active:bg-neutral-800'
-                          }`}
-                        >
-                          {isThai ? offer.label : offer.labelEn}
-                        </button>
-                      )
-                    })}
-                </div>
-
-                {budgetOfferType ? (
-                  <>
-                    <div className="mt-5 flex items-end justify-between gap-3">
-                      <div>
-                        <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                          {isThai ? 'ช่วงราคาแนะนำ' : 'Suggested ranges'}
-                        </h3>
-                        <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                          {budgetOfferType === 'rent'
-                            ? isThai
-                              ? 'ราคาต่อเดือน'
-                              : 'Monthly price'
-                            : isThai
-                              ? 'ราคาขายรวม'
-                              : 'Total sale price'}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setBudgetRange([draftBudgetConfig.min, draftBudgetConfig.max])}
-                        className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
-                      >
-                        {isThai ? 'ไม่จำกัดงบ' : 'Any budget'}
-                      </button>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      {draftBudgetConfig.presets.map((preset) => {
-                        const active = budgetRange[0] === preset.min && budgetRange[1] === preset.max
-                        return (
-                          <button
-                            key={preset.term}
-                            type="button"
-                            data-mobile-budget-preset={`${preset.min}-${preset.max}`}
-                            onClick={() => setBudgetRange([preset.min, preset.max])}
-                            className={`min-h-11 rounded-2xl border px-2.5 text-sm font-semibold transition ${
-                              active
-                                ? 'border-[#176b50] bg-[#f1f7f4] text-[#123f32] ring-1 ring-[#176b50] dark:border-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-100'
-                                : 'border-neutral-200 bg-white text-neutral-600 active:border-[#9fc2b5] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
-                            }`}
-                          >
-                            {isThai ? preset.label : preset.labelEn}
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    <div className="mt-5 rounded-[22px] border border-neutral-200 bg-neutral-50 px-4 pt-4 pb-5 dark:border-neutral-700 dark:bg-neutral-800/70">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-semibold">
-                            {isThai ? 'กำหนดช่วงราคาเอง' : 'Set your own range'}
-                          </h3>
-                          <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-                            {isThai
-                              ? 'ลากจุดซ้ายและขวาเพื่อเลือกราคาต่ำสุด–สูงสุด'
-                              : 'Drag both handles to set min–max'}
-                          </p>
-                        </div>
-                        <span className="shrink-0 rounded-full bg-[#f1f7f4] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200">
-                          {draftBudgetSummary}
-                        </span>
-                      </div>
-
-                      <div className="px-2 pt-7 pb-3">
-                        <Slider
-                          range
-                          allowCross={false}
-                          min={0}
-                          max={draftBudgetConfig.priceScale.length - 1}
-                          step={1}
-                          value={draftSliderValue}
-                          onChange={(value) => {
-                            const [minIndex, maxIndex] = value as [number, number]
-                            setBudgetRange([
-                              draftBudgetConfig.priceScale[minIndex],
-                              draftBudgetConfig.priceScale[maxIndex],
-                            ])
-                          }}
-                          styles={{
-                            rail: { height: 6, backgroundColor: '#e5e7eb' },
-                            track: { height: 6, backgroundColor: '#2a8063' },
-                            handle: {
-                              width: 24,
-                              height: 24,
-                              marginTop: -9,
-                              border: '3px solid #2a8063',
-                              backgroundColor: '#ffffff',
-                              boxShadow: '0 3px 12px rgba(42,128,99,0.22)',
-                              opacity: 1,
-                            },
-                          }}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl bg-white px-3 py-2.5 dark:bg-neutral-900">
-                          <span className="block text-[11px] text-neutral-500 dark:text-neutral-400">
-                            {isThai ? 'ราคาต่ำสุด' : 'Minimum'}
-                          </span>
-                          <span className="mt-0.5 block text-sm font-semibold">
-                            {draftHasMin ? formatPrice(budgetRange[0], isThai) : isThai ? 'ไม่กำหนด' : 'No minimum'}
-                          </span>
-                        </div>
-                        <div className="rounded-2xl bg-white px-3 py-2.5 dark:bg-neutral-900">
-                          <span className="block text-[11px] text-neutral-500 dark:text-neutral-400">
-                            {isThai ? 'ราคาสูงสุด' : 'Maximum'}
-                          </span>
-                          <span className="mt-0.5 block text-sm font-semibold">
-                            {draftHasMax ? formatPrice(budgetRange[1], isThai) : isThai ? 'ไม่กำหนด' : 'No maximum'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-5 rounded-[22px] border border-dashed border-[#b9d2c8] bg-[#f1f7f4] px-5 py-6 text-center dark:border-emerald-900 dark:bg-emerald-950/20">
-                    <span className="mx-auto grid size-10 place-items-center rounded-full bg-white text-[#176b50] shadow-sm dark:bg-neutral-900 dark:text-emerald-300">
-                      <Check className="size-5" />
-                    </span>
-                    <p className="mt-3 text-sm font-semibold">
-                      {isThai ? 'ดูประกาศทุกแบบ ทุกช่วงราคา' : 'See every offer and price'}
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                      {isThai ? 'หากต้องการกำหนดงบ กรุณาเลือกซื้อหรือเช่า' : 'Choose Buy or Rent to set a budget'}
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={applyBudget}
-                  className="mt-5 min-h-13 w-full rounded-2xl bg-[#123f32] px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(18,63,50,0.22)] transition active:scale-[0.99] dark:bg-emerald-200 dark:text-emerald-950"
-                >
-                  {isThai ? 'ใช้งบนี้' : 'Use this budget'}
-                </button>
-              </div>
-            </div>
+            <MobileSearchBudgetSheet
+              value={budget}
+              onApply={setBudget}
+              onClose={() => setBudgetOpen(false)}
+              offerType={offerType}
+              rentalRooms={propertyGroup === 'rooms'}
+              th={isThai}
+            />
           )}
         </DialogPanel>
       </Dialog>

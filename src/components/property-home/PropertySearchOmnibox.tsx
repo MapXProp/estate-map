@@ -25,6 +25,8 @@ type Props = {
   allowEmptyQuery?: boolean
   showTypeLabels?: boolean
   suggestionsMode?: 'popover' | 'inline'
+  suggestionScope?: 'all' | 'location'
+  scrollSuggestionsIntoView?: boolean
   showSuggestionsOnEmpty?: boolean
   placeholder?: string
   children?: ReactNode
@@ -127,6 +129,8 @@ const PropertySearchOmnibox = ({
   allowEmptyQuery = false,
   showTypeLabels = false,
   suggestionsMode = 'popover',
+  suggestionScope = 'all',
+  scrollSuggestionsIntoView = false,
   showSuggestionsOnEmpty = true,
   placeholder,
   children,
@@ -135,6 +139,7 @@ const PropertySearchOmnibox = ({
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const isHeader = variant === 'header'
+  const useRecents = isHeader || suggestionScope === 'location'
   const integratedHeader = isHeader && Boolean(children)
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -149,7 +154,7 @@ const PropertySearchOmnibox = ({
   useEffect(() => {
     if (!focused || (!showSuggestionsOnEmpty && !normalizedQuery)) return
 
-    if (isHeader && !normalizedQuery) return
+    if (useRecents && !normalizedQuery) return
 
     const controller = new AbortController()
     const timer = window.setTimeout(
@@ -157,9 +162,12 @@ const PropertySearchOmnibox = ({
         setLoading(true)
         const localItems = await fetchPropertySearchSuggestions(normalizedQuery, controller.signal, {
           limit: isHeader ? 8 : undefined,
-          scope: 'all',
+          scope: suggestionScope,
         })
         if (controller.signal.aborted) return
+
+        // Local matches stay tappable while external place results are still loading.
+        setSuggestions(dedupeSuggestions(localItems, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
 
         let items = localItems
         if (Array.from(normalizedQuery).length >= 3) {
@@ -183,9 +191,8 @@ const PropertySearchOmnibox = ({
               }
             }
             if (controller.signal.aborted) return
-            items = externalLocationPattern.test(normalizedQuery)
-              ? [...(longdoItems || []), ...localItems]
-              : [...localItems, ...(longdoItems || [])]
+            // Append new matches so a visible row never moves under a user's finger.
+            items = [...localItems, ...(longdoItems || [])]
           }
         }
 
@@ -198,7 +205,18 @@ const PropertySearchOmnibox = ({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [focused, isHeader, isThai, normalizedQuery, showSuggestionsOnEmpty])
+  }, [focused, isHeader, isThai, normalizedQuery, showSuggestionsOnEmpty, suggestionScope, useRecents])
+
+  useEffect(() => {
+    if (!focused || !scrollSuggestionsIntoView) return
+    const reveal = () => rootRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    const frame = window.requestAnimationFrame(reveal)
+    window.visualViewport?.addEventListener('resize', reveal)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.visualViewport?.removeEventListener('resize', reveal)
+    }
+  }, [focused, scrollSuggestionsIntoView])
 
   useEffect(() => {
     const close = (event: PointerEvent) => {
@@ -216,7 +234,7 @@ const PropertySearchOmnibox = ({
       setFocused(true)
       return
     }
-    if (isHeader && rawValue) {
+    if (useRecents && rawValue) {
       savePropertyRecentSearch(
         rawValue,
         selectedSuggestion?.label || rawValue,
@@ -305,7 +323,14 @@ const PropertySearchOmnibox = ({
   }[tone]
 
   return (
-    <div ref={rootRef} className={integratedHeader ? styles.integratedRoot : 'relative w-full'}>
+    <div
+      ref={rootRef}
+      className={
+        integratedHeader
+          ? styles.integratedRoot
+          : `relative w-full ${scrollSuggestionsIntoView && focused ? 'min-h-[min(560px,80dvh)] scroll-mt-3' : ''}`
+      }
+    >
       <form
         data-property-search-form
         data-integrated-search={integratedHeader || undefined}
@@ -330,7 +355,7 @@ const PropertySearchOmnibox = ({
           onFocus={() => {
             setFocused(true)
             setActiveIndex(-1)
-            if (isHeader && !normalizedQuery) {
+            if (useRecents && !normalizedQuery) {
               setSuggestions(recentHeaderSuggestions(isThai))
               setLoading(false)
             }
@@ -339,13 +364,18 @@ const PropertySearchOmnibox = ({
             const nextQuery = event.target.value
             setQuery(nextQuery)
             setActiveIndex(-1)
-            setSuggestions(isHeader && !nextQuery.trim() ? recentHeaderSuggestions(isThai) : [])
+            setSuggestions(useRecents && !nextQuery.trim() ? recentHeaderSuggestions(isThai) : [])
             setLoading(Boolean(nextQuery.trim()))
           }}
           onKeyDown={handleInputKeyDown}
           aria-label={isThai ? 'ค้นหาอสังหาริมทรัพย์' : 'Search properties'}
           role="combobox"
-          aria-expanded={focused}
+          aria-autocomplete="list"
+          aria-expanded={
+            focused &&
+            (showSuggestionsOnEmpty || Boolean(normalizedQuery)) &&
+            (loading || suggestions.length > 0 || Boolean(normalizedQuery))
+          }
           aria-controls={listboxId}
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined}
           autoComplete="off"
@@ -409,7 +439,7 @@ const PropertySearchOmnibox = ({
                 ? isThai
                   ? 'ผลการค้นหา'
                   : 'Search suggestions'
-                : isHeader
+                : useRecents
                   ? isThai
                     ? 'ค้นหาล่าสุด'
                     : 'Recent searches'
