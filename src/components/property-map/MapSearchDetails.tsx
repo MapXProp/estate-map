@@ -78,17 +78,24 @@ export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }
         >
           <header
             data-sheet-drag-handle
-            className={`${sheetStyles.handle} flex min-h-14 shrink-0 items-center justify-between gap-4 border-b border-neutral-100 px-5 py-1.5 sm:px-6 dark:border-neutral-800`}
+            className={`${sheetStyles.handle} grid min-h-14 shrink-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 border-b border-neutral-100 px-5 py-1.5 sm:px-6 dark:border-neutral-800`}
           >
-            <span className={sheetStyles.grip} aria-hidden="true" />
-            <DialogTitle className="text-base font-semibold">{th ? 'ปรับตัวกรอง' : 'Refine your search'}</DialogTitle>
+            <span className={`${sheetStyles.grip} lg:hidden`} aria-hidden="true" />
+            <DialogTitle className="col-start-2 row-start-1 min-w-0 text-center text-base font-semibold">
+              {th ? 'ปรับตัวกรอง' : 'Refine your search'}
+            </DialogTitle>
             <button
               type="button"
               onClick={dismiss}
               aria-label={th ? 'ปิดตัวกรอง' : 'Close filters'}
-              className="grid size-11 shrink-0 place-items-center rounded-full bg-neutral-100/80 text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white"
+              className="group col-start-3 row-start-1 grid size-11 place-items-center rounded-full text-neutral-500 transition hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:text-neutral-400 dark:hover:text-white"
             >
-              <X className="size-5" />
+              <span
+                aria-hidden="true"
+                className="grid size-8 place-items-center rounded-full bg-neutral-100/70 transition group-hover:bg-neutral-200 group-active:bg-neutral-200 dark:bg-neutral-800 dark:group-hover:bg-neutral-700 dark:group-active:bg-neutral-700"
+              >
+                <X className="size-4.5" strokeWidth={1.75} />
+              </span>
             </button>
           </header>
           <div
