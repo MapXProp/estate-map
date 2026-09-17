@@ -1161,7 +1161,7 @@ const LongdoPropertyMap = ({
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
         .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
         .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #176b50; border-color: #176b50; color: white; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #f2f8f4; border-color: #c5dbcf; color: #176b50; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #176b50; border-color: #176b50; color: white; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
         div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
