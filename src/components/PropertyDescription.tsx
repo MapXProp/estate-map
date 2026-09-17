@@ -1,4 +1,4 @@
-import { propertyDescriptionSections } from '@/lib/propertyDetailPresentation'
+import { isPropertyLocationHeading, propertyDescriptionSections } from '@/lib/propertyDetailPresentation'
 import { ChevronDown } from 'lucide-react'
 
 const headings = new Set([
@@ -17,14 +17,18 @@ export default function PropertyDescription({
   className = '',
   collapsible = false,
   isThai = true,
+  separateLocation = false,
 }: {
   text: string
   className?: string
   collapsible?: boolean
   isThai?: boolean
+  separateLocation?: boolean
 }) {
   if (collapsible) {
-    const sections = propertyDescriptionSections(text)
+    const sections = propertyDescriptionSections(text).filter(
+      (section) => !separateLocation || !isPropertyLocationHeading(section.heading)
+    )
     const introduction = sections[0]?.paragraphs[0]
     const remaining = sections
       .map((section, index) => ({

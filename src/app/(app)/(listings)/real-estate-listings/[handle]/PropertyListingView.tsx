@@ -3,6 +3,7 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingLocationSection from '@/components/property-home/ListingLocationSection'
 import PropertyDescription from '@/components/PropertyDescription'
 import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
@@ -15,7 +16,6 @@ import {
   BedDouble,
   Building2,
   CarFront,
-  ExternalLink,
   Mail,
   MapPin,
   Maximize2,
@@ -252,7 +252,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                     <span className="hidden min-[744px]:inline">
                       {[district, province].filter(Boolean).join(' · ')}{' '}
                       <span className="ml-2 text-[#176b50] underline underline-offset-4">
-                        {isThai ? 'ดูทำเล' : 'View location'}
+                        {isThai ? 'ดูแผนที่' : 'View map'}
                       </span>
                     </span>
                   </div>
@@ -301,10 +301,13 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <PropertyDescription
                 text={description}
                 collapsible
+                separateLocation
                 isThai={isThai}
                 className="mt-4 font-sarabun text-[15px]"
               />
             </section>
+
+            <ListingLocationSection listing={listing} isThai={isThai} className={`${styles.section} mt-8`} />
 
             {listing.amenities.length ? (
               <section className="mt-10 border-t border-neutral-200 pt-8 dark:border-neutral-800">
@@ -321,31 +324,6 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                     </span>
                   ))}
                 </div>
-              </section>
-            ) : null}
-
-            {mapURL || fullAddress ? (
-              <section
-                id="listing-location"
-                className={`${styles.section} mt-8 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-5 sm:p-6 dark:border-[#205e30] dark:bg-[#173520]`}
-              >
-                <h2 className="flex items-center gap-2 font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
-                  <MapPin className="size-5 text-[#176b50] dark:text-[#8bd49c]" />{' '}
-                  {isThai ? 'ตำแหน่งทรัพย์' : 'Property location'}
-                </h2>
-                <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-                  {fullAddress}
-                </p>
-                {mapURL && (
-                  <a
-                    href={mapURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-1.5 font-sarabun text-sm font-semibold text-[#176b50] hover:underline dark:text-[#8bd49c]"
-                  >
-                    {isThai ? 'เปิดตำแหน่งบนแผนที่' : 'Open in maps'} <ExternalLink className="size-4" />
-                  </a>
-                )}
               </section>
             ) : null}
           </div>

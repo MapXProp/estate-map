@@ -34,6 +34,9 @@ const descriptionHeadings = new Set([
   'Price and contact',
 ])
 
+export const isPropertyLocationHeading = (heading: string) =>
+  heading === 'ทำเลและการเดินทาง' || heading === 'Location and access'
+
 export function propertyDescriptionSections(text: string) {
   const sections: Array<{ heading: string; paragraphs: string[] }> = []
   for (const paragraph of text

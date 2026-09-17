@@ -6,6 +6,7 @@ import { getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import styles from './PropertyListingView.module.css'
 
 import PropertyDescription from '@/components/PropertyDescription'
+import ListingLocationSection from '@/components/property-home/ListingLocationSection'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
@@ -15,9 +16,7 @@ import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
-  CarFront,
   ChevronDown,
-  ExternalLink,
   LandPlot,
   Mail,
   MapPin,
@@ -165,7 +164,15 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           {fullAddress && (
             <div className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-              <span className="min-w-0">{fullAddress}</span>
+              <div className="min-w-0">
+                <span>{fullAddress}</span>
+                <a
+                  href="#listing-location"
+                  className="flex min-h-9 items-center text-sm font-medium text-[#176b50] underline underline-offset-4"
+                >
+                  {isThai ? 'ดูแผนที่และการเดินทาง' : 'View map and directions'}
+                </a>
+              </div>
             </div>
           )}
         </div>
@@ -235,6 +242,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                     <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                     <div className="min-w-0">
                       <span className="block">{fullAddress}</span>
+                      <a
+                        href="#listing-location"
+                        className="inline-flex min-h-9 items-center text-sm font-medium text-[#176b50] underline underline-offset-4"
+                      >
+                        {isThai ? 'ดูแผนที่และการเดินทาง' : 'View map and directions'}
+                      </a>
                     </div>
                   </div>
                 )}
@@ -352,11 +365,19 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
             <section className="order-1 mt-6 min-[744px]:order-none min-[744px]:mt-10 min-[744px]:border-t min-[744px]:border-neutral-200 min-[744px]:pt-8">
               <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">รายละเอียดที่ดิน</h2>
-              <PropertyDescription text={description} collapsible isThai={isThai} className="mt-4 text-[15px]" />
+              <PropertyDescription
+                text={description}
+                collapsible
+                separateLocation
+                isThai={isThai}
+                className="mt-4 text-[15px]"
+              />
             </section>
 
+            <ListingLocationSection listing={listing} isThai={isThai} className="order-4 mt-8 min-[744px]:order-none" />
+
             {featureCards.items.length > 0 && (
-              <section className="order-4 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
+              <section className="order-5 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
                 <h2 className="text-2xl font-semibold text-neutral-950">{featureCards.heading}</h2>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {featureCards.items.map((item) => (
@@ -369,69 +390,22 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </section>
             )}
 
-            {(listing.nearby_places.length > 0 || listing.transaction_terms.length > 0) && (
-              <section className="order-5 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  {listing.nearby_places.length > 0 && (
-                    <div>
-                      <h2 className="flex items-center gap-2 text-xl font-semibold text-neutral-950">
-                        <CarFront className="size-5 text-[#176b50]" /> การเดินทางและสถานที่ใกล้เคียง
-                      </h2>
-                      <ul className="mt-4 space-y-2.5 text-sm leading-6 text-neutral-700">
-                        {listing.nearby_places.map((place) => (
-                          <li key={`${place.place_type_code}-${place.name_th}`} className="flex gap-2.5">
-                            <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-[#176b50]" />
-                            {place.name_th}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {listing.transaction_terms.length > 0 && (
-                    <div>
-                      <h2 className="flex items-center gap-2 text-xl font-semibold text-neutral-950">
-                        <WalletCards className="size-5 text-[#176b50]" /> ค่าใช้จ่ายและเงื่อนไข
-                      </h2>
-                      <ul className="mt-4 space-y-2.5 text-sm leading-6 text-neutral-700">
-                        {listing.transaction_terms.map((term) => (
-                          <li key={term.code}>
-                            <span className="font-medium text-neutral-800">{term.label_th}</span> {term.value_th}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+            {listing.transaction_terms.length > 0 && (
+              <section className="order-6 mt-10 border-t border-neutral-200 pt-8 min-[744px]:order-none">
+                <div>
+                  <h2 className="flex items-center gap-2 text-xl font-semibold text-neutral-950">
+                    <WalletCards className="size-5 text-[#176b50]" /> ค่าใช้จ่ายและเงื่อนไข
+                  </h2>
+                  <ul className="mt-4 space-y-2.5 text-sm leading-6 text-neutral-700">
+                    {listing.transaction_terms.map((term) => (
+                      <li key={term.code}>
+                        <span className="font-medium text-neutral-800">{term.label_th}</span> {term.value_th}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </section>
             )}
-
-            <section className="order-6 mt-10 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 min-[744px]:order-none sm:p-6">
-              <div className="flex items-start gap-3">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
-                  <Building2 className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-xl font-semibold text-neutral-950">ตำแหน่งที่ดิน</h2>
-                  <p className="mt-1 text-sm leading-6 text-neutral-600">
-                    พิกัด {listing.latitude}, {listing.longitude}
-                  </p>
-                  <p className="mt-2 text-xs leading-5 text-neutral-500">
-                    ตำแหน่งในประกาศใช้เพื่อช่วยนำทาง ผู้ซื้อควรตรวจสอบแนวเขต เลขที่โฉนด ผังเมือง
-                    และสิทธิทางกฎหมายก่อนทำสัญญา
-                  </p>
-                  {mapURL && (
-                    <a
-                      href={mapURL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#176b50] hover:underline"
-                    >
-                      เปิดตำแหน่งบนแผนที่ <ExternalLink className="size-4" />
-                    </a>
-                  )}
-                </div>
-              </div>
-            </section>
           </div>
 
           <aside className={styles.sidebar}>
