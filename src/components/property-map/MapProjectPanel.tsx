@@ -156,9 +156,17 @@ export default function MapProjectPanel({
       </button>
       <div id="map-project-content" className={styles.resultsContent}>
         <header className={styles.projectHeader}>
-          <button type="button" ref={backRef} onClick={onClose} data-map-project-back className={styles.projectBack}>
-            <ArrowLeft className="size-4" />
-            {th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}
+          <button
+            type="button"
+            ref={backRef}
+            onClick={onClose}
+            data-map-project-back
+            className={styles.projectBack}
+            aria-label={th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}
+          >
+            <ArrowLeft className="size-4 shrink-0" />
+            <span className="lg:hidden">{th ? 'กลับ' : 'Back'}</span>
+            <span className="hidden lg:inline">{th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}</span>
           </button>
           <div className={styles.projectIdentity}>
             <span className={styles.projectIcon}>
@@ -203,21 +211,24 @@ export default function MapProjectPanel({
               </button>
             ))}
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-neutral-500">
+          <div className={styles.projectResultsToolbar}>
             <p aria-live="polite">
-              {data
-                ? th
-                  ? `${rows.length} ประกาศในโครงการนี้`
-                  : `${rows.length} listings in this project`
-                : th
-                  ? 'กำลังโหลดประกาศในโครงการ'
-                  : 'Loading project listings'}
+              {data ? (
+                <>
+                  {`${rows.length} ${th ? 'ประกาศ' : 'listings'}`}
+                  <span className="hidden lg:inline">{th ? 'ในโครงการนี้' : ' in this project'}</span>
+                </>
+              ) : th ? (
+                'กำลังโหลด…'
+              ) : (
+                'Loading…'
+              )}
             </p>
             <select
               aria-label={th ? 'เรียงประกาศในโครงการ' : 'Sort project listings'}
               value={sort}
               onChange={(event) => setSort(event.target.value as typeof sort)}
-              className="min-h-9 max-w-[45%] rounded-lg border-neutral-200 py-0 text-xs dark:bg-neutral-900"
+              className={`${styles.projectSort} min-h-9 max-w-[45%] rounded-lg border-neutral-200 py-0 text-xs dark:bg-neutral-900`}
             >
               <option value="newest">{th ? 'ใหม่ล่าสุด' : 'Newest'}</option>
               <option value="price_low">{th ? 'ราคาต่ำก่อน' : 'Lowest price'}</option>
