@@ -44,6 +44,9 @@ export function layoutProjectLabels<T extends ProjectLabelCandidate>(
   const density = 0.55 + clamp((zoom - 10) / 7, 0, 1) * 0.65
   const budget = clamp(Math.floor((area / (mobile ? 52000 : 68000)) * density), 2, 28)
   const gap = zoom < 13 ? 12 : 7
+  // Keep names attached visually at every zoom. The 4px pointer bridges this
+  // small gap while leaving room for the count badge above/right of the pin.
+  const attachmentGap = 6
   const accepted: MapLabelRect[] = []
   const pinRects = candidates.map((candidate) => expand(candidate.pin, 3))
   return candidates.map((candidate, candidateIndex) => {
@@ -61,10 +64,10 @@ export function layoutProjectLabels<T extends ProjectLabelCandidate>(
       return { candidate, placement: undefined, rect: undefined }
 
     const positions: Record<ProjectLabelPlacement, MapLabelRect> = {
-      top: { left: x - width / 2, right: x + width / 2, top: pin.top - 12 - height, bottom: pin.top - 12 },
-      right: { left: pin.right + 12, right: pin.right + 12 + width, top: y - height / 2, bottom: y + height / 2 },
-      left: { left: pin.left - 10 - width, right: pin.left - 10, top: y - height / 2, bottom: y + height / 2 },
-      bottom: { left: x - width / 2, right: x + width / 2, top: pin.bottom + 8, bottom: pin.bottom + 8 + height },
+      top: { left: x - width / 2, right: x + width / 2, top: pin.top - attachmentGap - height, bottom: pin.top - attachmentGap },
+      right: { left: pin.right + attachmentGap, right: pin.right + attachmentGap + width, top: y - height / 2, bottom: y + height / 2 },
+      left: { left: pin.left - attachmentGap - width, right: pin.left - attachmentGap, top: y - height / 2, bottom: y + height / 2 },
+      bottom: { left: x - width / 2, right: x + width / 2, top: pin.bottom + attachmentGap, bottom: pin.bottom + attachmentGap + height },
     }
     const order: ProjectLabelPlacement[] = ['top', 'right', 'left', 'bottom']
     if (candidate.previousPlacement && order.includes(candidate.previousPlacement)) {
