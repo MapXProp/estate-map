@@ -2,10 +2,12 @@
 
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
-import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyDescription from '@/components/PropertyDescription'
+import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
+import { getPropertyPrices, propertyOffersLabel, propertyPricesText } from '@/lib/propertyPrices'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Bath,
@@ -49,7 +51,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     }))
   const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')
   const projectDisplayName = listing.project_display_name || listing.project_name_en || listing.project_name
-  const price = formatPrice(listing, isThai, formatCurrencyFrom)
+  const prices = getPropertyPrices(listing)
+  const price = propertyPricesText(prices, isThai, formatCurrencyFrom)
   const formatRetailAmount = (amount: number) => formatCurrencyFrom(amount, listing.currency)
   const retailTerms =
     listing.property_type_code === 'retail_space'
@@ -178,7 +181,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             <div className="flex flex-col">
               <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
                 <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
-                  {offerLabel(listing.offer_type, isThai)}
+                  {propertyOffersLabel(prices, isThai) || offerLabel(listing.offer_type, isThai)}
                 </span>
                 <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                   {propertyLabel}
@@ -243,12 +246,12 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </section>
             ) : null}
 
-            {listing.property_type_code === 'retail_space' ? (
+            {listing.property_type_code === 'retail_space' || prices.length > 1 ? (
               <section className="mt-7 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 lg:hidden dark:border-[#205e30] dark:bg-[#173520]">
                 <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-300">
-                  {isThai ? 'ค่าเช่าและเงื่อนไข' : 'Rent & terms'}
+                  {prices.length > 1 ? (isThai ? 'ราคา' : 'Price') : isThai ? 'ค่าเช่าและเงื่อนไข' : 'Rent & terms'}
                 </p>
-                <p className="mt-1 font-sarabun text-2xl font-semibold text-[#123f32] dark:text-white">{price}</p>
+                <PropertyPrices prices={prices} variant="detail" className="mt-2 text-[#123f32] dark:text-white" />
                 <RetailTerms items={retailTerms} />
               </section>
             ) : null}
@@ -302,9 +305,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)] dark:border-neutral-800 dark:bg-neutral-900">
               <p className="font-sarabun text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              <p className="mt-1 font-sarabun text-3xl font-semibold tracking-tight text-neutral-950 dark:text-white">
-                {price}
-              </p>
+              <PropertyPrices prices={prices} variant="detail" className="mt-2 text-neutral-950 dark:text-white" />
               <RetailTerms items={retailTerms} />
               <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
               <p className="font-sarabun font-semibold text-neutral-950 dark:text-white">
@@ -366,10 +367,10 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="font-sarabun text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              <p className="mt-1 truncate font-sarabun text-sm leading-none font-semibold text-neutral-950 dark:text-white">
-                {price}
-              </p>
+              {prices.length === 1 && (
+                <p className="font-sarabun text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
+              )}
+              <PropertyPrices prices={prices} variant="compact" className="mt-1 text-neutral-950 dark:text-white" />
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL) && (
@@ -448,34 +449,6 @@ const RetailTerms = ({ items }: { items: Array<{ label: string; value: string }>
 
 const formatNumber = (value: number, locale: 'th' | 'en') =>
   value.toLocaleString(locale === 'th' ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 })
-
-const formatPrice = (
-  listing: PropertyListingDetail,
-  isThai: boolean,
-  formatAmount: (amount: number, sourceCurrency?: string) => string
-) => {
-  if (listing.offer_amount === undefined) return isThai ? 'สอบถามราคา' : 'Price on request'
-  const amount = formatAmount(listing.offer_amount, listing.currency)
-  const unit =
-    listing.price_unit === 'month'
-      ? isThai
-        ? '/เดือน'
-        : '/month'
-      : listing.price_unit === 'day'
-        ? isThai
-          ? '/วัน'
-          : '/day'
-        : listing.price_unit === 'week'
-          ? isThai
-            ? '/สัปดาห์'
-            : '/week'
-          : listing.price_unit === 'event_period'
-            ? isThai
-              ? '/งาน'
-              : '/event'
-            : ''
-  return `${amount}${unit}`
-}
 
 const offerLabel = (value: string, isThai: boolean) => {
   const labels: Record<string, [string, string]> = {

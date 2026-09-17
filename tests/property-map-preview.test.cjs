@@ -12,6 +12,8 @@ function load(relative, imports = {}) {
   const context = {
     exports: {},
     require: (id) => {
+      if (id === '@/lib/propertyPrices') return require('./helpers/property-prices.cjs').prices
+      if (id === '@/components/PropertyPrices') return require('./helpers/property-prices.cjs').component(imports['@/components/preferences/PreferencesProvider'])
       if (!(id in imports)) throw new Error(`Unexpected import: ${id}`)
       return imports[id]
     },

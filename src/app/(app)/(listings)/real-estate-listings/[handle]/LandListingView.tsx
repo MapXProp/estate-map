@@ -1,5 +1,8 @@
 'use client'
 
+import PropertyPrices from '@/components/PropertyPrices'
+import { getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
+
 import PropertyDescription from '@/components/PropertyDescription'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
@@ -100,10 +103,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     ? listing.contact_verification_status === 'authority_verified'
     : listing.is_verified || textDetail(listing, 'contact_trust_status') === 'verified'
   const featureCards = getFeatureCards(listing, isThai)
-  const offerAmount = listing.offer_amount || 0
+  const prices = getPropertyPrices(listing)
+  const offerAmount = prices.find((price) => price.offerType === 'sale')?.amount || 0
   const pricePerSquareWah =
     offerAmount > 0 && landAreaSquareWah > 0 ? Math.round(offerAmount / landAreaSquareWah) : storedPricePerSquareWah
-  const formattedOfferAmount = formatCurrencyFrom(offerAmount, listing.currency)
   const formattedPricePerSquareWah = pricePerSquareWah ? formatCurrencyFrom(pricePerSquareWah, listing.currency) : ''
   const fullAddress = [address, province].filter(Boolean).join(' ')
   const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
@@ -128,7 +131,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
           <div className="mb-1.5 flex min-h-10 items-center justify-between gap-3">
             <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium">
-              <span className="text-[#176b50]">{listing.offer_type === 'sale' ? 'ขาย' : 'ให้เช่า'}</span>
+              <span className="text-[#176b50]">{propertyOffersLabel(prices, isThai)}</span>
               <span className="text-neutral-300" aria-hidden="true">
                 ·
               </span>
@@ -173,9 +176,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           <div className="flex min-w-0 flex-col">
             <div className="flex flex-col">
               <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
-                {listing.offer_type === 'sale' && (
+                {prices.length > 0 && (
                   <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
-                    ขาย
+                    {propertyOffersLabel(prices, isThai)}
                   </span>
                 )}
                 {isVacantLand && (
@@ -418,9 +421,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
           <aside className="hidden lg:block">
             <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)]">
-              <p className="text-sm text-neutral-500">ราคาขายรวม</p>
+              <p className="text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <p className="text-3xl font-semibold tracking-tight text-neutral-950">{formattedOfferAmount}</p>
+                <PropertyPrices prices={prices} variant="detail" className="text-neutral-950" />
                 {pricePerSquareWah ? (
                   <p className="text-sm font-medium text-[#71817b]">เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.</p>
                 ) : null}
@@ -479,10 +482,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden">
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] leading-none text-neutral-500">ราคาขาย</p>
+              {prices.length === 1 && (
+                <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
+              )}
               <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                <p className="shrink-0 text-sm leading-none font-semibold text-neutral-950">{formattedOfferAmount}</p>
-                {pricePerSquareWah ? (
+                <PropertyPrices prices={prices} variant="compact" className="text-neutral-950" />
+                {pricePerSquareWah && prices.length === 1 ? (
                   <p className="text-[10px] leading-none font-medium whitespace-nowrap text-[#71817b]">
                     เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.
                   </p>

@@ -1,5 +1,7 @@
 'use client'
 
+import { getMapListingPrices, propertyPricesText } from '@/lib/propertyPrices'
+
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
 import {
@@ -159,6 +161,10 @@ export const getMarkerHtml = (
     ? `<img data-mapx-preview-src="${escapeHtml(imageUrl)}" alt="" loading="lazy" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;object-fit:cover;background:#eef3f0;" />`
     : `<span aria-hidden="true" style="width:96px;height:82px;flex:0 0 96px;border-radius:10px;background:linear-gradient(145deg,#dfece6,#f5f8f6);display:flex;align-items:center;justify-content:center;color:#176b50;font-size:11px;font-weight:700;">MapxProp</span>`
   const previewLabel = isThai ? 'ดูรูปและราคา' : 'Preview photos and price'
+  const priceLines = price.split('\n')
+  const priceHtml =
+    priceLines.length > 1 ? priceLines.map((line) => `<span>${escapeHtml(line)}</span>`).join('') : escapeHtml(price)
+  const priceClass = `mapx-price-pill${priceLines.length > 1 ? ' mapx-dual-price' : ''}`
 
   return `
   <div
@@ -180,7 +186,7 @@ export const getMarkerHtml = (
       ${
         dockedPreview
           ? ''
-          : `<span class="mapx-price-pill">${escapeHtml(price)}</span>
+          : `<span class="${priceClass}">${priceHtml}</span>
       <span aria-hidden="true" class="mapx-price-pointer-outer"></span>
       <span aria-hidden="true" class="mapx-price-pointer-inner"></span>`
       }
@@ -195,7 +201,7 @@ export const getMarkerHtml = (
       aria-controls="map-property-preview"
       aria-expanded="${previewSelected}"
       aria-label="${previewLabel} ${escapeHtml(title)} · ${escapeHtml(price)}"
-    ><span class="mapx-price-pill">${escapeHtml(price)}</span></a>`
+    ><span class="${priceClass}">${priceHtml}</span></a>`
         : ''
     }
     <span aria-hidden="true" class="mapx-fan-line"></span>
@@ -207,7 +213,7 @@ export const getMarkerHtml = (
       <span style="min-width:0;display:flex;min-height:82px;flex:1;flex-direction:column;align-items:flex-start;">
         <span style="margin:1px 0 4px;color:#176b50;font-size:10px;font-weight:700;">${categoryLabel}${promotedLabel ? ` · ${promotedLabel}` : ''}</span>
         <strong style="display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;line-height:1.35;font-weight:700;text-align:left;">${escapeHtml(title)}</strong>
-        <span style="margin-top:auto;font-size:13px;font-weight:700;white-space:nowrap;">${escapeHtml(price)}</span>
+        <span style="margin-top:auto;font-size:13px;font-weight:700;white-space:pre-line;">${escapeHtml(price)}</span>
       </span>
     </article>`
     }
@@ -347,6 +353,9 @@ const LongdoPropertyMap = ({
   const displayPrices = useMemo(
     () =>
       listings.map((listing) => {
+        const prices = getMapListingPrices(listing)
+        if (listing.prices || prices.length > 1)
+          return propertyPricesText(prices, isThai, formatCurrencyFrom, prices.length > 1)
         if (typeof listing.priceAmount === 'number' && listing.priceAmount > 0) {
           return `${formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)}${formatPricePeriod(listing.priceUnit, isThai)}`
         }
@@ -1388,6 +1397,17 @@ const LongdoPropertyMap = ({
         }
         .mapx-exact-coordinates .mapx-price-pointer-outer,
         .mapx-exact-coordinates .mapx-price-pointer-inner { display: none !important; }
+        .mapx-price-pill.mapx-dual-price {
+          height: auto;
+          min-height: 44px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1px;
+          padding: 5px 10px;
+          border-radius: 13px;
+          line-height: 16px;
+          font-size: 12px;
+        }
         .mapx-exact-coordinates .mapx-marker-hover-card { bottom: 40px; }
         @media (max-width: 1023px) {
           .mapx-exact-coordinates .mapx-price-marker-link {

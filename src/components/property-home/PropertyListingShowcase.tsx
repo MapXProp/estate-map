@@ -2,8 +2,10 @@
 
 import ListingImageFallback from '@/components/ListingImageFallback'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyPrices from '@/components/PropertyPrices'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
+import { filterPropertyPrices, getPropertyPrices, propertyOffersLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
 import { CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
@@ -13,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react'
 type ListingGroup = 'residential' | 'rooms' | 'mixed_use' | 'commercial' | 'land'
 
 export type PrototypeListing = {
+  prices?: PropertyPrice[]
   id: number
   identifier?: string
   group: ListingGroup
@@ -398,7 +401,8 @@ const pricePeriodLabel = (unit: string | undefined, isThai: boolean) => {
   return ''
 }
 
-const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): PrototypeListing => {
+const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean, offerType?: string): PrototypeListing => {
+  const prices = filterPropertyPrices(getPropertyPrices(listing), offerType ? [offerType] : [])
   const group = getListingGroup(listing)
   const propertyType = getPropertyType(normalizeLegacyPropertyType(listing.property_type_code))
   const isRetailSpace = listing.property_type_code === 'retail_space'
@@ -440,7 +444,8 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean): Pro
           : isThai
             ? 'อสังหาริมทรัพย์'
             : 'Property',
-    offer: isEvent ? (listing.price_on_request ? 'ติดต่อผู้จัดงาน' : 'เช่า') : isRental ? 'เช่า' : 'ขาย',
+    offer: propertyOffersLabel(prices, isThai),
+    prices,
     title: isThai ? listing.title : listing.title_en || listing.title,
     location: [localizedAddress, localizedDistrict, localizedProvince].filter(Boolean).join(', '),
     facts: isEvent
@@ -511,8 +516,8 @@ const PropertyListingShowcase = ({
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
   const [listingRows, setListingRows] = useState<PropertySearchListing[]>(initialListings || [])
   const databaseListings = useMemo(
-    () => (initialListings || listingRows).map((listing) => toShowcaseListing(listing, isThai)),
-    [initialListings, listingRows, isThai]
+    () => (initialListings || listingRows).map((listing) => toShowcaseListing(listing, isThai, offerType)),
+    [initialListings, listingRows, isThai, offerType]
   )
 
   useEffect(() => {
@@ -696,7 +701,9 @@ const PropertyListingShowcase = ({
                       ))}
                     </div>
                     <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                      {listing.priceLabel ? (
+                      {listing.prices ? (
+                        <PropertyPrices prices={listing.prices} className="text-neutral-950 dark:text-white" />
+                      ) : listing.priceLabel ? (
                         <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
                           {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
                         </span>

@@ -3,11 +3,12 @@
 import MobileListingContactSheet from '@/app/(app)/(listings)/components/MobileListingContactSheet'
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingViewCount from '@/components/ListingViewCount'
-import PropertyDescription from '@/components/PropertyDescription'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import sheetStyles from '@/components/property-map/MobileSheet.module.css'
 import PropertyPhotoGallery from '@/components/property-map/PropertyPhotoGallery'
 import PropertyPreviewContactCard from '@/components/property-map/PropertyPreviewContactCard'
+import PropertyDescription from '@/components/PropertyDescription'
+import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
@@ -17,6 +18,7 @@ import {
   getPropertyPreviewContactRole,
   getPropertyPreviewFacts,
 } from '@/lib/propertyPreviewDetails'
+import { getPropertyPrices } from '@/lib/propertyPrices'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { ChevronLeft, ExternalLink, ImageIcon, MapPin, Maximize2, Share2, X } from 'lucide-react'
@@ -26,7 +28,7 @@ import { useState } from 'react'
 
 const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) => {
   const router = useRouter()
-  const { locale, formatCurrencyFrom } = usePreferences()
+  const { locale } = usePreferences()
   const isThai = locale === 'th'
   const handle = listing.slug || listing.public_listing_id
   const title = isThai ? listing.title : listing.title_en || listing.title
@@ -55,12 +57,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
   const [galleryOpen, setGalleryOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
   const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen && !contactOpen)
-  const displayPrice =
-    typeof listing.offer_amount === 'number' && listing.offer_amount > 0
-      ? `${formatCurrencyFrom(listing.offer_amount, listing.currency)}${formatPricePeriod(listing.price_unit, isThai)}`
-      : isThai
-        ? 'สอบถามราคา'
-        : 'Price on request'
+  const prices = getPropertyPrices(listing)
 
   const shareProperty = async () => {
     const shareData = { title, url: `${window.location.origin}/real-estate-listings/${encodeURIComponent(handle)}` }
@@ -229,7 +226,7 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
                 <aside className="hidden border-s border-neutral-200 bg-[#f7faf8] p-6 lg:block dark:border-neutral-800 dark:bg-neutral-950/40">
                   <PropertyPreviewContactCard
                     listing={listing}
-                    price={displayPrice}
+                    price={<PropertyPrices prices={prices} variant="detail" />}
                     isThai={isThai}
                     directionsUrl={directionsUrl}
                   />
@@ -241,10 +238,10 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
               className="flex shrink-0 items-center gap-2 border-t border-neutral-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden dark:border-neutral-800 dark:bg-neutral-900"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-                <p className="mt-1 text-sm leading-5 font-semibold [overflow-wrap:anywhere] text-neutral-950 dark:text-white">
-                  {displayPrice}
-                </p>
+                {prices.length === 1 && (
+                  <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
+                )}
+                <PropertyPrices prices={prices} variant="compact" className="mt-1 text-neutral-950 dark:text-white" />
               </div>
               <MobileListingContactSheet
                 key={listing.public_listing_id}
@@ -293,11 +290,3 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
 }
 
 export default PropertyPreviewModal
-
-const formatPricePeriod = (unit: string | undefined, isThai: boolean) => {
-  if (unit === 'month') return isThai ? '/เดือน' : '/month'
-  if (unit === 'day') return isThai ? '/วัน' : '/day'
-  if (unit === 'week') return isThai ? '/สัปดาห์' : '/week'
-  if (unit === 'event_period') return isThai ? '/งาน' : '/event'
-  return ''
-}

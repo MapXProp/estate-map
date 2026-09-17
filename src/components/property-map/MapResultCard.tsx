@@ -1,8 +1,10 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyPrices from '@/components/PropertyPrices'
 import type { TRealEstateListing } from '@/data/listings'
 import { getPropertyType, offerTypes } from '@/data/propertyTaxonomy'
+import { getMapListingPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { MapPin, Maximize2 } from 'lucide-react'
 import Image from 'next/image'
@@ -19,34 +21,14 @@ export default function MapResultCard({
   onLocate?: () => void
   compact?: boolean
 }) {
-  const { locale, formatCurrencyFrom } = usePreferences()
+  const { locale } = usePreferences()
   const th = locale === 'th'
   const title = th ? listing.title : listing.titleEn || listing.title
-  const price = listing.priceAmount
-    ? formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)
-    : th
-      ? listing.priceLabel || listing.price
-      : 'Price on request'
-  const period =
-    listing.priceUnit === 'month'
-      ? th
-        ? '/เดือน'
-        : '/mo'
-      : listing.priceUnit === 'day'
-        ? th
-          ? '/วัน'
-          : '/day'
-        : listing.priceUnit === 'week'
-          ? th
-            ? '/สัปดาห์'
-            : '/wk'
-          : listing.priceUnit === 'event_period'
-            ? th
-              ? '/งาน'
-              : '/event'
-            : ''
+  const prices = getMapListingPrices(listing)
   const category = th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'
-  const offer = th ? listing.offer : offerTypes.find((item) => item.nameTh === listing.offer)?.nameEn || listing.offer
+  const offer =
+    propertyOffersLabel(prices, th) ||
+    (th ? listing.offer : offerTypes.find((item) => item.nameTh === listing.offer)?.nameEn || listing.offer)
   return (
     <article
       onMouseEnter={() => onHover(listing.id)}
@@ -99,12 +81,11 @@ export default function MapResultCard({
           >
             {title}
           </h3>
-          <p
-            className={`order-1 text-base leading-6 font-semibold text-[#176b50] dark:text-emerald-400 ${compact ? 'mt-1' : ''}`}
-          >
-            {price}
-            <span className="ms-0.5 text-[11px] font-normal">{period}</span>
-          </p>
+          <PropertyPrices
+            prices={prices}
+            variant={compact ? 'compact' : 'card'}
+            className={`order-1 text-[#176b50] dark:text-emerald-400 ${compact ? 'mt-1' : ''}`}
+          />
           {compact && (
             <p className="order-3 mt-1 text-[11px] text-neutral-500">
               {th ? listing.metadataSummary : listing.metadataSummaryEn}

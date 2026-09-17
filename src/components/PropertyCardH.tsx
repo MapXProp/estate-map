@@ -4,10 +4,12 @@ import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
+import PropertyPrices from '@/components/PropertyPrices'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
+import { getMapListingPrices } from '@/lib/propertyPrices'
 import { Badge } from '@/shared/Badge'
 import Link from 'next/link'
 import { FC } from 'react'
@@ -20,6 +22,7 @@ interface PropertyCardHProps {
 const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
+  const prices = getMapListingPrices(data)
   const {
     galleryImgs,
     title: sourceTitle,
@@ -90,9 +93,13 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data }) => {
           <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700"></div>
           <div className="flex w-full items-end justify-between">
             {reviewCount > 0 && <StartRating reviewCount={reviewCount} point={reviewStart} />}
-            <span className="flex items-center justify-center rounded-lg border-2 border-secondary-500 px-2.5 py-1.5 text-sm leading-none font-medium text-secondary-500">
-              {displayPrice}
-            </span>
+            {prices.length > 1 ? (
+              <PropertyPrices prices={prices} className="text-secondary-500" />
+            ) : (
+              <span className="flex items-center justify-center rounded-lg border-2 border-secondary-500 px-2.5 py-1.5 text-sm leading-none font-medium text-secondary-500">
+                {displayPrice}
+              </span>
+            )}
           </div>
         </div>
       </div>

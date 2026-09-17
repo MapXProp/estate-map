@@ -2,10 +2,12 @@ import BtnLikeIcon from '@/components/BtnLikeIcon'
 import GallerySlider from '@/components/GallerySlider'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
+import PropertyPrices from '@/components/PropertyPrices'
 import SaleOffBadge from '@/components/SaleOffBadge'
 import StartRating from '@/components/StartRating'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
+import { getMapListingPrices } from '@/lib/propertyPrices'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { Badge } from '@/shared/Badge'
 import clsx from 'clsx'
@@ -51,6 +53,7 @@ const PropertyCard: FC<Props> = ({
 }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const isThai = locale === 'th'
+  const prices = getMapListingPrices(data)
   const {
     galleryImgs,
     listingCategory,
@@ -235,10 +238,14 @@ const PropertyCard: FC<Props> = ({
         ></div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}>
-              {' '}
-              {displayPrice}
-            </span>
+            {prices.length > 1 ? (
+              <PropertyPrices prices={prices} variant={compactMobile ? 'compact' : 'card'} />
+            ) : (
+              <span className={compactMobile ? 'text-sm font-semibold lg:text-base' : 'text-base font-semibold'}>
+                {' '}
+                {displayPrice}
+              </span>
+            )}
           </div>
           {!!reviewStart && (
             <span className={compactMobile ? 'max-lg:hidden' : ''}>

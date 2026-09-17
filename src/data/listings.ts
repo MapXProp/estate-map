@@ -20,6 +20,7 @@ import airlineLogo3 from '@/images/flights/logo3.png'
 import airlineLogo4 from '@/images/flights/logo4.png'
 import { getAuthApiUrl } from '@/lib/auth'
 import { formatMoney } from '@/lib/currency'
+import { getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import { fetchPropertyListingSummary, type PropertySearchListing } from '@/lib/propertySearch'
 import { getPropertyType, normalizeLegacyPropertyType } from './propertyTaxonomy'
 
@@ -1231,6 +1232,7 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
               : formatListingPrice(listing.sale_price),
     priceAmount,
     priceCurrency: listing.currency || 'THB',
+    prices: getPropertyPrices(listing),
     priceUnit,
     maxGuests: 0,
     bedrooms: listing.bedroom_count || 0,
@@ -1257,15 +1259,17 @@ export const toRealEstateListing = (listing: PropertySearchListing) => {
     landAreaSqm: listing.land_area_sqm || 0,
     petAllowed: listing.pet_allowed,
     group,
-    offer: isEvent
-      ? listing.offer_type === 'business_transfer'
-        ? 'เซ้งกิจการ'
-        : listing.offer_type === 'sublease'
-          ? 'เช่าช่วง'
-          : 'เช่า'
-      : isRental
-        ? 'เช่า'
-        : 'ขาย',
+    offer:
+      propertyOffersLabel(getPropertyPrices(listing), true) ||
+      (isEvent
+        ? listing.offer_type === 'business_transfer'
+          ? 'เซ้งกิจการ'
+          : listing.offer_type === 'sublease'
+            ? 'เช่าช่วง'
+            : 'เช่า'
+        : isRental
+          ? 'เช่า'
+          : 'ขาย'),
     badge: isEvent ? 'พื้นที่ออกบูธ' : listing.source_type === 'owner' ? 'เจ้าของขายเอง' : undefined,
     priceLabel:
       isRetailSpace && isPriceOnRequest

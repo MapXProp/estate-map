@@ -13,6 +13,8 @@ function load(relative, imports = {}) {
     exports: {},
     URL,
     require: (name) => {
+      if (name === '@/lib/propertyPrices') return require('./helpers/property-prices.cjs').prices
+      if (name === '@/components/PropertyPrices') return require('./helpers/property-prices.cjs').component(imports['@/components/preferences/PreferencesProvider'])
       if (!(name in imports)) throw new Error(`Unexpected import: ${name}`)
       return imports[name]
     },
@@ -186,6 +188,16 @@ test('map detail initially renders three photos, correct total, actual contacts 
   assert.ok(!html.includes('href="tel:"'))
   assert.ok(html.includes('data-analytics-surface="map_modal"'))
   assert.ok(html.includes('data-analytics-listing-id="public-1280"'))
+})
+
+test('map detail sidebar and mobile footer both retain the sale and monthly rent of a dual-offer property', () => {
+  const html = renderToStaticMarkup(React.createElement(modal(), { listing: {
+    ...fixture, offer_type: 'rent', offer_amount: 65000, price_unit: 'month', sale_price: 11900000, rent_price_monthly: 65000,
+  } }))
+  assert.equal((html.match(/data-property-prices="2"/g) || []).length, 2)
+  assert.equal((html.match(/11,900,000 บาท/g) || []).length, 2)
+  assert.equal((html.match(/65,000 บาท\/เดือน/g) || []).length, 2)
+  assert.ok(html.includes('data-contact-trigger="true"'))
 })
 
 test('opening gallery makes every photo available with lazy loading, including photo 29', () => {

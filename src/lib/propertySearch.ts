@@ -236,6 +236,9 @@ export type PropertyListingDetail = {
   organization_logo_url?: string
   offer_type: string
   offer_amount?: number
+  sale_price?: number
+  rent_price_monthly?: number
+  price_on_request?: boolean
   price_unit: string
   price_negotiable: boolean
   currency: string

@@ -1,7 +1,9 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType } from '@/data/propertyTaxonomy'
+import { filterPropertyPrices, getPropertyPrices } from '@/lib/propertyPrices'
 import { fetchPropertySearch, getPropertySearchUrl, PropertySearchResponse } from '@/lib/propertySearch'
 import { Bath, BedDouble, Building2, MapPin, Ruler, SearchX } from 'lucide-react'
 import Link from 'next/link'
@@ -27,7 +29,7 @@ const PropertySearchResults = ({
   page?: number
 }) => {
   const router = useRouter()
-  const { locale, formatCurrencyFrom } = usePreferences()
+  const { locale } = usePreferences()
   const isThai = locale === 'th'
   const [requestState, setRequestState] = useState<{
     query: string
@@ -164,7 +166,7 @@ const PropertySearchResults = ({
         {data && data.listings.length > 0 && (
           <div className="grid gap-5 py-8 md:grid-cols-2 xl:grid-cols-3">
             {data.listings.map((listing) => {
-              const price = listing.sale_price ?? listing.rent_price_monthly
+              const prices = filterPropertyPrices(getPropertyPrices(listing), data?.intent.offer_types)
               const title = isThai ? listing.title : listing.title_en || listing.title
               const projectName = listing.project_display_name || listing.project_name_en || listing.project_name
               const address = isThai ? listing.address : listing.address_en || listing.address
@@ -213,16 +215,10 @@ const PropertySearchResults = ({
                         </span>
                       )}
                     </div>
-                    {price !== undefined && (
-                      <p className="mt-5 border-t border-neutral-100 pt-4 text-lg font-semibold text-neutral-950 dark:border-neutral-800 dark:text-white">
-                        {formatCurrencyFrom(price, listing.currency)}
-                        {listing.rent_price_monthly !== undefined && listing.sale_price === undefined && (
-                          <span className="ms-1 text-sm font-normal text-neutral-500">
-                            /{isThai ? 'เดือน' : 'month'}
-                          </span>
-                        )}
-                      </p>
-                    )}
+                    <PropertyPrices
+                      prices={prices}
+                      className="mt-5 border-t border-neutral-100 pt-4 text-neutral-950 dark:border-neutral-800 dark:text-white"
+                    />
                   </div>
                 </Link>
               )

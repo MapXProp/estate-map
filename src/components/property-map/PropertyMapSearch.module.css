@@ -1371,6 +1371,12 @@
   visibility: hidden;
   pointer-events: none;
 }
+.previewPanel[data-mobile-top-sheet='false']:has([data-property-prices='2']) {
+  height: 260px;
+}
+.previewPanel[data-mobile-top-sheet='true']:has([data-property-prices='2']) {
+  height: min(272px, 50dvh);
+}
 .previewPanel[data-mobile-top-sheet='false']::after {
   content: '';
   position: absolute;

@@ -1,5 +1,7 @@
 'use client'
 
+import { filterPropertyPrices } from '@/lib/propertyPrices'
+
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { toRealEstateListing, type TRealEstateListing } from '@/data/listings'
 import {
@@ -81,6 +83,7 @@ export default function MapProjectPanel({
       .filter((row) => offer === 'all' || hasProjectOffer(row, offer))
       .map((row) => {
         const listing = toRealEstateListing(row)
+        listing.prices = filterPropertyPrices(listing.prices, offer === 'all' ? [] : [offer])
         if (offer === 'rent') {
           listing.priceAmount = row.rent_price_monthly || row.offer_amount
           listing.priceUnit = row.rent_price_monthly ? 'month' : listing.priceUnit

@@ -1,5 +1,7 @@
 'use client'
 
+import { filterPropertyPrices } from '@/lib/propertyPrices'
+
 import AvatarDropdown from '@/components/Header/AvatarDropdown'
 import LongdoPropertyMap, {
   type PropertyMapAreaSearch,
@@ -361,6 +363,7 @@ export default function PropertyMapSearch({
     () =>
       mapRows.map((listing) => {
         const result = { ...toRealEstateListing(listing), map: { lat: listing.latitude!, lng: listing.longitude! } }
+        result.prices = filterPropertyPrices(result.prices, filters.offerTypes)
         const amount = mapListingPrice(listing, filters.offerTypes)
         if (filters.offerTypes.length === 1) {
           const offer = filters.offerTypes[0]

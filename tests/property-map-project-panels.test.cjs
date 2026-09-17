@@ -9,6 +9,7 @@ function load(file, imports) {
   const context = {
     exports: {},
     require(id) {
+      if (id === '@/lib/propertyPrices') return require('./helpers/property-prices.cjs').prices
       assert.ok(id in imports, id)
       return imports[id]
     },
@@ -123,6 +124,7 @@ test('project tabs preserve event rental units, show selected dual-offer prices 
     '@/data/listings': {
       toRealEstateListing: (row) => ({
         ...row,
+        prices: require('./helpers/property-prices.cjs').prices.getPropertyPrices(row),
         priceAmount: row.sale_price || row.offer_amount,
         priceUnit: row.offer_price_unit || '',
         map: {},
@@ -143,11 +145,14 @@ test('project tabs preserve event rental units, show selected dual-offer prices 
     render()
   }
   render()
+  assert.equal(cards()[1].props.listing.prices.length, 2)
   choose('rent')
   assert.equal(cards()[0].props.listing.priceUnit, 'event_period')
   assert.equal(cards()[0].props.listing.priceAmount, 60000)
   assert.equal(cards()[1].props.listing.priceUnit, 'month')
   assert.equal(cards()[1].props.listing.priceAmount, 20000)
+  assert.equal(cards()[1].props.listing.prices.length, 1)
+  assert.equal(cards()[1].props.listing.prices[0].amount, 20000)
   cards()[0].props.onLocate()
   cards()[1].props.onLocate()
   assert.equal(located[0].map.lat, data.project.latitude)
@@ -156,4 +161,8 @@ test('project tabs preserve event rental units, show selected dual-offer prices 
   assert.equal(cards().length, 1)
   assert.equal(cards()[0].props.listing.priceAmount, 3000000)
   assert.equal(cards()[0].props.listing.priceUnit, '')
+  assert.equal(cards()[0].props.listing.prices.length, 1)
+  assert.equal(cards()[0].props.listing.prices[0].amount, 3000000)
+  choose('all')
+  assert.equal(cards()[1].props.listing.prices.length, 2)
 })

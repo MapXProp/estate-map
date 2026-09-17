@@ -2,6 +2,7 @@
 
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import PropertyPrices from '@/components/PropertyPrices'
 import type { TRealEstateListing } from '@/data/listings'
 import { getPropertyType, offerTypes } from '@/data/propertyTaxonomy'
 import {
@@ -10,6 +11,7 @@ import {
   getMapPreviewImages,
   stepMapPreviewImage,
 } from '@/lib/propertyMapPreview'
+import { getMapListingPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import { fetchPropertyListingDetail } from '@/lib/propertySearch'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -42,7 +44,7 @@ export default function MapPinPreview({
   onBack: () => void
   onClose: () => void
 }) {
-  const { locale, formatCurrencyFrom } = usePreferences()
+  const { locale } = usePreferences()
   const th = locale === 'th'
   const title = th ? listing.title : listing.titleEn || listing.title
   const headline = listing.projectDisplayName || listing.projectNameEn || listing.projectName || title
@@ -60,21 +62,10 @@ export default function MapPinPreview({
   const activeImage = images[imageIndex]
   const imageAvailable = Boolean(activeImage && !failedImages.includes(activeImage))
   const category = th ? listing.listingCategory : getPropertyType(listing.propertyTypeCode || '')?.nameEn || 'Property'
-  const offer = th ? listing.offer : offerTypes.find((item) => item.nameTh === listing.offer)?.nameEn || listing.offer
-  const price = listing.priceAmount
-    ? formatCurrencyFrom(listing.priceAmount, listing.priceCurrency)
-    : th
-      ? listing.priceLabel || listing.price
-      : 'Price on request'
-  const period =
-    (
-      {
-        month: th ? '/เดือน' : '/mo',
-        day: th ? '/วัน' : '/day',
-        week: th ? '/สัปดาห์' : '/wk',
-        event_period: th ? '/งาน' : '/event',
-      } as Record<string, string>
-    )[listing.priceUnit || ''] || ''
+  const prices = getMapListingPrices(listing)
+  const offer =
+    propertyOffersLabel(prices, th) ||
+    (th ? listing.offer : offerTypes.find((item) => item.nameTh === listing.offer)?.nameEn || listing.offer)
   const facts = th ? listing.metadataSummary : listing.metadataSummaryEn
   const quickFacts = [
     ...(listing.bedrooms > 0
@@ -293,10 +284,7 @@ export default function MapPinPreview({
               {title}
             </p>
           )}
-          <p className={styles.price}>
-            {price}
-            <span>{period}</span>
-          </p>
+          <PropertyPrices prices={prices} variant={prices.length > 1 ? 'compact' : 'card'} className={styles.price} />
           {quickFacts.length > 0 && (
             <div className={styles.quickFacts} data-map-preview-facts>
               {quickFacts.map(({ icon: Icon, text, label }) => (

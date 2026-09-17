@@ -159,6 +159,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     'lucide-react': require('lucide-react'),
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale: 'th', formatCurrencyFrom }) },
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
+    '@/lib/propertyPrices': require('./helpers/property-prices.cjs').prices,
     '@/lib/propertyMapProjects': projectContext.exports,
     '@/lib/propertyMapLocationSearch': {
       resolveMapSearchPlace: async (...args) => {
@@ -739,6 +740,19 @@ test('dot and price are separate accessible links, escape content and preserve n
   assert.ok(!html.includes('<script>'))
   const legacy = h.getMarkerHtml(listing, '315,000,000 บาท', false, true, false, false)
   assert.equal((legacy.match(/<a\s/g) || []).length, 1)
+})
+
+test('dual-price pills show labeled sale and monthly rent without changing the property links or escaping', () => {
+  for (const width of [390, 1440]) {
+    const h = harness(width)
+    const html = h.getMarkerHtml(listing, 'ขาย 11.9 ล้านบาท\nเช่า 65,000 บาท/เดือน', true, true, true, true)
+    assert.match(html, /class="mapx-price-pill mapx-dual-price"/)
+    assert.match(html, /<span>ขาย 11.9 ล้านบาท<\/span><span>เช่า 65,000 บาท\/เดือน<\/span>/)
+    assert.equal((html.match(/<a\s/g) || []).length, 2)
+    assert.equal((html.match(/aria-controls="map-property-preview"/g) || []).length, 2)
+    const unsafe = h.getMarkerHtml(listing, 'ขาย <script>x</script>\nเช่า <img src=x>', false, true, true, false)
+    assert.ok(!unsafe.includes('<script>') && !unsafe.includes('<img src=x>'))
+  }
 })
 
 test('mouse press folds map controls before release, once per gesture, without changing the camera', () => {
