@@ -112,11 +112,18 @@ const common = {
   'react/jsx-runtime': jsx,
   'lucide-react': require('lucide-react'),
   '@/lib/contactAnalytics': load('src/lib/contactAnalytics.ts'),
+  '@/lib/propertyDetailPresentation': load('src/lib/propertyDetailPresentation.ts'),
 }
 const Description = load('src/components/PropertyDescription.tsx', common).default
+const ContactDetails = load('src/components/property-home/ListingContactDetails.tsx', {
+  ...common,
+  'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
+  '@/lib/propertyPreviewDetails': helpers,
+})
 const Contact = load('src/components/property-map/PropertyPreviewContactCard.tsx', {
   ...common,
   '@/lib/propertyPreviewDetails': helpers,
+  '@/components/property-home/ListingContactDetails': ContactDetails,
 }).default
 const ContactSheetStub = ({ triggerLabel }) =>
   React.createElement('button', { 'data-contact-trigger': true }, triggerLabel)
