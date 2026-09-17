@@ -236,7 +236,7 @@ export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selec
   const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
   return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}${hovered ? ' is-hovered' : ''}">
     <a href="/properties/map?map_mode=projects&amp;project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
-      <span class="mapx-project-label"><span>${escapeHtml(name)}</span><small>${isThai ? 'โครงการ · ดูประกาศ' : 'Project · View listings'}</small></span>
+      <span class="mapx-project-label"><span>${escapeHtml(name)}</span></span>
       <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
     </a>
   </div>`
@@ -1156,12 +1156,11 @@ const LongdoPropertyMap = ({
         .mapx-project-link { position: relative; display: grid; width: 44px; height: 44px; place-items: center; text-decoration: none !important; color: #176b50 !important; border-radius: 50%; }
         .mapx-project-pin { position: relative; display: grid; width: 32px; height: 32px; place-items: center; border: 2px solid #176b50; border-radius: 11px; background: white; box-shadow: 0 3px 10px #123f3230; }
         .mapx-project-pin b { position: absolute; top: -8px; right: -10px; display: grid; min-width: 19px; height: 19px; padding: 0 4px; place-items: center; border: 2px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 10px; }
-        .mapx-project-label { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; max-width: 186px; width: max-content; flex-direction: column; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
+        .mapx-project-label { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; max-width: min(260px,70vw); width: max-content; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
         .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
-        .mapx-project-label small { margin-top: 2px; font-size: 10px; color: #638171; font-weight: 400; }
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
         .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #e8f3ed; border-color: #518f75; color: #176b50; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #176b50; border-color: #176b50; color: white; }
         .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #f2f8f4; border-color: #c5dbcf; color: #176b50; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
