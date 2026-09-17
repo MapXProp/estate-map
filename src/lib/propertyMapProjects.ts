@@ -6,6 +6,27 @@ export type PropertyMapMode = 'listings' | 'projects'
 export const normalizeMapMode = (value: string, hasProject = false): PropertyMapMode =>
   value === 'projects' || (!value && hasProject) ? 'projects' : 'listings'
 
+export const projectCategoryFilters = [
+  { value: 'all', th: 'ทุกประเภท', en: 'All types' },
+  { value: 'commercial_complex', th: 'ห้าง / พาณิชย์', en: 'Malls / retail' },
+  { value: 'office_campus', th: 'อาคารสำนักงาน', en: 'Office buildings' },
+  { value: 'housing_estate', th: 'หมู่บ้าน', en: 'Housing estates' },
+  { value: 'condominium', th: 'คอนโด', en: 'Condominiums' },
+  { value: 'mixed_use', th: 'มิกซ์ยูส', en: 'Mixed use' },
+  { value: 'industrial_estate', th: 'นิคมอุตสาหกรรม', en: 'Industrial estates' },
+  { value: 'other', th: 'โครงการอื่น ๆ', en: 'Other projects' },
+] as const
+export type ProjectCategoryFilter = (typeof projectCategoryFilters)[number]['value']
+export const normalizeProjectCategoryFilter = (value: string): ProjectCategoryFilter =>
+  projectCategoryFilters.find((option) => option.value === value)?.value || 'all'
+export const matchesProjectCategory = (category: string, filter: ProjectCategoryFilter) =>
+  filter === 'all' ||
+  (filter === 'other'
+    ? !projectCategoryFilters.some(
+        (option) => option.value !== 'all' && option.value !== 'other' && option.value === category
+      )
+    : category === filter)
+
 export const projectCategoryLabel = (category: string, th: boolean) => {
   const labels: Record<string, [string, string]> = {
     housing_estate: ['โครงการบ้าน', 'Housing project'],
@@ -39,10 +60,15 @@ const publishedTime = (value?: string) => {
   return Number.isFinite(time) ? time : 0
 }
 
-// Rank using current map promotions, the newest matching listing and the known listing count.
+const projectCategoryPriority = (category: string) =>
+  category === 'commercial_complex' ? 2 : category === 'office_campus' ? 1 : 0
+
+// Malls and office buildings lead discovery; within each group use current
+// promotions, the newest matching listing and the known listing count.
 // These are discovery signals, not claims about a project's construction date or physical size.
 export function compareMapProjectPriority(first: MapProject, second: MapProject) {
   return (
+    projectCategoryPriority(second.category) - projectCategoryPriority(first.category) ||
     promotionRank(second.mapPromotionTier) - promotionRank(first.mapPromotionTier) ||
     (second.mapPriorityWeight || 0) - (first.mapPriorityWeight || 0) ||
     publishedTime(second.latestListingAt) - publishedTime(first.latestListingAt) ||

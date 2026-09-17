@@ -19,9 +19,12 @@ import {
   compareMapProjectPriority,
   groupMapProjects,
   mapProjectSearchSeed,
+  matchesProjectCategory,
+  normalizeProjectCategoryFilter,
   validProjectLocation,
   type MapProject,
   type MapProjectDetails,
+  type ProjectCategoryFilter,
   type PropertyMapMode,
 } from '@/lib/propertyMapProjects'
 import {
@@ -120,6 +123,7 @@ export default function PropertyMapSearch({
   offerLayout = 'compact',
   initialProject = '',
   initialMapMode = 'listings',
+  initialProjectCategory = 'all',
 }: {
   query?: string
   initialMapCenter?: { lat: number; lon: number }
@@ -129,10 +133,12 @@ export default function PropertyMapSearch({
   offerLayout?: 'compact' | 'classic'
   initialProject?: string
   initialMapMode?: PropertyMapMode
+  initialProjectCategory?: ProjectCategoryFilter
 }) {
   const { locale } = usePreferences()
   const th = locale === 'th'
   const [mapMode, setMapMode] = useState(initialMapMode)
+  const [projectCategory, setProjectCategory] = useState(() => normalizeProjectCategoryFilter(initialProjectCategory))
   const [categories, setCategories] = useState(() => initialMapCategories(initialFilters, initialCategories))
   const [filters, setFilters] = useState<PropertyMapFilterState>(() => ({
     ...emptyPropertyMapFilters,
@@ -299,9 +305,11 @@ export default function PropertyMapSearch({
       'feature',
       'project',
       'map_mode',
+      'project_category',
     ].forEach((key) => params.delete(key))
     if (keyword) params.set('q', keyword)
     if (mapMode === 'projects') params.set('map_mode', 'projects')
+    if (mapMode === 'projects' && projectCategory !== 'all') params.set('project_category', projectCategory)
     if (selectedProject) params.set('project', selectedProject.seed?.slug || selectedProject.id)
     categories.forEach((id) => params.append('category', id))
     mapOfferSearchValues(filters.offerTypes).forEach((offer) => params.append('offer_type', offer))
@@ -319,7 +327,7 @@ export default function PropertyMapSearch({
     }
     if (window.location.pathname === '/properties/map')
       window.history.replaceState(window.history.state, '', `/properties/map${params.size ? `?${params}` : ''}`)
-  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode])
+  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode, projectCategory])
 
   useEffect(() => {
     const container = resultsRef.current
@@ -337,16 +345,20 @@ export default function PropertyMapSearch({
       ),
     [matchingRows]
   )
-  const projectMarkers = useMemo(
-    () =>
-      selectedProject?.seed && !mapProjects.some((project) => project.id === selectedProject.id)
-        ? [...mapProjects, selectedProject.seed]
-        : mapProjects,
-    [mapProjects, selectedProject]
-  )
+  const projectMarkers = useMemo(() => {
+    const matching = mapProjects.filter(
+      (project) =>
+        matchesProjectCategory(project.category, projectCategory) ||
+        Boolean(selectedProject && [project.id, project.slug].includes(selectedProject.id))
+    )
+    return selectedProject?.seed && !matching.some((project) => project.id === selectedProject.id)
+      ? [...matching, selectedProject.seed]
+      : matching
+  }, [mapProjects, selectedProject, projectCategory])
   const displayedProjects = useMemo(
     () =>
       mapProjects
+        .filter((project) => matchesProjectCategory(project.category, projectCategory))
         .filter(
           ({ location }) =>
             !area ||
@@ -356,7 +368,7 @@ export default function PropertyMapSearch({
               location.lon <= area.maxLon)
         )
         .sort(compareMapProjectPriority),
-    [mapProjects, area]
+    [mapProjects, area, projectCategory]
   )
   const mapListings = useMemo(
     () =>
@@ -434,6 +446,7 @@ export default function PropertyMapSearch({
   const selectSearchedProject = useCallback(
     (project: MapProjectDetails) => {
       setHoveredProjectId('')
+      if (!matchesProjectCategory(project.project_category, projectCategory)) setProjectCategory('all')
       const seed = mapProjectSearchSeed(
         project,
         mapProjects.find((item) => item.id === project.public_project_id)
@@ -449,7 +462,7 @@ export default function PropertyMapSearch({
       setMobilePanelOpen(true)
       setMobileGroupOpen(false)
     },
-    [mapProjects, setMobilePanelOpen]
+    [mapProjects, setMobilePanelOpen, projectCategory]
   )
   const closeMapProject = () => {
     const id = selectedProject?.seed?.id || selectedProject?.id
@@ -482,6 +495,7 @@ export default function PropertyMapSearch({
     filters.features.length
   const hasFilters =
     mapMode !== 'listings' ||
+    projectCategory !== 'all' ||
     categories.length > 0 ||
     !isDefaultMapOffers(filters.offerTypes) ||
     detailsCount > 0 ||
@@ -518,6 +532,7 @@ export default function PropertyMapSearch({
   }, [])
   const reset = () => {
     changeMapMode('listings')
+    setProjectCategory('all')
     setSelectedProject(null)
     setCategories([])
     setFilters({ ...emptyPropertyMapFilters, offerTypes: [...defaultMapOfferTypes] })
@@ -996,6 +1011,12 @@ export default function PropertyMapSearch({
           ) : mapMode === 'projects' ? (
             <MapProjectResults
               projects={displayedProjects}
+              category={projectCategory}
+              onCategoryChange={(value) => {
+                setProjectCategory(value)
+                setHoveredProjectId('')
+                setSelectedProject(null)
+              }}
               heading={th ? 'โครงการทั้งหมด' : 'All projects'}
               areaLabel={mapAreaText}
               loading={loading}

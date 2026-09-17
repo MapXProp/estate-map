@@ -119,6 +119,28 @@ test('project priority aggregates real promotion packages, latest publication an
   assert.deepEqual(plain(rows), before)
 })
 
+test('mall names lead office names, then residential projects, with paid and new projects leading within each group', () => {
+  const m = model()
+  const projects = m.groupMapProjects([
+    { ...listing, id: '1', projectPublicId: 'paid-condo', isMapPromoted: true, mapPromotionTier: 'premium', date: '2026-09-17' },
+    { ...listing, id: '2', projectPublicId: 'empire', projectCategory: 'office_campus', date: '2026-01-01' },
+    { ...listing, id: '3', projectPublicId: 'mall-old', projectCategory: 'commercial_complex', date: '2026-01-01' },
+    { ...listing, id: '4', projectPublicId: 'mall-new', projectCategory: 'commercial_complex', date: '2026-09-17' },
+    { ...listing, id: '5', projectPublicId: 'mall-paid', projectCategory: 'commercial_complex', isMapPromoted: true, mapPromotionTier: 'boosted', date: '2025-01-01' },
+  ])
+  assert.deepEqual(plain(projects.sort(m.compareMapProjectPriority).map(project => project.id)), ['mall-paid', 'mall-new', 'mall-old', 'empire', 'paid-condo'])
+})
+
+test('project type filtering handles known categories, future/unknown categories and invalid URL values', () => {
+  const m = model()
+  assert.equal(m.normalizeProjectCategoryFilter('office_campus'), 'office_campus')
+  assert.equal(m.normalizeProjectCategoryFilter('invented'), 'all')
+  const categories = ['commercial_complex', 'office_campus', 'housing_estate', 'condominium', 'mixed_use', 'industrial_estate', 'other', 'future_type', '']
+  assert.deepEqual(categories.filter(category => m.matchesProjectCategory(category, 'office_campus')), ['office_campus'])
+  assert.deepEqual(categories.filter(category => m.matchesProjectCategory(category, 'all')), categories)
+  assert.deepEqual(categories.filter(category => m.matchesProjectCategory(category, 'other')), ['other', 'future_type', ''])
+})
+
 test('all project pages load independently of map filters, including units with no map coordinate', async () => {
   const calls = []
   const rows = Array.from({ length: 125 }, (_, id) => ({

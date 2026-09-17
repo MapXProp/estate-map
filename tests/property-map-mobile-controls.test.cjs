@@ -157,6 +157,13 @@ function harness(width, locale = 'th', entryProps = {}) {
     tab,
     click,
     center,
+    seedRows(rows) {
+      const index = slots.findIndex((slot) => slot?.rows && slot.status)
+      const key = slots.find((slot) => typeof slot === 'string' && slot.startsWith('{"keyword":'))
+      assert.ok(index >= 0 && key)
+      slots[index] = { key, rows, status: 'ready' }
+      render()
+    },
     seedSelectedListing(listing) {
       const selection = slots.find((slot) => slot?.id === listing.id && slot.requestKey)
       assert.ok(selection)
@@ -513,6 +520,51 @@ test('project overview and map markers share hover state without opening a proje
   h.render()
   assert.equal(h.map().hoveredProjectId, '')
   assert.equal(h.nodes((node) => node.type === 'test-project-panel')[0].props.identifier, 'project-b')
+})
+
+test('project type filter synchronizes rows and markers, preserves camera and offers, resets and yields to explicit project search', () => {
+  for (const width of [390, 820, 1440]) {
+    const h = harness(width, 'th', { initialMapMode: 'projects', initialFilters: { offerTypes: ['rent'] } })
+    const rows = ['condominium', 'office_campus', 'commercial_complex'].map((category, i) => ({
+      id: `unit-${i}`, projectPublicId: `project-${i}`, projectName: `Name ${i}`, projectCategory: category,
+      projectLatitude: 13.7, projectLongitude: 100.5, latitude: 13.7, longitude: 100.5,
+    }))
+    h.seedRows(rows)
+    const overview = () => h.nodes((node) => node.type === 'test-project-results')[0].props
+    assert.deepEqual(Array.from(overview().projects, project => project.category), ['commercial_complex', 'office_campus', 'condominium'])
+    overview().onHover('project-0')
+    overview().onCategoryChange('office_campus')
+    h.render()
+    assert.equal(overview().projects.length, 1)
+    assert.equal(h.map().projectMarkers.length, 1)
+    assert.equal(h.map().projectMarkers[0].id, 'project-1')
+    assert.equal(h.map().hoveredProjectId, '')
+    assert.equal(h.map().initialCenter, h.center)
+    assert.equal(h.map().initialZoom, 15)
+    assert.deepEqual(Array.from(h.nodes(node => node.type === 'test-offers')[0].props.value), ['rent'])
+    h.map().onProjectSelect(h.map().projectMarkers[0])
+    h.render()
+    h.map().onMapBackgroundTap()
+    h.render()
+    assert.equal(overview().category, 'office_campus')
+    assert.equal(overview().projects.length, 1)
+    h.map().onProjectSearchSelect({ public_project_id: 'project-0', name_th: 'A condo', project_category: 'condominium', latitude: 13.7, longitude: 100.5 })
+    h.render()
+    h.map().onMapBackgroundTap()
+    h.render()
+    assert.equal(overview().category, 'all')
+    assert.equal(overview().projects.length, 3)
+    overview().onCategoryChange('housing_estate')
+    h.render()
+    assert.equal(overview().projects.length, 0)
+    assert.equal(h.map().projectMarkers.length, 0)
+    h.nodes(node => node.type === 'test-map-view-controls')[0].props.onModeChange('listings')
+    h.render()
+    h.click(h.data('data-map-reset', true))
+    h.nodes(node => node.type === 'test-map-view-controls')[0].props.onModeChange('projects')
+    h.render()
+    assert.equal(overview().category, 'all')
+  }
 })
 
 test('background taps clear an active project on phones, tablets and desktop while preserving map context', () => {

@@ -1,6 +1,12 @@
 'use client'
 
-import { projectCategoryLabel, type MapProject } from '@/lib/propertyMapProjects'
+import {
+  normalizeProjectCategoryFilter,
+  projectCategoryFilters,
+  projectCategoryLabel,
+  type MapProject,
+  type ProjectCategoryFilter,
+} from '@/lib/propertyMapProjects'
 import {
   Building2,
   ChevronDown,
@@ -29,6 +35,8 @@ export default function MapProjectResults({
   hoveredProjectId,
   onRetry,
   onClearArea,
+  category = 'all',
+  onCategoryChange,
 }: {
   projects: MapProject[]
   heading: string
@@ -44,6 +52,8 @@ export default function MapProjectResults({
   hoveredProjectId: string
   onRetry: () => void
   onClearArea?: () => void
+  category: ProjectCategoryFilter
+  onCategoryChange: (category: ProjectCategoryFilter) => void
 }) {
   const count = `${projects.length} ${th ? 'โครงการ' : 'projects'}`
   return (
@@ -78,7 +88,7 @@ export default function MapProjectResults({
       </button>
       <div id="map-project-results-content" className={styles.resultsContent}>
         <header className={styles.projectOverviewHeader}>
-          <div className="flex items-start justify-between gap-2 pt-2">
+          <div className="hidden items-start justify-between gap-2 pt-2 lg:flex">
             <div className="min-w-0">
               <h2 className="hidden text-base font-semibold lg:block">{heading}</h2>
               <p className="mt-1 text-xs text-neutral-500">
@@ -95,16 +105,32 @@ export default function MapProjectResults({
             </button>
           </div>
           <div
-            className={`${onClearArea ? 'flex' : 'hidden lg:flex'} mt-2 min-h-9 items-center justify-between gap-2 text-xs text-neutral-500`}
+            data-project-results-toolbar
+            className="flex min-h-11 items-center justify-between gap-2 text-xs text-neutral-500 lg:mt-2 lg:min-h-9"
           >
-            <span className="hidden lg:inline" aria-live="polite">
+            <span className="min-w-0" aria-live="polite" data-project-results-count>
               {loading ? (th ? `กำลังโหลด · ${count}` : `Loading · ${count}`) : count}
             </span>
-            {onClearArea && (
-              <button type="button" onClick={onClearArea} className="min-h-9 font-medium text-[#176b50]">
-                {th ? 'ดูทุกบริเวณ' : 'All areas'}
-              </button>
-            )}
+            <div className="flex shrink-0 items-center gap-2">
+              {onClearArea && (
+                <button type="button" onClick={onClearArea} className="min-h-9 font-medium text-[#176b50]">
+                  {th ? 'ดูทุกบริเวณ' : 'All areas'}
+                </button>
+              )}
+              <select
+                data-map-project-category
+                value={category}
+                onChange={(event) => onCategoryChange(normalizeProjectCategoryFilter(event.target.value))}
+                aria-label={th ? 'ประเภทโครงการ' : 'Project type'}
+                className={`h-11 w-36 max-w-[43vw] cursor-pointer rounded-lg border px-2 py-0 pr-7 text-xs font-medium focus:border-[#176b50] focus:ring-[#176b50] lg:h-9 ${category === 'all' ? 'border-neutral-200 bg-white text-neutral-700' : 'border-[#c5dbcf] bg-[#edf6f1] text-[#176b50]'}`}
+              >
+                {projectCategoryFilters.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {th ? option.th : option.en}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </header>
         <div data-sheet-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2" aria-busy={loading}>
@@ -156,11 +182,22 @@ export default function MapProjectResults({
             )
           })}
           {!loading && !failed && !projects.length && (
-            <p className="px-5 py-8 text-center text-sm leading-6 text-neutral-500">
-              {th
-                ? 'ยังไม่มีโครงการที่ตรงกับตัวกรอง ลองขยายบริเวณค้นหาหรือปรับตัวกรอง'
-                : 'No matching projects. Try a wider area or adjust the filters.'}
-            </p>
+            <div className="px-5 py-8 text-center text-sm leading-6 text-neutral-500">
+              <p>
+                {th
+                  ? 'ยังไม่มีโครงการที่ตรงกับตัวกรอง ลองขยายบริเวณค้นหาหรือปรับตัวกรอง'
+                  : 'No matching projects. Try a wider area or adjust the filters.'}
+              </p>
+              {category !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => onCategoryChange('all')}
+                  className="mt-2 min-h-11 font-semibold text-[#176b50]"
+                >
+                  {th ? 'ดูทุกประเภทโครงการ' : 'Show all project types'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
