@@ -25,6 +25,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   const slots = [],
     effects = [],
     frames = new Map(),
+    mapEvents = new Map(),
     listeners = new Map(),
     calls = [],
     navigation = [],
@@ -194,6 +195,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
           this.Ui = { Crosshair: { visible() {} } }
           this.Event = {
             bind: (event, callback) => {
+              mapEvents.set(event, callback)
               if (event === 'ready') callback()
             },
           }
@@ -431,6 +433,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     getSpiderOffsets: context.exports.getSpiderOffsets,
     unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
     api,
+    emitMapEvent: (name) => mapEvents.get(name)?.(),
     getMarkerHtml: context.exports.getMarkerHtml,
     startMapGesture: (options = {}) =>
       visit(tree, (node) => {
@@ -586,6 +589,51 @@ test('project mode replaces coincident price pins with one accessible building m
     assert.equal(h.selectedProjects.length, 2, 'native touch and compatibility click open once')
     assert.equal(h.click('project', { ctrlKey: true }).prevented, false)
     assert.deepEqual(h.calls, [])
+  }
+})
+
+test('project buildings shrink as users zoom in and recover when zooming out without rebuilding pins', () => {
+  const units = [{ ...listing, projectPublicId: 'project-a', projectSlug: 'project-a', projectName: 'Project A' }]
+  for (const width of [390, 820, 1440]) {
+    const h = harness(width, 11, units, true)
+    h.render({ selectedProjectId: 'project-a' })
+    const root = h.projectRoots[0]
+    const size = () => parseFloat(root.style['--mapx-project-size'])
+    const initialSize = size()
+    const overlayCount = h.overlays.length
+    const center = h.api.location()
+    assert.ok(initialSize > 0 && initialSize <= (width < 1024 ? 28 : 32))
+    const zoomFromMap = (level) => {
+      h.api.zoom(level)
+      h.calls.length = 0
+      h.emitMapEvent('zoom')
+      h.render()
+      assert.deepEqual(h.calls, [], 'resizing markers cannot issue camera commands')
+      assert.equal(h.api.location(), center)
+      assert.equal(h.api.zoom(), level)
+      assert.equal(h.overlays.length, overlayCount, 'updates existing marker elements')
+      assert.equal(root.classes.has('is-selected'), true)
+      assert.equal(root.attributes['aria-expanded'], 'true')
+    }
+    let previousSize = initialSize
+    for (const level of [13, 15, 17]) {
+      zoomFromMap(level)
+      assert.ok(size() < previousSize, `zoom ${level} shrinks the building on a ${width}px viewport`)
+      previousSize = size()
+    }
+    assert.ok(size() >= 20, 'the building retains a readable visual floor')
+    zoomFromMap(22)
+    assert.equal(size(), previousSize, 'extreme zoom cannot shrink it below the floor')
+    zoomFromMap(11)
+    assert.equal(size(), initialSize)
+    zoomFromMap(4)
+    assert.equal(size(), initialSize, 'far-out views cannot create oversized buildings')
+    zoomFromMap(17)
+    h.pointer('pointerdown', 'project')
+    h.pointer('pointerup', 'project')
+    h.render()
+    assert.equal(h.selectedProjects[0].id, 'project-a', 'compact pins retain their activation handler')
+    h.unmount()
   }
 })
 

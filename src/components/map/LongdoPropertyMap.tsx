@@ -441,7 +441,12 @@ const LongdoPropertyMap = ({
 
     const zoom = map.zoom()
     const projectRoots = Array.from(mapContainer.querySelectorAll<HTMLElement>('[data-mapx-project-marker]'))
+    const maxProjectPinSize = window.matchMedia('(max-width: 1023px)').matches ? 28 : 32
+    const projectZoomProgress = Math.max(0, Math.min(1, (zoom - 11) / 6))
+    const projectPinSize = Math.round(maxProjectPinSize - projectZoomProgress * 8)
     projectRoots.forEach((root) => {
+      // Zooming in shrinks the visible building; the link keeps its 44px touch target.
+      root.style.setProperty('--mapx-project-size', `${projectPinSize}px`)
       root.dataset.mapxProjectLabel = zoom >= 16 ? 'true' : 'false'
     })
     if (!candidates.length) return
@@ -1152,16 +1157,17 @@ const LongdoPropertyMap = ({
         .mapx-search-marker-label { position: absolute; bottom: 35px; left: 0; transform: translateX(-50%); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; width: max-content; max-width: min(240px,70vw); padding: 6px 12px; border: 1px solid #f3b5b5; border-radius: 16px; background: #fff7f7; color: #b91c1c; box-shadow: 0 2px 8px #7f1d1d18; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
         .mapx-search-marker-pin { position: absolute; bottom: 0; left: -11px; filter: drop-shadow(0 1px 2px #7f1d1d30); }
         @media (prefers-reduced-motion: reduce) { .mapx-search-marker { transition: none; } }
-        .mapx-project-marker { position: relative; width: 44px; height: 44px; transform: translate(-50%,-50%); font-family: Sarabun,Arial,sans-serif; z-index: 920; }
+        .mapx-project-marker { --mapx-project-size: 24px; position: relative; width: 44px; height: 44px; transform: translate(-50%,-50%); font-family: Sarabun,Arial,sans-serif; z-index: 920; }
         .mapx-project-link { position: relative; display: grid; width: 44px; height: 44px; place-items: center; text-decoration: none !important; color: #176b50 !important; border-radius: 50%; }
-        .mapx-project-pin { position: relative; display: grid; width: 32px; height: 32px; place-items: center; border: 2px solid #176b50; border-radius: 11px; background: white; box-shadow: 0 3px 10px #123f3230; }
-        .mapx-project-pin b { position: absolute; top: -8px; right: -10px; display: grid; min-width: 19px; height: 19px; padding: 0 4px; place-items: center; border: 2px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 10px; }
-        .mapx-project-label { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; max-width: min(260px,70vw); width: max-content; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
+        .mapx-project-pin { position: relative; display: grid; width: var(--mapx-project-size); height: var(--mapx-project-size); place-items: center; border: 2px solid #176b50; border-radius: calc(var(--mapx-project-size) / 3); background: white; box-shadow: 0 3px 10px #123f3230; }
+        .mapx-project-pin > svg { width: calc(var(--mapx-project-size) * .6); height: calc(var(--mapx-project-size) * .6); }
+        .mapx-project-pin b { position: absolute; top: -7px; right: -8px; display: grid; min-width: clamp(16px,calc(var(--mapx-project-size) * .6),19px); height: clamp(16px,calc(var(--mapx-project-size) * .6),19px); padding: 0 3px; place-items: center; border: 2px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 10px; line-height: 1; }
+        .mapx-project-label { position: absolute; bottom: calc(30px + var(--mapx-project-size) / 2); left: 50%; transform: translateX(-50%); display: flex; max-width: min(260px,70vw); width: max-content; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
         .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
         .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #123f32; border-color: #123f32; color: white; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #123f32; border-color: #123f32; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #155541; border-color: #155541; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #155541; border-color: #155541; color: white; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
         div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
