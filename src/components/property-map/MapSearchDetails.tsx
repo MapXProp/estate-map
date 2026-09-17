@@ -59,7 +59,7 @@ export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }
   const update = <K extends keyof PropertyMapFilterState>(key: K, next: PropertyMapFilterState[K]) =>
     setValue({ ...value, [key]: next })
   const inputClassName =
-    'h-12 w-full rounded-2xl border-neutral-200 bg-neutral-50/70 text-base font-normal text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-700 focus:bg-white focus:ring-neutral-700 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-100 dark:focus:border-neutral-300 dark:focus:bg-neutral-800 dark:focus:ring-neutral-300'
+    'h-12 w-full rounded-2xl border text-base font-normal text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-700 focus:bg-white focus:ring-neutral-700 dark:text-neutral-100 dark:focus:border-neutral-300 dark:focus:bg-neutral-800 dark:focus:ring-neutral-300'
   const sectionClassName = 'border-t border-neutral-200 pt-5 dark:border-neutral-700'
   const sectionHeaderClassName = 'mb-4 flex items-center gap-2.5'
   const sectionIconClassName =
@@ -123,7 +123,7 @@ export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }
                           onBlur={() => setEditingPrice(null)}
                           onChange={(event) => update(key, cleanMapPriceInput(event.target.value))}
                           placeholder={th ? 'ไม่จำกัด' : 'Any'}
-                          className={`${inputClassName} pe-12`}
+                          className={`${inputClassName} border-neutral-800 bg-white pe-12 dark:border-neutral-300 dark:bg-neutral-900`}
                         />
                         <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-normal text-neutral-500 dark:text-neutral-400">
                           {th ? 'บาท' : 'THB'}
@@ -221,7 +221,7 @@ export function MapSearchDetailsSheet({ onClose, value: initialValue, onChange }
                       value={value.minArea}
                       onChange={(event) => update('minArea', event.target.value.replace(/\D/g, '').slice(0, 10))}
                       placeholder={th ? 'ไม่จำกัด' : 'Any'}
-                      className={`${inputClassName} pe-16`}
+                      className={`${inputClassName} border-neutral-200 bg-neutral-50/70 pe-16 dark:border-neutral-700 dark:bg-neutral-800/60`}
                     />
                     <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs font-normal text-neutral-500 dark:text-neutral-400">
                       {th ? 'ตร.ม.' : 'sq.m.'}
