@@ -15,10 +15,12 @@ import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
+import { getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
   ChevronDown,
+  ExternalLink,
   LandPlot,
   MapPin,
   Ruler,
@@ -114,10 +116,12 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const hasContacts = Boolean(
     listing.contact_name || listing.organization_name || listing.contact_organization_name || contactLinks.length
   )
-  const mapURL =
-    listing.latitude && listing.longitude
-      ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
-      : ''
+  const location =
+    typeof listing.latitude === 'number' && typeof listing.longitude === 'number'
+      ? { lat: listing.latitude, lng: listing.longitude }
+      : undefined
+  const locationMapURL = getMapPreviewGoogleMapsUrl(location)
+  const mapURL = getMapPreviewGoogleMapsUrl(location, true)
   const factCards = [
     { icon: LandPlot, value: `${formatThaiNumber(landAreaSquareWah)} ตร.ว.`, label: 'เนื้อที่รวม' },
     ...(plotCount ? [{ icon: SplitSquareVertical, value: `${plotCount} แปลง`, label: 'แปลงติดกัน' }] : []),
@@ -159,12 +163,23 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
               <div className="min-w-0">
                 <span>{fullAddress}</span>
-                <a
-                  href="#listing-location"
-                  className="flex min-h-9 items-center text-sm font-medium text-[#176b50] underline underline-offset-4"
-                >
-                  {isThai ? 'ดูแผนที่และการเดินทาง' : 'View map and directions'}
-                </a>
+                {locationMapURL && (
+                  <a
+                    href={locationMapURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-listing-map-link
+                    aria-label={
+                      isThai
+                        ? 'ดูตำแหน่งใน Google Maps (เปิดแท็บใหม่)'
+                        : 'View location in Google Maps (opens a new tab)'
+                    }
+                    className="ml-2 inline-flex items-center gap-1 text-sm font-medium whitespace-nowrap text-[#176b50] underline underline-offset-4"
+                  >
+                    {isThai ? 'ดูแผนที่' : 'View map'}
+                    <ExternalLink className="size-3" aria-hidden="true" />
+                  </a>
+                )}
               </div>
             </div>
           )}
@@ -234,13 +249,24 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   <div className="mt-3 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
                     <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                     <div className="min-w-0">
-                      <span className="block">{fullAddress}</span>
-                      <a
-                        href="#listing-location"
-                        className="inline-flex min-h-9 items-center text-sm font-medium text-[#176b50] underline underline-offset-4"
-                      >
-                        {isThai ? 'ดูแผนที่และการเดินทาง' : 'View map and directions'}
-                      </a>
+                      <span>{fullAddress}</span>
+                      {locationMapURL && (
+                        <a
+                          href={locationMapURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-listing-map-link
+                          aria-label={
+                            isThai
+                              ? 'ดูตำแหน่งใน Google Maps (เปิดแท็บใหม่)'
+                              : 'View location in Google Maps (opens a new tab)'
+                          }
+                          className="ml-2 inline-flex items-center gap-1 text-sm font-medium whitespace-nowrap text-[#176b50] underline underline-offset-4"
+                        >
+                          {isThai ? 'ดูแผนที่' : 'View map'}
+                          <ExternalLink className="size-3" aria-hidden="true" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}

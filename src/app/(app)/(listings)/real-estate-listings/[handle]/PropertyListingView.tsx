@@ -10,6 +10,7 @@ import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { isPropertyPlan, propertyPreviewImages } from '@/lib/propertyDetailPresentation'
+import { getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
 import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { getPropertyPrices, propertyOffersLabel, propertyPricesText } from '@/lib/propertyPrices'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
@@ -18,6 +19,7 @@ import {
   BedDouble,
   Building2,
   CarFront,
+  ExternalLink,
   MapPin,
   Maximize2,
   MessageCircle,
@@ -109,10 +111,12 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   )
   const phoneURL = contactLinks.find((contact) => contact.kind === 'phone')?.href || ''
   const lineURL = contactLinks.find((contact) => contact.kind === 'line')?.href || ''
-  const mapURL =
-    listing.latitude && listing.longitude
-      ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
-      : ''
+  const location =
+    typeof listing.latitude === 'number' && typeof listing.longitude === 'number'
+      ? { lat: listing.latitude, lng: listing.longitude }
+      : undefined
+  const locationMapURL = getMapPreviewGoogleMapsUrl(location)
+  const mapURL = getMapPreviewGoogleMapsUrl(location, true)
   const isTrustedContact =
     listing.organization_verification_status === 'verified' ||
     listing.contact_verification_status === 'authority_verified'
@@ -245,21 +249,32 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 </Link>
               ) : null}
               {fullAddress ? (
-                <a
-                  href="#listing-location"
-                  className="mt-3 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 hover:text-[#176b50] dark:text-neutral-300"
-                >
+                <div className="mt-3 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
                   <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
                   <div className="min-w-0">
                     <span className="min-[744px]:hidden">{fullAddress}</span>
                     <span className="hidden min-[744px]:inline">
-                      {[district, province].filter(Boolean).join(' · ')}{' '}
-                      <span className="ml-2 text-[#176b50] underline underline-offset-4">
-                        {isThai ? 'ดูแผนที่' : 'View map'}
-                      </span>
+                      {[district, province].filter(Boolean).join(' · ')}
                     </span>
+                    {locationMapURL && (
+                      <a
+                        href={locationMapURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-listing-map-link
+                        aria-label={
+                          isThai
+                            ? 'ดูตำแหน่งใน Google Maps (เปิดแท็บใหม่)'
+                            : 'View location in Google Maps (opens a new tab)'
+                        }
+                        className="ml-2 inline-flex items-center gap-1 font-medium whitespace-nowrap text-[#176b50] underline underline-offset-4"
+                      >
+                        {isThai ? 'ดูแผนที่' : 'View map'}
+                        <ExternalLink className="size-3" aria-hidden="true" />
+                      </a>
+                    )}
                   </div>
-                </a>
+                </div>
               ) : null}
             </div>
             {facts.length ? (
