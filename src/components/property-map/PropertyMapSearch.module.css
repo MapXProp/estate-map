@@ -82,17 +82,7 @@
   color: #687d71;
 }
 .projectResult:is(:hover, :focus-visible, [data-hovered='true']) {
-  background: #123f32;
-  color: #fff;
-  border-color: #123f32;
-}
-.projectResult:is(:hover, :focus-visible, [data-hovered='true']) .projectResultMeta {
-  color: #d7e9df;
-}
-.projectResult:is(:hover, :focus-visible, [data-hovered='true']) .projectIcon {
-  background: #ffffff14;
-  color: #fff;
-  border-color: #ffffff40;
+  background: #f2f8f4;
 }
 .homes {
   --category-ink: #176b50;
@@ -1399,9 +1389,10 @@
   border-color: #324037;
 }
 :global(.dark) .projectResult:is(:hover, :focus-visible, [data-hovered='true']) {
-  background: #123f32;
-  color: #fff;
-  border-color: #123f32;
+  background: #263c30;
+}
+:global(.dark) .projectResultMeta {
+  color: #a6b9ad;
 }
 :global(.dark) .offers button {
   color: #c1c7c1;

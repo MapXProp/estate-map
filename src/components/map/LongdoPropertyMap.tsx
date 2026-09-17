@@ -1161,9 +1161,8 @@ const LongdoPropertyMap = ({
         .mapx-project-label small { margin-top: 2px; font-size: 10px; color: #638171; font-weight: 400; }
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
         .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #123f32; border-color: #123f32; color: white; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #123f32; border-color: #123f32; color: white; }
-        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label small { color: #d7e9df; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #e8f3ed; border-color: #518f75; color: #176b50; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #f2f8f4; border-color: #c5dbcf; color: #176b50; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
         div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
