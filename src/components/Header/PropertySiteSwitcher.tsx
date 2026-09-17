@@ -104,7 +104,7 @@ const PropertySiteSwitcher = ({
       <PopoverPanel
         transition
         anchor={{ to: 'bottom end', gap: 12 }}
-        className="z-50 w-80 max-w-[calc(100vw-1rem)] rounded-3xl border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-20px_rgba(15,23,42,0.32)] transition duration-200 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-1 data-closed:opacity-0"
+        className="z-[65] w-80 max-w-[calc(100vw-1rem)] rounded-3xl border border-neutral-200 bg-white p-2 shadow-[0_22px_65px_-20px_rgba(15,23,42,0.32)] transition duration-200 dark:border-neutral-700 dark:bg-neutral-900 data-closed:translate-y-1 data-closed:opacity-0"
       >
         <div className="px-3 pt-2 pb-2">
           <p className="text-sm font-semibold text-neutral-950 dark:text-white">

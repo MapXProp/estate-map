@@ -103,7 +103,7 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             to: 'bottom end',
             gap: 16,
           }}
-          className="z-40 max-h-[calc(100dvh-6rem)] w-80 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-3xl shadow-lg ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0"
+          className="z-[65] max-h-[calc(100dvh-6rem)] w-80 max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-3xl shadow-lg ring-1 ring-black/5 transition duration-200 ease-in-out data-closed:translate-y-1 data-closed:opacity-0"
         >
           <div className="relative bg-white px-5 py-5 dark:bg-neutral-800">
             <div className="flex items-center gap-3 px-1">

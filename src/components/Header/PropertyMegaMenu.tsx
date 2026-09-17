@@ -5,7 +5,6 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import {
   CloseButton,
   Popover,
-  PopoverBackdrop,
   PopoverButton,
   PopoverPanel,
   Tab,
@@ -17,6 +16,7 @@ import {
 import { ChevronDown, Map, MapPin, Search, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
 
 const locations = [
   ['กรุงเทพมหานคร', 'Bangkok'],
@@ -49,15 +49,12 @@ const PropertyMegaMenu = () => {
         <ChevronDown className="ms-1 size-4 transition group-data-open:rotate-180" aria-hidden="true" />
       </PopoverButton>
 
-      <PopoverBackdrop
-        transition
-        className="fixed inset-0 top-20 z-30 bg-neutral-950/10 transition duration-200 dark:bg-black/25 data-closed:opacity-0"
-      />
+      <TopNavPopoverBackdrop />
 
       <PopoverPanel
         anchor={{ to: 'bottom', gap: 18 }}
         transition
-        className="z-50 max-h-[calc(100vh-7rem)] w-[min(1040px,calc(100vw-2rem))] overflow-y-auto rounded-[28px] border border-neutral-200/80 bg-white p-5 shadow-2xl shadow-neutral-900/15 transition duration-200 min-[900px]:p-6 dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-black/40 data-closed:-translate-y-1 data-closed:opacity-0"
+        className="z-[65] max-h-[calc(100vh-7rem)] w-[min(1040px,calc(100vw-2rem))] overflow-y-auto rounded-[28px] border border-neutral-200/80 bg-white p-5 shadow-2xl shadow-neutral-900/15 transition duration-200 min-[900px]:p-6 dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-black/40 data-closed:-translate-y-1 data-closed:opacity-0"
       >
         <div className="mb-5 flex items-start justify-between gap-5">
           <div>

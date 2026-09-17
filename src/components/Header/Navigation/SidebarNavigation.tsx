@@ -159,7 +159,7 @@ const SidebarNavigation: React.FC<Props> = ({ data, currencies, languages }) => 
             to: 'top end',
             gap: 12,
           }}
-          panelClassName="z-50 w-[calc(100vw-2rem)] max-w-sm p-4!"
+          panelClassName="w-[calc(100vw-2rem)] max-w-sm p-4!"
         />
       </div>
     </div>
