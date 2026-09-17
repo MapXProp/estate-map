@@ -96,6 +96,29 @@ test('official project coordinate anchors units at different coordinates; unknow
   assert.deepEqual(plain(group[0].location), { lat: 13.72, lon: 100.52 })
 })
 
+test('project priority aggregates real promotion packages, latest publication and listing counts without depending on input order', () => {
+  const m = model()
+  const rows = [
+    { ...listing, id: 'a1', projectPublicId: 'paid', isMapPromoted: true, mapPromotionTier: 'premium', mapPriorityWeight: 4, date: '2026-01-01' },
+    { ...listing, id: 'a2', projectPublicId: 'paid', isMapPromoted: true, mapPromotionTier: 'boosted', mapPriorityWeight: 99, date: '2026-06-01', projectListingCount: 12 },
+    { ...listing, id: 'b', projectPublicId: 'boosted', isMapPromoted: true, mapPromotionTier: 'boosted', mapPriorityWeight: 1, date: '2026-09-01' },
+    { ...listing, id: 'c', projectPublicId: 'new', date: '2026-09-17', projectListingCount: 1 },
+    { ...listing, id: 'd', projectPublicId: 'large', date: '2026-09-16', projectListingCount: 50 },
+    { ...listing, id: 'e', projectPublicId: 'small', date: '2026-09-16', projectListingCount: 2 },
+    { ...listing, id: 'f', projectPublicId: 'expired', isMapPromoted: false, mapPromotionTier: 'premium', mapPriorityWeight: 500, date: 'invalid' },
+  ]
+  const before = plain(rows)
+  const groups = m.groupMapProjects(rows)
+  assert.deepEqual(plain(m.groupMapProjects([...rows].reverse())), plain(groups))
+  const paid = groups.find(project => project.id === 'paid')
+  assert.equal(paid.mapPromotionTier, 'premium')
+  assert.equal(paid.mapPriorityWeight, 4, 'do not borrow the weight from a different package tier')
+  assert.equal(paid.latestListingAt, '2026-06-01')
+  assert.equal(paid.listingCount, 12)
+  assert.deepEqual(plain([...groups].sort(m.compareMapProjectPriority).map(project => project.id)), ['paid', 'boosted', 'new', 'large', 'small', 'expired'])
+  assert.deepEqual(plain(rows), before)
+})
+
 test('all project pages load independently of map filters, including units with no map coordinate', async () => {
   const calls = []
   const rows = Array.from({ length: 125 }, (_, id) => ({

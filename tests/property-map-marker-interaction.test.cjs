@@ -25,6 +25,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   const slots = [],
     effects = [],
     frames = new Map(),
+    mapObstacles = [],
     mapEvents = new Map(),
     listeners = new Map(),
     calls = [],
@@ -51,6 +52,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       this.link = link
       this.dataset = {}
       this.offsetWidth = 100
+      this.offsetHeight = 30
       this.style = {
         setProperty(name, value) {
           this[name] = value
@@ -72,16 +74,20 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
           : this.root || this
     }
     querySelectorAll(selector) {
+      if (this.isMap && selector.includes('[data-map-results-panel]')) return mapObstacles
       if (selector.includes('aria-controls="map-property-preview"')) return [this]
       if (this.isMap && selector.includes('data-mapx-project-marker')) return projectRoots
       return this.isMap && selector.includes('data-mapx-price-marker') ? markerRoots : []
     }
     querySelector(selector) {
+      if (selector === '.mapx-project-label' && this.label) return this.label
+      if (selector === '.mapx-project-pin' && this.pin) return this.pin
       if (this.isMap && selector.includes('data-mapx-search-marker'))
         return overlays.findLast((overlay) => overlay.searchRoot && !removedOverlays.has(overlay))?.searchRoot || null
       return this
     }
     getBoundingClientRect() {
+      if (this.rect) return this.rect
       return { left: 0, top: 0, width, height: 600, right: width, bottom: 600 }
     }
     contains() {
@@ -105,9 +111,22 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   })
   const markerRoot = markerRoots[0]
   const projectRoots = projectsEnabled
-    ? projectContext.exports.groupMapProjects(initialListings).map((project) => {
+    ? projectContext.exports.groupMapProjects(initialListings).map((project, index) => {
         const root = new Element()
         root.dataset.mapxProjectId = project.id
+        root.dataset.mapxProjectSlug = project.slug
+        root.rect = { left: 120 + index * 100, top: 250, right: 164 + index * 100, bottom: 294, width: 44, height: 44 }
+        root.parentElement = new Element()
+        root.label = new Element()
+        root.label.offsetWidth = 120
+        root.label.offsetHeight = 29
+        root.pin = new Element()
+        root.pin.getBoundingClientRect = () => {
+          const size = parseFloat(root.style['--mapx-project-size']) || 24
+          const x = (root.rect.left + root.rect.right) / 2
+          const y = (root.rect.top + root.rect.bottom) / 2
+          return { left: x - size / 2, top: y - size / 2, right: x + size / 2, bottom: y + size / 2, width: size, height: size }
+        }
         return root
       })
     : []
@@ -161,6 +180,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     '@/lib/propertyReturnNavigation': { rememberPropertyResultsLocation: () => {} },
     '@/lib/propertyPrices': require('./helpers/property-prices.cjs').prices,
     '@/lib/propertyMapProjects': projectContext.exports,
+    '@/lib/propertyMapProjectLayout': require('./helpers/property-prices.cjs').load('src/lib/propertyMapProjectLayout.ts'),
     '@/lib/propertyMapLocationSearch': {
       resolveMapSearchPlace: async (...args) => {
         const place = await searchPlace(...args)
@@ -173,6 +193,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     'next/script': { default: 'sdk-script' },
   }
   const window = {
+    getComputedStyle: node => ({ visibility: node.visibility || 'visible' }),
     location: { pathname, search: '?lat=13.8&lon=100.4&zoom=14', hash: '' },
     requestAnimationFrame: (fn) => {
       frames.set(++frameId, fn)
@@ -431,6 +452,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     markerRoot,
     markerRoots,
     projectRoots,
+    mapObstacles,
     getSpiderOffsets: context.exports.getSpiderOffsets,
     unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
     api,
@@ -593,17 +615,17 @@ test('project mode replaces coincident price pins with one accessible building m
   }
 })
 
-test('project buildings shrink as users zoom in and recover when zooming out without rebuilding pins', () => {
+test('project buildings grow gently when zooming in and shrink at overview zoom without rebuilding pins', () => {
   const units = [{ ...listing, projectPublicId: 'project-a', projectSlug: 'project-a', projectName: 'Project A' }]
   for (const width of [390, 820, 1440]) {
-    const h = harness(width, 11, units, true)
+    const h = harness(width, 10, units, true)
     h.render({ selectedProjectId: 'project-a' })
     const root = h.projectRoots[0]
     const size = () => parseFloat(root.style['--mapx-project-size'])
     const initialSize = size()
     const overlayCount = h.overlays.length
     const center = h.api.location()
-    assert.ok(initialSize > 0 && initialSize <= (width < 1024 ? 28 : 32))
+    assert.equal(initialSize, width < 1024 ? 16 : 18)
     const zoomFromMap = (level) => {
       h.api.zoom(level)
       h.calls.length = 0
@@ -617,15 +639,15 @@ test('project buildings shrink as users zoom in and recover when zooming out wit
       assert.equal(root.attributes['aria-expanded'], 'true')
     }
     let previousSize = initialSize
-    for (const level of [13, 15, 17]) {
+    for (const level of [12.1, 12.2, 14, 17]) {
       zoomFromMap(level)
-      assert.ok(size() < previousSize, `zoom ${level} shrinks the building on a ${width}px viewport`)
+      assert.ok(size() > previousSize, `zoom ${level} grows the building on a ${width}px viewport`)
       previousSize = size()
     }
-    assert.ok(size() >= 20, 'the building retains a readable visual floor')
+    assert.equal(size(), width < 1024 ? 24 : 26, 'street-level buildings keep a modest size ceiling')
     zoomFromMap(22)
-    assert.equal(size(), previousSize, 'extreme zoom cannot shrink it below the floor')
-    zoomFromMap(11)
+    assert.equal(size(), previousSize, 'extreme zoom cannot enlarge it beyond the ceiling')
+    zoomFromMap(10)
     assert.equal(size(), initialSize)
     zoomFromMap(4)
     assert.equal(size(), initialSize, 'far-out views cannot create oversized buildings')
@@ -636,6 +658,51 @@ test('project buildings shrink as users zoom in and recover when zooming out wit
     assert.equal(h.selectedProjects[0].id, 'project-a', 'compact pins retain their activation handler')
     h.unmount()
   }
+})
+
+test('project labels rank current promotions and new listings, reveal selected names and respond to map repaint without rebuilding', () => {
+  const rows = [
+    { ...listing, id: 'a', projectPublicId: 'a', projectSlug: 'a', projectName: 'Older', date: '2026-01-01' },
+    { ...listing, id: 'b', projectPublicId: 'b', projectSlug: 'b', projectName: 'Newest', date: '2026-09-17' },
+    { ...listing, id: 'c', projectPublicId: 'c', projectSlug: 'c', projectName: 'Promoted', isMapPromoted: true, mapPromotionTier: 'premium' },
+  ]
+  const h = harness(390, 10, rows, true)
+  h.projectRoots.forEach(root => {
+    root.rect = { left: 138, right: 182, top: 250, bottom: 294, width: 44, height: 44 }
+    root.label.offsetWidth = 260
+    root.label.offsetHeight = 34
+  })
+  const overlays = h.overlays.length
+  const position = h.api.location()
+  h.emitMapEvent('repaint')
+  h.render()
+  const [older, newer, paid] = h.projectRoots
+  assert.equal(paid.dataset.mapxProjectRank, '0')
+  assert.equal(paid.dataset.mapxProjectLabel, 'true')
+  assert.equal(newer.dataset.mapxProjectRank, '1')
+  assert.equal(newer.dataset.mapxProjectLabel, 'true')
+  assert.equal(older.dataset.mapxProjectLabel, 'false')
+  h.render({ selectedProjectId: 'a' })
+  assert.equal(older.dataset.mapxProjectRank, '0')
+  assert.equal(older.dataset.mapxProjectLabel, 'true')
+  assert.equal(newer.dataset.mapxProjectLabel, 'false')
+  assert.notEqual(older.style['--mapx-project-label-y'], paid.style['--mapx-project-label-y'])
+  const obstacle = {
+    offsetWidth: 390, offsetHeight: 500,
+    getBoundingClientRect: () => ({ left: 0, right: 390, top: 0, bottom: 500 }),
+  }
+  h.mapObstacles.push(obstacle)
+  h.emitMapEvent('resize')
+  h.render()
+  assert.ok(h.projectRoots.every(root => root.dataset.mapxProjectLabel === 'false'), 'the results sheet covers these pins')
+  obstacle.visibility = 'hidden'
+  h.emitMapEvent('idle')
+  h.render()
+  assert.equal(older.dataset.mapxProjectLabel, 'true')
+  assert.equal(h.overlays.length, overlays)
+  assert.equal(h.api.location(), position)
+  assert.deepEqual(h.calls, [])
+  h.unmount()
 })
 
 test('listing pins are the default; switching to all projects and back preserves the camera', () => {

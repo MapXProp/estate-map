@@ -16,6 +16,7 @@ import { useMapAutoAreaSearch } from '@/hooks/useMapAutoAreaSearch'
 import { useMapPreviewHeaderHeight } from '@/hooks/useMapPreviewHeaderHeight'
 import { useMapBottomSheet } from '@/hooks/useMobileSheets'
 import {
+  compareMapProjectPriority,
   groupMapProjects,
   mapProjectSearchSeed,
   validProjectLocation,
@@ -354,10 +355,8 @@ export default function PropertyMapSearch({
               location.lon >= area.minLon &&
               location.lon <= area.maxLon)
         )
-        .sort((a, b) =>
-          (a.displayName || a.nameEn || a.name).localeCompare(b.displayName || b.nameEn || b.name, th ? 'th' : 'en')
-        ),
-    [mapProjects, area, th]
+        .sort(compareMapProjectPriority),
+    [mapProjects, area]
   )
   const mapListings = useMemo(
     () =>

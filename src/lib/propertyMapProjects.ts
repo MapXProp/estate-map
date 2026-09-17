@@ -28,6 +28,27 @@ export type MapProject = {
   location: { lat: number; lon: number }
   listingIds: string[]
   listingCount?: number
+  mapPromotionTier?: 'premium' | 'boosted' | 'free'
+  mapPriorityWeight?: number
+  latestListingAt?: string
+}
+
+const promotionRank = (tier: MapProject['mapPromotionTier']) => (tier === 'premium' ? 2 : tier === 'boosted' ? 1 : 0)
+const publishedTime = (value?: string) => {
+  const time = Date.parse(value || '')
+  return Number.isFinite(time) ? time : 0
+}
+
+// Rank using current map promotions, the newest matching listing and the known listing count.
+// These are discovery signals, not claims about a project's construction date or physical size.
+export function compareMapProjectPriority(first: MapProject, second: MapProject) {
+  return (
+    promotionRank(second.mapPromotionTier) - promotionRank(first.mapPromotionTier) ||
+    (second.mapPriorityWeight || 0) - (first.mapPriorityWeight || 0) ||
+    publishedTime(second.latestListingAt) - publishedTime(first.latestListingAt) ||
+    (second.listingCount ?? second.listingIds.length) - (first.listingCount ?? first.listingIds.length) ||
+    first.id.localeCompare(second.id)
+  )
 }
 
 export type MapProjectDetails = {
@@ -85,10 +106,10 @@ export function groupMapProjects(listings: TRealEstateListing[]): MapProject[] {
       ? { lat: listing.projectLatitude!, lon: listing.projectLongitude! }
       : { lat: listing.map.lat, lon: listing.map.lng }
     const key = `${listing.projectPublicId}:${location.lat.toFixed(7)}:${location.lon.toFixed(7)}`
-    const group = groups.get(key)
+    let group = groups.get(key)
     if (group) group.listingIds.push(listing.id)
-    else
-      groups.set(key, {
+    else {
+      group = {
         id: listing.projectPublicId,
         slug: listing.projectSlug,
         name: listing.projectName,
@@ -98,7 +119,21 @@ export function groupMapProjects(listings: TRealEstateListing[]): MapProject[] {
         location,
         listingIds: [listing.id],
         listingCount: listing.projectListingCount,
-      })
+      }
+      groups.set(key, group)
+    }
+    if (publishedTime(listing.date) > publishedTime(group.latestListingAt)) group.latestListingAt = listing.date
+    if (listing.projectListingCount !== undefined)
+      group.listingCount = Math.max(group.listingCount || 0, listing.projectListingCount)
+    const tier = listing.isMapPromoted ? listing.mapPromotionTier || 'free' : 'free'
+    const weight = tier === 'free' ? 0 : Math.max(0, listing.mapPriorityWeight || 0)
+    if (
+      promotionRank(tier) > promotionRank(group.mapPromotionTier) ||
+      (promotionRank(tier) === promotionRank(group.mapPromotionTier) && weight > (group.mapPriorityWeight || 0))
+    ) {
+      group.mapPromotionTier = tier
+      group.mapPriorityWeight = weight
+    }
   }
   return [...groups.values()]
 }

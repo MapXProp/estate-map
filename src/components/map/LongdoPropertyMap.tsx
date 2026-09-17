@@ -12,7 +12,9 @@ import {
   searchMapProjects,
   type MapSearchSuggestion,
 } from '@/lib/propertyMapLocationSearch'
+import { layoutProjectLabels, projectMarkerSize, type ProjectLabelPlacement } from '@/lib/propertyMapProjectLayout'
 import {
+  compareMapProjectPriority,
   groupMapProjects,
   projectCategoryLabel,
   type MapProject,
@@ -228,7 +230,13 @@ export type PropertyMapViewport = {
   initial?: boolean
 }
 
-export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean, hovered = false) => {
+export const getProjectMarkerHtml = (
+  project: MapProject,
+  isThai: boolean,
+  selected: boolean,
+  hovered = false,
+  size = 24
+) => {
   const name = project.displayName || project.nameEn || project.name
   const label = isThai ? 'ดูประกาศทั้งหมดในโครงการ' : 'View all listings in this project'
   const count = project.listingCount ?? project.listingIds.length
@@ -241,7 +249,7 @@ export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selec
         ? 'ประกาศทั้งหมดในโครงการ'
         : 'All project listings'
   const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
-  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}${hovered ? ' is-hovered' : ''}">
+  return `<div data-mapx-project-marker="true" data-mapx-project-label="false" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" style="--mapx-project-size:${size.toFixed(3)}px" class="mapx-project-marker${selected ? ' is-selected' : ''}${hovered ? ' is-hovered' : ''}">
     <a href="/properties/map?map_mode=projects&amp;project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
       <span class="mapx-project-label"><span>${escapeHtml(name)}</span></span>
       <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
@@ -384,6 +392,7 @@ const LongdoPropertyMap = ({
     () => (mapMode === 'projects' ? (projectMarkers ?? groupMapProjects(listings)) : []),
     [listings, mapMode, projectMarkers]
   )
+  const projectsById = useMemo(() => new Map(projects.map((project) => [project.id, project])), [projects])
 
   const clearSearchMarker = useCallback(() => {
     const cue = searchMarkerRef.current
@@ -459,14 +468,80 @@ const LongdoPropertyMap = ({
       })
 
     const zoom = map.zoom()
+    const mobile = window.matchMedia('(max-width: 1023px)').matches
+    const mapRect = mapContainer.getBoundingClientRect()
     const projectRoots = Array.from(mapContainer.querySelectorAll<HTMLElement>('[data-mapx-project-marker]'))
-    const maxProjectPinSize = window.matchMedia('(max-width: 1023px)').matches ? 28 : 32
-    const projectZoomProgress = Math.max(0, Math.min(1, (zoom - 11) / 6))
-    const projectPinSize = Math.round(maxProjectPinSize - projectZoomProgress * 8)
+    const projectPinSize = `${projectMarkerSize(zoom, mobile).toFixed(3)}px`
     projectRoots.forEach((root) => {
-      // Zooming in shrinks the visible building; the link keeps its 44px touch target.
-      root.style.setProperty('--mapx-project-size', `${projectPinSize}px`)
-      root.dataset.mapxProjectLabel = zoom >= 16 ? 'true' : 'false'
+      if (root.dataset.mapxProjectSize !== projectPinSize) {
+        root.style.setProperty('--mapx-project-size', projectPinSize)
+        root.dataset.mapxProjectSize = projectPinSize
+      }
+    })
+    const projectCandidates = projectRoots
+      .flatMap((root) => {
+        const project = projectsById.get(root.dataset.mapxProjectId || '')
+        const label = root.querySelector<HTMLElement>('.mapx-project-label')
+        const pin = root.querySelector<HTMLElement>('.mapx-project-pin')
+        if (!project || !label || !pin) return []
+        const selected =
+          Boolean(selectedProjectIdRef.current) && [project.id, project.slug].includes(selectedProjectIdRef.current)
+        const hovered = project.id === hoveredProjectIdRef.current
+        return [
+          {
+            root,
+            rootRect: root.getBoundingClientRect(),
+            project,
+            label,
+            pin: pin.getBoundingClientRect(),
+            width: label.offsetWidth,
+            height: label.offsetHeight,
+            active: selected || hovered,
+            attention: hovered ? 2 : selected ? 1 : 0,
+            previousPlacement: root.dataset.mapxProjectPlacement as ProjectLabelPlacement | undefined,
+          },
+        ]
+      })
+      .sort(
+        (first, second) =>
+          second.attention - first.attention || compareMapProjectPriority(first.project, second.project)
+      )
+    const obstacles = Array.from(
+      (
+        mapContainer.closest('[data-map-canvas]') ||
+        mapContainer.parentElement ||
+        mapContainer
+      ).querySelectorAll<HTMLElement>(
+        '[data-map-results-panel], [data-map-location-search], [data-map-area-control], [data-map-open-results], [data-map-zoom-controls]'
+      )
+    )
+      .filter(
+        (node) => node.offsetWidth > 0 && node.offsetHeight > 0 && window.getComputedStyle(node).visibility !== 'hidden'
+      )
+      .map((node) => node.getBoundingClientRect())
+    const projectLayout = layoutProjectLabels(projectCandidates, mapRect, obstacles, zoom, mobile)
+    projectLayout.forEach(({ candidate: { root, rootRect }, rect, placement }, index) => {
+      const visible = rect ? 'true' : 'false'
+      if (root.dataset.mapxProjectLabel !== visible) root.dataset.mapxProjectLabel = visible
+      if (root.dataset.mapxProjectRank !== String(index)) root.dataset.mapxProjectRank = String(index)
+      const zIndex = String(920 + projectCandidates.length - index)
+      if (root.style.zIndex !== zIndex) {
+        root.style.zIndex = zIndex
+        root.parentElement?.style.setProperty('--mapx-project-z', zIndex)
+      }
+      if (rect && placement) {
+        const x = `${(rect.left - (rootRect.left + rootRect.right) / 2).toFixed(2)}px`
+        const y = `${(rect.top - (rootRect.top + rootRect.bottom) / 2).toFixed(2)}px`
+        if (root.dataset.mapxProjectLabelX !== x) {
+          root.style.setProperty('--mapx-project-label-x', x)
+          root.dataset.mapxProjectLabelX = x
+        }
+        if (root.dataset.mapxProjectLabelY !== y) {
+          root.style.setProperty('--mapx-project-label-y', y)
+          root.dataset.mapxProjectLabelY = y
+        }
+        if (root.dataset.mapxProjectPlacement !== placement) root.dataset.mapxProjectPlacement = placement
+      }
     })
     if (!candidates.length) return
     const showEveryLabel = !exactCoordinates && zoom >= 19
@@ -511,14 +586,8 @@ const LongdoPropertyMap = ({
       return
     }
 
-    const mapRect = mapContainer.getBoundingClientRect()
     const collisionGap = zoom <= 10 ? 14 : zoom <= 13 ? 10 : zoom <= 16 ? 7 : 4
-    const acceptedRects: Array<{ left: number; top: number; right: number; bottom: number }> = projectRoots.flatMap(
-      (root) => {
-        const label = root.querySelector<HTMLElement>('.mapx-project-label')
-        return [root.getBoundingClientRect(), ...(label?.offsetWidth ? [label.getBoundingClientRect()] : [])]
-      }
-    )
+    const acceptedRects = projectLayout.flatMap(({ candidate, rect }) => [candidate.pin, ...(rect ? [rect] : [])])
 
     candidates.forEach(({ root, pill }, priorityIndex) => {
       const rect = pill.getBoundingClientRect()
@@ -547,7 +616,7 @@ const LongdoPropertyMap = ({
       root.style.zIndex = String(900 - Math.min(priorityIndex, 850))
       if (!overlaps) acceptedRects.push(expandedRect)
     })
-  }, [exactCoordinates, listingsById])
+  }, [exactCoordinates, listingsById, projectsById])
 
   const scheduleMarkerDeclutter = useCallback(() => {
     if (declutterAnimationFrameRef.current !== null) {
@@ -1005,6 +1074,9 @@ const LongdoPropertyMap = ({
     })
     map.Event.bind('location', notifyViewportChange)
     map.Event.bind('zoom', notifyViewportChange)
+    // Keep names clear during SDK animations without submitting searches or moving the camera.
+    for (const event of ['repaint', 'resize', 'pinch', 'pinchEnd', 'drop', 'idle'])
+      map.Event.bind(event, () => declutterMarkersRef.current())
 
     return () => {
       if (enableViewportEventsTimer) clearTimeout(enableViewportEventsTimer)
@@ -1123,7 +1195,8 @@ const LongdoPropertyMap = ({
             project,
             isThai,
             project.id === selectedProjectIdRef.current || project.slug === selectedProjectIdRef.current,
-            project.id === hoveredProjectIdRef.current
+            project.id === hoveredProjectIdRef.current,
+            projectMarkerSize(map.zoom(), window.matchMedia('(max-width: 1023px)').matches)
           ),
           offset: { x: 0, y: 0 },
         },
@@ -1179,18 +1252,18 @@ const LongdoPropertyMap = ({
         @media (prefers-reduced-motion: reduce) { .mapx-search-marker { transition: none; } }
         .mapx-project-marker { --mapx-project-size: 24px; position: relative; width: 44px; height: 44px; transform: translate(-50%,-50%); font-family: Sarabun,Arial,sans-serif; z-index: 920; }
         .mapx-project-link { position: relative; display: grid; width: 44px; height: 44px; place-items: center; text-decoration: none !important; color: #176b50 !important; border-radius: 50%; }
-        .mapx-project-pin { position: relative; display: grid; width: var(--mapx-project-size); height: var(--mapx-project-size); place-items: center; border: 2px solid #176b50; border-radius: calc(var(--mapx-project-size) / 3); background: white; box-shadow: 0 3px 10px #123f3230; }
-        .mapx-project-pin > svg { width: calc(var(--mapx-project-size) * .6); height: calc(var(--mapx-project-size) * .6); }
-        .mapx-project-pin b { position: absolute; top: -7px; right: -8px; display: grid; min-width: clamp(16px,calc(var(--mapx-project-size) * .6),19px); height: clamp(16px,calc(var(--mapx-project-size) * .6),19px); padding: 0 3px; place-items: center; border: 2px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 10px; line-height: 1; }
-        .mapx-project-label { position: absolute; bottom: calc(30px + var(--mapx-project-size) / 2); left: 50%; transform: translateX(-50%); display: flex; max-width: min(260px,70vw); width: max-content; align-items: center; padding: 6px 11px; border: 1px solid #c5dbcf; border-radius: 12px; background: white; box-shadow: 0 3px 10px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; }
+        .mapx-project-pin { position: relative; display: grid; width: var(--mapx-project-size); height: var(--mapx-project-size); place-items: center; border: 1.5px solid #176b50; border-radius: calc(var(--mapx-project-size) / 3); background: white; box-shadow: 0 2px 6px #123f3224; transition: width 220ms ease-out, height 220ms ease-out, border-radius 220ms ease-out, background-color 140ms ease-out; }
+        .mapx-project-pin > svg { width: calc(var(--mapx-project-size) * .6); height: calc(var(--mapx-project-size) * .6); transition: width 220ms ease-out, height 220ms ease-out; }
+        .mapx-project-pin b { position: absolute; top: -5px; right: -5px; display: grid; min-width: clamp(13px,calc(var(--mapx-project-size) * .65),17px); height: clamp(13px,calc(var(--mapx-project-size) * .65),17px); padding: 0 2px; place-items: center; border: 1.5px solid white; border-radius: 12px; background: #176b50; color: white; font-size: 9px; line-height: 1; transition: min-width 220ms ease-out, height 220ms ease-out; }
+        .mapx-project-label { position: absolute; top: 50%; left: 50%; transform: translate(var(--mapx-project-label-x,-50%),var(--mapx-project-label-y,-54px)); display: flex; max-width: min(260px,70vw); width: max-content; align-items: center; padding: 5px 9px; border: 1px solid #c5dbcf; border-radius: 10px; background: white; box-shadow: 0 2px 8px #123f321a; font-size: 12px; font-weight: 700; line-height: 1.4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 140ms ease-out; }
         .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
-        .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
-        .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
+        .mapx-project-marker[data-mapx-project-label="true"] .mapx-project-label { opacity: 1; visibility: visible; pointer-events: auto; }
         .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #155541; border-color: #155541; color: white; }
         .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #155541; border-color: #155541; color: white; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
-        div:has(> .mapx-project-marker) { z-index: 920 !important; }
+        div:has(> .mapx-project-marker) { z-index: var(--mapx-project-z,920) !important; }
         div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
+        @media (prefers-reduced-motion: reduce) { .mapx-project-pin, .mapx-project-pin > svg, .mapx-project-pin b, .mapx-project-label { transition: none; } }
         .mapx-price-marker {
           cursor: pointer;
           isolation: isolate;
@@ -1712,6 +1785,7 @@ const LongdoPropertyMap = ({
         </div>
 
         <div
+          data-map-zoom-controls
           className={`${zoomControlsClassName || 'absolute end-3 bottom-3 z-20'} flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)] ${
             mobileControlsVisible ? '' : 'max-lg:hidden'
           }`}
