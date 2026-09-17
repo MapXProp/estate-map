@@ -143,8 +143,7 @@ function harness(locale = 'th') {
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
     'next/navigation': { usePathname: () => '/homes', useSearchParams: () => new URLSearchParams() },
-    '@/hooks/useMobileSearchViewport': { useMobileSearchViewport: () => null },
-    '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogTitle: 'test-title' },
+    './MobilePropertySearchDialog': { default: 'test-dialog' },
     '@/components/preferences/PreferencesProvider': {
       usePreferences: () => ({
         locale,
@@ -263,12 +262,14 @@ test('both offers can use an exact budget immediately; closing budget does not c
   h.click(h.data('data-mobile-search-budget', true))
   let sheet = h.one((node) => node.type === 'test-budget').props
   assert.equal(sheet.offerType, '')
+  assert.equal(h.one((node) => node.type === 'test-dialog').props.blocked, true)
   h.one((node) => node.type === 'test-dialog').props.onClose()
   h.render()
   assert.equal(h.one((node) => node.type === 'test-dialog').props.open, true)
   sheet.onApply({ minPrice: '', maxPrice: '123456789' })
   sheet.onClose()
   h.render()
+  assert.equal(h.one((node) => node.type === 'test-dialog').props.blocked, false)
   assert.deepEqual(h.url().searchParams.getAll('offer_type'), ['sale', 'rent'])
   assert.equal(h.url().searchParams.get('price_max'), '123456789')
   h.click(h.data('data-mobile-search-budget', true))
@@ -282,4 +283,31 @@ test('both offers can use an exact budget immediately; closing budget does not c
   const omnibox = h.one((node) => node.type === 'test-omnibox').props
   assert.equal(omnibox.suggestionScope, 'location')
   assert.equal(omnibox.scrollSuggestionsIntoView, true)
+  const locationSection = h.one((node) => node.type === 'section' && node.props['data-sheet-no-drag'])
+  assert.ok(locationSection.props.children.some((node) => node.type === 'test-omnibox'))
+})
+
+test('dismissing and reopening discovery keeps the selected category, offer and exact budget', () => {
+  const h = harness()
+  h.click(h.data('data-mobile-property-search-trigger', true))
+  h.click(h.data('data-mobile-search-group', 'business'))
+  h.click(h.data('data-mobile-search-category', 'business:office'))
+  h.click(h.data('data-mobile-search-offer', 'rent'))
+  h.click(h.data('data-mobile-search-budget', true))
+  const budget = h.one((node) => node.type === 'test-budget').props
+  budget.onApply({ minPrice: '20000', maxPrice: '60000' })
+  budget.onClose()
+  h.render()
+  const before = h.url('สาทร').href
+  assert.equal(h.one((node) => node.props['data-sheet-scroll']).props.className.includes('overflow-y-auto'), true)
+  h.one((node) => node.type === 'test-dialog').props.onClose()
+  h.render()
+  assert.equal(h.one((node) => node.type === 'test-dialog').props.open, false)
+  h.click(h.data('data-mobile-property-search-trigger', true))
+  assert.equal(h.one((node) => node.type === 'test-dialog').props.open, true)
+  assert.equal(h.url('สาทร').href, before)
+  assert.equal(h.data('data-mobile-search-group', 'business').props['aria-pressed'], true)
+  assert.equal(h.data('data-mobile-search-category', 'business:office').props['aria-pressed'], true)
+  assert.equal(h.data('data-mobile-search-offer', 'rent').props['aria-pressed'], true)
+  assert.equal(h.data('data-mobile-search-offer', 'sale').props['aria-pressed'], false)
 })

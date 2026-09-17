@@ -3,14 +3,12 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import type { PropertyTypeCode } from '@/data/propertyTaxonomy'
-import { useMobileSearchViewport } from '@/hooks/useMobileSearchViewport'
 import {
   getMobilePropertyMapSearchUrl,
   mobilePropertyCategories,
   type MobilePropertyCategory,
 } from '@/lib/mobilePropertySearch'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Banknote,
   BedDouble,
@@ -30,12 +28,12 @@ import {
   SlidersHorizontal,
   Store,
   Warehouse,
-  X,
 } from 'lucide-react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useState, type ComponentType, type SVGProps } from 'react'
 import MobileProjectSearchDialog from './MobileProjectSearchDialog'
 import MobilePropertyBrandMark from './MobilePropertyBrandMark'
+import MobilePropertySearchDialog from './MobilePropertySearchDialog'
 import MobileSearchBudgetSheet, { emptySearchBudget, type SearchBudget } from './MobileSearchBudgetSheet'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
@@ -80,7 +78,15 @@ const propertyGroups: Array<{ value: PropertyGroup; label: string; labelEn: stri
 
 const propertyGroupTones: Record<
   PropertyGroup,
-  { activeTab: string; inactiveCount: string; activeCard: string; check: string; activeIcon: string }
+  {
+    activeTab: string
+    inactiveCount: string
+    activeCard: string
+    check: string
+    activeIcon: string
+    offerBorder: string
+    activeOffer: string
+  }
 > = {
   homes: {
     activeTab:
@@ -90,6 +96,9 @@ const propertyGroupTones: Record<
       'border-[#176B50] bg-[#F0F7F4] text-[#123F32] ring-1 ring-[#176B50] ring-inset dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:ring-emerald-400',
     check: 'bg-[#176B50] text-white dark:bg-emerald-300 dark:text-emerald-950',
     activeIcon: 'bg-white/80 dark:bg-emerald-900',
+    offerBorder: 'border-[#d8e5dd]',
+    activeOffer:
+      'bg-[#e5f0e9] text-[#123f32] ring-1 ring-[#c5dbcf] dark:bg-emerald-950 dark:text-emerald-200 dark:ring-emerald-800',
   },
   rooms: {
     activeTab:
@@ -99,6 +108,9 @@ const propertyGroupTones: Record<
       'border-[#2D8FC7] bg-[#E0F2FC] text-[#155C82] ring-1 ring-[#2D8FC7] ring-inset dark:border-[#8fd4f4] dark:bg-[#102b3a] dark:text-[#d8f2ff] dark:ring-[#8fd4f4]',
     check: 'bg-[#2D8FC7] text-white dark:bg-[#8fd4f4] dark:text-[#102b3a]',
     activeIcon: 'bg-white/80 dark:bg-[#173747]',
+    offerBorder: 'border-[#cde2ee]',
+    activeOffer:
+      'bg-[#e9f4fa] text-[#155c82] ring-1 ring-[#c9e2ef] dark:bg-[#102b3a] dark:text-[#bce9fc] dark:ring-[#28566e]',
   },
   business: {
     activeTab:
@@ -108,6 +120,9 @@ const propertyGroupTones: Record<
       'border-[#E65A2F] bg-[#FFF2EC] text-[#8C321D] ring-1 ring-[#E65A2F] ring-inset dark:border-[#FFC2AD] dark:bg-[#351B14] dark:text-[#FFE8DF] dark:ring-[#FFC2AD]',
     check: 'bg-[#E65A2F] text-white dark:bg-[#FFC2AD] dark:text-[#351B14]',
     activeIcon: 'bg-white/80 dark:bg-[#4A251C]',
+    offerBorder: 'border-[#eddcd4]',
+    activeOffer:
+      'bg-[#fff0e8] text-[#974326] ring-1 ring-[#f0d4c5] dark:bg-[#351b14] dark:text-[#ffccb9] dark:ring-[#71412e]',
   },
 }
 
@@ -137,7 +152,6 @@ const MobilePropertySearch = ({
   const mapQuery = searchParams.get('q')?.trim() || ''
   const activePropertyGroup: PropertyGroup = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const [open, setOpen] = useState(false)
-  const searchPanelRef = useMobileSearchViewport(open)
   const [projectSearchOpen, setProjectSearchOpen] = useState(false)
   const [propertyGroup, setPropertyGroup] = useState<PropertyGroup>(activePropertyGroup)
   const [offerType, setOfferType] = useState<OfferType>(activePropertyGroup === 'rooms' ? 'rent' : '')
@@ -274,223 +288,202 @@ const MobilePropertySearch = ({
         )}
       </div>
 
-      <Dialog
+      <MobilePropertySearchDialog
         open={open}
+        blocked={budgetOpen}
+        th={isThai}
         onClose={() => {
           if (!budgetOpen) setOpen(false)
         }}
-        className="relative z-[100] min-[744px]:hidden"
       >
-        <DialogPanel
-          ref={searchPanelRef}
-          transition
-          className="fixed inset-x-0 top-[var(--search-viewport-top,0px)] flex h-[var(--search-viewport-height,100dvh)] flex-col overflow-hidden bg-[#f4f5f6] text-neutral-950 transition duration-200 dark:bg-neutral-950 dark:text-white data-closed:translate-y-8 data-closed:opacity-0"
-        >
-          <div className="flex items-center justify-between border-b border-neutral-200/80 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-900">
-            <div>
-              <DialogTitle className="text-lg font-semibold">
-                {isThai ? 'วันนี้กำลังมองหาอะไร?' : 'What are you looking for today?'}
-              </DialogTitle>
+        <div data-sheet-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-28">
+          <section>
+            <div className="grid grid-cols-3 gap-1 rounded-2xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-800">
+              {propertyGroups.map((group) => {
+                const active = propertyGroup === group.value
+                const tone = propertyGroupTones[group.value]
+                const selectedCount = selectedPropertyTypes.filter(
+                  (property) => property.channel === group.value
+                ).length
+
+                return (
+                  <button
+                    key={group.value}
+                    type="button"
+                    data-mobile-search-group={group.value}
+                    onClick={() => {
+                      setPropertyGroup(group.value)
+                      setPropertyZone(group.value)
+                      setSelectedPropertyTypes([])
+                      setBudget(emptySearchBudget)
+                      setOfferType(group.value === 'rooms' ? 'rent' : '')
+                    }}
+                    aria-pressed={active}
+                    className={`flex min-h-12 items-center justify-center gap-1 rounded-xl px-1 text-[10px] leading-tight font-semibold transition min-[390px]:text-[11px] ${
+                      active
+                        ? tone.activeTab
+                        : 'text-neutral-600 hover:bg-white/55 active:bg-white/80 dark:text-neutral-300 dark:hover:bg-neutral-700/60 dark:active:bg-neutral-700'
+                    }`}
+                  >
+                    <span className="text-center">
+                      {isThai ? (
+                        <PropertyCategoryLabel
+                          label={group.label}
+                          ampersandClassName={active ? 'text-white/55' : 'text-neutral-400'}
+                        />
+                      ) : (
+                        group.labelEn
+                      )}
+                    </span>
+                    {selectedCount > 0 && (
+                      <span
+                        className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${
+                          active
+                            ? 'bg-white/20 text-white ring-1 ring-white/30 dark:bg-emerald-950/15 dark:text-emerald-950 dark:ring-emerald-950/20'
+                            : tone.inactiveCount
+                        }`}
+                      >
+                        {selectedCount}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                {isThai ? 'เลือกประเภทที่สนใจ' : 'Choose property types'}
+              </h2>
+              {hasQuickFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPropertyGroup(activePropertyGroup)
+                    setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
+                    setSelectedPropertyTypes([])
+                    setBudget(emptySearchBudget)
+                  }}
+                  className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
+                >
+                  {isThai ? 'ล้างทั้งหมด' : 'Clear all'}
+                </button>
+              )}
+            </div>
+            <div className="mt-2 grid grid-cols-4 gap-2 pt-1 pb-1">
+              {visiblePropertyTypes.map((property) => {
+                const Icon = categoryIcons[property.propertyType]
+                const active = selectedPropertyTypes.some((item) => item.value === property.value)
+                const tone = propertyGroupTones[propertyGroup]
+                return (
+                  <button
+                    key={property.value}
+                    type="button"
+                    data-mobile-search-category={property.value}
+                    onClick={() => togglePropertyType(property)}
+                    aria-pressed={active}
+                    className={`relative flex min-h-[78px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2 text-[11px] leading-tight font-semibold transition ${
+                      active
+                        ? tone.activeCard
+                        : 'border-neutral-200 bg-white text-neutral-600 active:border-[#8ab6a7] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
+                    }`}
+                  >
+                    {active && (
+                      <span
+                        className={`absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full ${tone.check}`}
+                      >
+                        <Check className="size-2.5" strokeWidth={3} />
+                      </span>
+                    )}
+                    <span
+                      className={`grid size-8 place-items-center rounded-full ${active ? tone.activeIcon : 'bg-neutral-100 dark:bg-neutral-800'}`}
+                    >
+                      <Icon className="size-[18px]" strokeWidth={1.8} />
+                    </span>
+                    <span className="text-center">{isThai ? property.label : property.labelEn}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          <section
+            className="mt-5 flex flex-wrap items-start gap-2"
+            aria-label={isThai ? 'ซื้อ เช่า และงบประมาณ' : 'Buy, rent and budget'}
+          >
+            <div
+              className={`inline-flex shrink-0 gap-0.5 rounded-2xl border bg-white p-1 ${propertyGroupTones[propertyGroup].offerBorder} dark:border-neutral-700 dark:bg-neutral-900`}
+              role="group"
+              aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
+            >
+              {(['sale', 'rent'] as const)
+                .filter((offer) => propertyGroup !== 'rooms' || offer === 'rent')
+                .map((offer) => {
+                  const active = !offerType || offerType === offer
+                  const Icon = offer === 'sale' ? House : KeyRound
+                  return (
+                    <button
+                      key={offer}
+                      type="button"
+                      data-mobile-search-offer={offer}
+                      aria-pressed={active}
+                      onClick={() => {
+                        if (offerType !== offer) {
+                          setOfferType(offer)
+                          setBudget(emptySearchBudget)
+                        }
+                      }}
+                      className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium transition-colors ${active ? propertyGroupTones[propertyGroup].activeOffer : 'text-neutral-500 dark:text-neutral-400'}`}
+                    >
+                      <Icon className="size-4.5" strokeWidth={1.8} />
+                      {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
+                    </button>
+                  )
+                })}
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
-              aria-label={isThai ? 'ปิด' : 'Close'}
-              className="grid size-11 place-items-center rounded-full border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
+              data-mobile-search-budget
+              onClick={openBudget}
+              className={`flex min-h-[54px] min-w-[116px] flex-1 items-center gap-2 rounded-2xl border bg-white px-3 text-start text-sm dark:bg-neutral-900 ${hasBudget ? 'border-neutral-800 dark:border-neutral-300' : 'border-neutral-200 dark:border-neutral-700'}`}
             >
-              <X className="size-5" />
+              <Banknote className="size-4.5 shrink-0 text-neutral-500" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{isThai ? 'งบประมาณ' : 'Budget'}</span>
+                {hasBudget && <span className="block py-1 text-xs leading-5">{budgetLabel}</span>}
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-neutral-400" />
             </button>
-          </div>
+          </section>
 
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-28">
-            <section>
-              <div className="grid grid-cols-3 gap-1 rounded-2xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-800">
-                {propertyGroups.map((group) => {
-                  const active = propertyGroup === group.value
-                  const tone = propertyGroupTones[group.value]
-                  const selectedCount = selectedPropertyTypes.filter(
-                    (property) => property.channel === group.value
-                  ).length
-
-                  return (
-                    <button
-                      key={group.value}
-                      type="button"
-                      data-mobile-search-group={group.value}
-                      onClick={() => {
-                        setPropertyGroup(group.value)
-                        setPropertyZone(group.value)
-                        setSelectedPropertyTypes([])
-                        setBudget(emptySearchBudget)
-                        setOfferType(group.value === 'rooms' ? 'rent' : '')
-                      }}
-                      aria-pressed={active}
-                      className={`flex min-h-12 items-center justify-center gap-1 rounded-xl px-1 text-[10px] leading-tight font-semibold transition min-[390px]:text-[11px] ${
-                        active
-                          ? tone.activeTab
-                          : 'text-neutral-600 hover:bg-white/55 active:bg-white/80 dark:text-neutral-300 dark:hover:bg-neutral-700/60 dark:active:bg-neutral-700'
-                      }`}
-                    >
-                      <span className="text-center">
-                        {isThai ? (
-                          <PropertyCategoryLabel
-                            label={group.label}
-                            ampersandClassName={active ? 'text-white/55' : 'text-neutral-400'}
-                          />
-                        ) : (
-                          group.labelEn
-                        )}
-                      </span>
-                      {selectedCount > 0 && (
-                        <span
-                          className={`grid size-4 shrink-0 place-items-center rounded-full text-[9px] ${
-                            active
-                              ? 'bg-white/20 text-white ring-1 ring-white/30 dark:bg-emerald-950/15 dark:text-emerald-950 dark:ring-emerald-950/20'
-                              : tone.inactiveCount
-                          }`}
-                        >
-                          {selectedCount}
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                  {isThai ? 'เลือกประเภทที่สนใจ' : 'Choose property types'}
-                </h2>
-                {hasQuickFilters && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPropertyGroup(activePropertyGroup)
-                      setOfferType(activePropertyGroup === 'rooms' ? 'rent' : '')
-                      setSelectedPropertyTypes([])
-                      setBudget(emptySearchBudget)
-                    }}
-                    className="text-xs font-semibold text-[#176b50] dark:text-emerald-300"
-                  >
-                    {isThai ? 'ล้างทั้งหมด' : 'Clear all'}
-                  </button>
-                )}
-              </div>
-              <div className="mt-2 grid grid-cols-4 gap-2 pt-1 pb-1">
-                {visiblePropertyTypes.map((property) => {
-                  const Icon = categoryIcons[property.propertyType]
-                  const active = selectedPropertyTypes.some((item) => item.value === property.value)
-                  const tone = propertyGroupTones[propertyGroup]
-                  return (
-                    <button
-                      key={property.value}
-                      type="button"
-                      data-mobile-search-category={property.value}
-                      onClick={() => togglePropertyType(property)}
-                      aria-pressed={active}
-                      className={`relative flex min-h-[78px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border px-1.5 py-2 text-[11px] leading-tight font-semibold transition ${
-                        active
-                          ? tone.activeCard
-                          : 'border-neutral-200 bg-white text-neutral-600 active:border-[#8ab6a7] dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
-                      }`}
-                    >
-                      {active && (
-                        <span
-                          className={`absolute end-1.5 top-1.5 grid size-4 place-items-center rounded-full ${tone.check}`}
-                        >
-                          <Check className="size-2.5" strokeWidth={3} />
-                        </span>
-                      )}
-                      <span
-                        className={`grid size-8 place-items-center rounded-full ${active ? tone.activeIcon : 'bg-neutral-100 dark:bg-neutral-800'}`}
-                      >
-                        <Icon className="size-[18px]" strokeWidth={1.8} />
-                      </span>
-                      <span className="text-center">{isThai ? property.label : property.labelEn}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section
-              className="mt-5 flex flex-wrap items-start gap-2"
-              aria-label={isThai ? 'ซื้อ เช่า และงบประมาณ' : 'Buy, rent and budget'}
-            >
-              <div
-                className="inline-flex shrink-0 gap-0.5 rounded-2xl border border-[#d8e5dd] bg-white p-1 dark:border-neutral-700 dark:bg-neutral-900"
-                role="group"
-                aria-label={isThai ? 'เลือกซื้อหรือเช่า' : 'Choose buy or rent'}
-              >
-                {(['sale', 'rent'] as const)
-                  .filter((offer) => propertyGroup !== 'rooms' || offer === 'rent')
-                  .map((offer) => {
-                    const active = !offerType || offerType === offer
-                    const Icon = offer === 'sale' ? House : KeyRound
-                    return (
-                      <button
-                        key={offer}
-                        type="button"
-                        data-mobile-search-offer={offer}
-                        aria-pressed={active}
-                        onClick={() => {
-                          if (offerType !== offer) {
-                            setOfferType(offer)
-                            setBudget(emptySearchBudget)
-                          }
-                        }}
-                        className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-medium ${active ? 'bg-[#e5f0e9] text-[#123f32] ring-1 ring-[#c5dbcf] dark:bg-emerald-950 dark:text-emerald-200' : 'text-neutral-500 dark:text-neutral-400'}`}
-                      >
-                        <Icon className="size-4.5" strokeWidth={1.8} />
-                        {offer === 'sale' ? (isThai ? 'ซื้อ' : 'Buy') : isThai ? 'เช่า' : 'Rent'}
-                      </button>
-                    )
-                  })}
-              </div>
-              <button
-                type="button"
-                data-mobile-search-budget
-                onClick={openBudget}
-                className={`flex min-h-[54px] min-w-[116px] flex-1 items-center gap-2 rounded-2xl border bg-white px-3 text-start text-sm dark:bg-neutral-900 ${hasBudget ? 'border-neutral-800 dark:border-neutral-300' : 'border-neutral-200 dark:border-neutral-700'}`}
-              >
-                <Banknote className="size-4.5 shrink-0 text-neutral-500" />
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{isThai ? 'งบประมาณ' : 'Budget'}</span>
-                  {hasBudget && <span className="block py-1 text-xs leading-5">{budgetLabel}</span>}
-                </span>
-                <ChevronRight className="size-4 shrink-0 text-neutral-400" />
-              </button>
-            </section>
-
-            <section className="mt-6 border-t border-neutral-200 pt-5 dark:border-neutral-800">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-white">
-                <MapPin className="size-4.5 text-[#176b50] dark:text-emerald-300" />
-                {isThai ? 'ทำเลที่ต้องการ?' : 'Where do you want to look?'}
-              </div>
-              <PropertySearchOmnibox
-                buildSearchUrl={buildMapSearchUrl}
-                allowEmptyQuery
-                suggestionsMode="inline"
-                suggestionScope="location"
-                scrollSuggestionsIntoView
-                showTypeLabels
-                placeholder={isThai ? 'จังหวัด เขต ย่าน หรือชื่อโครงการ' : 'Province, area, or project name'}
-                onSubmitQuery={() => setOpen(false)}
-              />
-            </section>
-          </div>
-
-          {budgetOpen && (
-            <MobileSearchBudgetSheet
-              value={budget}
-              onApply={setBudget}
-              onClose={() => setBudgetOpen(false)}
-              offerType={offerType}
-              rentalRooms={propertyGroup === 'rooms'}
-              th={isThai}
+          <section data-sheet-no-drag className="mt-6 border-t border-neutral-200 pt-5 dark:border-neutral-800">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-900 dark:text-white">
+              <MapPin className="size-4.5 text-[#176b50] dark:text-emerald-300" />
+              {isThai ? 'ทำเลที่ต้องการ?' : 'Where do you want to look?'}
+            </div>
+            <PropertySearchOmnibox
+              buildSearchUrl={buildMapSearchUrl}
+              allowEmptyQuery
+              suggestionsMode="inline"
+              suggestionScope="location"
+              scrollSuggestionsIntoView
+              showTypeLabels
+              placeholder={isThai ? 'จังหวัด เขต ย่าน หรือชื่อโครงการ' : 'Province, area, or project name'}
+              onSubmitQuery={() => setOpen(false)}
             />
-          )}
-        </DialogPanel>
-      </Dialog>
+          </section>
+        </div>
+
+        {budgetOpen && (
+          <MobileSearchBudgetSheet
+            value={budget}
+            onApply={setBudget}
+            onClose={() => setBudgetOpen(false)}
+            offerType={offerType}
+            rentalRooms={propertyGroup === 'rooms'}
+            th={isThai}
+          />
+        )}
+      </MobilePropertySearchDialog>
       <MobileProjectSearchDialog open={projectSearchOpen} onClose={() => setProjectSearchOpen(false)} />
     </div>
   )

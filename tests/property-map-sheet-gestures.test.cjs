@@ -306,6 +306,14 @@ function hookHarness(kind, config = {}) {
     },
   }
   const hook = load('src/hooks/useMobileSheets.ts', h.globals, { react: hooks, '@/lib/verticalSheetGesture': h.engine })
+  const searchModule = kind === 'search' ? load('src/components/property-home/MobilePropertySearchDialog.tsx', h.globals, {
+    'react/jsx-runtime': require('react/jsx-runtime'),
+    'lucide-react': require('lucide-react'),
+    '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogBackdrop: 'test-backdrop', DialogTitle: 'test-title' },
+    '@/components/property-map/MobileSheet.module.css': { default: {} },
+    '@/hooks/useMobileSearchViewport': { useMobileSearchViewport: () => null },
+    '@/hooks/useMobileSheets': hook,
+  }) : null
   const photoChanges = []
   const photo = kind === 'photo' ? load('src/components/property-map/PropertyPhotoGallery.tsx', h.globals, {
     react: hooks,
@@ -351,7 +359,10 @@ function hookHarness(kind, config = {}) {
   function render() {
     cursor = 0
     result =
-      filtersModule ? filtersModule.MapSearchDetailsSheet({
+      searchModule ? searchModule.MobilePropertySearchSheet({
+        blocked: !enabled, th: true, onClose: () => { closed++ },
+        children: require('react/jsx-runtime').jsx('div', { 'data-sheet-scroll': true }),
+      }) : filtersModule ? filtersModule.MapSearchDetailsSheet({
         open: true, value: filterValue,
         onChange: (next) => { filterValue = next; filterEvents.push('apply'); render() },
         onClose: () => { closed++; filterEvents.push('close') },
@@ -372,7 +383,7 @@ function hookHarness(kind, config = {}) {
   }
   render()
   const backdrop = new ElementStub()
-  if (photo || filtersModule) {
+  if (photo || filtersModule || searchModule) {
     if (photo) {
       assert.equal(photoPanel().props['data-sheet-scroll'], true)
       h.root.attrs['data-sheet-scroll'] = ''
@@ -417,6 +428,7 @@ function hookHarness(kind, config = {}) {
     blurPrice: (key) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onBlur(); render() },
     typePrice: (key, text) => { photoNode((node) => node.props['data-map-price-field'] === key).props.onChange({ target: { value: text } }); render() },
     filterVisible: (open) => filtersModule.default({ open, onClose() {}, onChange() {}, value: filterValue }),
+    searchVisible: (open) => searchModule.default({ open, blocked: false, th: true, onClose() {}, children: null }),
     clickFilter: (predicate) => { photoNode(predicate).props.onClick(); render() },
     get closed() {
       return closed
@@ -440,6 +452,84 @@ function hookHarness(kind, config = {}) {
     },
   }
 }
+
+test('mobile top search follows a pull from its header or content at the top, then closes once', () => {
+  for (const fromHeader of [true, false]) {
+    const h = hookHarness('search')
+    h.start(fromHeader ? h.handle : h.content)
+    assert.equal(h.move(0, 450, 250).prevented, true)
+    assert.equal(h.root.properties.get('--sheet-offset'), '142.5px')
+    assert.ok(Number(h.backdrop.properties.get('--sheet-backdrop')) < 1)
+    h.end()
+    assert.equal(h.closed, 0)
+    h.photoButton('ปิด').props.onClick()
+    h.advance(260)
+    assert.equal(h.closed, 1)
+    assert.equal(h.root.dispatch('click', h.content).prevented, true)
+    assert.equal(h.searchVisible(false), null, 'closing unmounts completed gesture state')
+    assert.equal(typeof h.searchVisible(true).type, 'function')
+    h.unmount()
+    assert.equal(h.root.listeners.size, 0)
+  }
+})
+
+test('search scrolling, typing, taps, short pulls and cancelled gestures do not dismiss discovery', () => {
+  for (const kind of ['scrolled', 'input', 'suggestions', 'tap', 'short', 'up', 'horizontal', 'cancel', 'pinch']) {
+    const h = hookHarness('search')
+    if (kind === 'scrolled') h.scroller.scrollTop = 100
+    const target = kind === 'input' ? new ElementStub('input', {}, h.scroller)
+      : kind === 'suggestions' ? new ElementStub('button', {}, new ElementStub('section', { 'data-sheet-no-drag': '' }, h.scroller)) : h.content
+    h.start(target)
+    if (kind !== 'tap') h.move(kind === 'horizontal' ? 150 : 0, kind === 'up' ? 150 : kind === 'short' ? 330 : kind === 'horizontal' ? 304 : 450, 400)
+    if (kind === 'cancel') h.root.dispatch('touchcancel', target)
+    if (kind === 'pinch') h.root.dispatch('touchstart', target, { touches: [{}, {}] })
+    h.end(120)
+    h.advance(300)
+    assert.equal(h.closed, 0, kind)
+    if (kind === 'tap') assert.equal(h.root.dispatch('click', target).prevented, undefined)
+    h.unmount()
+  }
+})
+
+test('an open budget sheet blocks search dismissal and closing it restores the search gesture', () => {
+  const h = hookHarness('search')
+  h.setEnabled(false)
+  h.start()
+  assert.equal(h.move(0, 480).prevented, undefined)
+  h.end()
+  h.photoButton('ปิด').props.onClick()
+  h.filterNode((node) => node.type === 'test-dialog').props.onClose()
+  h.advance(300)
+  assert.equal(h.closed, 0)
+  h.setEnabled(true)
+  h.start()
+  h.move(0, 480, 250)
+  h.end()
+  h.advance(260)
+  assert.equal(h.closed, 1)
+  h.unmount()
+})
+
+test('search close controls respect reduced motion and pending dismissal is cancelled on unmount', () => {
+  for (const action of ['button', 'dialog', 'swipe']) {
+    const h = hookHarness('search', { reducedMotion: true })
+    if (action === 'button') h.photoButton('ปิด').props.onClick()
+    else if (action === 'dialog') h.filterNode((node) => node.type === 'test-dialog').props.onClose()
+    else {
+      h.start()
+      h.move(0, 450, 250)
+      h.end()
+    }
+    assert.equal(h.closed, 1, action)
+    assert.equal(h.jobs.size, 0)
+    h.unmount()
+  }
+  const h = hookHarness('search')
+  h.photoButton('ปิด').props.onClick()
+  h.unmount()
+  h.advance(300)
+  assert.equal(h.closed, 0)
+})
 
 test('modal returns after a short pull and closes once only after its exit animation', () => {
   const h = hookHarness('modal')
