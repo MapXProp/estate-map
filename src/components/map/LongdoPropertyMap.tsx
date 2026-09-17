@@ -221,7 +221,7 @@ export type PropertyMapViewport = {
   initial?: boolean
 }
 
-export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean) => {
+export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selected: boolean, hovered = false) => {
   const name = project.displayName || project.nameEn || project.name
   const label = isThai ? 'ดูประกาศทั้งหมดในโครงการ' : 'View all listings in this project'
   const count = project.listingCount ?? project.listingIds.length
@@ -234,7 +234,7 @@ export const getProjectMarkerHtml = (project: MapProject, isThai: boolean, selec
         ? 'ประกาศทั้งหมดในโครงการ'
         : 'All project listings'
   const location = `&lat=${project.location.lat}&lon=${project.location.lon}&zoom=17`
-  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}">
+  return `<div data-mapx-project-marker="true" data-mapx-project-id="${escapeHtml(project.id)}" data-mapx-project-slug="${escapeHtml(project.slug)}" class="mapx-project-marker${selected ? ' is-selected' : ''}${hovered ? ' is-hovered' : ''}">
     <a href="/properties/map?map_mode=projects&amp;project=${encodeURIComponent(project.slug || project.id)}${escapeHtml(location)}" data-mapx-project-link="true" aria-controls="map-project-listings" aria-expanded="${selected}" aria-label="${escapeHtml(name)} · ${label}" class="mapx-project-link">
       <span class="mapx-project-label"><span>${escapeHtml(name)}</span><small>${isThai ? 'โครงการ · ดูประกาศ' : 'Project · View listings'}</small></span>
       <span class="mapx-project-pin"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1M10 21v-3h4v3"/></svg><b aria-label="${countLabel}">${count}</b></span>
@@ -262,6 +262,8 @@ interface Props {
   onLocationSearch?: (location: LongdoLocation, label: string, zoom: number) => void
   onMarkerSelect?: (id: string) => void
   onProjectSelect?: (project: MapProject) => void
+  onProjectHover?: (id: string) => void
+  hoveredProjectId?: string
   onProjectSearchSelect?: (project: MapProjectDetails) => void
   selectedProjectId?: string
   mapMode?: PropertyMapMode
@@ -291,6 +293,8 @@ const LongdoPropertyMap = ({
   onLocationSearch,
   onMarkerSelect,
   onProjectSelect,
+  onProjectHover,
+  hoveredProjectId = '',
   onProjectSearchSelect,
   selectedProjectId = '',
   mapMode = 'listings',
@@ -327,6 +331,7 @@ const LongdoPropertyMap = ({
   const currentHoverIDRef = useRef(currentHoverID)
   const previewListingIdRef = useRef(previewListingId)
   const selectedProjectIdRef = useRef(selectedProjectId)
+  const hoveredProjectIdRef = useRef(hoveredProjectId)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [searchText, setSearchText] = useState(initialSearchQuery)
@@ -538,6 +543,7 @@ const LongdoPropertyMap = ({
     currentHoverIDRef.current = currentHoverID
     previewListingIdRef.current = previewListingId
     selectedProjectIdRef.current = selectedProjectId
+    hoveredProjectIdRef.current = hoveredProjectId
 
     const mapContainer = placeholderRef.current
     if (!mapContainer) return
@@ -553,10 +559,11 @@ const LongdoPropertyMap = ({
         Boolean(selectedProjectId) &&
         (root.dataset.mapxProjectId === selectedProjectId || root.dataset.mapxProjectSlug === selectedProjectId)
       root.classList.toggle('is-selected', selected)
+      root.classList.toggle('is-hovered', Boolean(hoveredProjectId) && root.dataset.mapxProjectId === hoveredProjectId)
       root.querySelector('[data-mapx-project-link]')?.setAttribute('aria-expanded', String(selected))
     })
     scheduleMarkerDeclutter()
-  }, [currentHoverID, previewListingId, selectedProjectId, scheduleMarkerDeclutter])
+  }, [currentHoverID, previewListingId, selectedProjectId, hoveredProjectId, scheduleMarkerDeclutter])
 
   useEffect(
     () => () => {
@@ -1090,7 +1097,8 @@ const LongdoPropertyMap = ({
           html: getProjectMarkerHtml(
             project,
             isThai,
-            project.id === selectedProjectIdRef.current || project.slug === selectedProjectIdRef.current
+            project.id === selectedProjectIdRef.current || project.slug === selectedProjectIdRef.current,
+            project.id === hoveredProjectIdRef.current
           ),
           offset: { x: 0, y: 0 },
         },
@@ -1152,11 +1160,13 @@ const LongdoPropertyMap = ({
         .mapx-project-label > span { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
         .mapx-project-label small { margin-top: 2px; font-size: 10px; color: #638171; font-weight: 400; }
         .mapx-project-marker[data-mapx-project-label="false"] .mapx-project-label { display: none; }
-        .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label { display: flex; }
-        .mapx-project-marker.is-selected .mapx-project-pin { background: #176b50; color: white; }
+        .mapx-project-marker:hover .mapx-project-label, .mapx-project-marker:focus-within .mapx-project-label, .mapx-project-marker.is-selected .mapx-project-label, .mapx-project-marker.is-hovered .mapx-project-label { display: flex; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-pin { background: #123f32; border-color: #123f32; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label { background: #123f32; border-color: #123f32; color: white; }
+        .mapx-project-marker:is(:hover, :focus-within, .is-selected, .is-hovered) .mapx-project-label small { color: #d7e9df; }
         .mapx-project-link:focus-visible { outline: 2px solid #176b50; outline-offset: 3px; }
         div:has(> .mapx-project-marker) { z-index: 920 !important; }
-        div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected) { z-index: 2147482999 !important; }
+        div:has(> .mapx-project-marker:hover), div:has(> .mapx-project-marker:focus-within), div:has(> .mapx-project-marker.is-selected), div:has(> .mapx-project-marker.is-hovered) { z-index: 2147482999 !important; }
         .mapx-price-marker {
           cursor: pointer;
           isolation: isolate;
@@ -1399,6 +1409,33 @@ const LongdoPropertyMap = ({
       <div
         ref={placeholderRef}
         data-map-marker-surface
+        onPointerOverCapture={(event) => {
+          if (event.pointerType === 'mouse' && event.target instanceof Element)
+            onProjectHover?.(
+              event.target.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId || ''
+            )
+        }}
+        onPointerOutCapture={(event) => {
+          if (event.pointerType === 'mouse')
+            onProjectHover?.(
+              event.relatedTarget instanceof Element
+                ? event.relatedTarget.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId || ''
+                : ''
+            )
+        }}
+        onFocusCapture={(event) => {
+          if (event.target instanceof Element)
+            onProjectHover?.(
+              event.target.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId || ''
+            )
+        }}
+        onBlurCapture={(event) => {
+          onProjectHover?.(
+            event.relatedTarget instanceof Element
+              ? event.relatedTarget.closest<HTMLElement>('[data-mapx-project-marker]')?.dataset.mapxProjectId || ''
+              : ''
+          )
+        }}
         tabIndex={-1}
         className="pointer-events-auto size-full touch-none overscroll-contain outline-none"
         onPointerEnter={() => {

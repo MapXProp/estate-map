@@ -83,7 +83,7 @@ export default function MapProjectPanel({
         const listing = toRealEstateListing(row)
         if (offer === 'rent') {
           listing.priceAmount = row.rent_price_monthly || row.offer_amount
-          listing.priceUnit = 'month'
+          listing.priceUnit = row.rent_price_monthly ? 'month' : listing.priceUnit
           listing.offer = 'เช่า'
         } else if (offer === 'sale') {
           listing.priceAmount = row.sale_price || row.offer_amount
@@ -228,7 +228,7 @@ export default function MapProjectPanel({
           ref={scrollRef}
           data-sheet-scroll
           data-map-project-rows
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1.5"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
           aria-busy={!data && !failed}
         >
           {failed ? (
@@ -273,17 +273,16 @@ export default function MapProjectPanel({
               )}
             </div>
           ) : (
-            rows
-              .slice(0, visible)
-              .map(({ listing, canLocate }) => (
+            <div className="grid gap-3 sm:max-lg:grid-cols-2" data-map-project-listing-cards>
+              {rows.slice(0, visible).map(({ listing, canLocate }) => (
                 <MapResultCard
                   key={listing.id}
-                  compact
                   listing={listing}
                   onHover={onHover}
                   onLocate={canLocate ? () => onLocate(listing) : undefined}
                 />
-              ))
+              ))}
+            </div>
           )}
           {rows.length > visible && (
             <button

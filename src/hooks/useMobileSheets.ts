@@ -87,13 +87,7 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
     const probe = node.querySelector<HTMLElement>('[data-map-mobile-panel-toggle]')
     const safeBottom = probe ? parseFloat(getComputedStyle(probe).paddingBottom) - 8 : 0
     const peek = 84 + Math.max(0, safeBottom || 0, parseFloat(css.paddingBottom) || 0)
-    const full = Math.max(
-      peek,
-      Math.min(
-        availableHeight - ceiling,
-        node.dataset.projectOpen === 'true' ? window.innerHeight * (window.innerHeight < 600 ? 0.58 : 0.48) : Infinity
-      )
-    )
+    const full = Math.max(peek, availableHeight - ceiling)
     points.current = {
       peek,
       full,

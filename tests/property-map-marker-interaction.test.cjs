@@ -426,6 +426,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     pointer,
     markerRoot,
     markerRoots,
+    projectRoots,
     getSpiderOffsets: context.exports.getSpiderOffsets,
     unmount: () => slots.forEach((slot) => slot?.cleanup?.()),
     api,
@@ -611,6 +612,29 @@ test('listing pins are the default; switching to all projects and back preserves
   assert.equal(markers(before).length, rows.length)
   assert.ok(markers(before).every((marker) => marker.options.icon.html.includes('data-mapx-price-marker')))
   assert.deepEqual(h.calls, [], 'mode switches never pan or zoom')
+})
+
+test('project hover and keyboard focus sync without selecting, moving the map or rebuilding markers', () => {
+  const units = [{ ...listing, projectPublicId: 'project-a', projectSlug: 'project-a', projectName: 'Project A' }]
+  const hovered = []
+  const h = harness(1440, 14, units, true, { onProjectHover: (id) => hovered.push(id) })
+  const overlayCount = h.overlays.length
+  h.render({ hoveredProjectId: 'project-a' })
+  assert.equal(h.projectRoots[0].classes.has('is-hovered'), true)
+  assert.equal(h.projectRoots[0].classes.has('is-selected'), false)
+  assert.equal(h.projectRoots[0].attributes['aria-expanded'], 'false')
+  h.render({ hoveredProjectId: '' })
+  assert.equal(h.projectRoots[0].classes.has('is-hovered'), false)
+  assert.equal(h.overlays.length, overlayCount)
+  h.surfaceEvent('onPointerOverCapture', { pointerType: 'mouse', target: h.projectRoots[0] })
+  h.surfaceEvent('onPointerOutCapture', { pointerType: 'mouse', relatedTarget: null })
+  h.surfaceEvent('onFocusCapture', { target: h.projectRoots[0] })
+  h.surfaceEvent('onBlurCapture', { relatedTarget: null })
+  h.surfaceEvent('onPointerOverCapture', { pointerType: 'touch', target: h.projectRoots[0] })
+  assert.deepEqual(hovered, ['project-a', '', 'project-a', ''])
+  assert.equal(h.selectedProjects.length, 0)
+  assert.equal(h.navigation.length, 0)
+  assert.deepEqual(h.calls, [])
 })
 
 test('a two-pin spider has at most 84px wings instead of 132px', () => {

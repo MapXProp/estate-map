@@ -496,6 +496,24 @@ test('desktop results start collapsed; opening the list replaces the floating pr
   assert.equal(h.map().initialCenter, h.center)
 })
 
+test('project overview and map markers share hover state without opening a project or changing camera', () => {
+  const h = harness(1440, 'th', { initialMapMode: 'projects' })
+  const overview = () => h.nodes((node) => node.type === 'test-project-results')[0].props
+  overview().onHover('project-a')
+  h.render()
+  assert.equal(h.map().hoveredProjectId, 'project-a')
+  h.map().onProjectHover('project-b')
+  h.render()
+  assert.equal(overview().hoveredProjectId, 'project-b')
+  assert.equal(h.nodes((node) => node.type === 'test-project-panel').length, 0)
+  assert.equal(h.map().initialCenter, h.center)
+  assert.equal(h.map().initialZoom, 15)
+  overview().onChoose({ id: 'project-b', location: { lat: 13.7, lon: 100.5 } })
+  h.render()
+  assert.equal(h.map().hoveredProjectId, '')
+  assert.equal(h.nodes((node) => node.type === 'test-project-panel')[0].props.identifier, 'project-b')
+})
+
 test('selection keeps the phone top sheet and anchors tablet/desktop previews inside the map', () => {
   for (const width of [320, 390, 820, 1440]) {
     const h = harness(width)

@@ -152,6 +152,7 @@ export default function PropertyMapSearch({
   const mobilePanelOpen = mobileSheetSnap !== 'peek'
   const setMobilePanelOpen = useCallback((open: boolean) => setMobileSheetSnap(open ? 'full' : 'peek'), [])
   const [hoveredId, setHoveredId] = useState('')
+  const [hoveredProjectId, setHoveredProjectId] = useState('')
   const [previewSelection, setPreviewSelection] = useState<{ id: string; requestKey: string } | null>(null)
   const [selectedProject, setSelectedProject] = useState<{ id: string; seed?: MapProject } | null>(
     initialProject ? { id: initialProject } : null
@@ -417,6 +418,7 @@ export default function PropertyMapSearch({
   )
   const selectMapProject = useCallback(
     (project: MapProject) => {
+      setHoveredProjectId('')
       setSelectedProject({ id: project.id, seed: project })
       setPreviewSelection(null)
       setHoveredId('')
@@ -429,6 +431,7 @@ export default function PropertyMapSearch({
   )
   const selectSearchedProject = useCallback(
     (project: MapProjectDetails) => {
+      setHoveredProjectId('')
       const seed = mapProjectSearchSeed(
         project,
         mapProjects.find((item) => item.id === project.public_project_id)
@@ -496,6 +499,7 @@ export default function PropertyMapSearch({
   const changeMapMode = (next: PropertyMapMode) => {
     if (next === mapMode) return
     setMapMode(next)
+    setHoveredProjectId('')
     setPanelOpen(next === 'projects')
     setSelectedProject(null)
     setPreviewSelection(null)
@@ -854,6 +858,8 @@ export default function PropertyMapSearch({
               previewListingId={previewListing?.id}
               onMarkerSelect={selectMapMarker}
               onProjectSelect={selectMapProject}
+              hoveredProjectId={hoveredProjectId}
+              onProjectHover={setHoveredProjectId}
               onProjectSearchSelect={selectSearchedProject}
               selectedProjectId={selectedProject?.id}
               onMapInteraction={collapseCategories}
@@ -987,6 +993,8 @@ export default function PropertyMapSearch({
               onToggle={toggleMobilePanel}
               onCollapse={togglePanel}
               onChoose={selectMapProject}
+              onHover={setHoveredProjectId}
+              hoveredProjectId={hoveredProjectId}
               onRetry={() => setRetry((value) => value + 1)}
               onClearArea={area && !automaticAreaSearch ? () => setArea(null) : undefined}
             />

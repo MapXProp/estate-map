@@ -25,6 +25,8 @@ export default function MapProjectResults({
   onToggle,
   onCollapse,
   onChoose,
+  onHover,
+  hoveredProjectId,
   onRetry,
   onClearArea,
 }: {
@@ -38,6 +40,8 @@ export default function MapProjectResults({
   onToggle: () => void
   onCollapse: () => void
   onChoose: (project: MapProject) => void
+  onHover: (id: string) => void
+  hoveredProjectId: string
   onRetry: () => void
   onClearArea?: () => void
 }) {
@@ -125,20 +129,29 @@ export default function MapProjectResults({
                 type="button"
                 key={`${project.id}:${project.location.lat}:${project.location.lon}`}
                 data-project-result={project.id}
+                data-hovered={hoveredProjectId === project.id}
                 onClick={() => onChoose(project)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType === 'mouse') onHover(project.id)
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === 'mouse') onHover('')
+                }}
+                onFocus={() => onHover(project.id)}
+                onBlur={() => onHover('')}
                 className={styles.projectResult}
               >
                 <span className={styles.projectIcon}>
                   <Icon className="size-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{name}</span>
-                  <span className="mt-1 block text-xs text-neutral-500">
+                  <span className="block text-sm leading-5 font-semibold">{name}</span>
+                  <span className={styles.projectResultMeta}>
                     {projectCategoryLabel(project.category, th)} · {project.listingCount ?? project.listingIds.length}{' '}
                     {th ? 'ประกาศ' : 'listings'}
                   </span>
                 </span>
-                <ChevronRight className="size-4 shrink-0 text-[#176b50]" />
+                <ChevronRight className="size-4 shrink-0" />
               </button>
             )
           })}

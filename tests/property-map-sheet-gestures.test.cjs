@@ -561,13 +561,14 @@ test('list snapping leaves room for overlaid navigation without reducing the map
   assert.equal(h.snap, 'full')
 })
 
-test('a project sheet keeps the same map clearance while being dragged and when settled', () => {
+test('project photos use the full available sheet height while retaining navigation and search clearance', () => {
   const h = hookHarness('bottom', { snap: 'peek' })
   h.root.dataset.projectOpen = 'true'
+  h.root.properties.set('--map-navigation-height', '100px')
   h.root.offsetHeight = 84
   h.start()
   h.move(0, -800)
-  assert.equal(h.root.properties.get('--mobile-sheet-height'), `${820 * .48}px`)
+  assert.equal(h.root.properties.get('--mobile-sheet-height'), '532px')
   h.end()
   h.advance(260)
   assert.equal(h.snap, 'full')
