@@ -1,11 +1,13 @@
 'use client'
 
+import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Building2,
   CheckCircle2,
   ChevronRight,
   ContactRound,
+  Globe,
   Instagram,
   Mail,
   MessageCircle,
@@ -40,6 +42,11 @@ interface MobileListingContactSheetProps {
   email?: string
   lineId?: string
   instagramHandle?: string
+  websiteUrl?: string
+  triggerLabel?: string
+  showOnTablet?: boolean
+  isThai?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const formatPhone = (value: string) => {
@@ -62,6 +69,11 @@ const MobileListingContactSheet = ({
   email,
   lineId,
   instagramHandle,
+  websiteUrl,
+  triggerLabel,
+  showOnTablet = false,
+  isThai = true,
+  onOpenChange,
 }: MobileListingContactSheetProps) => {
   const [open, setOpen] = useState(false)
   const [dragOffset, setDragOffset] = useState(0)
@@ -76,28 +88,32 @@ const MobileListingContactSheet = ({
   const touchDragOffsetRef = useRef(0)
   const canStartTouchDragRef = useRef(false)
   const touchDragLockedRef = useRef(false)
-  const lineHandle = lineId?.replace(/^@/, '') || ''
-  const instagram = instagramHandle?.replace(/^@/, '') || ''
   const isAuthorityVerified = verificationStatus === 'authority_verified' || trusted
   const isIdentityVerified = verificationStatus === 'identity_verified'
 
   const verification = isAuthorityVerified
     ? {
-        title: 'ตรวจสอบตัวตนและสิทธิแล้ว',
-        description: 'ระบบตรวจสอบตัวตนและสิทธิในการลงประกาศแล้ว',
+        title: isThai ? 'ตรวจสอบตัวตนและสิทธิแล้ว' : 'Identity and authority verified',
+        description: isThai
+          ? 'ระบบตรวจสอบตัวตนและสิทธิในการลงประกาศแล้ว'
+          : 'Identity and authority to list have been checked.',
         icon: ShieldCheck,
         className: 'border-[#cfe5dc] bg-[#eff7f3] text-[#176b50]',
       }
     : isIdentityVerified
       ? {
-          title: 'ยืนยันตัวตนแล้ว',
-          description: 'ยืนยันตัวตนแล้ว แต่ยังไม่ได้ตรวจสอบสิทธิในการลงประกาศ',
+          title: isThai ? 'ยืนยันตัวตนแล้ว' : 'Identity verified',
+          description: isThai
+            ? 'ยืนยันตัวตนแล้ว แต่ยังไม่ได้ตรวจสอบสิทธิในการลงประกาศ'
+            : 'Identity checked; authority to list has not been verified.',
           icon: CheckCircle2,
           className: 'border-amber-200 bg-amber-50 text-amber-700',
         }
       : {
-          title: 'ยังไม่ได้รับการตรวจสอบ',
-          description: 'บทบาทและความเกี่ยวข้องเป็นข้อมูลที่ผู้ลงประกาศระบุเอง',
+          title: isThai ? 'ยังไม่ได้รับการตรวจสอบ' : 'Not yet verified',
+          description: isThai
+            ? 'บทบาทและความเกี่ยวข้องเป็นข้อมูลที่ผู้ลงประกาศระบุเอง'
+            : 'Role and affiliation are provided by the advertiser.',
           icon: ShieldQuestion,
           className: 'border-neutral-200 bg-neutral-50 text-neutral-600',
         }
@@ -109,6 +125,7 @@ const MobileListingContactSheet = ({
       dismissTimerRef.current = null
     }
     setOpen(false)
+    onOpenChange?.(false)
     setIsDragging(false)
     setIsDismissing(false)
     setDragOffset(0)
@@ -131,6 +148,7 @@ const MobileListingContactSheet = ({
       // Keep the panel translated below the viewport while Headless UI removes
       // it. Resetting the transform here caused a one-frame white flash.
       setOpen(false)
+      onOpenChange?.(false)
       dismissTimerRef.current = null
     }, 220)
   }
@@ -259,60 +277,22 @@ const MobileListingContactSheet = ({
     resetTouchDrag()
   }
 
-  const contactLinks = [
-    ...(phone
-      ? [
-          {
-            label: 'โทรศัพท์',
-            value: formatPhone(phone),
-            href: `tel:${phone.replace(/[^+\d]/g, '')}`,
-            icon: Phone,
-          },
-        ]
-      : []),
-    ...(secondaryPhone
-      ? [
-          {
-            label: 'โทรศัพท์สำรอง',
-            value: formatPhone(secondaryPhone),
-            href: `tel:${secondaryPhone.replace(/[^+\d]/g, '')}`,
-            icon: Phone,
-          },
-        ]
-      : []),
-    ...(lineHandle
-      ? [
-          {
-            label: 'LINE',
-            value: `@${lineHandle}`,
-            href: `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}`,
-            icon: MessageCircle,
-            external: true,
-          },
-        ]
-      : []),
-    ...(email
-      ? [
-          {
-            label: 'อีเมล',
-            value: email,
-            href: `mailto:${email}`,
-            icon: Mail,
-          },
-        ]
-      : []),
-    ...(instagram
-      ? [
-          {
-            label: 'Instagram',
-            value: `@${instagram}`,
-            href: `https://www.instagram.com/${encodeURIComponent(instagram)}`,
-            icon: Instagram,
-            external: true,
-          },
-        ]
-      : []),
-  ]
+  const contactIcons = { phone: Phone, line: MessageCircle, email: Mail, instagram: Instagram, website: Globe }
+  const contactLabels = { phone: 'Phone', line: 'LINE', email: 'Email', instagram: 'Instagram', website: 'Website' }
+  const contactLinks = getPropertyPreviewContacts({
+    contact_phone: phone || '',
+    contact_phone_secondary: secondaryPhone || '',
+    contact_email: email || '',
+    line_id: lineId || '',
+    instagram_handle: instagramHandle || '',
+    organization_website_url: websiteUrl,
+  }).map((contact) => ({
+    ...contact,
+    label: isThai ? contact.label : contactLabels[contact.kind],
+    value: contact.kind === 'phone' ? formatPhone(contact.value) : contact.value,
+    icon: contactIcons[contact.kind],
+    external: contact.href.startsWith('http'),
+  }))
 
   return (
     <>
@@ -326,13 +306,19 @@ const MobileListingContactSheet = ({
           setDragOffset(0)
           touchDragOffsetRef.current = 0
           setOpen(true)
+          onOpenChange?.(true)
         }}
-        aria-label="ข้อมูลผู้ติดต่อ"
+        aria-label={isThai ? 'ข้อมูลผู้ติดต่อ' : 'Contact details'}
         aria-expanded={open}
-        title="ข้อมูลผู้ติดต่อ"
-        className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95"
+        title={isThai ? 'ข้อมูลผู้ติดต่อ' : 'Contact details'}
+        className={
+          triggerLabel
+            ? 'flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#123f32] px-3 text-sm font-semibold text-white transition outline-none focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95'
+            : 'grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95'
+        }
       >
-        <ContactRound className="size-[19px]" />
+        <ContactRound className="size-[19px] shrink-0" aria-hidden="true" />
+        {triggerLabel && <span>{triggerLabel}</span>}
       </button>
 
       <Dialog
@@ -341,7 +327,7 @@ const MobileListingContactSheet = ({
         data-analytics-surface="mobile_contact_sheet"
         data-analytics-listing-id={analyticsListingId}
         data-analytics-property-type={analyticsPropertyType}
-        className="relative z-[100] min-[744px]:hidden"
+        className={`relative z-[100] ${showOnTablet ? '' : 'min-[744px]:hidden'}`}
       >
         <DialogBackdrop
           transition
@@ -375,12 +361,14 @@ const MobileListingContactSheet = ({
               <div className="mx-auto h-1.5 w-11 rounded-full bg-neutral-200" aria-hidden="true" />
               <div className="flex items-center justify-between gap-3 py-3">
                 <div>
-                  <DialogTitle className="text-lg font-semibold text-neutral-950">ข้อมูลผู้ลงประกาศ</DialogTitle>
+                  <DialogTitle className="text-lg font-semibold text-neutral-950">
+                    {isThai ? 'ข้อมูลผู้ลงประกาศ' : 'Advertiser details'}
+                  </DialogTitle>
                 </div>
                 <button
                   type="button"
                   onClick={closeSheet}
-                  aria-label="ปิดข้อมูลผู้ติดต่อ"
+                  aria-label={isThai ? 'ปิดข้อมูลผู้ติดต่อ' : 'Close contact details'}
                   className="grid size-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-600 transition active:scale-95"
                 >
                   <X className="size-5" />
@@ -398,21 +386,25 @@ const MobileListingContactSheet = ({
                     <ContactRound className="size-5" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-xs text-neutral-500">ผู้ลงประกาศ</p>
-                    <h2 className="mt-0.5 text-lg font-semibold text-neutral-950">{contactName || 'ไม่ระบุชื่อ'}</h2>
-                    <p className="mt-1 text-sm font-medium text-[#176b50]">{roleLabel || 'ไม่ได้ระบุบทบาท'}</p>
+                    <p className="text-xs text-neutral-500">{isThai ? 'ผู้ลงประกาศ' : 'Advertiser'}</p>
+                    <h2 className="mt-0.5 text-lg font-semibold text-neutral-950">
+                      {contactName || (isThai ? 'ไม่ระบุชื่อ' : 'Name not provided')}
+                    </h2>
+                    <p className="mt-1 text-sm font-medium text-[#176b50]">
+                      {roleLabel || (isThai ? 'ไม่ได้ระบุบทบาท' : 'Role not provided')}
+                    </p>
                   </div>
                 </div>
 
                 <dl className="mt-4 divide-y divide-neutral-100 border-t border-neutral-100 text-sm">
                   {authorityLabel && (
                     <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-3">
-                      <dt className="text-neutral-500">สิทธิลงประกาศจาก</dt>
+                      <dt className="text-neutral-500">{isThai ? 'สิทธิลงประกาศจาก' : 'Authority from'}</dt>
                       <dd className="font-medium text-neutral-800">{authorityLabel}</dd>
                     </div>
                   )}
                   <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-3">
-                    <dt className="text-neutral-500">บริษัท / สังกัด</dt>
+                    <dt className="text-neutral-500">{isThai ? 'บริษัท / สังกัด' : 'Organization'}</dt>
                     <dd className="font-medium text-neutral-800">
                       {organizationPublicId && organizationName ? (
                         <Link
@@ -423,7 +415,7 @@ const MobileListingContactSheet = ({
                           <ChevronRight className="size-4 shrink-0" />
                         </Link>
                       ) : (
-                        organizationName || 'ไม่ได้ระบุ'
+                        organizationName || (isThai ? 'ไม่ได้ระบุ' : 'Not provided')
                       )}
                     </dd>
                   </div>
@@ -441,7 +433,9 @@ const MobileListingContactSheet = ({
               </section>
 
               <section className="mt-5">
-                <h2 className="text-sm font-semibold text-neutral-950">ช่องทางติดต่อ</h2>
+                <h2 className="text-sm font-semibold text-neutral-950">
+                  {isThai ? 'ช่องทางติดต่อ' : 'Contact channels'}
+                </h2>
                 {contactLinks.length > 0 ? (
                   <div className="mt-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
                     {contactLinks.map((item) => (
@@ -465,13 +459,15 @@ const MobileListingContactSheet = ({
                   </div>
                 ) : (
                   <p className="mt-2 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">
-                    ยังไม่มีช่องทางติดต่อเพิ่มเติม
+                    {isThai ? 'ยังไม่มีช่องทางติดต่อเพิ่มเติม' : 'No contact channels provided.'}
                   </p>
                 )}
               </section>
 
               <p className="mt-4 text-xs leading-5 text-neutral-400">
-                ควรตรวจสอบเอกสารสิทธิและอำนาจของผู้ลงประกาศก่อนชำระเงินหรือทำสัญญา
+                {isThai
+                  ? 'ควรตรวจสอบเอกสารสิทธิและอำนาจของผู้ลงประกาศก่อนชำระเงินหรือทำสัญญา'
+                  : 'Check ownership documents and the advertiser’s authority before paying or signing.'}
               </p>
             </div>
           </DialogPanel>

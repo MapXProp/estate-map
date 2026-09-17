@@ -3,7 +3,7 @@
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
-import { Globe, Instagram, Mail, MessageCircle, Phone } from 'lucide-react'
+import { Globe, Instagram, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 
 const icons = { phone: Phone, line: MessageCircle, email: Mail, instagram: Instagram, website: Globe }
 const englishLabels = { phone: 'Call', line: 'LINE', email: 'Email', instagram: 'Instagram', website: 'Website' }
@@ -12,10 +12,12 @@ export default function PropertyPreviewContactCard({
   listing,
   price,
   isThai,
+  directionsUrl,
 }: {
   listing: PropertyListingDetail
   price: string
   isThai: boolean
+  directionsUrl?: string | null
 }) {
   const contacts = getPropertyPreviewContacts(listing)
   const organization = listing.organization_name || listing.contact_organization_name
@@ -69,6 +71,17 @@ export default function PropertyPreviewContactCard({
           </p>
         )}
       </div>
+      {directionsUrl && (
+        <a
+          href={directionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d7e5df] bg-[#f3f8f6] px-3 py-2 text-sm font-medium text-[#176b50] hover:bg-[#e7f3ee] dark:border-[#315f50] dark:bg-[#183d32] dark:text-[#8bd49c]"
+        >
+          <MapPin className="size-4 shrink-0" aria-hidden="true" />
+          {isThai ? 'เปิดเส้นทางใน Google Maps' : 'Get directions in Google Maps'}
+        </a>
+      )}
     </div>
   )
 }

@@ -18,7 +18,7 @@ export function stepMapPreviewImage(index: number, direction: number, count: num
   return count > 0 ? (((index + direction) % count) + count) % count : 0
 }
 
-export function getMapPreviewGoogleMapsUrl(location?: { lat: number; lng: number }) {
+export function getMapPreviewGoogleMapsUrl(location?: { lat: number; lng: number }, directions = false) {
   if (
     !location ||
     !Number.isFinite(location.lat) ||
@@ -27,5 +27,8 @@ export function getMapPreviewGoogleMapsUrl(location?: { lat: number; lng: number
     Math.abs(location.lng) > 180
   )
     return null
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.lat},${location.lng}`)}`
+  const destination = encodeURIComponent(`${location.lat},${location.lng}`)
+  return directions
+    ? `https://www.google.com/maps/dir/?api=1&destination=${destination}`
+    : `https://www.google.com/maps/search/?api=1&query=${destination}`
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import MobileListingContactSheet from '@/app/(app)/(listings)/components/MobileListingContactSheet'
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingViewCount from '@/components/ListingViewCount'
 import PropertyDescription from '@/components/PropertyDescription'
@@ -10,14 +11,18 @@ import PropertyPreviewContactCard from '@/components/property-map/PropertyPrevie
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
-import { getMapPreviewGallery } from '@/lib/propertyMapPreview'
-import { getPropertyPreviewContacts, getPropertyPreviewFacts } from '@/lib/propertyPreviewDetails'
+import { getMapPreviewGallery, getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
+import {
+  getPropertyPreviewContactAuthority,
+  getPropertyPreviewContactRole,
+  getPropertyPreviewFacts,
+} from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
-import { ChevronLeft, ExternalLink, ImageIcon, MapPin, Maximize2, Phone, Share2, X } from 'lucide-react'
+import { ChevronLeft, ExternalLink, ImageIcon, MapPin, Maximize2, Share2, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) => {
   const router = useRouter()
@@ -39,12 +44,17 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
     .join(', ')
   const images = getMapPreviewGallery(listing, handle)
   const facts = getPropertyPreviewFacts(listing, isThai)
-  const primaryContact = getPropertyPreviewContacts(listing)[0]
-  const contactRef = useRef<HTMLElement>(null)
+  const directionsUrl = getMapPreviewGoogleMapsUrl(
+    typeof listing.latitude === 'number' && typeof listing.longitude === 'number'
+      ? { lat: listing.latitude, lng: listing.longitude }
+      : undefined,
+    true
+  )
   const propertyType = getPropertyType(normalizeLegacyPropertyType(listing.property_type_code))
   const category = (isThai ? propertyType?.nameTh : propertyType?.nameEn) || (isThai ? 'อสังหาริมทรัพย์' : 'Property')
   const [galleryOpen, setGalleryOpen] = useState(false)
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen)
+  const [contactOpen, setContactOpen] = useState(false)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(() => router.back(), !galleryOpen && !contactOpen)
   const displayPrice =
     typeof listing.offer_amount === 'number' && listing.offer_amount > 0
       ? `${formatCurrencyFrom(listing.offer_amount, listing.currency)}${formatPricePeriod(listing.price_unit, isThai)}`
@@ -62,7 +72,13 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
   }
 
   return (
-    <Dialog open onClose={dismiss} className="relative z-[80]">
+    <Dialog
+      open
+      onClose={() => {
+        if (!galleryOpen && !contactOpen) dismiss()
+      }}
+      className="relative z-[80]"
+    >
       <DialogBackdrop
         ref={backdropRef}
         className={`${sheetStyles.modalBackdrop} fixed inset-0 bg-neutral-950/55 backdrop-blur-[1px]`}
@@ -210,34 +226,61 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
                   </div>
                 </div>
 
-                <aside
-                  ref={contactRef}
-                  className="scroll-mt-4 border-t border-neutral-200 bg-[#f7faf8] p-5 lg:border-s lg:border-t-0 lg:p-6 dark:border-neutral-800 dark:bg-neutral-950/40"
-                >
-                  <PropertyPreviewContactCard listing={listing} price={displayPrice} isThai={isThai} />
+                <aside className="hidden border-s border-neutral-200 bg-[#f7faf8] p-6 lg:block dark:border-neutral-800 dark:bg-neutral-950/40">
+                  <PropertyPreviewContactCard
+                    listing={listing}
+                    price={displayPrice}
+                    isThai={isThai}
+                    directionsUrl={directionsUrl}
+                  />
                 </aside>
               </div>
             </div>
-            {primaryContact && (
-              <footer className="flex shrink-0 items-center gap-2 border-t border-neutral-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden dark:border-neutral-800 dark:bg-neutral-900">
+            <footer
+              data-property-preview-footer
+              className="flex shrink-0 items-center gap-2 border-t border-neutral-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden dark:border-neutral-800 dark:bg-neutral-900"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
+                <p className="mt-1 text-sm leading-5 font-semibold [overflow-wrap:anywhere] text-neutral-950 dark:text-white">
+                  {displayPrice}
+                </p>
+              </div>
+              <MobileListingContactSheet
+                key={listing.public_listing_id}
+                analyticsListingId={listing.public_listing_id}
+                analyticsPropertyType={listing.property_type_code}
+                contactName={listing.contact_name}
+                roleLabel={getPropertyPreviewContactRole(listing.contact_role_code, isThai)}
+                authorityLabel={getPropertyPreviewContactAuthority(listing.contact_authority_code, isThai)}
+                organizationName={listing.organization_name || listing.contact_organization_name}
+                organizationPublicId={listing.organization_public_id}
+                verificationStatus={listing.contact_verification_status}
+                trusted={listing.organization_verification_status === 'verified'}
+                phone={listing.contact_phone}
+                secondaryPhone={listing.contact_phone_secondary}
+                email={listing.contact_email}
+                lineId={listing.line_id}
+                instagramHandle={listing.instagram_handle}
+                websiteUrl={listing.organization_website_url}
+                triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
+                showOnTablet
+                isThai={isThai}
+                onOpenChange={setContactOpen}
+              />
+              {directionsUrl && (
                 <a
-                  href={primaryContact.href}
-                  target={primaryContact.href.startsWith('http') ? '_blank' : undefined}
-                  rel={primaryContact.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#123f32] px-3 text-sm font-semibold text-white"
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={isThai ? 'เปิดเส้นทางใน Google Maps' : 'Get directions in Google Maps'}
+                  title={isThai ? 'เปิดเส้นทางใน Google Maps' : 'Get directions in Google Maps'}
+                  className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition hover:bg-[#e7f3ee] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] active:scale-95 dark:border-[#315f50] dark:bg-[#183d32] dark:text-[#8bd49c]"
                 >
-                  {primaryContact.kind === 'phone' && <Phone className="size-4 shrink-0" />}
-                  <span className="truncate">{primaryContact.value}</span>
+                  <MapPin className="size-5" aria-hidden="true" />
                 </a>
-                <button
-                  type="button"
-                  onClick={() => contactRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="min-h-11 rounded-xl border border-neutral-200 px-3 text-sm text-neutral-700 dark:border-neutral-700 dark:text-neutral-200"
-                >
-                  {isThai ? 'ข้อมูลติดต่อ' : 'Contact details'}
-                </button>
-              </footer>
-            )}
+              )}
+            </footer>
           </DialogPanel>
         </div>
       </div>

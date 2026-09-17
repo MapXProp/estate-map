@@ -1,6 +1,16 @@
 import type { PropertyListingDetail } from './propertySearch'
 
-export function getPropertyPreviewContacts(listing: PropertyListingDetail) {
+export function getPropertyPreviewContacts(
+  listing: Pick<
+    PropertyListingDetail,
+    | 'contact_phone'
+    | 'contact_phone_secondary'
+    | 'line_id'
+    | 'contact_email'
+    | 'instagram_handle'
+    | 'organization_website_url'
+  >
+) {
   const contacts: Array<{
     kind: 'phone' | 'line' | 'email' | 'instagram' | 'website'
     label: string
@@ -45,6 +55,31 @@ export function getPropertyPreviewContacts(listing: PropertyListingDetail) {
     }
   }
   return contacts
+}
+
+export function getPropertyPreviewContactRole(code: string, isThai: boolean) {
+  const labels: Record<string, [string, string]> = {
+    owner: ['เจ้าของทรัพย์', 'Property owner'],
+    owner_representative: ['ผู้รับมอบอำนาจจากเจ้าของ', 'Owner representative'],
+    independent_broker: ['นายหน้าอิสระ', 'Independent agent'],
+    agency_broker: ['นายหน้าสังกัดบริษัท', 'Agency agent'],
+    developer_investor_representative: ['ตัวแทนโครงการ / นักลงทุน', 'Developer / investor representative'],
+    property_manager: ['ผู้ดูแลทรัพย์ / ผู้จัดการอาคาร', 'Property manager'],
+  }
+  return labels[code]?.[isThai ? 0 : 1] || (isThai ? 'ผู้ลงประกาศ' : 'Advertiser')
+}
+
+export function getPropertyPreviewContactAuthority(code: string, isThai: boolean) {
+  const labels: Record<string, [string, string]> = {
+    self: ['ตนเอง', 'Self'],
+    property_owner: ['เจ้าของทรัพย์โดยตรง', 'Property owner'],
+    brokerage_company: ['บริษัทนายหน้าหรือทีม', 'Agency / team'],
+    developer_project: ['โครงการ / ผู้พัฒนา', 'Developer'],
+    investor_asset_holder: ['นักลงทุน / ผู้ถือทรัพย์', 'Investor / asset holder'],
+    co_broker: ['นายหน้าร่วม (Co-broker)', 'Co-broker'],
+    property_management_company: ['บริษัทบริหารทรัพย์', 'Property management company'],
+  }
+  return labels[code]?.[isThai ? 0 : 1] || ''
 }
 
 export function getPropertyPreviewFacts(listing: PropertyListingDetail, isThai: boolean) {
