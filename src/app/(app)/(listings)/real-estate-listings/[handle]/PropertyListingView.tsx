@@ -7,6 +7,7 @@ import PropertyDescription from '@/components/PropertyDescription'
 import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
+import { isPropertyPlan, propertyPreviewImages } from '@/lib/propertyDetailPresentation'
 import { getPropertyPrices, propertyOffersLabel, propertyPricesText } from '@/lib/propertyPrices'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
@@ -25,6 +26,7 @@ import {
 import Link from 'next/link'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
+import styles from './PropertyListingView.module.css'
 
 const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
@@ -44,7 +46,14 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     .filter((item) => ['image', 'video', '360', 'panorama'].includes(item.media_type))
     .map((item) => ({
       id: String(item.id),
-      type: item.media_type === 'image' ? 'photo' : item.media_type === 'video' ? 'video' : '360',
+      type:
+        item.media_type === 'image'
+          ? isPropertyPlan(item)
+            ? 'floor-plan'
+            : 'photo'
+          : item.media_type === 'video'
+            ? 'video'
+            : '360',
       url: item.url,
       thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,
@@ -141,6 +150,9 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
           },
         ]
       : []),
+    ...(listing.total_floors !== undefined
+      ? [{ icon: Building2, value: formatNumber(listing.total_floors, locale), label: isThai ? 'จำนวนชั้น' : 'Floors' }]
+      : []),
     ...(listing.parking_count !== undefined
       ? [
           {
@@ -153,88 +165,106 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   ]
 
   return (
-    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[744px]:pb-0">
-      <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
-        {media.length ? (
-          <HeaderGallery
-            images={images}
-            media={media}
-            listingIdentifier={listing.slug || listing.public_listing_id}
-            gridType={images.length >= 3 ? 'grid2' : 'grid1'}
-            propertyDetails={{
-              title,
-              category: propertyLabel,
-              price,
-              address: fullAddress,
-              bedrooms: listing.bedroom_count ?? '-',
-              bathrooms: listing.bathroom_count ?? '-',
-              area: listing.usable_area_sqm ?? '-',
-              phone: listing.contact_phone,
-            }}
-          />
-        ) : (
-          <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
-        )}
-
-        <div className="mt-5 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
-          <div className="min-w-0">
-            <div className="flex flex-col">
-              <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
-                <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
-                  {propertyOffersLabel(prices, isThai) || offerLabel(listing.offer_type, isThai)}
-                </span>
-                <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-                  {propertyLabel}
-                </span>
-                {listing.usage_type === 'mixed' ? (
-                  <span className="rounded-full bg-[#eef3f8] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#385f7a] dark:bg-sky-950/45 dark:text-sky-200">
-                    {isThai ? 'อยู่อาศัย + ธุรกิจ' : 'Mixed use · live + work'}
-                  </span>
-                ) : null}
-                {listing.is_verified ? (
-                  <span className="hidden items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50] min-[744px]:inline-flex">
-                    <ShieldCheck className="size-4" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
-                <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
-                  {title}
-                </h1>
-                <ListingViewCount
-                  listingId={listing.public_listing_id}
-                  initialCount={listing.view_count}
-                  source="listing_page"
-                  className="mt-2"
+    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[1100px]:pb-0">
+      <main
+        data-property-listing-page
+        className={`${styles.page} -mx-4 max-w-screen-xl px-3 min-[744px]:mx-auto min-[744px]:px-0 sm:px-5`}
+      >
+        <div className={styles.layout}>
+          <div className={styles.content}>
+            <div className={styles.gallery}>
+              {media.length ? (
+                <HeaderGallery
+                  images={images}
+                  media={media}
+                  listingIdentifier={listing.slug || listing.public_listing_id}
+                  gridType="grid2"
+                  listingPresentation
+                  previewImages={propertyPreviewImages(listing.media)}
+                  propertyDetails={{
+                    title,
+                    category: propertyLabel,
+                    price,
+                    prices,
+                    isVerified: listing.is_verified,
+                    address: fullAddress,
+                    bedrooms: listing.bedroom_count ?? '-',
+                    bathrooms: listing.bathroom_count ?? '-',
+                    area: listing.usable_area_sqm ?? '-',
+                    phone: listing.contact_phone,
+                  }}
                 />
-              </div>
+              ) : (
+                <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
+              )}
             </div>
-            {projectDisplayName ? (
-              <Link
-                href={getPropertyMapSearchUrl(projectDisplayName)}
-                data-listing-project-name
-                className="mt-4 flex w-fit items-start gap-2 rounded-2xl bg-[#edf5f1] px-3.5 py-2.5 font-sarabun text-sm text-[#176b50] transition hover:bg-[#e2efe9] dark:bg-emerald-950 dark:text-emerald-200"
-              >
-                <Building2 className="mt-0.5 size-4.5 shrink-0" />
-                <span className="font-semibold">{projectDisplayName}</span>
-              </Link>
-            ) : null}
-            {fullAddress ? (
-              <div className="mt-4 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 sm:text-base dark:text-neutral-300">
-                <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
-                <div className="min-w-0">
-                  <span className="block">{fullAddress}</span>
+            <div className={styles.identity}>
+              <div className="flex flex-col">
+                <div className="order-2 mt-3 flex flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:mt-0">
+                  <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50]">
+                    {propertyOffersLabel(prices, isThai) || offerLabel(listing.offer_type, isThai)}
+                  </span>
+                  <span className="rounded-full bg-neutral-100 px-3 py-1.5 font-sarabun text-sm text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                    {propertyLabel}
+                  </span>
+                  {listing.usage_type === 'mixed' ? (
+                    <span className="rounded-full bg-[#eef3f8] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#385f7a] dark:bg-sky-950/45 dark:text-sky-200">
+                      {isThai ? 'อยู่อาศัย + ธุรกิจ' : 'Mixed use · live + work'}
+                    </span>
+                  ) : null}
+                  {listing.is_verified ? (
+                    <span className="hidden items-center gap-1.5 rounded-full bg-[#edf5f1] px-3 py-1.5 font-sarabun text-sm font-semibold text-[#176b50] min-[744px]:inline-flex">
+                      <ShieldCheck className="size-4" /> {isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="order-1 min-[744px]:order-2 min-[744px]:mt-4">
+                  <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
+                    {title}
+                  </h1>
+                  <ListingViewCount
+                    listingId={listing.public_listing_id}
+                    initialCount={listing.view_count}
+                    source="listing_page"
+                    className="mt-2"
+                  />
                 </div>
               </div>
-            ) : null}
-
+              {projectDisplayName ? (
+                <Link
+                  href={getPropertyMapSearchUrl(projectDisplayName)}
+                  data-listing-project-name
+                  className="mt-3 flex w-fit items-start gap-2 rounded-xl bg-[#edf5f1] px-3 py-2 font-sarabun text-sm text-[#176b50] transition hover:bg-[#e2efe9] dark:bg-emerald-950 dark:text-emerald-200"
+                >
+                  <Building2 className="mt-0.5 size-4.5 shrink-0" />
+                  <span className="font-semibold">{projectDisplayName}</span>
+                </Link>
+              ) : null}
+              {fullAddress ? (
+                <a
+                  href="#listing-location"
+                  className="mt-3 flex items-start gap-2 font-sarabun text-sm leading-6 text-neutral-600 hover:text-[#176b50] dark:text-neutral-300"
+                >
+                  <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
+                  <div className="min-w-0">
+                    <span className="min-[744px]:hidden">{fullAddress}</span>
+                    <span className="hidden min-[744px]:inline">
+                      {[district, province].filter(Boolean).join(' · ')}{' '}
+                      <span className="ml-2 text-[#176b50] underline underline-offset-4">
+                        {isThai ? 'ดูทำเล' : 'View location'}
+                      </span>
+                    </span>
+                  </div>
+                </a>
+              ) : null}
+            </div>
             {facts.length ? (
-              <section className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <section id="listing-overview" aria-label={isThai ? 'ข้อมูลสำคัญ' : 'Key facts'} className={styles.facts}>
                 {facts.map((item) => (
                   <div
                     key={item.label}
-                    className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+                    className={`${styles.fact} bg-white dark:border-neutral-800 dark:bg-neutral-900`}
                   >
                     <item.icon className="size-5 text-[#176b50]" />
                     <p className="mt-3 font-sarabun text-lg font-semibold text-neutral-950 dark:text-white">
@@ -246,21 +276,34 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </section>
             ) : null}
 
-            {listing.property_type_code === 'retail_space' || prices.length > 1 ? (
-              <section className="mt-7 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 lg:hidden dark:border-[#205e30] dark:bg-[#173520]">
+            {prices.length > 0 ? (
+              <section
+                className={`mt-5 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-4 min-[1100px]:hidden dark:border-[#205e30] dark:bg-[#173520] ${listing.property_type_code !== 'retail_space' && prices.length === 1 ? 'max-[743px]:hidden' : ''}`}
+              >
                 <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-300">
-                  {prices.length > 1 ? (isThai ? 'ราคา' : 'Price') : isThai ? 'ค่าเช่าและเงื่อนไข' : 'Rent & terms'}
+                  {listing.property_type_code === 'retail_space'
+                    ? isThai
+                      ? 'ค่าเช่าและเงื่อนไข'
+                      : 'Rent & terms'
+                    : isThai
+                      ? 'ราคา'
+                      : 'Price'}
                 </p>
                 <PropertyPrices prices={prices} variant="detail" className="mt-2 text-[#123f32] dark:text-white" />
                 <RetailTerms items={retailTerms} />
               </section>
             ) : null}
 
-            <section className="mt-10 border-t border-neutral-200 pt-8 dark:border-neutral-800">
+            <section id="listing-description" className={`${styles.section} mt-8`}>
               <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
                 {isThai ? 'รายละเอียดประกาศ' : 'Listing details'}
               </h2>
-              <PropertyDescription text={description} className="mt-5 font-sarabun text-[15px] sm:text-base" />
+              <PropertyDescription
+                text={description}
+                collapsible
+                isThai={isThai}
+                className="mt-4 font-sarabun text-[15px]"
+              />
             </section>
 
             {listing.amenities.length ? (
@@ -281,8 +324,11 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               </section>
             ) : null}
 
-            {mapURL ? (
-              <section className="mt-10 rounded-3xl border border-[#dce9e4] bg-[#f7faf8] p-5 sm:p-6 dark:border-[#205e30] dark:bg-[#173520]">
+            {mapURL || fullAddress ? (
+              <section
+                id="listing-location"
+                className={`${styles.section} mt-8 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-5 sm:p-6 dark:border-[#205e30] dark:bg-[#173520]`}
+              >
                 <h2 className="flex items-center gap-2 font-sarabun text-xl font-semibold text-neutral-950 dark:text-white">
                   <MapPin className="size-5 text-[#176b50] dark:text-[#8bd49c]" />{' '}
                   {isThai ? 'ตำแหน่งทรัพย์' : 'Property location'}
@@ -290,20 +336,26 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                 <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
                   {fullAddress}
                 </p>
-                <a
-                  href={mapURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-1.5 font-sarabun text-sm font-semibold text-[#176b50] hover:underline dark:text-[#8bd49c]"
-                >
-                  {isThai ? 'เปิดตำแหน่งบนแผนที่' : 'Open in maps'} <ExternalLink className="size-4" />
-                </a>
+                {mapURL && (
+                  <a
+                    href={mapURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-1.5 font-sarabun text-sm font-semibold text-[#176b50] hover:underline dark:text-[#8bd49c]"
+                  >
+                    {isThai ? 'เปิดตำแหน่งบนแผนที่' : 'Open in maps'} <ExternalLink className="size-4" />
+                  </a>
+                )}
               </section>
             ) : null}
           </div>
 
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)] dark:border-neutral-800 dark:bg-neutral-900">
+          <aside className={styles.sidebar}>
+            <div
+              id="contact-owner-desktop"
+              data-listing-contact-card
+              className={`${styles.contactCard} bg-white dark:bg-neutral-900`}
+            >
               <p className="font-sarabun text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
               <PropertyPrices prices={prices} variant="detail" className="mt-2 text-neutral-950 dark:text-white" />
               <RetailTerms items={retailTerms} />
@@ -364,7 +416,10 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
       </main>
 
       {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL || mapURL) && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div
+          data-listing-contact-bar
+          className={`${styles.bottomBar} border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95`}
+        >
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               {prices.length === 1 && (
@@ -375,6 +430,9 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL) && (
                 <MobileListingContactSheet
+                  showOnTablet
+                  isThai={isThai}
+                  triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
                   analyticsListingId={listing.public_listing_id}
                   analyticsPropertyType={listing.property_type_code}
                   contactName={listing.contact_name}

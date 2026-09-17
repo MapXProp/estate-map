@@ -1,7 +1,9 @@
 'use client'
 
 import PropertyPrices from '@/components/PropertyPrices'
+import { isPropertyPlan, propertyPreviewImages } from '@/lib/propertyDetailPresentation'
 import { getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
+import styles from './PropertyListingView.module.css'
 
 import PropertyDescription from '@/components/PropertyDescription'
 
@@ -85,7 +87,14 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     .filter((item) => ['image', 'video', '360', 'panorama'].includes(item.media_type))
     .map((item) => ({
       id: String(item.id),
-      type: item.media_type === 'image' ? 'photo' : item.media_type === 'video' ? 'video' : '360',
+      type:
+        item.media_type === 'image'
+          ? isPropertyPlan(item)
+            ? 'floor-plan'
+            : 'photo'
+          : item.media_type === 'video'
+            ? 'video'
+            : '360',
       url: item.url,
       thumbnailUrl: item.thumbnail_url,
       caption: item.title || item.alt_text,
@@ -125,8 +134,11 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   ]
 
   return (
-    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[744px]:pb-0">
-      <main className="-mx-4 max-w-screen-xl px-3 pt-0 pb-4 min-[744px]:mx-auto min-[744px]:px-6 min-[744px]:py-8 sm:px-5 lg:px-8">
+    <div {...listingAnalyticsAttributes(listing, 'listing_page')} className="pb-24 min-[1100px]:pb-0">
+      <main
+        data-property-listing-page
+        className={`${styles.page} -mx-4 max-w-screen-xl px-3 min-[744px]:mx-auto min-[744px]:px-0 sm:px-5`}
+      >
         <h1 className="sr-only">{title}</h1>
         <div className="px-1 pt-2 pb-4 min-[744px]:hidden">
           <div className="mb-1.5 flex min-h-10 items-center justify-between gap-3">
@@ -158,23 +170,26 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           )}
         </div>
 
-        {media.length ? (
-          <HeaderGallery
-            images={images}
-            media={media}
-            listingIdentifier={listing.slug || listing.public_listing_id}
-            gridType="grid2"
-            imageAlt={title}
-            squareMobileCorners
-            hideMobileFavorite
-          />
-        ) : (
-          <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
-        )}
-
-        <div className="mt-0 grid gap-10 min-[744px]:mt-7 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
-          <div className="flex min-w-0 flex-col">
-            <div className="flex flex-col">
+        <div className={styles.layout}>
+          <div className={styles.content}>
+            <div className={styles.gallery}>
+              {media.length ? (
+                <HeaderGallery
+                  images={images}
+                  media={media}
+                  listingIdentifier={listing.slug || listing.public_listing_id}
+                  gridType="grid2"
+                  listingPresentation
+                  previewImages={propertyPreviewImages(listing.media)}
+                  imageAlt={title}
+                  squareMobileCorners
+                  hideMobileFavorite
+                />
+              ) : (
+                <ListingImageFallback className="aspect-[16/7] rounded-[28px]" />
+              )}
+            </div>
+            <div className={styles.landIdentity}>
               <div className="order-2 hidden flex-wrap items-center gap-2 min-[744px]:order-1 min-[744px]:flex">
                 {prices.length > 0 && (
                   <span className="rounded-full bg-[#edf5f1] px-3 py-1.5 text-sm font-semibold text-[#176b50]">
@@ -232,9 +247,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               source="listing_page"
               className="order-3 mt-3 min-[744px]:order-none"
             />
-            <section className="order-3 mt-5 grid grid-cols-2 gap-3 min-[744px]:order-none min-[744px]:mt-7 sm:grid-cols-4">
+            <section className={`${styles.facts} order-3 min-[744px]:order-none`}>
               {factCards.map((item) => (
-                <div key={item.label} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                <div key={item.label} className={`${styles.fact} bg-white`}>
                   <item.icon className="size-5 text-[#176b50]" aria-hidden="true" />
                   <p className="mt-3 text-lg font-semibold text-neutral-950">{item.value}</p>
                   <p className="mt-0.5 text-xs text-neutral-500">{item.label}</p>
@@ -337,7 +352,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
 
             <section className="order-1 mt-6 min-[744px]:order-none min-[744px]:mt-10 min-[744px]:border-t min-[744px]:border-neutral-200 min-[744px]:pt-8">
               <h2 className="text-xl font-semibold text-neutral-950 min-[744px]:text-2xl">รายละเอียดที่ดิน</h2>
-              <PropertyDescription text={description} className="mt-5 text-[15px] sm:text-base" />
+              <PropertyDescription text={description} collapsible isThai={isThai} className="mt-4 text-[15px]" />
             </section>
 
             {featureCards.items.length > 0 && (
@@ -419,8 +434,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             </section>
           </div>
 
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 rounded-3xl border border-neutral-200 bg-white p-6 shadow-[0_18px_55px_rgba(18,63,50,0.10)]">
+          <aside className={styles.sidebar}>
+            <div id="contact-owner-desktop" data-listing-contact-card className={`${styles.contactCard} bg-white`}>
               <p className="text-sm text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
               <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <PropertyPrices prices={prices} variant="detail" className="text-neutral-950" />
@@ -479,7 +494,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
       </main>
 
       {(listing.contact_name || phoneURL || emailURL || lineURL || mapURL) && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur min-[744px]:hidden">
+        <div
+          data-listing-contact-bar
+          className={`${styles.bottomBar} border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur`}
+        >
           <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               {prices.length === 1 && (
@@ -497,6 +515,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             <div className="flex shrink-0 items-center gap-1.5">
               {(listing.contact_name || phoneURL || emailURL || lineURL) && (
                 <MobileListingContactSheet
+                  showOnTablet
+                  isThai={isThai}
+                  triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
                   analyticsListingId={listing.public_listing_id}
                   analyticsPropertyType={listing.property_type_code}
                   contactName={listing.contact_name}

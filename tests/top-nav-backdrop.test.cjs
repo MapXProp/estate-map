@@ -22,6 +22,7 @@ function harness(initialBottom, hasBoundary = true) {
     'react/jsx-runtime': require('react/jsx-runtime'),
     '@headlessui/react': { Portal: 'portal', PopoverBackdrop: 'backdrop' },
     react: {
+      useSyncExternalStore: (_subscribe, snapshot) => snapshot(),
       useRef: () => anchor,
       useState: () => [state, next => { state = next }],
       useLayoutEffect(callback, deps) {

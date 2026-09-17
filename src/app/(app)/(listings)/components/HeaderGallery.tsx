@@ -1,7 +1,9 @@
 'use client'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
+import PropertyPrices from '@/components/PropertyPrices'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
+import type { PropertyPrice } from '@/lib/propertyPrices'
 import { Button } from '@/shared/Button'
 import ButtonClose from '@/shared/ButtonClose'
 import T from '@/utils/getT'
@@ -29,6 +31,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { type TouchEvent as ReactTouchEvent, type RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import ListingGalleryPreview from './ListingGalleryPreview'
 import PanoramaViewer from './PanoramaViewer'
 
 type PropertyMediaType = 'photo' | 'video' | '360' | 'floor-plan' | '3d'
@@ -328,7 +331,7 @@ const DeferredMediaSection = ({
           }
         >
           {items.map((item, index) => {
-            const imageIndex = item.type === 'photo' ? images.indexOf(item.url) : -1
+            const imageIndex = item.type === 'photo' || item.type === 'floor-plan' ? images.indexOf(item.url) : -1
 
             return (
               <button
@@ -349,13 +352,16 @@ const DeferredMediaSection = ({
                     : 'aspect-[4/3] rounded-xl'
                 )}
               >
-                {item.type === 'photo' || item.thumbnailUrl ? (
+                {item.type === 'photo' || item.type === 'floor-plan' || item.thumbnailUrl ? (
                   <Image
                     src={item.thumbnailUrl || item.url}
                     alt={`${imageAlt} ${MEDIA_LABELS[item.type]}ที่ ${index + 1}`}
                     fill
                     sizes={layout === 'mobile' ? '50vw' : '(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw'}
-                    className="object-cover transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95 group-active:scale-[0.99]"
+                    className={clsx(
+                      item.type === 'floor-plan' ? 'bg-white object-contain' : 'object-cover',
+                      'transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95 group-active:scale-[0.99]'
+                    )}
                   />
                 ) : (
                   <span className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[#edf5f1] to-neutral-200 text-[#176b50] dark:from-emerald-950/50 dark:to-neutral-800">
@@ -895,7 +901,9 @@ const DesktopPhotoGallery = ({
   const handleRequestViewing = () => {
     handleClose()
     window.setTimeout(() => {
-      document.getElementById('contact-owner-desktop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const contactCard = document.getElementById('contact-owner-desktop')
+      if (contactCard?.offsetHeight) contactCard.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      else document.querySelector<HTMLButtonElement>('[data-listing-contact-bar] button')?.click()
     }, 180)
   }
 
@@ -973,10 +981,12 @@ const DesktopPhotoGallery = ({
               <aside className="hidden w-[310px] shrink-0 flex-col border-l border-neutral-200 bg-white lg:flex xl:w-[350px] dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="min-h-0 flex-1 overflow-y-auto p-5 xl:p-6">
                   <div className="flex items-start justify-between gap-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff7f3] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
-                      <ShieldCheck className="size-4" />
-                      ตรวจสอบแล้ว
-                    </span>
+                    {propertyDetails.isVerified && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff7f3] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
+                        <ShieldCheck className="size-4" />
+                        ตรวจสอบแล้ว
+                      </span>
+                    )}
                     <button
                       type="button"
                       disabled={listingIdentifier ? savedListings.isBusy(listingIdentifier) : false}
@@ -1010,9 +1020,17 @@ const DesktopPhotoGallery = ({
                   <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
 
                   <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">ราคาเสนอ</p>
-                  <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">
-                    {propertyDetails.price}
-                  </p>
+                  {propertyDetails.prices ? (
+                    <PropertyPrices
+                      prices={propertyDetails.prices}
+                      variant="detail"
+                      className="mt-1 text-neutral-950 dark:text-white"
+                    />
+                  ) : (
+                    <p className="mt-1 text-2xl font-semibold text-neutral-950 dark:text-white">
+                      {propertyDetails.price}
+                    </p>
+                  )}
 
                   <div className="mt-5 grid grid-cols-3 gap-2">
                     <div className="rounded-2xl bg-neutral-50 p-3 text-center dark:bg-neutral-800/70">
@@ -1031,20 +1049,6 @@ const DesktopPhotoGallery = ({
                       <p className="text-[11px] text-neutral-500 dark:text-neutral-400">ตร.ม.</p>
                     </div>
                   </div>
-
-                  <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
-
-                  <h4 className="text-sm font-semibold text-neutral-950 dark:text-white">จุดเด่นของอสังหา</h4>
-                  <ul className="mt-3 space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
-                    {['ข้อมูลตรงตามประเภททรัพย์', 'ดูรูปภาพจริงได้ครบทุกมุม', 'ติดต่อเจ้าของประกาศได้โดยตรง'].map(
-                      (highlight) => (
-                        <li key={highlight} className="flex items-start gap-2.5">
-                          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-[#176b50]" />
-                          <span>{highlight}</span>
-                        </li>
-                      )
-                    )}
-                  </ul>
                 </div>
 
                 <div className="shrink-0 border-t border-neutral-200 bg-white p-5 xl:p-6 dark:border-neutral-800 dark:bg-neutral-900">
@@ -1053,7 +1057,7 @@ const DesktopPhotoGallery = ({
                     onClick={handleRequestViewing}
                     className="min-h-12 w-full rounded-full bg-[#124e3c] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d3d2f] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]/40"
                   >
-                    นัดดูสถานที่
+                    ติดต่อผู้ลงประกาศ
                   </button>
                   {propertyDetails.phone && (
                     <a
@@ -1061,7 +1065,7 @@ const DesktopPhotoGallery = ({
                       className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-800"
                     >
                       <Phone className="size-4" />
-                      โทรหาเจ้าของ
+                      โทรติดต่อ
                     </a>
                   )}
                 </div>
@@ -1167,12 +1171,16 @@ interface Props {
   imageAlt?: string
   squareMobileCorners?: boolean
   hideMobileFavorite?: boolean
+  listingPresentation?: boolean
+  previewImages?: string[]
 }
 
 interface PropertyGalleryDetails {
   title: string
   category: string
   price: string
+  prices?: PropertyPrice[]
+  isVerified?: boolean
   address: string
   bedrooms: number | string
   bathrooms: number | string
@@ -1190,6 +1198,8 @@ const HeaderGallery = ({
   imageAlt,
   squareMobileCorners = false,
   hideMobileFavorite = false,
+  listingPresentation = false,
+  previewImages,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = useState(false)
@@ -1258,6 +1268,8 @@ const HeaderGallery = ({
           imageAlt={galleryImageAlt}
           squareMobileCorners={squareMobileCorners}
           hideMobileFavorite={hideMobileFavorite}
+          listingPresentation={listingPresentation}
+          previewImages={previewImages}
         />
       )}
       {gridType === 'grid3' && (
@@ -1304,7 +1316,7 @@ const HeaderGallery = ({
       <VideoDialog item={activeVideo} onClose={() => setActiveVideo(null)} />
 
       {/* Dialog for full-screen image gallery */}
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-[60]">
+      <Dialog open={isOpen} onClose={() => setIsOpen(false)} data-listing-full-photo className="relative z-[60]">
         {/* The backdrop, rendered as a fixed sibling to the panel container */}
         <DialogBackdrop className="fixed inset-0 bg-black" />
 
@@ -1389,6 +1401,8 @@ const HeaderGalleryGrid2 = ({
   imageAlt,
   squareMobileCorners,
   hideMobileFavorite,
+  listingPresentation,
+  previewImages,
 }: {
   images: string[]
   mediaCount: number
@@ -1399,6 +1413,8 @@ const HeaderGalleryGrid2 = ({
   imageAlt: string
   squareMobileCorners: boolean
   hideMobileFavorite: boolean
+  listingPresentation: boolean
+  previewImages?: string[]
 }) => {
   const mobilePreviewImages = images.slice(0, 5)
   const mobilePreviewImageCount = mobilePreviewImages.length
@@ -1488,7 +1504,17 @@ const HeaderGalleryGrid2 = ({
         />
       ) : null}
 
-      <div className="hidden min-[744px]:block">
+      {listingPresentation && (
+        <ListingGalleryPreview
+          images={images}
+          previews={previewImages}
+          imageAlt={imageAlt}
+          mediaCount={mediaCount}
+          onImage={handleOpenImage}
+          onAll={handleOpenAllMedia}
+        />
+      )}
+      <div className={listingPresentation ? 'hidden' : 'hidden min-[744px]:block'}>
         <div className="grid grid-cols-12 gap-2">
           <button
             type="button"

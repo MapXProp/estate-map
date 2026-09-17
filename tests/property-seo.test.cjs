@@ -169,6 +169,8 @@ test('homepage renders real listing links and lazy image URLs before browser Jav
   const React = require('react')
   const { renderToStaticMarkup } = require('react-dom/server')
   const Showcase = load('src/components/property-home/PropertyListingShowcase.tsx', {
+    '@/components/PropertyPrices': require('./helpers/property-prices.cjs').component(),
+    '@/lib/propertyPrices': require('./helpers/property-prices.cjs').prices,
     react: React,
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),

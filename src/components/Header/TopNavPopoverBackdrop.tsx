@@ -1,11 +1,16 @@
 'use client'
 
 import { PopoverBackdrop, Portal } from '@headlessui/react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+
+const subscribe = () => () => {}
+const clientSnapshot = () => true
+const serverSnapshot = () => false
 
 const TopNavPopoverBackdrop = () => {
   const anchorRef = useRef<HTMLSpanElement>(null)
   const [backdrop, setBackdrop] = useState<HTMLElement | null>(null)
+  const hydrated = useSyncExternalStore(subscribe, clientSnapshot, serverSnapshot)
 
   useLayoutEffect(() => {
     if (!backdrop) return
@@ -30,14 +35,16 @@ const TopNavPopoverBackdrop = () => {
   return (
     <>
       <span ref={anchorRef} hidden aria-hidden="true" />
-      <Portal>
-        <PopoverBackdrop
-          ref={setBackdrop}
-          transition
-          data-top-nav-backdrop
-          className="fixed inset-x-0 top-[var(--top-nav-backdrop-top,0px)] bottom-0 z-[60] bg-[rgba(15,23,42,0.10)] transition-opacity duration-150 ease-out min-[744px]:bg-[rgba(15,23,42,0.12)] dark:bg-black/30 min-[744px]:dark:bg-black/35 data-closed:opacity-0"
-        />
-      </Portal>
+      {hydrated && (
+        <Portal>
+          <PopoverBackdrop
+            ref={setBackdrop}
+            transition
+            data-top-nav-backdrop
+            className="fixed inset-x-0 top-[var(--top-nav-backdrop-top,0px)] bottom-0 z-[60] bg-[rgba(15,23,42,0.10)] transition-opacity duration-150 ease-out min-[744px]:bg-[rgba(15,23,42,0.12)] dark:bg-black/30 min-[744px]:dark:bg-black/35 data-closed:opacity-0"
+          />
+        </Portal>
+      )}
     </>
   )
 }

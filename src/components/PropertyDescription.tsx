@@ -1,3 +1,6 @@
+import { propertyDescriptionSections } from '@/lib/propertyDetailPresentation'
+import { ChevronDown } from 'lucide-react'
+
 const headings = new Set([
   'รายละเอียดทรัพย์',
   'ทำเลและการเดินทาง',
@@ -9,7 +12,51 @@ const headings = new Set([
   'Price and contact',
 ])
 
-export default function PropertyDescription({ text, className = '' }: { text: string; className?: string }) {
+export default function PropertyDescription({
+  text,
+  className = '',
+  collapsible = false,
+  isThai = true,
+}: {
+  text: string
+  className?: string
+  collapsible?: boolean
+  isThai?: boolean
+}) {
+  if (collapsible) {
+    const sections = propertyDescriptionSections(text)
+    const introduction = sections[0]?.paragraphs[0]
+    const remaining = sections
+      .map((section, index) => ({
+        ...section,
+        paragraphs: index === 0 ? section.paragraphs.slice(1) : section.paragraphs,
+      }))
+      .filter((section) => section.paragraphs.length)
+    return (
+      <div className={`text-neutral-600 dark:text-neutral-300 ${className}`} data-listing-description>
+        {introduction && <p className="leading-7 [overflow-wrap:anywhere] whitespace-pre-line">{introduction}</p>}
+        {remaining.length > 0 && (
+          <div className="mt-5 divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+            {remaining.map((section, index) => (
+              <details key={`${section.heading}-${index}`} className="group">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 font-semibold text-neutral-900 dark:text-white [&::-webkit-details-marker]:hidden">
+                  {section.heading || (isThai ? 'รายละเอียดเพิ่มเติม' : 'More details')}
+                  <ChevronDown className="size-4 shrink-0 text-neutral-500 transition group-open:rotate-180" />
+                </summary>
+                <div className="space-y-4 pb-5 leading-7">
+                  {section.paragraphs.map((paragraph, i) => (
+                    <p key={i} className="[overflow-wrap:anywhere] whitespace-pre-line">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
   return (
     <div className={`space-y-4 leading-7 text-neutral-600 dark:text-neutral-300 ${className}`}>
       {text

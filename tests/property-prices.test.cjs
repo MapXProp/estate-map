@@ -124,6 +124,8 @@ test('all card/detail/footer variants render both labeled full amounts in Thai a
 test('the standalone detail renders both offers in its content, desktop price card and mobile contact bar', () => {
   const provider = { usePreferences: () => preferences() }
   const View = load('src/app/(app)/(listings)/real-estate-listings/[handle]/PropertyListingView.tsx', {
+    '@/lib/propertyDetailPresentation': load('src/lib/propertyDetailPresentation.ts'),
+    './PropertyListingView.module.css': { default: {} },
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
     '@/components/preferences/PreferencesProvider': provider,
