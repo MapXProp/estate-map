@@ -6,7 +6,9 @@ import { getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import styles from './PropertyListingView.module.css'
 
 import PropertyDescription from '@/components/PropertyDescription'
+import ListingContactDetails, { ListingContactChannels } from '@/components/property-home/ListingContactDetails'
 import ListingLocationSection from '@/components/property-home/ListingLocationSection'
+import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
@@ -18,17 +20,13 @@ import {
   Building2,
   ChevronDown,
   LandPlot,
-  Mail,
   MapPin,
-  MessageCircle,
-  Phone,
   Ruler,
   ShieldCheck,
   SplitSquareVertical,
   UserRoundCheck,
   WalletCards,
 } from 'lucide-react'
-import Link from 'next/link'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
@@ -68,11 +66,6 @@ const getFeatureCards = (listing: PropertyListingDetail, isThai: boolean) => {
 }
 
 const formatThaiNumber = (value: number) => value.toLocaleString('th-TH', { maximumFractionDigits: 0 })
-
-const formatPhone = (value: string) => {
-  const digits = value.replace(/\D/g, '')
-  return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : value
-}
 
 const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
@@ -117,10 +110,10 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
     offerAmount > 0 && landAreaSquareWah > 0 ? Math.round(offerAmount / landAreaSquareWah) : storedPricePerSquareWah
   const formattedPricePerSquareWah = pricePerSquareWah ? formatCurrencyFrom(pricePerSquareWah, listing.currency) : ''
   const fullAddress = [address, province].filter(Boolean).join(' ')
-  const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
-  const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
-  const lineHandle = listing.line_id.replace(/^@/, '')
-  const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
+  const contactLinks = getPropertyPreviewContacts(listing)
+  const hasContacts = Boolean(
+    listing.contact_name || listing.organization_name || listing.contact_organization_name || contactLinks.length
+  )
   const mapURL =
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
@@ -270,7 +263,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               ))}
             </section>
 
-            {(listing.contact_name || phoneURL || lineURL || emailURL) && (
+            {hasContacts && (
               <details className="group order-2 mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-3 p-3 select-none [&::-webkit-details-marker]:hidden">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
@@ -290,75 +283,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   <ChevronDown className="size-4 shrink-0 text-neutral-400 transition-transform group-open:rotate-180" />
                 </summary>
 
-                <div className="border-t border-[#dce9e4] px-3 py-2">
-                  {listing.organization_public_id &&
-                    (listing.organization_name || listing.contact_organization_name) && (
-                      <Link
-                        href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
-                        className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
-                      >
-                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
-                          <Building2 className="size-4" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-xs text-neutral-500">ข้อมูลองค์กร</span>
-                          <span className="block truncate text-sm font-semibold text-[#176b50]">
-                            {listing.organization_name || listing.contact_organization_name}
-                          </span>
-                        </span>
-                      </Link>
-                    )}
-                  {phoneURL && (
-                    <a
-                      href={phoneURL}
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
-                    >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
-                        <Phone className="size-4" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-xs text-neutral-500">โทรศัพท์</span>
-                        <span className="block text-sm font-semibold text-neutral-800">
-                          {formatPhone(listing.contact_phone)}
-                        </span>
-                      </span>
-                    </a>
-                  )}
-                  {lineURL && (
-                    <a
-                      href={lineURL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
-                    >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
-                        <MessageCircle className="size-4" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-xs text-neutral-500">LINE</span>
-                        <span className="block truncate text-sm font-semibold text-neutral-800">@{lineHandle}</span>
-                      </span>
-                    </a>
-                  )}
-                  {emailURL && (
-                    <a
-                      href={emailURL}
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-2.5 transition hover:bg-white/80 active:bg-white"
-                    >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-[#176b50]">
-                        <Mail className="size-4" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-xs text-neutral-500">อีเมล</span>
-                        <span className="block truncate text-sm font-semibold text-neutral-800">
-                          {listing.contact_email}
-                        </span>
-                      </span>
-                    </a>
-                  )}
-                  {!phoneURL && !lineURL && !emailURL && (
-                    <p className="px-2.5 py-3 text-sm text-neutral-500">ยังไม่มีข้อมูลติดต่อเพิ่มเติม</p>
-                  )}
+                <div className="border-t border-[#dce9e4] p-3">
+                  <ListingContactChannels listing={listing} isThai={isThai} revealOnRequest={false} />
                 </div>
               </details>
             )}
@@ -418,56 +344,13 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 ) : null}
               </div>
               <div className="my-5 border-t border-neutral-200" />
-              <p className="font-semibold text-neutral-950">ติดต่อ {listing.contact_name}</p>
-              {contactRole && <p className="mt-1 text-sm font-medium text-neutral-700">{contactRole}</p>}
-              {(listing.organization_name || listing.contact_organization_name) && (
-                <>
-                  {listing.organization_public_id ? (
-                    <Link
-                      href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
-                      className="mt-1 flex items-center gap-1.5 text-sm font-medium text-[#176b50] hover:underline"
-                    >
-                      <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
-                    </Link>
-                  ) : (
-                    <p className="mt-1 flex items-center gap-1.5 text-sm text-neutral-500">
-                      <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
-                    </p>
-                  )}
-                </>
-              )}
-              {listing.organization_verification_status === 'verified' && (
-                <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-blue-600">
-                  <ShieldCheck className="size-3.5" /> องค์กรตรวจสอบแล้ว
-                </p>
-              )}
-              <p className="mt-2 text-xs text-neutral-500">
-                {contactVerificationLabel(listing.contact_verification_status, isTrustedContact)}
-              </p>
-              <div className="mt-5 grid gap-2.5">
-                {phoneURL && (
-                  <a
-                    href={phoneURL}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-semibold text-white transition hover:bg-[#145d46]"
-                  >
-                    <Phone className="size-4" /> โทร {formatPhone(listing.contact_phone)}
-                  </a>
-                )}
-                {emailURL && (
-                  <a
-                    href={emailURL}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-medium text-neutral-700 transition hover:bg-neutral-50"
-                  >
-                    <Mail className="size-4" /> ส่งอีเมล
-                  </a>
-                )}
-              </div>
+              <ListingContactDetails listing={listing} isThai={isThai} />
             </div>
           </aside>
         </div>
       </main>
 
-      {(listing.contact_name || phoneURL || emailURL || lineURL || mapURL) && (
+      {(hasContacts || mapURL) && (
         <div
           data-listing-contact-bar
           className={`${styles.bottomBar} border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur`}
@@ -487,7 +370,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              {(listing.contact_name || phoneURL || emailURL || lineURL) && (
+              {hasContacts && (
                 <MobileListingContactSheet
                   showOnTablet
                   isThai={isThai}
@@ -506,6 +389,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                   email={listing.contact_email}
                   lineId={listing.line_id}
                   instagramHandle={listing.instagram_handle}
+                  websiteUrl={listing.organization_website_url}
                 />
               )}
               {mapURL && (
@@ -551,12 +435,6 @@ const contactAuthorityLabel = (value: string) => {
     property_management_company: 'บริษัทบริหารทรัพย์',
   }
   return labels[value] || ''
-}
-
-const contactVerificationLabel = (status: PropertyListingDetail['contact_verification_status'], isTrusted: boolean) => {
-  if (isTrusted) return 'ตรวจสอบตัวตนและสิทธิแล้ว'
-  if (status === 'identity_verified') return 'ยืนยันตัวตนแล้ว · ยังไม่ได้ยืนยันสิทธิในทรัพย์'
-  return 'ข้อมูลบทบาทที่ผู้ลงประกาศระบุเอง · ยังไม่ Verified'
 }
 
 export default LandListingView

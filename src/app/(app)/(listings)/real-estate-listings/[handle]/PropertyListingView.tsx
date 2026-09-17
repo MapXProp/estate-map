@@ -3,12 +3,14 @@
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingContactDetails from '@/components/property-home/ListingContactDetails'
 import ListingLocationSection from '@/components/property-home/ListingLocationSection'
 import PropertyDescription from '@/components/PropertyDescription'
 import PropertyPrices from '@/components/PropertyPrices'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { isPropertyPlan, propertyPreviewImages } from '@/lib/propertyDetailPresentation'
+import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { getPropertyPrices, propertyOffersLabel, propertyPricesText } from '@/lib/propertyPrices'
 import { getPropertyMapSearchUrl, type PropertyListingDetail } from '@/lib/propertySearch'
 import {
@@ -16,7 +18,6 @@ import {
   BedDouble,
   Building2,
   CarFront,
-  Mail,
   MapPin,
   Maximize2,
   MessageCircle,
@@ -102,10 +103,12 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             : []),
         ]
       : []
-  const phoneURL = listing.contact_phone ? `tel:${listing.contact_phone.replace(/[^+\d]/g, '')}` : ''
-  const emailURL = listing.contact_email ? `mailto:${listing.contact_email}` : ''
-  const lineHandle = listing.line_id.replace(/^@/, '')
-  const lineURL = lineHandle ? `https://line.me/R/ti/p/%40${encodeURIComponent(lineHandle)}` : ''
+  const contactLinks = getPropertyPreviewContacts(listing)
+  const hasContacts = Boolean(
+    listing.contact_name || listing.organization_name || listing.contact_organization_name || contactLinks.length
+  )
+  const phoneURL = contactLinks.find((contact) => contact.kind === 'phone')?.href || ''
+  const lineURL = contactLinks.find((contact) => contact.kind === 'line')?.href || ''
   const mapURL =
     listing.latitude && listing.longitude
       ? `https://www.google.com/maps/dir/?api=1&destination=${listing.latitude},${listing.longitude}`
@@ -338,62 +341,13 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <PropertyPrices prices={prices} variant="detail" className="mt-2 text-neutral-950 dark:text-white" />
               <RetailTerms items={retailTerms} />
               <div className="my-5 border-t border-neutral-200 dark:border-neutral-800" />
-              <p className="font-sarabun font-semibold text-neutral-950 dark:text-white">
-                {isThai ? 'ติดต่อ' : 'Contact'} {listing.contact_name}
-              </p>
-              {listing.organization_name || listing.contact_organization_name ? (
-                listing.organization_public_id ? (
-                  <Link
-                    href={`/organizations/${encodeURIComponent(listing.organization_public_id)}`}
-                    className="mt-1 flex items-center gap-1.5 font-sarabun text-sm font-medium text-[#176b50] hover:underline dark:text-emerald-300"
-                  >
-                    <Building2 className="size-4" /> {listing.organization_name || listing.contact_organization_name}
-                  </Link>
-                ) : (
-                  <p className="mt-1 font-sarabun text-sm text-neutral-500">
-                    {listing.organization_name || listing.contact_organization_name}
-                  </p>
-                )
-              ) : null}
-              {listing.organization_verification_status === 'verified' ? (
-                <p className="mt-1 flex items-center gap-1 font-sarabun text-xs font-semibold text-blue-600 dark:text-blue-300">
-                  <ShieldCheck className="size-3.5" /> {isThai ? 'องค์กรตรวจสอบแล้ว' : 'Verified organization'}
-                </p>
-              ) : null}
-              <div className="mt-5 grid gap-2.5">
-                {phoneURL ? (
-                  <a
-                    href={phoneURL}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun font-semibold text-white transition hover:bg-[#145d46]"
-                  >
-                    <Phone className="size-4" /> {listing.contact_phone}
-                  </a>
-                ) : null}
-                {lineURL ? (
-                  <a
-                    href={lineURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                  >
-                    <MessageCircle className="size-4" /> LINE
-                  </a>
-                ) : null}
-                {emailURL ? (
-                  <a
-                    href={emailURL}
-                    className="flex min-h-12 items-center justify-center gap-2 rounded-full border border-neutral-200 px-5 font-sarabun font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                  >
-                    <Mail className="size-4" /> {isThai ? 'ส่งอีเมล' : 'Email'}
-                  </a>
-                ) : null}
-              </div>
+              <ListingContactDetails listing={listing} isThai={isThai} />
             </div>
           </aside>
         </div>
       </main>
 
-      {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL || mapURL) && (
+      {(hasContacts || mapURL) && (
         <div
           data-listing-contact-bar
           className={`${styles.bottomBar} border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95`}
@@ -406,7 +360,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
               <PropertyPrices prices={prices} variant="compact" className="mt-1 text-neutral-950 dark:text-white" />
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              {(listing.contact_name || listing.organization_name || phoneURL || emailURL || lineURL) && (
+              {hasContacts && (
                 <MobileListingContactSheet
                   showOnTablet
                   isThai={isThai}
@@ -424,6 +378,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                   email={listing.contact_email}
                   lineId={listing.line_id}
                   instagramHandle={listing.instagram_handle}
+                  websiteUrl={listing.organization_website_url}
                 />
               )}
               {!phoneURL && lineURL ? (

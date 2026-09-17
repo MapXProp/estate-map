@@ -134,6 +134,8 @@ test('the standalone detail renders both offers in its content, desktop price ca
     '@/components/ListingImageFallback': { default: () => null },
     '@/components/ListingViewCount': { default: () => null },
     '@/components/PropertyDescription': { default: () => null },
+    '@/components/property-home/ListingContactDetails': { default: () => null },
+    '@/lib/propertyPreviewDetails': load('src/lib/propertyPreviewDetails.ts'),
     '@/components/property-home/ListingLocationSection': { default: () => null },
     '@/data/propertyTaxonomy': {
       getPropertyType: () => ({ nameTh: 'บ้านเดี่ยว' }),
