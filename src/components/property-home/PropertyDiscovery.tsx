@@ -23,9 +23,9 @@ import {
   Tent,
   Warehouse,
 } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+import DiscoveryHero from './DiscoveryHero'
 import styles from './PropertyDiscovery.module.css'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
 
@@ -78,7 +78,23 @@ const channelCategories: Record<DiscoveryChannelCode, DiscoveryCategory[]> = {
 const channelContent = {
   homes: {
     brand: 'HOMES & LIVING',
-    photo: '/images/channel-heroes/residential-house-daylight.jpg',
+    photos: [
+      { src: '/images/channel-heroes/residential-house-daylight.jpg', th: 'บ้านพร้อมสวน', en: 'A home with a garden' },
+      {
+        src: '/images/channel-heroes/apartment-living.jpg',
+        th: 'มุมพักผ่อนในอพาร์ตเมนต์',
+        en: 'Apartment living',
+        position: 'center 62%',
+        mobilePosition: '63% center',
+      },
+      {
+        src: '/images/channel-heroes/home-garden.jpg',
+        th: 'บ้านและพื้นที่สีเขียว',
+        en: 'A home close to nature',
+        position: 'center 57%',
+        mobilePosition: '59% center',
+      },
+    ],
     tone: 'green',
     titleTh: 'บ้านที่ใช่',
     titleEn: 'The right home,',
@@ -105,7 +121,23 @@ const channelContent = {
   },
   rooms: {
     brand: 'ROOMS & MONTHLY STAYS',
-    photo: '/images/channel-heroes/monthly-room-daylight.jpg',
+    photos: [
+      { src: '/images/channel-heroes/monthly-room-daylight.jpg', th: 'ห้องพักแสงธรรมชาติ', en: 'A sunlit room' },
+      {
+        src: '/images/channel-heroes/monthly-room-turquoise.jpg',
+        th: 'ห้องพักโทนสดใส',
+        en: 'A colorful bedroom',
+        position: 'center 65%',
+        mobilePosition: '58% center',
+      },
+      {
+        src: '/images/channel-heroes/apartment-living.jpg',
+        th: 'พื้นที่พักผ่อนและใช้ชีวิต',
+        en: 'Room to live and relax',
+        position: 'center 62%',
+        mobilePosition: '63% center',
+      },
+    ],
     tone: 'mint',
     titleTh: 'ห้องที่ใช่',
     titleEn: 'Your next room,',
@@ -132,7 +164,23 @@ const channelContent = {
   },
   business: {
     brand: 'SPACES FOR BUSINESS',
-    photo: '/images/business-hero/cafe-interior.jpg',
+    photos: [
+      { src: '/images/business-hero/cafe-interior.jpg', th: 'ร้านค้าและคาเฟ่', en: 'Shops and cafes' },
+      {
+        src: '/images/channel-heroes/office-daylight.jpg',
+        th: 'สำนักงานและพื้นที่ทำงาน',
+        en: 'Offices and workspaces',
+        position: 'center 57%',
+        mobilePosition: '60% center',
+      },
+      {
+        src: '/images/channel-heroes/business-park.jpg',
+        th: 'อาคารและพื้นที่ธุรกิจ',
+        en: 'Commercial properties',
+        position: 'center 52%',
+        mobilePosition: 'center',
+      },
+    ],
     tone: 'commerce',
     titleTh: 'ทำเลที่ใช่',
     titleEn: 'The right space,',
@@ -178,37 +226,32 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
   return (
     <section className={styles.discovery} aria-labelledby={`${mode}-hero-title`}>
       <div className="container">
-        <div className={styles.hero}>
-          <Image
-            src={content.photo}
-            alt=""
-            fill
-            preload
-            sizes="(max-width: 1280px) 100vw, 1280px"
-            className={styles.heroPhoto}
-          />
-          <div className={styles.heroShade} />
-          <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>
-              <span /> MAPXPROP · {content.brand}
-            </p>
-            <h1 id={`${mode}-hero-title`}>
-              {th ? content.titleTh : content.titleEn}
-              <span>{th ? content.accentTh : content.accentEn}</span>
-            </h1>
-            <p className={styles.description}>{th ? content.descriptionTh : content.descriptionEn}</p>
-          </div>
-          <Link href={searchHref('')} className={styles.mapCard}>
-            <span className={styles.mapIcon}>
-              <Map size={24} strokeWidth={1.5} aria-hidden="true" />
-            </span>
-            <span>
-              <strong>{th ? content.mapTitleTh : content.mapTitleEn}</strong>
-              <span>{th ? 'เริ่มสำรวจบนแผนที่' : 'Start exploring on the map'}</span>
-            </span>
-            <ArrowRight size={18} aria-hidden="true" />
-          </Link>
-        </div>
+        <DiscoveryHero
+          key={mode}
+          photos={content.photos}
+          isThai={th}
+          mapLink={
+            <Link href={searchHref('')} className={styles.mapCard}>
+              <span className={styles.mapIcon}>
+                <Map size={24} strokeWidth={1.5} aria-hidden="true" />
+              </span>
+              <span>
+                <strong>{th ? content.mapTitleTh : content.mapTitleEn}</strong>
+                <span>{th ? 'เริ่มสำรวจบนแผนที่' : 'Start exploring on the map'}</span>
+              </span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          }
+        >
+          <p className={styles.eyebrow}>
+            <span /> MAPXPROP · {content.brand}
+          </p>
+          <h1 id={`${mode}-hero-title`}>
+            {th ? content.titleTh : content.titleEn}
+            <span>{th ? content.accentTh : content.accentEn}</span>
+          </h1>
+          <p className={styles.description}>{th ? content.descriptionTh : content.descriptionEn}</p>
+        </DiscoveryHero>
 
         <div className={styles.searchPanel}>
           <div className={styles.searchTop}>

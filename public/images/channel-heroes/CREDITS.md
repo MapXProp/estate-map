@@ -12,7 +12,7 @@ These images are used as atmosphere illustrations, not as available MapXProp lis
 - Download: 1920px wide JPEG, quality 85. CSS positions the house facade within the banner crop; the original asset is not edited.
 - Used as a residential-category illustration, not as a MapXProp property listing or a claim about its location.
 
-## Previous homes image — home-garden.jpg
+## Homes garden scene — home-garden.jpg
 
 - Creator: Aalo Lens
 - Title: Modern house with large windows and lush garden
@@ -37,6 +37,40 @@ These images are used as atmosphere illustrations, not as available MapXProp lis
 - Source: https://unsplash.com/photos/modern-bedroom-with-desk-bed-and-city-view-f_mWO1Spf4w
 - Image: https://images.unsplash.com/photo-1776348065117-02285a905b0b
 - License: Free Unsplash License, verified on the photo page on 2026-09-10
+
+## Homes / rooms apartment scene — apartment-living.jpg
+
+- Creator: Irena Oze
+- Title: Sunny modern apartment living room with balcony and kitchen counter
+- Source: https://unsplash.com/photos/sunny-modern-apartment-living-room-with-balcony-and-kitchen-counter-eDKrWCFn8is
+- Image: https://images.unsplash.com/photo-1781249144484-f5969c55e54e
+- License: Free Unsplash License, verified on the photo page on 2026-09-18
+
+## Monthly room scene — monthly-room-turquoise.jpg
+
+- Creator: sidath vimukthi
+- Title: A clean, bright bedroom with a large bed
+- Source: https://unsplash.com/photos/a-clean-bright-bedroom-with-a-large-bed-L9GsIbPCXKU
+- Image: https://images.unsplash.com/photo-1750271334785-4f6008035021
+- License: Free Unsplash License, verified on the photo page on 2026-09-18
+
+## Business office scene — office-daylight.jpg
+
+- Creator: Deliberate Directions
+- Title: Modern office space with a bright sunny interior
+- Source: https://unsplash.com/photos/modern-office-space-with-a-bright-sunny-interior-yTrgkVaY1TM
+- Image: https://images.unsplash.com/photo-1746021451691-4385f318ec13
+- License: Free Unsplash License, verified on the photo page on 2026-09-18
+
+## Business park scene — business-park.jpg
+
+- Creator: Alex Reynolds
+- Title: Aerial view of a modern office building complex
+- Source: https://unsplash.com/photos/aerial-view-of-a-modern-office-building-complex-rHvi-_-0jUU
+- Image: https://images.unsplash.com/photo-1758304481667-71d545c91241
+- License: Free Unsplash License, verified on the photo page on 2026-09-18
+
+The four additional scenes above were downloaded at 1920px wide as JPEG, quality 85. They are category atmosphere illustrations, not available listings or claims about a property's location.
 
 License reference: https://unsplash.com/license
 

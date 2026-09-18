@@ -82,14 +82,34 @@
   background: rgb(var(--home-hero-rgb));
 }
 
+.heroSlide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1100ms ease-in-out;
+}
+.heroSlide:first-child,
+.heroSlide[data-active='true'] {
+  opacity: 1;
+}
+.heroSlide[data-failed='true'] {
+  opacity: 0;
+}
 .heroPhoto {
   object-fit: cover;
-  object-position: var(--home-photo-position);
+  object-position: var(--slide-position);
   filter: brightness(1.08);
+  animation: sceneBreathe 12s ease-in-out infinite alternate both paused;
+}
+.hero[data-playing='true'] .heroSlide[data-active='true'] .heroPhoto {
+  animation-play-state: running;
 }
 .heroShade {
   position: absolute;
   inset: 0;
+  z-index: 2;
+  pointer-events: none;
   background:
     linear-gradient(
       90deg,
@@ -102,9 +122,93 @@
 }
 .heroCopy {
   position: relative;
+  z-index: 3;
   padding: 38px 42px 90px;
   color: #fff;
   text-shadow: 0 1px 3px rgb(0 0 0 / 24%);
+}
+.heroControls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-top: 18px;
+  padding: 3px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  background: rgb(var(--home-hero-rgb) / 35%);
+  backdrop-filter: blur(12px);
+}
+.sceneButton,
+.playButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 180ms;
+}
+.sceneButton {
+  padding-inline: 11px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+.sceneButton[aria-pressed='true'] {
+  background: rgb(255 255 255 / 18%);
+}
+.sceneButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sceneButton:hover:not(:disabled),
+.playButton:hover {
+  background: rgb(255 255 255 / 26%);
+}
+.sceneTrack {
+  display: none;
+  width: 32px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 30%);
+}
+.sceneButton[aria-pressed='true'] .sceneTrack {
+  display: block;
+}
+.sceneProgress {
+  display: block;
+  height: 100%;
+  background: var(--home-hero-accent);
+  transform-origin: left;
+}
+.hero[data-playing='true'] .sceneButton[aria-pressed='true'] .sceneProgress {
+  animation: sceneTimer var(--hero-interval) linear both;
+}
+.playButton {
+  width: 36px;
+  flex-shrink: 0;
+  border: 1px solid rgb(255 255 255 / 24%);
+}
+@keyframes sceneBreathe {
+  from {
+    transform: scale(1.015);
+  }
+  to {
+    transform: scale(1.075);
+  }
+}
+@keyframes sceneTimer {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 .eyebrow {
   display: flex;
@@ -141,6 +245,7 @@
 }
 .mapCard {
   position: absolute;
+  z-index: 3;
   right: 32px;
   bottom: 88px;
   display: flex;
@@ -397,7 +502,8 @@
   outline: 2px solid var(--home-accent);
   outline-offset: 4px;
 }
-.hero a:focus-visible {
+.hero a:focus-visible,
+.hero button:focus-visible {
   outline-color: var(--home-hero-accent);
 }
 
@@ -606,7 +712,7 @@
     border-radius: 18px;
   }
   .heroPhoto {
-    object-position: var(--home-photo-mobile-position);
+    object-position: var(--slide-mobile-position);
   }
   .heroShade {
     background: linear-gradient(
@@ -618,6 +724,9 @@
   }
   .heroCopy {
     padding: 25px 22px 70px;
+  }
+  .heroControls {
+    margin-top: 14px;
   }
   .eyebrow {
     font-size: 8px;
@@ -776,6 +885,7 @@
   .page *::after {
     scroll-behavior: auto;
     transition: none;
+    animation: none;
   }
   .category:hover .categoryIcon,
   .mapCard:hover,

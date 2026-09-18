@@ -55,6 +55,7 @@ function discovery(mode, locale = 'th') {
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale }) },
     '@/lib/propertyHeaderSearch': headerSearch,
     './PropertyDiscovery.module.css': { default: {} },
+    './DiscoveryHero': { default: 'test-discovery-hero' },
     './PropertySearchOmnibox': { default: Omnibox },
   }).default
   const render = () => nodes(component({ mode }))
