@@ -20,6 +20,7 @@ const footerNavigation = [
       ['ประกาศเช่า', 'Properties for rent', '/rent'],
       ['ประกาศทั้งหมด', 'All listings', '/real-estate-categories/all'],
       ['ดูบนแผนที่', 'View on map', '/properties/map'],
+      ['อสังหาฯ ใกล้รถไฟฟ้า', 'Property near transit', '/all-transits'],
     ],
   },
   {

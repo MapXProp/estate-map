@@ -1,0 +1,1367 @@
+[
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n24",
+    "code": "N24",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n23",
+    "code": "N23",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n22",
+    "code": "N22",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n21",
+    "code": "N21",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n20",
+    "code": "N20",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n19",
+    "code": "N19",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n18",
+    "code": "N18",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n17",
+    "code": "N17",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n16",
+    "code": "N16",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n15",
+    "code": "N15",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n14",
+    "code": "N14",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n13",
+    "code": "N13",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n12",
+    "code": "N12",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n11",
+    "code": "N11",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n10",
+    "code": "N10",
+    "branchId": "main",
+    "position": 15
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n9",
+    "code": "N9",
+    "branchId": "main",
+    "position": 16
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n8",
+    "code": "N8",
+    "branchId": "main",
+    "position": 17
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n7",
+    "code": "N7",
+    "branchId": "main",
+    "position": 18
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n5",
+    "code": "N5",
+    "branchId": "main",
+    "position": 19
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n4",
+    "code": "N4",
+    "branchId": "main",
+    "position": 20
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n3",
+    "code": "N3",
+    "branchId": "main",
+    "position": 21
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n2",
+    "code": "N2",
+    "branchId": "main",
+    "position": 22
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-n1",
+    "code": "N1",
+    "branchId": "main",
+    "position": 23
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-cen",
+    "code": "CEN",
+    "branchId": "main",
+    "position": 24
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e1",
+    "code": "E1",
+    "branchId": "main",
+    "position": 25
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e2",
+    "code": "E2",
+    "branchId": "main",
+    "position": 26
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e3",
+    "code": "E3",
+    "branchId": "main",
+    "position": 27
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e4",
+    "code": "E4",
+    "branchId": "main",
+    "position": 28
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e5",
+    "code": "E5",
+    "branchId": "main",
+    "position": 29
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e6",
+    "code": "E6",
+    "branchId": "main",
+    "position": 30
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e7",
+    "code": "E7",
+    "branchId": "main",
+    "position": 31
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e8",
+    "code": "E8",
+    "branchId": "main",
+    "position": 32
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e9",
+    "code": "E9",
+    "branchId": "main",
+    "position": 33
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e10",
+    "code": "E10",
+    "branchId": "main",
+    "position": 34
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e11",
+    "code": "E11",
+    "branchId": "main",
+    "position": 35
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e12",
+    "code": "E12",
+    "branchId": "main",
+    "position": 36
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e13",
+    "code": "E13",
+    "branchId": "main",
+    "position": 37
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e14",
+    "code": "E14",
+    "branchId": "main",
+    "position": 38
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e15",
+    "code": "E15",
+    "branchId": "main",
+    "position": 39
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e16",
+    "code": "E16",
+    "branchId": "main",
+    "position": 40
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e17",
+    "code": "E17",
+    "branchId": "main",
+    "position": 41
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e18",
+    "code": "E18",
+    "branchId": "main",
+    "position": 42
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e19",
+    "code": "E19",
+    "branchId": "main",
+    "position": 43
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e20",
+    "code": "E20",
+    "branchId": "main",
+    "position": 44
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e21",
+    "code": "E21",
+    "branchId": "main",
+    "position": 45
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e22",
+    "code": "E22",
+    "branchId": "main",
+    "position": 46
+  },
+  {
+    "lineId": "bts-sukhumvit",
+    "stationId": "bts-e23",
+    "code": "E23",
+    "branchId": "main",
+    "position": 47
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-w1",
+    "code": "W1",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-cen",
+    "code": "CEN",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s1",
+    "code": "S1",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s2",
+    "code": "S2",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s3",
+    "code": "S3",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s4",
+    "code": "S4",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s5",
+    "code": "S5",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s6",
+    "code": "S6",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s7",
+    "code": "S7",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s8",
+    "code": "S8",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s9",
+    "code": "S9",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s10",
+    "code": "S10",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s11",
+    "code": "S11",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "bts-silom",
+    "stationId": "bts-s12",
+    "code": "S12",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "gold",
+    "stationId": "bts-g1",
+    "code": "G1",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "gold",
+    "stationId": "bts-g2",
+    "code": "G2",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "gold",
+    "stationId": "bts-g3",
+    "code": "G3",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl01",
+    "code": "BL01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl02",
+    "code": "BL02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl03",
+    "code": "BL03",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl04",
+    "code": "BL04",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl05",
+    "code": "BL05",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl06",
+    "code": "BL06",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl07",
+    "code": "BL07",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl08",
+    "code": "BL08",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl09",
+    "code": "BL09",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl10",
+    "code": "BL10",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl11",
+    "code": "BL11",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl12",
+    "code": "BL12",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl13",
+    "code": "BL13",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl14",
+    "code": "BL14",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl15",
+    "code": "BL15",
+    "branchId": "main",
+    "position": 15
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl16",
+    "code": "BL16",
+    "branchId": "main",
+    "position": 16
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl17",
+    "code": "BL17",
+    "branchId": "main",
+    "position": 17
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl18",
+    "code": "BL18",
+    "branchId": "main",
+    "position": 18
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl19",
+    "code": "BL19",
+    "branchId": "main",
+    "position": 19
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl20",
+    "code": "BL20",
+    "branchId": "main",
+    "position": 20
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl21",
+    "code": "BL21",
+    "branchId": "main",
+    "position": 21
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl22",
+    "code": "BL22",
+    "branchId": "main",
+    "position": 22
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl23",
+    "code": "BL23",
+    "branchId": "main",
+    "position": 23
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl24",
+    "code": "BL24",
+    "branchId": "main",
+    "position": 24
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl25",
+    "code": "BL25",
+    "branchId": "main",
+    "position": 25
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl26",
+    "code": "BL26",
+    "branchId": "main",
+    "position": 26
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl27",
+    "code": "BL27",
+    "branchId": "main",
+    "position": 27
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl28",
+    "code": "BL28",
+    "branchId": "main",
+    "position": 28
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl29",
+    "code": "BL29",
+    "branchId": "main",
+    "position": 29
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl30",
+    "code": "BL30",
+    "branchId": "main",
+    "position": 30
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl31",
+    "code": "BL31",
+    "branchId": "main",
+    "position": 31
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl32",
+    "code": "BL32",
+    "branchId": "main",
+    "position": 32
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl33",
+    "code": "BL33",
+    "branchId": "main",
+    "position": 33
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl34",
+    "code": "BL34",
+    "branchId": "main",
+    "position": 34
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl35",
+    "code": "BL35",
+    "branchId": "main",
+    "position": 35
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl36",
+    "code": "BL36",
+    "branchId": "main",
+    "position": 36
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl37",
+    "code": "BL37",
+    "branchId": "main",
+    "position": 37
+  },
+  {
+    "lineId": "blue",
+    "stationId": "mrt-bl38",
+    "code": "BL38",
+    "branchId": "main",
+    "position": 38
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp01",
+    "code": "PP01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp02",
+    "code": "PP02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp03",
+    "code": "PP03",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp04",
+    "code": "PP04",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp05",
+    "code": "PP05",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp06",
+    "code": "PP06",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp07",
+    "code": "PP07",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp08",
+    "code": "PP08",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp09",
+    "code": "PP09",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp10",
+    "code": "PP10",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp11",
+    "code": "PP11",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp12",
+    "code": "PP12",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp13",
+    "code": "PP13",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp14",
+    "code": "PP14",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp15",
+    "code": "PP15",
+    "branchId": "main",
+    "position": 15
+  },
+  {
+    "lineId": "purple",
+    "stationId": "mrt-pp16",
+    "code": "PP16",
+    "branchId": "main",
+    "position": 16
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-mt01",
+    "code": "MT01",
+    "branchId": "muang-thong-thani",
+    "position": 1
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-mt02",
+    "code": "MT02",
+    "branchId": "muang-thong-thani",
+    "position": 2
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk01",
+    "code": "PK01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk02",
+    "code": "PK02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk03",
+    "code": "PK03",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk04",
+    "code": "PK04",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk05",
+    "code": "PK05",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk06",
+    "code": "PK06",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk07",
+    "code": "PK07",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk08",
+    "code": "PK08",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk09",
+    "code": "PK09",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk10",
+    "code": "PK10",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk11",
+    "code": "PK11",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk12",
+    "code": "PK12",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk13",
+    "code": "PK13",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk14",
+    "code": "PK14",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk15",
+    "code": "PK15",
+    "branchId": "main",
+    "position": 15
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk16",
+    "code": "PK16",
+    "branchId": "main",
+    "position": 16
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk17",
+    "code": "PK17",
+    "branchId": "main",
+    "position": 17
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk18",
+    "code": "PK18",
+    "branchId": "main",
+    "position": 18
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk19",
+    "code": "PK19",
+    "branchId": "main",
+    "position": 19
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk20",
+    "code": "PK20",
+    "branchId": "main",
+    "position": 20
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk21",
+    "code": "PK21",
+    "branchId": "main",
+    "position": 21
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk22",
+    "code": "PK22",
+    "branchId": "main",
+    "position": 22
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk23",
+    "code": "PK23",
+    "branchId": "main",
+    "position": 23
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk24",
+    "code": "PK24",
+    "branchId": "main",
+    "position": 24
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk25",
+    "code": "PK25",
+    "branchId": "main",
+    "position": 25
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk26",
+    "code": "PK26",
+    "branchId": "main",
+    "position": 26
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk27",
+    "code": "PK27",
+    "branchId": "main",
+    "position": 27
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk28",
+    "code": "PK28",
+    "branchId": "main",
+    "position": 28
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk29",
+    "code": "PK29",
+    "branchId": "main",
+    "position": 29
+  },
+  {
+    "lineId": "pink",
+    "stationId": "mrt-pk30",
+    "code": "PK30",
+    "branchId": "main",
+    "position": 30
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl01",
+    "code": "YL01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl02",
+    "code": "YL02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl03",
+    "code": "YL03",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl04",
+    "code": "YL04",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl05",
+    "code": "YL05",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl06",
+    "code": "YL06",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl07",
+    "code": "YL07",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl08",
+    "code": "YL08",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl09",
+    "code": "YL09",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl10",
+    "code": "YL10",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl11",
+    "code": "YL11",
+    "branchId": "main",
+    "position": 11
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl12",
+    "code": "YL12",
+    "branchId": "main",
+    "position": 12
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl13",
+    "code": "YL13",
+    "branchId": "main",
+    "position": 13
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl14",
+    "code": "YL14",
+    "branchId": "main",
+    "position": 14
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl15",
+    "code": "YL15",
+    "branchId": "main",
+    "position": 15
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl16",
+    "code": "YL16",
+    "branchId": "main",
+    "position": 16
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl17",
+    "code": "YL17",
+    "branchId": "main",
+    "position": 17
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl18",
+    "code": "YL18",
+    "branchId": "main",
+    "position": 18
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl19",
+    "code": "YL19",
+    "branchId": "main",
+    "position": 19
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl20",
+    "code": "YL20",
+    "branchId": "main",
+    "position": 20
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl21",
+    "code": "YL21",
+    "branchId": "main",
+    "position": 21
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl22",
+    "code": "YL22",
+    "branchId": "main",
+    "position": 22
+  },
+  {
+    "lineId": "yellow",
+    "stationId": "mrt-yl23",
+    "code": "YL23",
+    "branchId": "main",
+    "position": 23
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a1",
+    "code": "A1",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a2",
+    "code": "A2",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a3",
+    "code": "A3",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a4",
+    "code": "A4",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a5",
+    "code": "A5",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a6",
+    "code": "A6",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a7",
+    "code": "A7",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "arl",
+    "stationId": "arl-a8",
+    "code": "A8",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-krung-thep-aphiwat",
+    "code": "RN01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn02",
+    "code": "RN02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn03",
+    "code": "RN03",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn04",
+    "code": "RN04",
+    "branchId": "main",
+    "position": 4
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn05",
+    "code": "RN05",
+    "branchId": "main",
+    "position": 5
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn06",
+    "code": "RN06",
+    "branchId": "main",
+    "position": 6
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn07",
+    "code": "RN07",
+    "branchId": "main",
+    "position": 7
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn08",
+    "code": "RN08",
+    "branchId": "main",
+    "position": 8
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn09",
+    "code": "RN09",
+    "branchId": "main",
+    "position": 9
+  },
+  {
+    "lineId": "dark-red",
+    "stationId": "srt-rn10",
+    "code": "RN10",
+    "branchId": "main",
+    "position": 10
+  },
+  {
+    "lineId": "light-red",
+    "stationId": "srt-krung-thep-aphiwat",
+    "code": "RW01",
+    "branchId": "main",
+    "position": 1
+  },
+  {
+    "lineId": "light-red",
+    "stationId": "srt-rw02",
+    "code": "RW02",
+    "branchId": "main",
+    "position": 2
+  },
+  {
+    "lineId": "light-red",
+    "stationId": "srt-rw05",
+    "code": "RW05",
+    "branchId": "main",
+    "position": 3
+  },
+  {
+    "lineId": "light-red",
+    "stationId": "srt-rw06",
+    "code": "RW06",
+    "branchId": "main",
+    "position": 4
+  }
+]

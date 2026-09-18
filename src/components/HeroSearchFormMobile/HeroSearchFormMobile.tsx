@@ -1,6 +1,6 @@
 'use client'
 
-import { isOrganizationPath } from '@/lib/propertyNavigation'
+import { isOrganizationPath, isTransitDirectoryPath } from '@/lib/propertyNavigation'
 import { ButtonCircle } from '@/shared/Button'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonThird from '@/shared/ButtonThird'
@@ -65,6 +65,7 @@ const HeroSearchFormMobile = ({
     pathname === '/rent' ||
     pathname === '/business' ||
     isOrganizationPath(pathname) ||
+    isTransitDirectoryPath(pathname) ||
     pathname.startsWith('/contact') ||
     pathname.startsWith('/about') ||
     pathname.startsWith('/account') ||

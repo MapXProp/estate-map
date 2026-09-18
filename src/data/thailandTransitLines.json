@@ -1,0 +1,180 @@
+[
+  {
+    "id": "bts-sukhumvit",
+    "system": "BTS",
+    "nameTh": "สายสุขุมวิท",
+    "nameEn": "Sukhumvit Line",
+    "aliases": [
+      "สายสุขุมวิท",
+      "สีเขียวอ่อน",
+      "sukhumvit line"
+    ],
+    "color": "#6C922D",
+    "sortOrder": 1,
+    "status": "operational",
+    "sourceUrl": "https://www.bts.co.th/routemap.html",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "bts-silom",
+    "system": "BTS",
+    "nameTh": "สายสีลม",
+    "nameEn": "Silom Line",
+    "aliases": [
+      "สายสีลม",
+      "สีเขียวเข้ม",
+      "silom line"
+    ],
+    "color": "#18795A",
+    "sortOrder": 2,
+    "status": "operational",
+    "sourceUrl": "https://www.bts.co.th/routemap.html",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "gold",
+    "system": "BTS",
+    "nameTh": "สายสีทอง",
+    "nameEn": "Gold Line",
+    "aliases": [
+      "สายสีทอง",
+      "สีทอง",
+      "gold line"
+    ],
+    "color": "#A77712",
+    "sortOrder": 3,
+    "status": "operational",
+    "sourceUrl": "https://www.bts.co.th/routemap.html",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "blue",
+    "system": "MRT",
+    "nameTh": "สายสีน้ำเงิน",
+    "nameEn": "Blue Line",
+    "aliases": [
+      "สายสีน้ำเงิน",
+      "สีน้ำเงิน",
+      "blue line"
+    ],
+    "color": "#2754AD",
+    "sortOrder": 4,
+    "status": "operational",
+    "sourceUrl": "https://metro.bemplc.co.th/",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "purple",
+    "system": "MRT",
+    "nameTh": "สายสีม่วง",
+    "nameEn": "Purple Line",
+    "aliases": [
+      "สายสีม่วง",
+      "สีม่วง",
+      "purple line"
+    ],
+    "color": "#803FA0",
+    "sortOrder": 5,
+    "status": "operational",
+    "sourceUrl": "https://metro.bemplc.co.th/",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "pink",
+    "system": "MRT",
+    "nameTh": "สายสีชมพู",
+    "nameEn": "Pink Line",
+    "aliases": [
+      "สายสีชมพู",
+      "สีชมพู",
+      "pink line"
+    ],
+    "color": "#C3477A",
+    "sortOrder": 6,
+    "status": "operational",
+    "sourceUrl": "https://www.nbm.co.th/th/areamap/",
+    "reviewedAt": "2026-09-18",
+    "branches": [
+      {
+        "id": "muang-thong-thani",
+        "nameTh": "ส่วนต่อขยายเมืองทองธานี",
+        "nameEn": "Muang Thong Thani branch",
+        "junctionStationId": "mrt-pk10"
+      }
+    ]
+  },
+  {
+    "id": "yellow",
+    "system": "MRT",
+    "nameTh": "สายสีเหลือง",
+    "nameEn": "Yellow Line",
+    "aliases": [
+      "สายสีเหลือง",
+      "สีเหลือง",
+      "yellow line"
+    ],
+    "color": "#B38909",
+    "sortOrder": 7,
+    "status": "operational",
+    "sourceUrl": "https://www.ebm.co.th/th/areamap/",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "arl",
+    "system": "ARL",
+    "nameTh": "แอร์พอร์ต เรล ลิงก์",
+    "nameEn": "Airport Rail Link",
+    "aliases": [
+      "airport rail link",
+      "แอร์พอร์ตเรลลิงก์",
+      "แอร์พอร์ตลิงก์",
+      "แอร์พอร์ตลิ้งค์"
+    ],
+    "color": "#B73945",
+    "sortOrder": 8,
+    "status": "operational",
+    "sourceUrl": "https://data.go.th/en/dataset/rail_station",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "dark-red",
+    "system": "SRT",
+    "nameTh": "สายสีแดงเข้ม",
+    "nameEn": "Dark Red Line",
+    "aliases": [
+      "สายสีแดงเข้ม",
+      "สีแดงเข้ม",
+      "dark red line"
+    ],
+    "color": "#A12D3D",
+    "sortOrder": 9,
+    "status": "operational",
+    "sourceUrl": "https://www.srtet.co.th/th/get-station",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  },
+  {
+    "id": "light-red",
+    "system": "SRT",
+    "nameTh": "สายสีแดงอ่อน",
+    "nameEn": "Light Red Line",
+    "aliases": [
+      "สายสีแดงอ่อน",
+      "สีแดงอ่อน",
+      "light red line"
+    ],
+    "color": "#D05F69",
+    "sortOrder": 10,
+    "status": "operational",
+    "sourceUrl": "https://www.srtet.co.th/th/get-station",
+    "reviewedAt": "2026-09-18",
+    "branches": []
+  }
+]

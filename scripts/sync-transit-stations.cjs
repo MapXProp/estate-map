@@ -2,6 +2,7 @@
 // Optional first argument: a directory containing stations.csv and operator-stations.json snapshots.
 const fs = require('node:fs')
 const path = require('node:path')
+const { writeTransitCatalog } = require('./lib/transit-catalog.cjs')
 const csvUrl =
   'https://drt.gdcatalog.go.th/dataset/0462230b-f87e-4335-a870-08b3d7559f9a/resource/1f03a45d-e3b5-4e37-95e6-092dcc75f6ba/download/drt2565_02-1.csv'
 const operatorUrl = 'https://www.ebm.co.th/mobapi-routemap/api/RouteMap/StationList?lang=th'
@@ -119,10 +120,7 @@ async function main() {
   }
   const result = [...stations.values()].sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))
   if (result.length < 193) throw Error('Operating station catalog unexpectedly shrank; review sources')
-  fs.writeFileSync(
-    path.join(__dirname, '../src/data/thailandTransitStations.json'),
-    JSON.stringify(result, null, 2) + '\n'
-  )
+  writeTransitCatalog(result, process.env.TRANSIT_REVIEWED_AT || new Date().toISOString().slice(0, 10))
   console.log(
     `Wrote ${result.length} stations across ${new Set(result.flatMap((station) => station.lines)).size} lines`
   )

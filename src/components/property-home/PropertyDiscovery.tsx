@@ -21,6 +21,7 @@ import {
   PanelsTopLeft,
   Store,
   Tent,
+  TrainFront,
   Warehouse,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -299,6 +300,10 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
                 {th ? location.th : location.en}
               </Link>
             ))}
+            <Link href="/all-transits" className="gap-1.5">
+              <TrainFront size={14} aria-hidden="true" />
+              {th ? 'ใกล้รถไฟฟ้า' : 'Near transit'}
+            </Link>
           </div>
         </div>
 

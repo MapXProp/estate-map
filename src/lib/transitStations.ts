@@ -1,3 +1,5 @@
+import lineData from '@/data/thailandTransitLines.json'
+import lineStationData from '@/data/thailandTransitLineStations.json'
 import stationData from '@/data/thailandTransitStations.json'
 
 export type TransitStation = {
@@ -11,27 +13,30 @@ export type TransitStation = {
   longitude: number
   aliases?: string[]
 }
+export const transitLineCatalog = lineData.filter((line) => line.status === 'operational')
+const activeLineIds = new Set(transitLineCatalog.map((line) => line.id))
+export const transitLineStations = lineStationData.filter((stop) => activeLineIds.has(stop.lineId))
+export const transitCatalogReviewedAt = stationData
+  .map((station) => station.reviewedAt)
+  .sort()
+  .at(-1)
+export type TransitLine = (typeof lineData)[number]
+export type TransitLineStation = (typeof lineStationData)[number]
 export const transitStations: readonly TransitStation[] = stationData
-export const transitLines: Record<string, { th: string; en: string; aliases: string[] }> = {
-  'bts-sukhumvit': {
-    th: 'สายสุขุมวิท',
-    en: 'Sukhumvit Line',
-    aliases: ['สายสุขุมวิท', 'สีเขียวอ่อน', 'sukhumvit line'],
-  },
-  'bts-silom': { th: 'สายสีลม', en: 'Silom Line', aliases: ['สายสีลม', 'สีเขียวเข้ม', 'silom line'] },
-  gold: { th: 'สายสีทอง', en: 'Gold Line', aliases: ['สายสีทอง', 'สีทอง', 'gold line'] },
-  blue: { th: 'สายสีน้ำเงิน', en: 'Blue Line', aliases: ['สายสีน้ำเงิน', 'สีน้ำเงิน', 'blue line'] },
-  purple: { th: 'สายสีม่วง', en: 'Purple Line', aliases: ['สายสีม่วง', 'สีม่วง', 'purple line'] },
-  pink: { th: 'สายสีชมพู', en: 'Pink Line', aliases: ['สายสีชมพู', 'สีชมพู', 'pink line'] },
-  yellow: { th: 'สายสีเหลือง', en: 'Yellow Line', aliases: ['สายสีเหลือง', 'สีเหลือง', 'yellow line'] },
-  arl: {
-    th: 'แอร์พอร์ต เรล ลิงก์',
-    en: 'Airport Rail Link',
-    aliases: ['airport rail link', 'แอร์พอร์ตเรลลิงก์', 'แอร์พอร์ตลิงก์', 'แอร์พอร์ตลิ้งค์'],
-  },
-  'dark-red': { th: 'สายสีแดงเข้ม', en: 'Dark Red Line', aliases: ['สายสีแดงเข้ม', 'สีแดงเข้ม', 'dark red line'] },
-  'light-red': { th: 'สายสีแดงอ่อน', en: 'Light Red Line', aliases: ['สายสีแดงอ่อน', 'สีแดงอ่อน', 'light red line'] },
-}
+  .filter(
+    (station) => station.status === 'operational' && transitLineStations.some((stop) => stop.stationId === station.id)
+  )
+  .map((station) => {
+    const memberships = transitLineStations.filter((item) => item.stationId === station.id)
+    return {
+      ...station,
+      lines: memberships.map((item) => item.lineId),
+      codes: [...new Set(memberships.map((item) => item.code))],
+    }
+  })
+export const transitLines: Record<string, { th: string; en: string; aliases: string[] }> = Object.fromEntries(
+  transitLineCatalog.map((line) => [line.id, { th: line.nameTh, en: line.nameEn, aliases: line.aliases }])
+)
 const normalize = (value: string) =>
   value
     .normalize('NFKC')

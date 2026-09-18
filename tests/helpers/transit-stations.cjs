@@ -7,8 +7,13 @@ const context = {
   exports: {},
   URLSearchParams,
   require: (id) => {
-    if (id !== '@/data/thailandTransitStations.json') throw Error(`Unexpected import ${id}`)
-    return { default: require('../../src/data/thailandTransitStations.json') }
+    const files = {
+      '@/data/thailandTransitStations.json': '../../src/data/thailandTransitStations.json',
+      '@/data/thailandTransitLines.json': '../../src/data/thailandTransitLines.json',
+      '@/data/thailandTransitLineStations.json': '../../src/data/thailandTransitLineStations.json',
+    }
+    if (!(id in files)) throw Error(`Unexpected import ${id}`)
+    return { default: require(files[id]) }
   },
 }
 vm.runInNewContext(

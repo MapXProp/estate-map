@@ -1,6 +1,6 @@
 # Thailand electric-rail search catalog
 
-Reviewed on 18 September 2026. `src/data/thailandTransitStations.json` contains 193 searchable station records across the 10 operating lines below. A shared station on two lines of the same system is stored once (Siam and Krung Thep Aphiwat); separate systems/platform locations retain separate records and codes. This is an electric urban/suburban rail catalog, not a list of conventional intercity railway stations. Planned/unopened stations are excluded using the Department of Rail Transport's operating-status field.
+Reviewed on 18 September 2026. `src/data/thailandTransitStations.json` contains 193 searchable station records across the 10 operating lines below. Line metadata and station/line relationships are now stored in `thailandTransitLines.json` and `thailandTransitLineStations.json`; see [the data model and migration plan](transit-data-model.md). A shared station on two lines of the same system is stored once (Siam and Krung Thep Aphiwat); separate systems/platform locations retain separate records and codes. This is an electric urban/suburban rail catalog, not a list of conventional intercity railway stations. Planned/unopened stations are excluded using the Department of Rail Transport's operating-status field.
 
 | Line | Station memberships |
 | --- | ---: |

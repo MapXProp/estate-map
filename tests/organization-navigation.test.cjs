@@ -83,6 +83,7 @@ test('organization and home routes show exactly one mobile navigation; listing c
     '/organizations',
     '/organizations/nick-property',
     '/stay-listings/villa',
+    '/all-transits',
     '/real-estate-listings/land',
   ]) {
     const Primary = load('src/components/property-home/MobilePrimaryNavigation.tsx', common(pathname)).default
@@ -119,7 +120,13 @@ test('organization and home routes show exactly one mobile navigation; listing c
 test('organization mobile headers use property search with its compact setting preserved', () => {
   const MobileSearch = ({ compactMapHeader }) =>
     React.createElement('span', null, compactMapHeader ? 'compact property search' : 'property search')
-  for (const pathname of ['/organizations', '/organizations/nick-property', '/homes', '/real-estate-listings/land']) {
+  for (const pathname of [
+    '/organizations',
+    '/organizations/nick-property',
+    '/homes',
+    '/all-transits',
+    '/real-estate-listings/land',
+  ]) {
     const Header = load('src/components/HeroSearchFormMobile/HeroSearchFormMobile.tsx', {
       ...common(pathname),
       '@/shared/Button': {},

@@ -24,6 +24,7 @@ export function buildPropertySitemap(
     '/rent',
     '/properties/map',
     '/organizations',
+    '/all-transits',
     '/about',
     '/contact',
   ].map((path) => ({ url: absoluteUrl(path) }))
