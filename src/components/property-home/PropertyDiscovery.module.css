@@ -79,6 +79,7 @@
 .heroPhoto {
   object-fit: cover;
   object-position: var(--home-photo-position);
+  filter: brightness(1.08);
 }
 .heroShade {
   position: absolute;
@@ -86,16 +87,18 @@
   background:
     linear-gradient(
       90deg,
-      rgb(var(--home-hero-rgb) / 94%) 0%,
-      rgb(var(--home-hero-rgb) / 78%) 34%,
-      rgb(var(--home-hero-rgb) / 16%) 72%
+      rgb(var(--home-hero-rgb) / 78%) 0%,
+      rgb(var(--home-hero-rgb) / 54%) 34%,
+      rgb(var(--home-hero-rgb) / 8%) 72%,
+      rgb(var(--home-hero-rgb) / 0%) 100%
     ),
-    linear-gradient(0deg, rgb(var(--home-hero-rgb) / 35%), transparent 55%);
+    linear-gradient(0deg, rgb(var(--home-hero-rgb) / 16%), transparent 55%);
 }
 .heroCopy {
   position: relative;
   padding: 38px 42px 90px;
   color: #fff;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 24%);
 }
 .eyebrow {
   display: flex;
@@ -591,9 +594,9 @@
   .heroShade {
     background: linear-gradient(
       90deg,
-      rgb(var(--home-hero-rgb) / 95%),
-      rgb(var(--home-hero-rgb) / 70%) 60%,
-      rgb(var(--home-hero-rgb) / 28%)
+      rgb(var(--home-hero-rgb) / 84%),
+      rgb(var(--home-hero-rgb) / 62%) 60%,
+      rgb(var(--home-hero-rgb) / 10%)
     );
   }
   .heroCopy {
