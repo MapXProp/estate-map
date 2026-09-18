@@ -99,7 +99,7 @@ function environment({ width = 390, reducedMotion = false } = {}) {
   const win = new ElementStub()
   win.innerHeight = 820
   win.matchMedia = (query) => ({
-    matches: query.includes('reduced-motion') ? reducedMotion : width < 1024,
+    matches: query.includes('reduced-motion') ? reducedMotion : width <= Number(query.match(/max-width:\s*(\d+)px/)?.[1] || 0),
     addEventListener() {},
     removeEventListener() {},
   })
@@ -113,7 +113,7 @@ function environment({ width = 390, reducedMotion = false } = {}) {
     performance: { now: () => time },
     getComputedStyle: (node) => ({
       paddingBottom: node.paddingBottom,
-      getPropertyValue: (key) => (key === '--mobile-panel-ceiling' ? '68px' : node.properties.get(key) || ''),
+      getPropertyValue: (key) => node.properties.get(key) || (key === '--mobile-panel-ceiling' ? '68px' : ''),
     }),
     setTimeout: schedule,
     clearTimeout: (id) => jobs.delete(id),
@@ -378,7 +378,7 @@ function hookHarness(kind, config = {}) {
         : hook.useMapBottomSheet(snap, config.previewId, (value) => {
             snap = value
             render()
-          })
+          }, config.includeTablet)
     while (pending.length) pending.shift()()
   }
   render()
@@ -675,6 +675,83 @@ test('selecting a property cancels an unfinished list expansion so it cannot cov
   h.advance(300)
   assert.equal(h.snap, 'peek')
   assert.equal(h.root.properties.has('--mobile-sheet-height'), false)
+})
+
+test('tablet project sheets collapse and reopen without losing the scrolled listings', () => {
+  for (const width of [1024, 1038, 1180, 1279]) {
+    const h = hookHarness('bottom', { width, snap: 'full', includeTablet: true, previewId: 'project-a' })
+    h.root.properties.set('--map-navigation-height', '54px')
+    h.root.properties.set('--mobile-panel-ceiling', '88px')
+    h.root.offsetHeight = 558
+    h.scroller.scrollTop = 170
+    h.start(h.content)
+    assert.equal(h.move(0, 460).prevented, undefined, 'reading the list remains native')
+    h.end()
+    h.start()
+    assert.equal(h.move(0, 380, 400).prevented, true)
+    assert.equal(h.root.properties.get('--mobile-sheet-height'), '478px')
+    h.end(120)
+    assert.equal(h.snap, 'full', 'commit only after settling')
+    assert.equal(h.root.properties.get('--mobile-sheet-height'), '84px')
+    h.advance(280)
+    assert.equal(h.snap, 'peek')
+    assert.equal(h.root.dispatch('click', h.handle).prevented, true, 'drag must not reopen via a ghost click')
+    h.root.offsetHeight = 84
+    h.start()
+    h.move(0, 220, 400)
+    h.end(120)
+    assert.equal(h.root.properties.get('--mobile-sheet-height'), '558px', 'leave room for search and the bottom inset')
+    h.advance(280)
+    assert.equal(h.snap, 'full')
+    assert.equal(h.scroller.scrollTop, 170)
+  }
+})
+
+test('tablet dragging is limited to project sheets and stops at the desktop breakpoint', () => {
+  for (const config of [
+    { width: 1038 },
+    { width: 1280, includeTablet: true },
+    { width: 1440, includeTablet: true },
+  ]) {
+    const h = hookHarness('bottom', { ...config, snap: 'full' })
+    h.start()
+    assert.equal(h.move(0, 450).prevented, undefined)
+    h.end()
+    h.advance(300)
+    assert.equal(h.snap, 'full')
+    assert.equal(h.root.properties.has('--mobile-sheet-height'), false)
+  }
+  const modal = hookHarness('modal', { width: 1038 })
+  modal.start()
+  modal.move(0, 600)
+  modal.end()
+  modal.advance(300)
+  assert.equal(modal.closed, 0, 'unrelated modal dismissal keeps its existing breakpoint')
+})
+
+test('rotating the tablet or switching projects cancels a pending collapse', () => {
+  for (const action of ['resize', 'selection']) {
+    const h = hookHarness('bottom', { width: 1180, includeTablet: true, previewId: 'project-a', snap: 'full' })
+    h.start()
+    h.move(0, 500)
+    h.end()
+    if (action === 'resize') h.globals.window.dispatch('resize', null)
+    else h.changeSelection('project-b')
+    h.advance(300)
+    assert.equal(h.snap, 'full')
+    assert.equal(h.root.properties.has('--mobile-sheet-height'), false)
+    assert.equal(h.root.attrs['data-sheet-settling'], undefined)
+  }
+})
+
+test('tablet project sheet respects reduced motion and keyboard activation after a drag', () => {
+  const h = hookHarness('bottom', { width: 1038, includeTablet: true, reducedMotion: true })
+  h.start()
+  h.move(0, 400)
+  h.end()
+  h.advance(0)
+  assert.equal(h.snap, 'peek')
+  assert.equal(h.root.dispatch('click', h.handle, { detail: 0 }).prevented, undefined)
 })
 
 test('the full-size photo follows a downward pull and returns to its gallery after the exit animation', () => {

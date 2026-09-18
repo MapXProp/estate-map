@@ -129,11 +129,22 @@ export default function MapProjectPanel({
         className={styles.mobilePanelToggle}
         aria-expanded={expanded}
         aria-controls="map-project-content"
+        aria-label={
+          expanded
+            ? th
+              ? 'ย่อประกาศเพื่อดูแผนที่'
+              : 'Collapse project listings to view map'
+            : th
+              ? 'เปิดประกาศในโครงการ'
+              : 'Open project listings'
+        }
         onClick={onToggle}
       >
         <span className="mx-auto mb-1.5 block h-1 w-9 rounded-full bg-neutral-300" aria-hidden="true" />
         <span className={styles.sheetSummaryRow}>
-          <span className={styles.sheetSummary}>{name || (th ? 'ประกาศในโครงการ' : 'Project listings')}</span>
+          <span className={styles.sheetSummary} title={name}>
+            {name || (th ? 'ประกาศในโครงการ' : 'Project listings')}
+          </span>
           <span className={styles.mobilePanelAction}>
             {expanded ? (th ? 'ดูแผนที่' : 'View map') : th ? 'ดูประกาศ' : 'View listings'}
             {expanded ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
@@ -168,8 +179,8 @@ export default function MapProjectPanel({
             aria-label={th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}
           >
             <ArrowLeft className="size-4 shrink-0" />
-            <span className="lg:hidden">{th ? 'กลับ' : 'Back'}</span>
-            <span className="hidden lg:inline">{th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}</span>
+            <span className="xl:hidden">{th ? 'กลับ' : 'Back'}</span>
+            <span className="hidden xl:inline">{th ? 'กลับไปดูบริเวณนี้' : 'Back to area results'}</span>
           </button>
           <div className={styles.projectIdentity}>
             <span className={styles.projectIcon}>

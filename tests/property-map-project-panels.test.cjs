@@ -77,7 +77,8 @@ test('project rows highlight on mouse/focus, ignore touch hover and only open on
 
 test('project tabs preserve event rental units, show selected dual-offer prices and use only real coordinates for Locate', () => {
   let cursor = 0,
-    tree
+    tree,
+    expanded = true
   const slots = [],
     located = []
   const data = {
@@ -137,7 +138,12 @@ test('project tabs preserve event rental units, show selected dual-offer prices 
   }).default
   function render() {
     cursor = 0
-    tree = Panel({ identifier: 'project-a', onLocate: (listing) => located.push(listing) })
+    tree = Panel({
+      identifier: 'project-a',
+      expanded,
+      onToggle: () => { expanded = !expanded; render() },
+      onLocate: (listing) => located.push(listing),
+    })
   }
   const cards = () => nodes(tree, (node) => node.type === 'card')
   function choose(offer) {
@@ -165,4 +171,19 @@ test('project tabs preserve event rental units, show selected dual-offer prices 
   assert.equal(cards()[0].props.listing.prices[0].amount, 3000000)
   choose('all')
   assert.equal(cards()[1].props.listing.prices.length, 2)
+
+  choose('rent')
+  nodes(tree, (node) => node.type === 'select')[0].props.onChange({ target: { value: 'price_low' } })
+  render()
+  const toggle = () => nodes(tree, (node) => node.props['data-map-mobile-panel-toggle'])[0]
+  const filteredOrder = cards().map((node) => node.props.listing.id)
+  assert.deepEqual(filteredOrder, ['unit', 'event'])
+  toggle().props.onClick()
+  assert.equal(toggle().props['aria-expanded'], false)
+  assert.deepEqual(cards().map((node) => node.props.listing.id), filteredOrder, 'collapse keeps the listings mounted')
+  toggle().props.onClick()
+  assert.equal(toggle().props['aria-expanded'], true)
+  assert.equal(nodes(tree, (node) => node.props['data-project-offer'] === 'rent')[0].props['aria-pressed'], true)
+  assert.equal(nodes(tree, (node) => node.type === 'select')[0].props.value, 'price_low')
+  assert.deepEqual(cards().map((node) => node.props.listing.id), filteredOrder)
 })

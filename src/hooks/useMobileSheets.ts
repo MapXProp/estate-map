@@ -17,7 +17,7 @@ function useSheetDrag(node: HTMLElement | null, options: SheetDragOptions) {
   useEffect(() => {
     latest.current = options
   })
-  useEffect(() => (node ? bindVerticalSheetDrag(node, () => latest.current) : undefined), [node])
+  useEffect(() => (node ? bindVerticalSheetDrag(node, () => latest.current) : undefined), [node, options.maxWidth])
 }
 
 export function useSwipeDismiss(onClose: () => void, enabled = true) {
@@ -69,7 +69,13 @@ export function useSwipeDismiss(onClose: () => void, enabled = true) {
   return { panelRef, backdropRef, dismiss }
 }
 
-export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefined, onSnap: (snap: SheetSnap) => void) {
+export function useMapBottomSheet(
+  snap: SheetSnap,
+  selectionId: string | undefined,
+  onSnap: (snap: SheetSnap) => void,
+  includeTablet = false
+) {
+  const maxWidth = includeTablet ? 1279 : 1023
   const [node, panelRef] = useState<HTMLElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const frame = useRef<number | null>(null)
@@ -105,19 +111,20 @@ export function useMapBottomSheet(snap: SheetSnap, selectionId: string | undefin
   useEffect(() => {
     reset()
     return reset
-  }, [reset, snap, selectionId])
+  }, [reset, snap, selectionId, maxWidth])
   useEffect(() => {
     if (!node) return
-    const media = window.matchMedia('(max-width: 1023px)')
+    const media = window.matchMedia(`(max-width: ${maxWidth}px)`)
     media.addEventListener('change', reset)
     window.addEventListener('resize', reset)
     return () => {
       media.removeEventListener('change', reset)
       window.removeEventListener('resize', reset)
     }
-  }, [node, reset])
+  }, [node, reset, maxWidth])
   useSheetDrag(node, {
     enabled: true,
+    maxWidth,
     canDrag: (down, handle, atTop) => handle || (atTop && (down || snap !== 'full')),
     onStart: () => {
       if (!node) return

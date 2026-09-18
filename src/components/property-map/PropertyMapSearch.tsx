@@ -575,10 +575,15 @@ export default function PropertyMapSearch({
     }
     dismissMobilePreview()
   }, [selectedProject, setMobilePanelOpen, dismissMobilePreview])
-  const { panelRef } = useMapBottomSheet(mobileSheetSnap, previewListing?.id || selectedProject?.id, (next) => {
-    setMobileSheetSnap(next)
-    if (next !== 'peek' && mobileViewport) setPreviewSelection(null)
-  })
+  const { panelRef } = useMapBottomSheet(
+    mobileSheetSnap,
+    previewListing?.id || selectedProject?.id,
+    (next) => {
+      setMobileSheetSnap(next)
+      if (next !== 'peek' && mobileViewport) setPreviewSelection(null)
+    },
+    Boolean(selectedProject)
+  )
   const propertyPreview = previewListing && (
     <MapPreviewPanel
       key="selected-property"
@@ -868,6 +873,8 @@ export default function PropertyMapSearch({
 
       <div
         data-map-canvas
+        data-map-mode={mapMode}
+        data-project-open={Boolean(selectedProject)}
         data-mobile-results-open={mobilePanelOpen}
         data-map-preview-open={Boolean(previewListing)}
         data-map-top-sheet={phonePreview && Boolean(previewListing)}
@@ -889,6 +896,9 @@ export default function PropertyMapSearch({
               onProjectHover={setHoveredProjectId}
               onProjectSearchSelect={selectSearchedProject}
               selectedProjectId={selectedProject?.id}
+              resizeRequestId={
+                1 + Number(panelOpen) + 2 * Number(mobilePanelOpen) + 4 * Number(Boolean(selectedProject))
+              }
               onMapInteraction={collapseCategories}
               onMapBackgroundTap={dismissMapSelection}
               initialCenter={center}

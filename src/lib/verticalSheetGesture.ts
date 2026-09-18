@@ -1,6 +1,7 @@
 export type SheetSnap = 'peek' | 'full'
 export type SheetDragOptions = {
   enabled?: boolean
+  maxWidth?: number
   canDrag: (down: boolean, handle: boolean, atTop: boolean) => boolean
   onStart: () => void
   onMove: (dy: number) => void
@@ -49,7 +50,7 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
     suppressClick = false
     if (
       getOptions().enabled === false ||
-      !window.matchMedia('(max-width: 1023px)').matches ||
+      !window.matchMedia(`(max-width: ${getOptions().maxWidth ?? 1023}px)`).matches ||
       !(target instanceof Element)
     )
       return
