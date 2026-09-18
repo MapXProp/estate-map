@@ -24,6 +24,7 @@ import {
   TrainFront,
   Warehouse,
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import DiscoveryHero from './DiscoveryHero'
@@ -37,17 +38,32 @@ type DiscoveryCategory = {
   en: string
   icon: typeof House
   tone: string
+  image?: string
 }
 
 const channelCategories: Record<DiscoveryChannelCode, DiscoveryCategory[]> = {
   homes: [
-    { type: 'condo', th: 'คอนโด', en: 'Condos', icon: Building2, tone: 'sky' },
-    { type: 'detached_house', th: 'บ้านเดี่ยว', en: 'Houses', icon: House, tone: 'green' },
-    { type: 'townhouse', th: 'ทาวน์โฮม', en: 'Townhomes', icon: Building, tone: 'sand' },
-    { type: 'semi_detached_house', th: 'บ้านแฝด', en: 'Semi-detached', icon: HousePlus, tone: 'rose' },
-    { type: 'home_office', th: 'โฮมออฟฟิศ', en: 'Home offices', icon: PanelsTopLeft, tone: 'slate' },
-    { type: 'shophouse', th: 'ตึกแถว', en: 'Shophouses', icon: Store, tone: 'orange' },
-    { type: 'land', th: 'ที่ดิน', en: 'Land', icon: LandPlot, tone: 'green' },
+    { type: 'condo', th: 'คอนโด', en: 'Condos', icon: Building2, tone: 'sky', image: 'condo' },
+    { type: 'detached_house', th: 'บ้านเดี่ยว', en: 'Houses', icon: House, tone: 'green', image: 'detached-house' },
+    { type: 'townhouse', th: 'ทาวน์โฮม', en: 'Townhomes', icon: Building, tone: 'sand', image: 'townhouse' },
+    {
+      type: 'semi_detached_house',
+      th: 'บ้านแฝด',
+      en: 'Semi-detached',
+      icon: HousePlus,
+      tone: 'rose',
+      image: 'semi-detached-house',
+    },
+    {
+      type: 'home_office',
+      th: 'โฮมออฟฟิศ',
+      en: 'Home offices',
+      icon: PanelsTopLeft,
+      tone: 'slate',
+      image: 'home-office',
+    },
+    { type: 'shophouse', th: 'ตึกแถว', en: 'Shophouses', icon: Store, tone: 'orange', image: 'shophouse' },
+    { type: 'land', th: 'ที่ดิน', en: 'Land', icon: LandPlot, tone: 'green', image: 'land' },
   ],
   rooms: [
     { type: 'rental_room', th: 'ห้องเช่า', en: 'Rental rooms', icon: KeyRound, tone: 'sky' },
@@ -275,11 +291,32 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
                 ))
               )}
             </div>
-            <Link href={searchHref('')} className={styles.mapLink}>
-              <Map size={16} aria-hidden="true" />
-              {th ? 'ค้นหาบนแผนที่' : 'Explore map'}
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
+            <nav className={styles.searchActions} aria-label={th ? 'ค้นหาตามทำเล' : 'Explore by location'}>
+              <Link
+                href={searchHref('')}
+                className={styles.mapLink}
+                aria-label={th ? 'ค้นหาบนแผนที่' : 'Explore map'}
+                title={th ? 'ค้นหาบนแผนที่' : 'Explore map'}
+              >
+                <Map size={17} aria-hidden="true" />
+                <span className={styles.actionLabel}>{th ? 'ค้นหาบนแผนที่' : 'Explore map'}</span>
+                <span className={styles.actionShortLabel} aria-hidden="true">
+                  {th ? 'แผนที่' : 'Map'}
+                </span>
+              </Link>
+              <Link
+                href="/all-transits"
+                className={styles.transitLink}
+                aria-label={th ? 'ค้นหาใกล้รถไฟฟ้า — ดูทุกสายและสถานี' : 'Near transit — browse all lines and stations'}
+                title={th ? 'ใกล้รถไฟฟ้า' : 'Near transit'}
+              >
+                <TrainFront size={17} aria-hidden="true" />
+                <span className={styles.actionLabel}>{th ? 'ใกล้รถไฟฟ้า' : 'Near transit'}</span>
+                <span className={styles.actionShortLabel} aria-hidden="true">
+                  {th ? 'รถไฟฟ้า' : 'Transit'}
+                </span>
+              </Link>
+            </nav>
           </div>
           <div className={styles.searchField}>
             <PropertySearchOmnibox
@@ -300,10 +337,6 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
                 {th ? location.th : location.en}
               </Link>
             ))}
-            <Link href="/all-transits" className="gap-1.5">
-              <TrainFront size={14} aria-hidden="true" />
-              {th ? 'ใกล้รถไฟฟ้า' : 'Near transit'}
-            </Link>
           </div>
         </div>
 
@@ -313,15 +346,27 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
             <strong>{th ? content.categoryAccentTh : content.categoryAccentEn}</strong>
           </div>
           <div className={styles.categoryLinks}>
-            {categories.map(({ type, spaceType, icon: Icon, tone, ...label }) => (
+            {categories.map(({ type, spaceType, icon: Icon, tone, image, ...label }) => (
               <Link
                 key={`${type}:${spaceType || ''}`}
                 href={`${searchHref('')}${spaceType ? `&space_type=${spaceType}` : `&property_type=${type}`}`}
                 className={styles.category}
               >
-                <span className={styles.categoryIcon} data-tone={tone}>
-                  <Icon size={27} strokeWidth={1.55} aria-hidden="true" />
-                </span>
+                {image ? (
+                  <span className={styles.categoryArt}>
+                    <Image
+                      src={`/images/property-categories/${image}.png`}
+                      alt=""
+                      fill
+                      sizes="(max-width: 743px) 72px, 88px"
+                      className={styles.categoryPhoto}
+                    />
+                  </span>
+                ) : (
+                  <span className={styles.categoryIcon} data-tone={tone}>
+                    <Icon size={27} strokeWidth={1.55} aria-hidden="true" />
+                  </span>
+                )}
                 <span>{th ? label.th : label.en}</span>
               </Link>
             ))}

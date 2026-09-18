@@ -311,12 +311,14 @@
 }
 .offerChoices {
   display: flex;
+  flex-shrink: 0;
   gap: 4px;
   padding: 3px;
   border-radius: 10px;
   background: var(--home-tint);
 }
 .offerChoices button {
+  white-space: nowrap;
   min-height: 36px;
   padding: 6px 18px;
   border-radius: 8px;
@@ -349,18 +351,37 @@
   font-size: 13px;
   font-weight: 600;
 }
-.mapLink {
-  display: inline-flex;
-  min-height: 40px;
+.searchActions {
+  display: flex;
+  flex-shrink: 0;
   align-items: center;
+  gap: 10px;
+}
+.mapLink,
+.transitLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
   gap: 7px;
+  padding-inline: 10px;
+  border-radius: 10px;
   color: var(--home-accent);
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
+  transition: background 180ms;
 }
-.mapLink:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.transitLink {
+  background: var(--home-tint);
+  box-shadow: inset 0 0 0 1px var(--home-line);
+}
+.mapLink:hover,
+.transitLink:hover {
+  background: var(--home-selection);
+}
+.actionShortLabel {
+  display: none;
 }
 .searchField [data-property-search-form] {
   min-height: 60px;
@@ -439,6 +460,7 @@
   display: grid;
   grid-template-columns: repeat(var(--category-columns, 7), minmax(0, 1fr));
   flex: 1;
+  min-width: 0;
   gap: 12px;
 }
 .category {
@@ -466,6 +488,22 @@
   transition:
     transform 180ms,
     box-shadow 180ms;
+}
+.categoryArt {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  transition: transform 180ms;
+}
+.categoryPhoto {
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.category:hover .categoryArt {
+  transform: translateY(-3px);
 }
 .categoryIcon[data-tone='green'] {
   background: #e3efe4;
@@ -651,6 +689,9 @@
 :global(.dark) .categoryIcon {
   border-color: var(--home-line);
 }
+:global(.dark) .categoryPhoto {
+  mix-blend-mode: normal;
+}
 :global(.dark) .page[data-discovery-channel='rooms'] {
   --home-ink: #d4e8f1;
   --home-accent: #a4d8ed;
@@ -703,6 +744,77 @@
   }
 }
 
+@media (max-width: 743px) {
+  /* Keep autoplay and its pause control without a row of numbered selectors. */
+  .heroControls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .heroControls:not(:has(.playButton)),
+  .sceneButton {
+    display: none;
+  }
+  .playButton {
+    width: 44px;
+    height: 44px;
+  }
+  .eyebrow {
+    padding-right: 36px;
+  }
+  .eyebrow > span {
+    flex-shrink: 0;
+  }
+  .mapCard {
+    display: none;
+  }
+  .searchActions {
+    gap: 4px;
+  }
+  .mapLink,
+  .transitLink {
+    min-width: 44px;
+    padding-inline: 8px;
+    gap: 5px;
+    font-size: 11px;
+  }
+  .actionLabel {
+    display: none;
+  }
+  .categoryLinks {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 5px 4px 10px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .categoryLinks::-webkit-scrollbar {
+    display: none;
+  }
+  .category {
+    flex: 0 0 80px;
+    gap: 5px;
+    padding: 0;
+    font-size: 11px;
+    scroll-snap-align: start;
+  }
+  .categoryArt {
+    width: 72px;
+    height: 72px;
+    border-radius: 13px;
+  }
+}
+
+@media (min-width: 400px) and (max-width: 743px) {
+  .actionShortLabel {
+    display: inline;
+  }
+}
+
 @media (max-width: 639px) {
   .discovery {
     padding-top: 12px;
@@ -725,9 +837,6 @@
   .heroCopy {
     padding: 25px 22px 70px;
   }
-  .heroControls {
-    margin-top: 14px;
-  }
   .eyebrow {
     font-size: 8px;
     gap: 7px;
@@ -741,9 +850,6 @@
     max-width: 235px;
     margin-top: 10px;
     font-size: 12px;
-  }
-  .mapCard {
-    display: none;
   }
   .searchPanel {
     margin: -40px 8px 0;
@@ -767,13 +873,6 @@
     min-height: 40px;
     padding-inline: 10px;
     font-size: 12px;
-  }
-  .mapLink {
-    font-size: 10px;
-    gap: 4px;
-  }
-  .mapLink > svg:last-child {
-    display: none;
   }
   .searchField [data-property-search-form] {
     min-height: 54px;
@@ -802,21 +901,6 @@
   .categories {
     padding-top: 20px;
     padding-bottom: 10px;
-  }
-  .categoryLinks {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 5px 2px 10px;
-    scrollbar-width: thin;
-    scroll-snap-type: x proximity;
-  }
-  .category {
-    flex: 0 0 67px;
-    gap: 7px;
-    padding: 0;
-    font-size: 11px;
-    scroll-snap-align: start;
   }
   .categoryIcon {
     width: 52px;
@@ -879,6 +963,13 @@
   }
 }
 
+@media (max-width: 359px) {
+  .offerChoices button {
+    padding-inline: 7px;
+    font-size: 10px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .page *,
   .page *::before,
@@ -888,6 +979,7 @@
     animation: none;
   }
   .category:hover .categoryIcon,
+  .category:hover .categoryArt,
   .mapCard:hover,
   .listings article:hover,
   .locationCard:hover .locationPhoto {

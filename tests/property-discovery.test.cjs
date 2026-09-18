@@ -123,3 +123,29 @@ test('home shortcuts target the requested soi/intersection and business uses a l
     assert.doesNotMatch(discovery('business', locale).search().placeholder, /โกดังบางนา|warehouse Bang Na/)
   }
 })
+
+test('location navigation exposes the station directory beside a map link that preserves the selected offer', () => {
+  for (const locale of ['th', 'en']) {
+    for (const channel of ['homes', 'rooms', 'business']) {
+      const view = discovery(channel, locale)
+      if (channel !== 'rooms')
+        view
+          .render()
+          .filter((node) => node.type === 'button')[2]
+          .props.onClick()
+      const navigation = view.render().find((node) => node.type === 'nav')
+      assert.equal(navigation.props['aria-label'], locale === 'th' ? 'ค้นหาตามทำเล' : 'Explore by location')
+      const links = nodes(navigation).filter((node) => node.props?.href)
+      assert.equal(links.length, 2)
+      const mapUrl = new URL(links[0].props.href, 'https://mapxprop.com')
+      assert.equal(mapUrl.pathname, '/properties/map')
+      assert.equal(mapUrl.searchParams.get('channel'), channel)
+      assert.deepEqual(mapUrl.searchParams.getAll('offer_type'), ['rent'])
+      assert.equal(links[1].props.href, '/all-transits')
+      for (const link of links) {
+        assert.ok(link.props['aria-label'], 'Compact icon links need a full accessible label')
+        assert.ok(link.props.title)
+      }
+    }
+  }
+})
