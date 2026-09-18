@@ -1,13 +1,14 @@
 'use client'
 
 import Footer2 from '@/components/Footer2'
+import { isOrganizationPath } from '@/lib/propertyNavigation'
 import { usePathname } from 'next/navigation'
 import PropertyFooterPrototype from './PropertyFooterPrototype'
 
 const ListingsFooter = () => {
   const pathname = usePathname()
 
-  if (pathname.startsWith('/real-estate-listings')) {
+  if (pathname.startsWith('/real-estate-listings') || isOrganizationPath(pathname)) {
     return <PropertyFooterPrototype showListingCta={false} />
   }
 

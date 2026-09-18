@@ -12,7 +12,18 @@ import {
   type OrganizationContact,
   type OrganizationListing,
 } from '@/lib/organizations'
-import { BadgeCheck, Building2, ExternalLink, Globe2, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import {
+  ArrowDown,
+  BadgeCheck,
+  Building2,
+  ChevronRight,
+  ExternalLink,
+  Globe2,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -71,13 +82,23 @@ export default function OrganizationPublicProfile({
     <main
       data-analytics-surface="organization"
       data-analytics-organization-id={organization.public_organization_id}
-      className="py-9 sm:py-12 lg:py-14"
+      className="pt-6 pb-10 sm:pt-8 sm:pb-14 lg:pt-9 lg:pb-16"
     >
-      <nav className="mb-5 font-sarabun text-sm text-neutral-500">
+      <nav
+        aria-label={isThai ? 'เส้นทางนำทาง' : 'Breadcrumb'}
+        className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-sarabun text-sm text-neutral-500"
+      >
+        <Link href="/" className="hover:text-[#176b50]">
+          {isThai ? 'หน้าแรก' : 'Home'}
+        </Link>
+        <ChevronRight className="size-3.5" aria-hidden="true" />
         <Link href="/organizations" className="hover:text-[#176b50]">
           {isThai ? 'องค์กร' : 'Organizations'}
-        </Link>{' '}
-        / <span className="text-neutral-700 dark:text-neutral-300">{organization.display_name}</span>
+        </Link>
+        <ChevronRight className="size-3.5" aria-hidden="true" />
+        <span aria-current="page" className="text-neutral-700 dark:text-neutral-300">
+          {organization.display_name}
+        </span>
       </nav>
 
       <section className="overflow-hidden rounded-[32px] border border-[#dce9e4] bg-gradient-to-br from-[#eef6f2] to-white p-5 sm:p-8 dark:border-[#315f50] dark:from-[#17372d] dark:to-neutral-900">
@@ -125,8 +146,27 @@ export default function OrganizationPublicProfile({
                 ))}
               </div>
             ) : null}
+            <div className="mt-6 flex flex-wrap gap-2.5">
+              {contacts.some((contact) => contactLink(contact)) || organization.website_url ? (
+                <a
+                  href="#organization-contacts"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#176b50] px-5 font-sarabun text-sm font-semibold text-white transition hover:bg-[#125740] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#176b50] dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                >
+                  <MessageCircle className="size-4" aria-hidden="true" />
+                  {isThai ? 'ติดต่อองค์กร' : 'Contact organization'}
+                </a>
+              ) : null}
+              <a
+                href="#organization-listings"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#cfe3da] bg-white px-5 font-sarabun text-sm font-semibold text-[#176b50] transition hover:bg-[#f4f9f7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#176b50] dark:border-[#315f50] dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-neutral-800"
+              >
+                {isThai ? 'ดูประกาศ' : 'View listings'} (
+                {organization.listing_count.toLocaleString(isThai ? 'th-TH' : 'en-US')})
+                <ArrowDown className="size-4" aria-hidden="true" />
+              </a>
+            </div>
           </div>
-          <div className="rounded-2xl bg-white/85 px-5 py-4 text-center shadow-sm dark:bg-neutral-900/85">
+          <div className="hidden shrink-0 rounded-2xl bg-white/85 px-5 py-4 text-center shadow-sm sm:block dark:bg-neutral-900/85">
             <p className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
               {organization.listing_count.toLocaleString(isThai ? 'th-TH' : 'en-US')}
             </p>
@@ -139,7 +179,11 @@ export default function OrganizationPublicProfile({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <section>
-          <h2 className="font-sarabun text-2xl font-semibold text-neutral-950 dark:text-white">
+          <h2
+            id="organization-listings"
+            tabIndex={-1}
+            className="scroll-mt-24 font-sarabun text-2xl font-semibold text-neutral-950 focus:outline-none dark:text-white"
+          >
             {isThai ? `ประกาศจาก ${organization.display_name}` : `Listings from ${organization.display_name}`}
           </h2>
           {listings.length ? (
@@ -162,7 +206,11 @@ export default function OrganizationPublicProfile({
 
         <aside>
           <div className="rounded-3xl border border-neutral-200 bg-white p-5 lg:sticky lg:top-24 dark:border-neutral-800 dark:bg-neutral-900">
-            <h2 className="font-sarabun text-lg font-semibold">
+            <h2
+              id="organization-contacts"
+              tabIndex={-1}
+              className="scroll-mt-24 font-sarabun text-lg font-semibold focus:outline-none"
+            >
               {isThai ? 'ช่องทางขององค์กร' : 'Organization contacts'}
             </h2>
             <div className="mt-4 grid gap-2">

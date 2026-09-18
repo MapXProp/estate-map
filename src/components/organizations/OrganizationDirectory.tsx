@@ -34,7 +34,7 @@ export default function OrganizationDirectory({ initialOrganizations }: { initia
   }, [organizationType, specialty])
 
   return (
-    <main className="py-10 sm:py-14 lg:py-16">
+    <main className="pt-6 pb-10 sm:pt-8 sm:pb-14 lg:pt-9 lg:pb-16">
       <div className="rounded-[30px] bg-[#eef6f2] px-5 py-8 sm:px-8 sm:py-10 dark:bg-[#17372d]">
         <p className="font-sarabun text-sm font-semibold text-[#176b50] dark:text-emerald-300">
           MapxProp Organizations

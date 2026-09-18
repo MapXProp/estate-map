@@ -1,7 +1,8 @@
 'use client'
 
-import { Bars3Icon, HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
+import { Bars3Icon, HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -44,7 +45,7 @@ const FooterQuickNavigation = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
   const isThai = locale === 'th'
-  const hideOnChannelHome = pathname === '/homes' || pathname === '/rooms' || pathname === '/business'
+  const hideOnPrimaryNavigation = usesMobilePrimaryNavigation(pathname)
   const hideOnContact = pathname.startsWith('/contact')
   const hideOnAbout = pathname.startsWith('/about')
   const hideOnAccount = pathname.startsWith('/account')
@@ -105,7 +106,7 @@ const FooterQuickNavigation = () => {
   //
 
   if (
-    hideOnChannelHome ||
+    hideOnPrimaryNavigation ||
     hideOnContact ||
     hideOnAbout ||
     hideOnAccount ||

@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
 import { Heart, Home, Map, Plus, UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -13,7 +14,7 @@ const MobilePrimaryNavigation = () => {
   const isThai = locale === 'th'
   const isChannelHome = channelHomePaths.includes(pathname)
 
-  if (!isChannelHome) return null
+  if (!usesMobilePrimaryNavigation(pathname)) return null
 
   const navigationItems = [
     {
@@ -72,7 +73,7 @@ const MobilePrimaryNavigation = () => {
                   key={item.href}
                   href={item.href}
                   aria-label={label}
-                  className="group flex min-h-[66px] touch-manipulation flex-col items-center justify-end gap-0.5 pb-1.5 text-orange-600 focus-visible:outline-none"
+                  className="group flex min-h-[66px] touch-manipulation flex-col items-center justify-end gap-0.5 rounded-2xl pb-1.5 text-orange-600 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
                 >
                   <span className="grid size-11 -translate-y-1 place-items-center rounded-full bg-orange-500 text-white shadow-[0_7px_18px_rgba(249,82,28,0.32)] ring-4 ring-white transition group-active:scale-95 dark:ring-neutral-950">
                     <Icon className="size-6" strokeWidth={2.2} />
@@ -87,7 +88,7 @@ const MobilePrimaryNavigation = () => {
                 key={item.href}
                 href={item.href}
                 aria-current={item.active ? 'page' : undefined}
-                className={`relative flex min-h-[58px] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-2xl pb-1 text-[10px] leading-4 font-medium transition focus-visible:outline-none active:scale-95 ${
+                className={`relative flex min-h-[58px] touch-manipulation flex-col items-center justify-center gap-0.5 rounded-2xl pb-1 text-[10px] leading-4 font-medium transition focus-visible:ring-2 focus-visible:ring-[#176b50] focus-visible:outline-none active:scale-95 ${
                   item.active ? 'text-[#176b50] dark:text-emerald-300' : 'text-neutral-500 dark:text-neutral-400'
                 }`}
               >
