@@ -1,10 +1,12 @@
 import { getAuthApiUrl } from './auth'
 import { getPropertyMapLocationPreset } from './propertyMapLocations'
 import type { MapProjectDetails, PropertyMapMode } from './propertyMapProjects'
+import { findTransitStation, getTransitSearchSuggestions, transitStationPlace } from './transitStations'
 
 export type MapSearchSuggestion =
   | { kind: 'project'; label: string; project: MapProjectDetails }
   | { kind: 'place'; label: string; direct?: boolean }
+  | { kind: 'station'; label: string; stationId: string; detail: string }
 
 export const mapSearchName = (value: string) =>
   value
@@ -73,7 +75,17 @@ export async function fetchMapSearchSuggestions(
   const locations = results[1].status === 'fulfilled' ? results[1].value : []
   if (mode === 'projects' && !locations.some((item) => mapSearchName(item.label) === mapSearchName(query)))
     locations.push({ kind: 'place', label: query, direct: true })
-  return [...projects.map(projectSearchSuggestion), ...locations]
+  const stations: MapSearchSuggestion[] = getTransitSearchSuggestions(query).map((item) => ({
+    kind: 'station',
+    label: item.label,
+    stationId: item.stationId,
+    detail: item.detail,
+  }))
+  return [
+    ...projects.map(projectSearchSuggestion),
+    ...stations,
+    ...locations.filter((item) => !findTransitStation(item.label)),
+  ]
 }
 
 export async function searchMapPlace(query: string, apiKey: string, th: boolean, signal: AbortSignal) {
@@ -117,6 +129,9 @@ export async function resolveMapSearchPlace(
       lon: preset.longitude,
       zoom: preset.zoom,
     }
+
+  const station = findTransitStation(query)
+  if (station) return transitStationPlace(station, th)
 
   if (includeProjects) {
     const projects = await searchMapProjects(query, signal).catch((error) => {

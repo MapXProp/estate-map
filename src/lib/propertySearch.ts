@@ -1,10 +1,13 @@
 import { getAuthApiUrl } from './auth'
+import { getTransitSearchSuggestions } from './transitStations'
 
 export type PropertySearchSuggestion = {
   type: string
   label: string
   description: string
   query: string
+  stationId?: string
+  detail?: string
 }
 
 export type PropertySearchSuggestionOptions = {
@@ -354,6 +357,12 @@ export const fetchPropertySearchSuggestions = async (
   signal?: AbortSignal,
   options: PropertySearchSuggestionOptions = {}
 ): Promise<PropertySearchSuggestion[]> => {
+  const stations = getTransitSearchSuggestions(query, options.limit || 8)
+  const combine = (items: PropertySearchSuggestion[]) =>
+    [...stations, ...items.filter((item) => !stations.length || item.description !== 'transit')].slice(
+      0,
+      options.limit || 8
+    )
   try {
     const searchParams = new URLSearchParams({ q: query.trim() })
     if (options.limit) searchParams.set('limit', String(options.limit))
@@ -363,11 +372,11 @@ export const fetchPropertySearchSuggestions = async (
       cache: 'no-store',
       credentials: 'include',
     })
-    if (!response.ok) return query.trim() ? [] : fallbackSuggestions
+    if (!response.ok) return combine(query.trim() ? [] : fallbackSuggestions)
     const data = (await response.json()) as { suggestions?: PropertySearchSuggestion[] }
-    return data.suggestions?.length ? data.suggestions : query.trim() ? [] : fallbackSuggestions
+    return combine(data.suggestions?.length ? data.suggestions : query.trim() ? [] : fallbackSuggestions)
   } catch {
-    return query.trim() ? [] : fallbackSuggestions
+    return combine(query.trim() ? [] : fallbackSuggestions)
   }
 }
 

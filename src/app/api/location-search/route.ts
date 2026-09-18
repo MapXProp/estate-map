@@ -1,4 +1,6 @@
+import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import { getLongdoApiKey, longdoNoStoreHeaders, takeLongdoQuota } from '@/lib/server/longdoQuota'
+import { findTransitStation, getTransitStation, transitStationPlace } from '@/lib/transitStations'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -14,10 +16,23 @@ type LongdoSearchResponse = {
 }
 
 export async function GET(request: NextRequest) {
+  const stationId = request.nextUrl.searchParams.get('station') || undefined
   const query = request.nextUrl.searchParams.get('q')?.trim().replace(/\s+/g, ' ') || ''
+  const selectedStation = getTransitStation(stationId)
+  if (selectedStation)
+    return NextResponse.json({ place: transitStationPlace(selectedStation) }, { headers: longdoNoStoreHeaders })
   if (Array.from(query).length < 2 || query.length > 120) {
     return NextResponse.json({ place: null }, { headers: longdoNoStoreHeaders })
   }
+
+  const preset = getPropertyMapLocationPreset(query)
+  if (preset)
+    return NextResponse.json(
+      { place: { name: preset.nameTh, address: '', lat: preset.latitude, lon: preset.longitude, zoom: preset.zoom } },
+      { headers: longdoNoStoreHeaders }
+    )
+  const station = findTransitStation(query)
+  if (station) return NextResponse.json({ place: transitStationPlace(station) }, { headers: longdoNoStoreHeaders })
 
   const apiKey = getLongdoApiKey()
   if (!apiKey) {

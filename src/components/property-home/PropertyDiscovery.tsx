@@ -113,9 +113,9 @@ const channelContent = {
     categoryLabelTh: 'เลือกประเภทที่อยู่อาศัย',
     categoryLabelEn: 'Browse home types',
     locations: [
-      { th: 'อารีย์', en: 'Ari' },
+      { th: 'อารีย์', en: 'Ari', query: 'ซอยอารีย์ (พหลโยธิน 7)' },
       { th: 'ทองหล่อ', en: 'Thong Lo' },
-      { th: 'พระราม 9', en: 'Rama 9' },
+      { th: 'พระราม 9', en: 'Rama 9', query: 'แยกพระราม 9–รัชดาภิเษก' },
       { th: 'บางนา', en: 'Bang Na' },
     ],
   },
@@ -190,8 +190,8 @@ const channelContent = {
     descriptionEn: 'Shops, offices, warehouses and event spaces. Find your fit.',
     mapTitleTh: 'เห็นทำเล เห็นโอกาส',
     mapTitleEn: 'Explore your next location',
-    placeholderTh: 'ค้นหาทำเล อาคาร หรือลอง “โกดังบางนา”',
-    placeholderEn: 'Search area, building or “warehouse Bang Na”',
+    placeholderTh: 'ค้นหาทำเล อาคาร หรือสถานีรถไฟฟ้า',
+    placeholderEn: 'Search location, building or transit station',
     categoryLeadTh: 'ธุรกิจของคุณ',
     categoryLeadEn: 'Your business,',
     categoryAccentTh: 'เริ่มที่พื้นที่แบบไหน',
@@ -295,7 +295,7 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
               <MapPin size={13} aria-hidden="true" /> {th ? 'ลองเริ่มจาก' : 'Start with'}
             </span>
             {content.locations.map((location) => (
-              <Link key={location.en} href={searchHref(location.th)}>
+              <Link key={location.en} href={searchHref('query' in location ? location.query : location.th)}>
                 {th ? location.th : location.en}
               </Link>
             ))}

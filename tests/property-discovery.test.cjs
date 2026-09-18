@@ -111,3 +111,15 @@ test('every category shortcut opens supported map filters and event booths exclu
     if (channel === 'business') assert.ok(links.some((link) => link.props.href.includes('space_type=event_booth')))
   }
 })
+
+test('home shortcuts target the requested soi/intersection and business uses a location-only placeholder', () => {
+  for (const locale of ['th', 'en']) {
+    const links = discovery('homes', locale)
+      .render()
+      .filter((node) => node.props?.href?.includes('?'))
+    const queries = links.map((node) => new URL(node.props.href, 'https://mapxprop.com').searchParams.get('q'))
+    assert.ok(queries.includes('ซอยอารีย์ (พหลโยธิน 7)'))
+    assert.ok(queries.includes('แยกพระราม 9–รัชดาภิเษก'))
+    assert.doesNotMatch(discovery('business', locale).search().placeholder, /โกดังบางนา|warehouse Bang Na/)
+  }
+})

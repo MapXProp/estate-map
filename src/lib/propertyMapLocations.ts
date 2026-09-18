@@ -5,11 +5,42 @@ export type PropertyMapLocationPreset = {
   latitude: number
   longitude: number
   zoom: number
+  aliases?: string[]
 }
 
 // These presets make location links deterministic. They are intentionally kept
 // separate from listing data: the map starts at the province centre even before
 // its matching listings have finished loading from the API.
+export const propertyMapLandmarkPresets: PropertyMapLocationPreset[] = [
+  {
+    slug: 'soi-ari',
+    nameTh: 'ซอยอารีย์ (พหลโยธิน 7)',
+    nameEn: 'Soi Ari (Phahon Yothin 7)',
+    aliases: ['อารีย์', 'อารี', 'Ari', 'Aree', 'Soi Ari', 'ซอยอารีย์', 'ซอยพหลโยธิน 7'],
+    latitude: 13.780953470242196,
+    longitude: 100.54483583660047,
+    zoom: 16,
+  },
+  {
+    slug: 'rama-9-ratchada-intersection',
+    nameTh: 'แยกพระราม 9–รัชดาภิเษก',
+    nameEn: 'Rama 9–Ratchadaphisek Intersection',
+    aliases: [
+      'พระราม 9',
+      'พระราม9',
+      'พระรามเก้า',
+      'Rama 9',
+      'Rama IX',
+      'แยกพระราม 9',
+      '4 แยก พระราม9 รัชดา',
+      'สี่แยกพระราม 9 รัชดา',
+    ],
+    latitude: 13.7560737133026,
+    longitude: 100.565071105957,
+    zoom: 16,
+  },
+]
+
 export const propertyMapLocationPresets: PropertyMapLocationPreset[] = [
   {
     slug: 'bangkok',
@@ -109,14 +140,21 @@ export const propertyMapLocationPresets: PropertyMapLocationPreset[] = [
   },
 ]
 
-const normaliseLocation = (value: string) => value.trim().toLocaleLowerCase('en-US')
+const normaliseLocation = (value: string) =>
+  value
+    .trim()
+    .normalize('NFKC')
+    .toLocaleLowerCase('en-US')
+    .replace(/[\s–—-]/g, '')
 
 export const getPropertyMapLocationPreset = (value?: string) => {
   if (!value) return undefined
   const location = normaliseLocation(value)
 
-  return propertyMapLocationPresets.find((preset) =>
-    [preset.slug, preset.nameTh, preset.nameEn].some((candidate) => normaliseLocation(candidate) === location)
+  return [...propertyMapLandmarkPresets, ...propertyMapLocationPresets].find((preset) =>
+    [preset.slug, preset.nameTh, preset.nameEn, ...(preset.aliases || [])].some(
+      (candidate) => normaliseLocation(candidate) === location
+    )
   )
 }
 

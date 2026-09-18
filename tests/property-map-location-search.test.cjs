@@ -22,7 +22,11 @@ function model(fetch) {
     URLSearchParams,
     fetch,
     require: (id) =>
-      id === './propertyMapLocations' ? locationsContext.exports : { getAuthApiUrl: (value) => '/apix/' + value },
+      id === './transitStations'
+        ? require('./helpers/transit-stations.cjs')
+        : id === './propertyMapLocations'
+          ? locationsContext.exports
+          : { getAuthApiUrl: (value) => '/apix/' + value },
   }
   vm.runInNewContext(source, context)
   return context.exports

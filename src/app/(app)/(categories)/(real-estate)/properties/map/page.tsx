@@ -12,10 +12,12 @@ import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import { normalizeMapMode, normalizeProjectCategoryFilter } from '@/lib/propertyMapProjects'
 import { initialMapOfferTypes } from '@/lib/propertyMapSearch'
 import { createPageMetadata } from '@/lib/seo'
+import { getTransitStation, transitStationLabel } from '@/lib/transitStations'
 import type { Metadata } from 'next'
 
 type PageSearchParams = Promise<{
   q?: string | string[]
+  station?: string | string[]
   project?: string | string[]
   map_mode?: string | string[]
   project_category?: string | string[]
@@ -79,16 +81,19 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
   const coordinates = getMapCoordinates(search)
   const requestedZoom = Number(getFirstSearchParam(search.zoom))
   const zoom = Number.isFinite(requestedZoom) && requestedZoom >= 5 && requestedZoom <= 19 ? requestedZoom : undefined
-  const query = getFirstSearchParam(search.q) || location?.nameTh || ''
+  const station = getTransitStation(getFirstSearchParam(search.station))
+  const query = station ? transitStationLabel(station) : getFirstSearchParam(search.q) || location?.nameTh || ''
   const project = getFirstSearchParam(search.project).slice(0, 200)
   const initialMapMode = normalizeMapMode(getFirstSearchParam(search.map_mode), Boolean(project))
   return {
     query,
     initialMapMode,
     initialProjectCategory: normalizeProjectCategoryFilter(getFirstSearchParam(search.project_category)),
-    initialProject: initialMapMode === 'projects' ? project : '',
-    mapCenter: coordinates || (location ? { lat: location.latitude, lon: location.longitude } : undefined),
-    mapZoom: zoom || location?.zoom,
+    initialProject: !station && initialMapMode === 'projects' ? project : '',
+    mapCenter: station
+      ? undefined
+      : coordinates || (location ? { lat: location.latitude, lon: location.longitude } : undefined),
+    mapZoom: station ? undefined : zoom || location?.zoom,
     initialFilters: getInitialFilters(search),
     initialCategories: getSearchParamValues(search.category),
     offerLayout: getFirstSearchParam(search.offer_ui) === 'classic' ? ('classic' as const) : ('compact' as const),

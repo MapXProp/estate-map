@@ -1,4 +1,5 @@
 import { getLongdoApiKey, longdoNoStoreHeaders, takeLongdoQuota } from '@/lib/server/longdoQuota'
+import { getTransitSearchSuggestions } from '@/lib/transitStations'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,10 @@ type LongdoSuggestionResponse = {
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim().replace(/\s+/g, ' ') || ''
+  if (query.length <= 120) {
+    const stations = getTransitSearchSuggestions(query)
+    if (stations.length) return NextResponse.json({ suggestions: stations }, { headers: longdoNoStoreHeaders })
+  }
   if (Array.from(query).length < 3 || query.length > 120) {
     return NextResponse.json({ suggestions: [] }, { headers: longdoNoStoreHeaders })
   }

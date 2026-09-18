@@ -173,6 +173,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   const { formatCurrencyFrom } = require('./helpers/property-prices.cjs').preferences()
   const router = { push: (...args) => navigation.push(args) }
   const imports = {
+    '@/lib/transitStations': require('./helpers/transit-stations.cjs'),
     react: hooks,
     'react/jsx-runtime': jsx,
     'lucide-react': require('lucide-react'),

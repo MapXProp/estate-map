@@ -22,7 +22,19 @@ import {
   type PropertyMapMode,
 } from '@/lib/propertyMapProjects'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
-import { Building2, House, LoaderCircle, MapPin, Search, ShoppingBag, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { findTransitStation } from '@/lib/transitStations'
+import {
+  Building2,
+  House,
+  LoaderCircle,
+  MapPin,
+  Search,
+  ShoppingBag,
+  TrainFront,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import Script from 'next/script'
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -916,7 +928,7 @@ const LongdoPropertyMap = ({
       setSearchMessage('')
       try {
         let project = suggestion?.kind === 'project' ? suggestion.project : undefined
-        if (mapMode === 'projects' && !suggestion) {
+        if (mapMode === 'projects' && !suggestion && !findTransitStation(keyword)) {
           const matches = await searchMapProjects(keyword, controller.signal).catch((error) => {
             if (controller.signal.aborted) throw error
             return []
@@ -1739,7 +1751,9 @@ const LongdoPropertyMap = ({
                     : project.project_category === 'commercial_complex'
                       ? ShoppingBag
                       : Building2
-                  : MapPin
+                  : suggestion.kind === 'station'
+                    ? TrainFront
+                    : MapPin
                 const description = project
                   ? [
                       projectCategoryLabel(project.project_category, isThai),
@@ -1750,13 +1764,15 @@ const LongdoPropertyMap = ({
                     ]
                       .filter(Boolean)
                       .join(' · ')
-                  : suggestion.kind === 'place' && suggestion.direct
-                    ? isThai
-                      ? 'ค้นหาสถานที่ด้วยคำนี้'
-                      : 'Search places with this name'
-                    : isThai
-                      ? 'สถานที่'
-                      : 'Place'
+                  : suggestion.kind === 'station'
+                    ? suggestion.detail
+                    : suggestion.kind === 'place' && suggestion.direct
+                      ? isThai
+                        ? 'ค้นหาสถานที่ด้วยคำนี้'
+                        : 'Search places with this name'
+                      : isThai
+                        ? 'สถานที่'
+                        : 'Place'
                 return (
                   <button
                     id={`longdo-location-suggestion-${index}`}

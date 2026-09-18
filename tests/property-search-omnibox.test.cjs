@@ -48,6 +48,7 @@ function harness(variant, options = {}) {
     },
   }
   const imports = {
+    '@/lib/transitStations': require('./helpers/transit-stations.cjs'),
     react: hooks,
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
@@ -167,6 +168,31 @@ function harness(variant, options = {}) {
     },
   }
 }
+
+test('station suggestions are immediately selectable on desktop and mobile while the remote search is pending', async () => {
+  for (const variant of ['header', 'hero']) {
+    let resolveLocal
+    const h = harness(variant, {
+      local: () =>
+        new Promise((resolve) => {
+          resolveLocal = resolve
+        }),
+    })
+    h.type('อารีย์')
+    await h.suggestions()
+    const options = h.nodes((n) => n.props?.role === 'option')
+    options[0].props.onClick()
+    const url = new URL(h.navigation[0], 'https://mapxprop.com')
+    assert.equal(url.searchParams.get('station'), 'bts-n5')
+    assert.equal(url.searchParams.get('q'), 'BTS อารีย์ (N5)')
+    assert.equal(url.searchParams.get('channel'), 'homes')
+    assert.equal(url.searchParams.get('offer_type'), 'rent')
+    h.render()
+    resolveLocal([])
+    await h.suggestions()
+    assert.equal(h.closed(), 1)
+  }
+})
 
 test('desktop and mobile both offer external locations; tapping one submits its complete place name', async () => {
   for (const variant of ['header', 'hero']) {

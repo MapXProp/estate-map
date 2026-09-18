@@ -9,7 +9,8 @@ import {
   getPropertyMapSearchUrl,
   PropertySearchSuggestion,
 } from '@/lib/propertySearch'
-import { Building2, Clock3, FileText, MapPin, Search } from 'lucide-react'
+import { getTransitSearchSuggestions, getTransitStationMapUrl } from '@/lib/transitStations'
+import { Building2, Clock3, FileText, MapPin, Search, TrainFront } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FormEvent, KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import styles from './PropertySearchOmnibox.module.css'
@@ -75,12 +76,14 @@ const dedupeSuggestions = (items: PropertySearchSuggestion[], limit: number) => 
 }
 
 const suggestionDescription = (item: PropertySearchSuggestion, isThai: boolean) => {
+  if (item.detail) return item.detail
   if (item.type === 'recent') return item.description
   const label = locationTypeLabels[item.description] || locationTypeLabels[item.type]
   return label?.[isThai ? 'th' : 'en'] || item.description
 }
 
 const iconForSuggestion = (item: PropertySearchSuggestion) => {
+  if (item.stationId) return TrainFront
   if (item.type === 'recent' || item.type === 'popular') return Clock3
   if (item.type === 'listing') return FileText
   if (item.type === 'longdo' || (item.type === 'location' && !['project', 'building'].includes(item.description))) {
@@ -160,6 +163,7 @@ const PropertySearchOmnibox = ({
     const timer = window.setTimeout(
       async () => {
         setLoading(true)
+        setSuggestions(getTransitSearchSuggestions(normalizedQuery, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
         const localItems = await fetchPropertySearchSuggestions(normalizedQuery, controller.signal, {
           limit: isHeader ? 8 : undefined,
           scope: suggestionScope,
@@ -260,7 +264,9 @@ const PropertySearchOmnibox = ({
     setFocused(false)
     setActiveIndex(-1)
     onSubmitQuery?.(value)
-    router.push(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value))
+    router.push(
+      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion?.stationId)
+    )
   }
 
   const selectSuggestion = (suggestion: PropertySearchSuggestion) => {
@@ -393,8 +399,8 @@ const PropertySearchOmnibox = ({
                 ? 'ค้นหาทำเลหรืออสังหา'
                 : 'Search location or property'
               : isThai
-                ? 'ลองค้นหา “คอนโดอารีย์” หรือ “โกดังบางนา”'
-                : 'Try “condo in Ari” or “warehouse Bang Na”')
+                ? 'ค้นหาทำเล โครงการ หรือสถานีรถไฟฟ้า'
+                : 'Search location, project or transit station')
           }
         />
         <button
