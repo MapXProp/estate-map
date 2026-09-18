@@ -28,13 +28,13 @@
   --home-tint: #f0f6fa;
   --home-line: #dce8ef;
   --home-background: #f8fbfd;
-  --home-gradient-start: #eaf3f9;
+  --home-gradient-start: #eef8fc;
   --home-gradient-mid: #f2f7fb;
   --home-listings: #edf4f8;
-  --home-hero-rgb: 12 37 56;
-  --home-hero-accent: #c9e9f5;
-  --home-photo-position: center 56%;
-  --home-photo-mobile-position: 65% center;
+  --home-hero-rgb: 15 50 68;
+  --home-hero-accent: #d9f3fc;
+  --home-photo-position: center 48%;
+  --home-photo-mobile-position: 70% center;
   --home-button: #3d7892;
   --home-button-hover: #346a82;
   --home-selection: #e2eef4;
@@ -56,8 +56,8 @@
   --home-hero-accent: #f4d4ad;
   --home-photo-position: center 45%;
   --home-photo-mobile-position: 62% 45%;
-  --home-button: #a96044;
-  --home-button-hover: #97553d;
+  --home-button: #d94a22;
+  --home-button-hover: #be3e1b;
   --home-selection: #f4e6dc;
   --home-shadow-rgb: 86 56 44;
   --category-columns: 8;
@@ -572,9 +572,9 @@
   --home-gradient-start: #34251c;
   --home-gradient-mid: #2b1f19;
   --home-listings: #34251c;
-  --home-button: #ebba9f;
-  --home-button-hover: #f4ccb7;
-  --home-button-text: #573324;
+  --home-button: #ffc2ad;
+  --home-button-hover: #ffd0bf;
+  --home-button-text: #351b14;
   --home-selection: #4a3328;
 }
 

@@ -20,7 +20,17 @@ These images are used as atmosphere illustrations, not as available MapXProp lis
 - Image: https://images.unsplash.com/photo-1758448756207-54505680d130
 - License: Free Unsplash License, verified on the photo page on 2026-09-10
 
-## Monthly rooms — monthly-room.jpg
+## Monthly rooms discovery banner — monthly-room-daylight.jpg
+
+- Creator: Shashi Chaturvedula
+- Title: White bed linen on bed
+- Description: A nice bright bedroom decor
+- Source: https://unsplash.com/photos/white-bed-linen-on-bed-A2m-9Yy12-s
+- Image: https://images.unsplash.com/photo-1610513492570-914a65a5d5ae
+- License: Free Unsplash License, verified on the photo page on 2026-09-18
+- Download: 1920px wide JPEG, quality 85. The white room, natural window light and warm bedding illustrate the rental category; this is not an available MapXProp listing.
+
+## Previous monthly rooms image — monthly-room.jpg
 
 - Creator: Marc Wieland
 - Title: Modern bedroom with desk, bed, and city view
@@ -30,4 +40,4 @@ These images are used as atmosphere illustrations, not as available MapXProp lis
 
 License reference: https://unsplash.com/license
 
-The previous home and monthly-room assets were downloaded at 1600px wide as JPEG (quality 85) using the image host's delivery parameters. The current homes discovery image uses the size noted above. Next.js serves optimized responsive versions from these local assets. The business hero image retains its existing attribution in ../business-hero/CREDITS.md.
+The previous home and monthly-room assets were downloaded at 1600px wide as JPEG (quality 85) using the image host's delivery parameters. The current discovery images use the sizes noted above. Next.js serves optimized responsive versions from these local assets. The business hero image retains its existing attribution in ../business-hero/CREDITS.md.

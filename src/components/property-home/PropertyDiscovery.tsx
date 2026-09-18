@@ -105,7 +105,7 @@ const channelContent = {
   },
   rooms: {
     brand: 'ROOMS & MONTHLY STAYS',
-    photo: '/images/channel-heroes/monthly-room.jpg',
+    photo: '/images/channel-heroes/monthly-room-daylight.jpg',
     tone: 'mint',
     titleTh: 'ห้องที่ใช่',
     titleEn: 'Your next room,',
