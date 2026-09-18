@@ -78,7 +78,7 @@ const channelCategories: Record<DiscoveryChannelCode, DiscoveryCategory[]> = {
 const channelContent = {
   homes: {
     brand: 'HOMES & LIVING',
-    photo: '/images/channel-heroes/home-garden.jpg',
+    photo: '/images/channel-heroes/residential-house-daylight.jpg',
     tone: 'green',
     titleTh: 'บ้านที่ใช่',
     titleEn: 'The right home,',

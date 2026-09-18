@@ -11,10 +11,12 @@
   --home-listings: #f3f6f2;
   --home-hero-rgb: 12 40 30;
   --home-hero-accent: #deebc6;
-  --home-photo-position: center 57%;
-  --home-photo-mobile-position: 59% center;
-  --home-button: #193e32;
+  --home-photo-position: center 43%;
+  --home-photo-mobile-position: 55% center;
+  --home-button: #367a60;
+  --home-button-hover: #2f6b54;
   --home-button-text: #fff;
+  --home-selection: #e1eee7;
   --home-shadow-rgb: 25 62 50;
   background: var(--home-background);
 }
@@ -33,7 +35,9 @@
   --home-hero-accent: #c9e9f5;
   --home-photo-position: center 56%;
   --home-photo-mobile-position: 65% center;
-  --home-button: #216a8c;
+  --home-button: #3d7892;
+  --home-button-hover: #346a82;
+  --home-selection: #e2eef4;
   --home-shadow-rgb: 25 62 85;
   --category-columns: 6;
 }
@@ -52,7 +56,9 @@
   --home-hero-accent: #f4d4ad;
   --home-photo-position: center 45%;
   --home-photo-mobile-position: 62% 45%;
-  --home-button: #98452e;
+  --home-button: #a96044;
+  --home-button-hover: #97553d;
+  --home-selection: #f4e6dc;
   --home-shadow-rgb: 86 56 44;
   --category-columns: 8;
 }
@@ -141,28 +147,28 @@
   align-items: center;
   gap: 13px;
   padding: 16px;
-  border: 1px solid rgb(255 255 255 / 32%);
+  border: 1px solid var(--home-line);
   border-radius: 16px;
-  background: rgb(var(--home-hero-rgb) / 73%);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
-  backdrop-filter: blur(12px);
-  color: #fff;
+  background: var(--home-paper);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 8%);
+  color: var(--home-ink);
   transition:
     background 180ms,
     transform 180ms;
 }
 .mapCard:hover {
   transform: translateY(-3px);
-  background: rgb(var(--home-hero-rgb) / 90%);
+  background: var(--home-tint);
 }
 .mapIcon {
   display: grid;
   place-items: center;
   width: 46px;
   height: 46px;
-  border: 1px solid rgb(255 255 255 / 22%);
+  border: 1px solid var(--home-line);
   border-radius: 12px;
-  background: rgb(255 255 255 / 12%);
+  background: var(--home-tint);
+  color: var(--home-accent);
 }
 .mapCard strong {
   display: block;
@@ -173,7 +179,7 @@
   display: block;
   margin-top: 4px;
   font-size: 11px;
-  color: #e0eadf;
+  color: var(--home-muted);
 }
 .mapCard > svg {
   margin-left: 12px;
@@ -218,9 +224,9 @@
     color 150ms;
 }
 .offerChoices button[aria-pressed='true'] {
-  background: var(--home-button);
-  color: var(--home-button-text);
-  box-shadow: 0 2px 5px rgb(0 0 0 / 10%);
+  background: var(--home-selection);
+  color: var(--home-ink);
+  box-shadow: inset 0 0 0 1px var(--home-line);
 }
 .offerChoices button:hover:not([aria-pressed='true']) {
   color: var(--home-ink);
@@ -233,8 +239,8 @@
   gap: 8px;
   padding: 6px 15px;
   border-radius: 8px;
-  background: var(--home-button);
-  color: var(--home-button-text);
+  background: var(--home-selection);
+  color: var(--home-ink);
   font-size: 13px;
   font-weight: 600;
 }
@@ -272,7 +278,12 @@
   min-height: 46px;
   padding-inline: 23px;
   border-radius: 9px;
-  box-shadow: 0 3px 9px rgb(var(--home-shadow-rgb) / 14%);
+  background: var(--home-button);
+  color: var(--home-button-text);
+  box-shadow: 0 2px 5px rgb(var(--home-shadow-rgb) / 8%);
+}
+.searchField button[type='submit']:hover {
+  background: var(--home-button-hover);
 }
 .quickLocations {
   display: flex;
@@ -527,7 +538,9 @@
   --home-gradient-mid: #16251c;
   --home-listings: #182a20;
   --home-button: #b8d7c1;
+  --home-button-hover: #c9e3d1;
   --home-button-text: #153323;
+  --home-selection: #2b4938;
 }
 :global(.dark) .categoryIcon {
   border-color: var(--home-line);
@@ -544,7 +557,9 @@
   --home-gradient-mid: #172a36;
   --home-listings: #192f3d;
   --home-button: #acd8ed;
+  --home-button-hover: #c5e5f4;
   --home-button-text: #173c51;
+  --home-selection: #2b4758;
 }
 :global(.dark) .page[data-discovery-channel='business'] {
   --home-ink: #f0e0d5;
@@ -558,7 +573,9 @@
   --home-gradient-mid: #2b1f19;
   --home-listings: #34251c;
   --home-button: #ebba9f;
+  --home-button-hover: #f4ccb7;
   --home-button-text: #573324;
+  --home-selection: #4a3328;
 }
 
 @media (max-width: 1023px) {
