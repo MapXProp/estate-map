@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { discoveryPageContentUpdatedAt, discoveryPageSeo } from './discoveryPageSeo'
 import type { Organization } from './organizations'
 import {
   CATALOG_PAGE_SIZE,
@@ -17,17 +18,16 @@ export function buildPropertySitemap(
   organizations: Organization[]
 ): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [
-    '/homes',
-    '/rooms',
-    '/business',
-    '/buy',
-    '/rent',
-    '/properties/map',
-    '/organizations',
-    '/all-transits',
-    '/about',
-    '/contact',
-  ].map((path) => ({ url: absoluteUrl(path) }))
+    ...Object.values(discoveryPageSeo).map((page) => ({
+      url: absoluteUrl(page.path),
+      lastModified: new Date(discoveryPageContentUpdatedAt),
+    })),
+    ...['/organizations', '/all-transits'].map((path) => ({
+      url: absoluteUrl(path),
+      lastModified: new Date(discoveryPageContentUpdatedAt),
+    })),
+    ...['/properties/map', '/about', '/contact'].map((path) => ({ url: absoluteUrl(path) })),
+  ]
   const collections = [
     { path: CATALOG_PATH, count: listings.length },
     ...propertyCatalogs

@@ -1,14 +1,32 @@
 import OrganizationDirectory from '@/components/organizations/OrganizationDirectory'
+import JsonLd from '@/components/seo/JsonLd'
 import { getPublicOrganizations } from '@/lib/publicOrganizations'
-import { createPageMetadata } from '@/lib/seo'
+import { collectionPageStructuredData, createPageMetadata } from '@/lib/seo'
 
-export const metadata = createPageMetadata({
+const page = {
   title: 'องค์กรอสังหาริมทรัพย์และประกาศจากบริษัท',
-  description: 'ค้นหาองค์กรอสังหาริมทรัพย์ ธนาคารทรัพย์ NPA บริษัทนายหน้า และประกาศที่แยกตามความเชี่ยวชาญ',
+  description:
+    'ค้นหาบริษัทนายหน้า ผู้พัฒนาโครงการ ธนาคาร และบริษัทบริหารสินทรัพย์ เลือกตามความเชี่ยวชาญ พร้อมดูประกาศอสังหาริมทรัพย์และช่องทางติดต่อองค์กร',
   path: '/organizations',
   keywords: ['บริษัทอสังหาริมทรัพย์', 'ทรัพย์ NPA', 'นายหน้าอสังหาริมทรัพย์', 'องค์กร MapxProp'],
-})
+}
+
+export const metadata = createPageMetadata(page)
 
 export default async function Page() {
-  return <OrganizationDirectory initialOrganizations={await getPublicOrganizations()} />
+  const organizations = await getPublicOrganizations()
+  return (
+    <>
+      <JsonLd
+        data={collectionPageStructuredData(
+          page,
+          organizations.map((organization) => ({
+            name: organization.display_name,
+            path: `/organizations/${encodeURIComponent(organization.slug || organization.public_organization_id)}`,
+          }))
+        )}
+      />
+      <OrganizationDirectory initialOrganizations={organizations} />
+    </>
+  )
 }

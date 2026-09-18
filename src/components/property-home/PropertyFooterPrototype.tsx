@@ -17,7 +17,7 @@ const footerNavigation = [
       ['ห้องเช่า & ที่พักรายเดือน', 'Rooms & monthly stays', '/rooms'],
       ['พื้นที่ทำธุรกิจ', 'Business spaces', '/business'],
       ['ประกาศขาย', 'Properties for sale', '/buy'],
-      ['ประกาศเช่า', 'Properties for rent', '/rent'],
+      ['ประกาศเช่า', 'Properties for rent', '/rooms'],
       ['ประกาศทั้งหมด', 'All listings', '/real-estate-categories/all'],
       ['ดูบนแผนที่', 'View on map', '/properties/map'],
       ['อสังหาฯ ใกล้รถไฟฟ้า', 'Property near transit', '/all-transits'],

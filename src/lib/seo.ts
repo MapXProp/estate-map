@@ -21,6 +21,46 @@ export const cleanSeoText = (value: string, maxLength = 158) => {
   return `${shortened.slice(0, lastSpace > maxLength * 0.65 ? lastSpace : shortened.length).trim()}…`
 }
 
+type StructuredLink = { name: string; path: string }
+
+export const breadcrumbStructuredData = (items: StructuredLink[]) => ({
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: absoluteUrl(item.path),
+  })),
+})
+
+export const collectionPageStructuredData = (
+  page: { title: string; description: string; path: string },
+  items?: StructuredLink[],
+  breadcrumbs?: StructuredLink[]
+) => ({
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  '@id': absoluteUrl(page.path),
+  url: absoluteUrl(page.path),
+  name: page.title,
+  description: cleanSeoText(page.description),
+  inLanguage: 'th-TH',
+  isPartOf: { '@id': absoluteUrl('/#website') },
+  breadcrumb: breadcrumbs?.length ? breadcrumbStructuredData(breadcrumbs) : undefined,
+  mainEntity: items
+    ? {
+        '@type': 'ItemList',
+        numberOfItems: items.length,
+        itemListElement: items.map((item, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          url: absoluteUrl(item.path),
+        })),
+      }
+    : undefined,
+})
+
 type PageMetadataOptions = {
   title: string
   description: string

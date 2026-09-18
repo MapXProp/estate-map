@@ -106,7 +106,7 @@ export default function OrganizationDirectory({ initialOrganizations }: { initia
           {organizations.map((organization) => (
             <Link
               key={organization.public_organization_id}
-              href={`/organizations/${organization.slug}`}
+              href={`/organizations/${encodeURIComponent(organization.slug || organization.public_organization_id)}`}
               className="group rounded-3xl border border-neutral-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-[#9bc7b5] hover:shadow-[0_16px_40px_rgba(18,63,50,0.10)] dark:border-neutral-800 dark:bg-neutral-900"
             >
               <div className="flex items-start gap-4">

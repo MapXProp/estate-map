@@ -33,7 +33,7 @@ export default function TransitDirectory() {
     <main className={styles.page}>
       <div className="container">
         <nav className={styles.breadcrumb} aria-label={th ? 'เส้นทางนำทาง' : 'Breadcrumb'}>
-          <Link href="/">{th ? 'หน้าแรก' : 'Home'}</Link>
+          <Link href="/homes">{th ? 'หน้าแรก' : 'Home'}</Link>
           <ChevronRight size={14} aria-hidden="true" />
           <span aria-current="page">{th ? 'อสังหาฯ ใกล้รถไฟฟ้า' : 'Property near transit'}</span>
         </nav>
@@ -44,13 +44,11 @@ export default function TransitDirectory() {
               <TrainFront size={16} aria-hidden="true" />{' '}
               {th ? 'ทำเลที่ใช่ เดินทางสะดวก' : 'Your place. Better connected.'}
             </p>
-            <h1 id="transit-title">
-              {th ? 'ชีวิตใกล้รถไฟฟ้า เริ่มที่สถานีของคุณ' : 'Find your place, one station away'}
-            </h1>
+            <h1 id="transit-title">{th ? 'ค้นหาอสังหาฯ ใกล้สถานีรถไฟฟ้า' : 'Find property near a transit station'}</h1>
             <p>
               {th
-                ? 'เลือกสายหรือค้นหาสถานี แล้วสำรวจบ้าน คอนโด ห้องเช่า และพื้นที่ธุรกิจในทำเลที่เดินทางสะดวก'
-                : 'Choose a line or station to explore homes, condos, monthly rooms and business spaces on the map.'}
+                ? 'รวมสาย BTS, MRT, Airport Rail Link และสายสีแดงในกรุงเทพฯ และปริมณฑล เลือกสถานีเพื่อดูพิกัดและสำรวจบ้าน คอนโด ห้องเช่า หรือพื้นที่ธุรกิจบนแผนที่'
+                : 'Browse BTS, MRT, Airport Rail Link and SRT Red Line stations in Greater Bangkok. Select a station to explore homes, rooms and business spaces on the map.'}
             </p>
             <div className={styles.stats}>
               <span>
@@ -86,7 +84,7 @@ export default function TransitDirectory() {
 
         <section className={styles.explorer} aria-labelledby="transit-lines-title">
           <div className={styles.sectionHeading}>
-            <h2 id="transit-lines-title">{th ? 'ไปกับสายไหน' : 'Choose your line'}</h2>
+            <h2 id="transit-lines-title">{th ? 'เลือกสายรถไฟฟ้า' : 'Choose your transit line'}</h2>
             <button type="button" aria-pressed={!lineId} onClick={() => setLineId('')}>
               {th ? 'ทุกสาย' : 'All lines'} <ArrowRight size={15} aria-hidden="true" />
             </button>

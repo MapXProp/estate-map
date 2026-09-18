@@ -1,7 +1,7 @@
 import OrganizationPublicProfile from '@/components/organizations/OrganizationPublicProfile'
 import JsonLd from '@/components/seo/JsonLd'
 import { getPublicOrganization } from '@/lib/publicOrganizations'
-import { absoluteUrl, createPageMetadata } from '@/lib/seo'
+import { absoluteUrl, breadcrumbStructuredData, createPageMetadata } from '@/lib/seo'
 import { notFound, permanentRedirect } from 'next/navigation'
 
 type Props = { params: Promise<{ identifier: string }> }
@@ -36,6 +36,13 @@ export default async function Page({ params }: Props) {
           '@id': url,
           url,
           name: organization.display_name,
+          inLanguage: 'th-TH',
+          isPartOf: { '@id': absoluteUrl('/#website') },
+          breadcrumb: breadcrumbStructuredData([
+            { name: 'หน้าแรก', path: '/homes' },
+            { name: 'องค์กรอสังหาริมทรัพย์', path: '/organizations' },
+            { name: organization.display_name, path: url },
+          ]),
           mainEntity: {
             '@type': 'Organization',
             '@id': `${url}#organization`,

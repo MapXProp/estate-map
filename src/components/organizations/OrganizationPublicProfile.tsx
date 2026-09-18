@@ -88,7 +88,7 @@ export default function OrganizationPublicProfile({
         aria-label={isThai ? 'เส้นทางนำทาง' : 'Breadcrumb'}
         className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-sarabun text-sm text-neutral-500"
       >
-        <Link href="/" className="hover:text-[#176b50]">
+        <Link href="/homes" className="hover:text-[#176b50]">
           {isThai ? 'หน้าแรก' : 'Home'}
         </Link>
         <ChevronRight className="size-3.5" aria-hidden="true" />
