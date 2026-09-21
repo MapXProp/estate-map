@@ -25,14 +25,14 @@ test('published map and human address replace coordinates, while Google links re
   assert.ok(text.includes('นำทางด้วย Google Maps'))
 })
 test('moving access information keeps each paragraph once and leaves property notes with the description', () => {
-  const description = renderToStaticMarkup(React.createElement(Description, { text: listing.description, collapsible: true, separateLocation: true }))
+  const description = renderToStaticMarkup(React.createElement(Description, { text: listing.description, sectioned: true, separateLocation: true }))
   const location = render()
   assert.ok(!description.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
   assert.ok(description.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
   assert.ok(location.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
-  assert.match(location, /<details\b[^>]*\bopen=""/, 'travel information is open on arrival')
+  assert.ok(!/<details\b|<summary\b|<button\b/.test(location), 'travel information is always visible without folding controls')
   assert.ok(!location.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
-  const oldUse = renderToStaticMarkup(React.createElement(Description, { text: listing.description, collapsible: true }))
+  const oldUse = renderToStaticMarkup(React.createElement(Description, { text: listing.description, sectioned: true }))
   assert.ok(oldUse.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'), 'other consumers keep their complete descriptions')
 })
 test('missing and invalid coordinates never become an invented destination, and photos are labelled as photos', () => {

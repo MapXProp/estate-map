@@ -335,7 +335,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </h2>
               <PropertyDescription
                 text={description}
-                collapsible
+                sectioned
                 separateLocation
                 isThai={isThai}
                 className="mt-4 text-[15px]"
