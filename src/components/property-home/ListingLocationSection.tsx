@@ -137,7 +137,7 @@ export default function ListingLocationSection({
             </ul>
           )}
           {paragraphs.length > 0 && (
-            <details className="group mt-4 border-t border-neutral-200 dark:border-neutral-800">
+            <details open className="group mt-4 border-t border-neutral-200 dark:border-neutral-800">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 [&::-webkit-details-marker]:hidden">
                 {isThai ? 'ข้อมูลการเดินทางเพิ่มเติม' : 'More location information'}
                 <ChevronDown className="size-4 shrink-0 transition group-open:rotate-180" />

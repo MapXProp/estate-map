@@ -30,6 +30,7 @@ test('moving access information keeps each paragraph once and leaves property no
   assert.ok(!description.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
   assert.ok(description.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
   assert.ok(location.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
+  assert.match(location, /<details\b[^>]*\bopen=""/, 'travel information is open on arrival')
   assert.ok(!location.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
   const oldUse = renderToStaticMarkup(React.createElement(Description, { text: listing.description, collapsible: true }))
   assert.ok(oldUse.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'), 'other consumers keep their complete descriptions')

@@ -23,12 +23,23 @@ export function propertyPreviewImages(media: PropertyListingMedia[]) {
   ].slice(0, 3)
 }
 
-const descriptionHeadings = new Set([
+const summaryHeadings = new Set([
+  '',
   'รายละเอียดทรัพย์',
+  'รายละเอียดที่ดิน',
+  'รายละเอียดเพิ่มเติม',
+  'Property details',
+  'Land details',
+  'More details',
+])
+
+export const isPropertySummaryHeading = (heading: string) => summaryHeadings.has(heading)
+
+const descriptionHeadings = new Set([
+  ...summaryHeadings,
   'ทำเลและการเดินทาง',
   'ข้อควรทราบเกี่ยวกับทรัพย์',
   'ราคาและการติดต่อ',
-  'Property details',
   'Location and access',
   'Property notes',
   'Price and contact',
