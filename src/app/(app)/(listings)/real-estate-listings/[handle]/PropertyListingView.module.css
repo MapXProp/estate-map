@@ -49,10 +49,11 @@
 .identity {
   margin-top: 1.25rem;
 }
-.identity h1,
+.surface :is(h1, h2, h3, h4, h5, h6),
+.heading,
 .landIdentity p[aria-hidden],
 .mobileIdentity p[aria-hidden],
-.eventContent h1 {
+.section summary {
   color: var(--listing-title);
 }
 .page [data-listing-address] {
@@ -174,16 +175,12 @@
   gap: 10px;
   font-size: 20px;
   line-height: 1.5;
-  color: var(--listing-ink);
 }
 .featureCard {
   padding: 20px;
   border: 1px solid var(--listing-border);
   border-radius: 14px;
   background: var(--listing-soft);
-}
-.featureCard h3 {
-  color: var(--listing-ink);
 }
 .featureCard p {
   color: var(--listing-muted);
@@ -225,6 +222,7 @@
   color: var(--listing-ink);
 }
 .eventContact {
+  --listing-title: #fff;
   background: linear-gradient(135deg, var(--listing-price-start), var(--listing-price-end));
   box-shadow: 0 12px 28px -14px rgb(26 50 38 / 20%);
 }

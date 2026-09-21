@@ -192,7 +192,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
 
             <section className="mt-8 grid gap-4 sm:grid-cols-2">
               <div className={styles.featureCard}>
-                <div className="flex items-center gap-2 font-semibold">
+                <div className={`${styles.heading} flex items-center gap-2 font-semibold`}>
                   <Store className="size-5 text-[#176b50]" /> สินค้าที่เปิดรับ
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -204,7 +204,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
                 </div>
               </div>
               <div className={styles.featureCard}>
-                <div className="flex items-center gap-2 font-semibold">
+                <div className={`${styles.heading} flex items-center gap-2 font-semibold`}>
                   <Users className="size-5 text-[#176b50]" /> กลุ่มลูกค้า
                 </div>
                 <ul className="mt-3 space-y-2 text-sm leading-6 text-neutral-600">
@@ -216,7 +216,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
             </section>
 
             <section className={styles.section}>
-              <div className="flex items-center gap-2 font-semibold">
+              <div className={`${styles.heading} flex items-center gap-2 font-semibold`}>
                 <CircleHelp className="size-5 text-[#d66a22]" /> ข้อมูลที่ควรสอบถามผู้จัดงาน
               </div>
               <p className="mt-3 text-sm leading-6 text-neutral-600">
