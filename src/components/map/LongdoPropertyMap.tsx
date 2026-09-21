@@ -1440,6 +1440,7 @@ const LongdoPropertyMap = ({
           }
         }
         .mapx-exact-coordinates .mapx-price-marker {
+          --mapx-price-gap: 14px;
           width: 0 !important;
           height: 0;
           padding: 0 !important;
@@ -1472,13 +1473,37 @@ const LongdoPropertyMap = ({
         }
         .mapx-exact-coordinates .mapx-price-pill {
           position: absolute;
-          bottom: 27px;
+          bottom: calc(50% + var(--mapx-price-gap));
           left: 50%;
           height: 30px;
           min-width: 64px;
           padding: 0 9px;
           font-size: 12px;
           transform: translateX(-50%);
+        }
+        .mapx-exact-coordinates .mapx-price-pill::before,
+        .mapx-exact-coordinates .mapx-price-pill::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          width: 0;
+          height: 0;
+          pointer-events: none;
+          transform: translateX(-50%);
+        }
+        .mapx-exact-coordinates .mapx-price-pill::before {
+          bottom: -8px;
+          border-left: 7px solid transparent;
+          border-right: 7px solid transparent;
+          border-top: 8px solid #ffffff;
+          filter: drop-shadow(0 1px 1px rgba(18,63,50,.14));
+        }
+        .mapx-exact-coordinates .mapx-price-pill::after {
+          bottom: -6px;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 6px solid var(--mapx-marker-bg);
+          transition: border-top-color 150ms ease;
         }
         .mapx-exact-coordinates .mapx-price-marker.is-active .mapx-price-pill,
         .mapx-exact-coordinates .mapx-price-marker:hover .mapx-price-pill,
@@ -1487,13 +1512,16 @@ const LongdoPropertyMap = ({
         }
         .mapx-exact-coordinates .mapx-price-details-link {
           position: absolute;
-          bottom: 4px;
+          bottom: var(--mapx-price-gap);
           left: 0;
           width: max-content;
+          align-items: flex-end;
           transform: translateX(-50%);
         }
         .mapx-exact-coordinates .mapx-price-marker .mapx-price-details-link .mapx-price-pill {
-          position: static;
+          position: relative;
+          bottom: auto;
+          left: auto;
           transform: none;
         }
         .mapx-exact-coordinates .mapx-price-pointer-outer,
@@ -1514,9 +1542,6 @@ const LongdoPropertyMap = ({
           .mapx-exact-coordinates .mapx-price-marker-link {
             width: 44px;
             height: 44px;
-          }
-          .mapx-exact-coordinates .mapx-price-details-link {
-            bottom: 8px;
           }
         }
       `}</style>
