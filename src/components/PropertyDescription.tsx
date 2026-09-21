@@ -3,6 +3,7 @@ import {
   isPropertySummaryHeading,
   propertyDescriptionSections,
 } from '@/lib/propertyDetailPresentation'
+import { ChevronDown } from 'lucide-react'
 
 const headings = new Set([
   'รายละเอียดทรัพย์',
@@ -52,10 +53,14 @@ export default function PropertyDescription({
         {remaining.length > 0 && (
           <div className="mt-5 divide-y divide-neutral-200 border-y border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
             {remaining.map((section, index) => (
-              <div key={`${section.heading}-${index}`}>
-                <h3 className="py-4 font-semibold text-neutral-950 dark:text-white">
+              <details key={`${section.heading}-${index}`} open className="group/description">
+                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded py-4 font-semibold text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:text-white [&::-webkit-details-marker]:hidden">
                   {section.heading || (isThai ? 'รายละเอียดเพิ่มเติม' : 'More details')}
-                </h3>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="size-4 shrink-0 text-neutral-500 transition-transform group-open/description:rotate-180"
+                  />
+                </summary>
                 <div className="space-y-4 pb-5 leading-7">
                   {section.paragraphs.map((paragraph, i) => (
                     <p key={i} className="[overflow-wrap:anywhere] whitespace-pre-line">
@@ -63,7 +68,7 @@ export default function PropertyDescription({
                     </p>
                   ))}
                 </div>
-              </div>
+              </details>
             ))}
           </div>
         )}

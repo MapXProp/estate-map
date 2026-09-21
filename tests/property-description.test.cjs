@@ -5,14 +5,16 @@ const { renderToStaticMarkup } = require('react-dom/server')
 const { load } = require('./helpers/property-prices.cjs')
 const { default: Description } = load('src/components/PropertyDescription.tsx', {
   'react/jsx-runtime': require('react/jsx-runtime'),
+  'lucide-react': require('lucide-react'),
   '@/lib/propertyDetailPresentation': load('src/lib/propertyDetailPresentation.ts'),
 })
 const render = (text, props = {}) => renderToStaticMarkup(React.createElement(Description, { text, sectioned: true, ...props }))
 const assertFullyVisible = html => {
-  assert.ok(!/<details\b|<summary\b|<button\b|aria-expanded|data-description-excerpt|line-clamp|max-height|overflow-hidden/.test(html), 'descriptions have no folding or clipping controls')
+  assert.ok(!/<button\b|data-description-excerpt|line-clamp|max-height|overflow-hidden/.test(html), 'descriptions have no read-more preview or clipping')
+  for (const [tag] of html.matchAll(/<details\b[^>]*>/g)) assert.match(tag, /\bopen=""/, 'every foldable section starts expanded')
 }
 
-test('all information sections are plain headings with every paragraph visible exactly once', () => {
+test('all information sections can fold but start expanded with every paragraph visible exactly once', () => {
   const paragraphs = [
     'รายละเอียดทรัพย์', 'บ้านพร้อมอยู่', 'มีสวนหลังบ้าน',
     'ข้อควรทราบเกี่ยวกับทรัพย์', 'ตรวจสอบสภาพบ้านก่อนซื้อ',
@@ -23,7 +25,8 @@ test('all information sections are plain headings with every paragraph visible e
   ]
   const html = render(paragraphs.join('\n\n'))
   assertFullyVisible(html)
-  assert.equal((html.match(/<h3\b/g) || []).length, 5)
+  assert.equal((html.match(/<details\b/g) || []).length, 5)
+  assert.equal((html.match(/<summary\b/g) || []).length, 5)
   for (const index of [1, 2, 4, 5, 7, 9, 11]) {
     assert.equal(html.split(paragraphs[index]).length - 1, 1, 'every paragraph is preserved exactly once')
   }
@@ -43,12 +46,12 @@ test('Thai and English headings keep their structure, including a leading import
   for (const heading of ['รายละเอียดที่ดิน', 'รายละเอียดเพิ่มเติม', 'Property details', 'Land details', 'More details']) {
     const html = render(`${heading}\n\nDescription body\n\nProperty notes\n\nInspect before purchase`)
     assertFullyVisible(html)
-    assert.match(html, /<h3\b[^>]*>Property notes<\/h3>/)
+    assert.match(html, /<summary\b[^>]*>Property notes<svg\b/)
     assert.ok(html.includes('Description body') && html.includes('Inspect before purchase'))
   }
   const note = render('ข้อควรตรวจสอบสำคัญ: ตรวจสอบเอกสารก่อนซื้อ')
   assertFullyVisible(note)
-  assert.match(note, /<h3\b[^>]*>ข้อควรตรวจสอบสำคัญ<\/h3>/)
+  assert.match(note, /<summary\b[^>]*>ข้อควรตรวจสอบสำคัญ<svg\b/)
   assert.ok(note.includes('ตรวจสอบเอกสารก่อนซื้อ'))
 })
 
@@ -57,5 +60,6 @@ test('empty and short descriptions never create empty controls or extra content'
     const html = render(text)
     assertFullyVisible(html)
     assert.equal((html.match(/<p\b/g) || []).length, text ? 1 : 0)
+    assert.ok(!html.includes('<details'), 'a short introduction does not create an empty disclosure')
   }
 })

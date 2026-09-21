@@ -30,7 +30,9 @@ test('moving access information keeps each paragraph once and leaves property no
   assert.ok(!description.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
   assert.ok(description.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
   assert.ok(location.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'))
-  assert.ok(!/<details\b|<summary\b|<button\b/.test(location), 'travel information is always visible without folding controls')
+  const disclosures = [...location.matchAll(/<details\b[^>]*>/g)]
+  assert.equal(disclosures.length, 1, 'travel information has its folding control back')
+  assert.match(disclosures[0][0], /\bopen=""/, 'travel information starts fully expanded')
   assert.ok(!location.includes('ตรวจสอบแนวเขตกับผู้ขาย'))
   const oldUse = renderToStaticMarkup(React.createElement(Description, { text: listing.description, sectioned: true }))
   assert.ok(oldUse.includes('เข้าจากซอย อบต.ไทรน้อยเก่า'), 'other consumers keep their complete descriptions')

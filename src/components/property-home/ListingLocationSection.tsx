@@ -7,7 +7,7 @@ import {
 } from '@/lib/propertyDetailPresentation'
 import { getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
-import { ExternalLink, MapPin, Navigation } from 'lucide-react'
+import { ChevronDown, ExternalLink, MapPin, Navigation } from 'lucide-react'
 import { useState } from 'react'
 
 export default function ListingLocationSection({
@@ -137,10 +137,14 @@ export default function ListingLocationSection({
             </ul>
           )}
           {paragraphs.length > 0 && (
-            <div className="mt-4 border-t border-neutral-200 dark:border-neutral-800">
-              <h3 className="py-3 text-sm font-semibold text-neutral-950 dark:text-white">
+            <details open className="group/location mt-4 border-t border-neutral-200 dark:border-neutral-800">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded py-3 text-sm font-semibold text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-500 dark:text-white [&::-webkit-details-marker]:hidden">
                 {isThai ? 'ข้อมูลการเดินทางเพิ่มเติม' : 'More location information'}
-              </h3>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-neutral-500 transition-transform group-open/location:rotate-180"
+                />
+              </summary>
               <div className="space-y-3 text-sm leading-7 text-neutral-600 dark:text-neutral-300">
                 {paragraphs.map((paragraph, i) => (
                   <p key={i} className="[overflow-wrap:anywhere] whitespace-pre-line">
@@ -148,7 +152,7 @@ export default function ListingLocationSection({
                   </p>
                 ))}
               </div>
-            </div>
+            </details>
           )}
         </div>
       </div>
