@@ -15,10 +15,11 @@ import {
 } from '@/lib/propertyLandingRows'
 import { filterPropertyPrices, getPropertyPrices, propertyOffersLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
-import { ArrowRight, CheckCircle2, Heart, MapPin } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Heart, Map, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
+import styles from './PropertyListingShowcase.module.css'
 
 type ListingGroup = 'residential' | 'rooms' | 'mixed_use' | 'commercial' | 'land'
 
@@ -50,11 +51,13 @@ const DeferredListingImage = ({
   eager,
   position = 'center',
   src,
+  sizes,
 }: {
   alt: string
   eager: boolean
   position?: 'center' | 'top'
   src: string
+  sizes: string
 }) => {
   const [failedSrc, setFailedSrc] = useState('')
   const hasError = Boolean(src && failedSrc === src)
@@ -68,7 +71,7 @@ const DeferredListingImage = ({
           fill
           src={src}
           alt={alt}
-          sizes="(max-width: 402px) 82vw, (max-width: 640px) 330px, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
+          sizes={sizes}
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'low'}
           preload={eager}
@@ -499,6 +502,22 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean, offe
   }
 }
 
+const rowPresentation: Record<string, { image: string; th: string; en: string }> = {
+  houses: { image: 'detached-house', th: 'พื้นที่สำหรับทุกวันของคุณ', en: 'Space for your everyday life' },
+  condos: { image: 'condo', th: 'เลือกห้อง เลือกจังหวะชีวิต', en: 'Find a space at your pace' },
+  land: { image: 'land', th: 'เริ่มต้นจากทำเลที่ใช่', en: 'Start with the right location' },
+  shophouses: { image: 'shophouse', th: 'พื้นที่ที่เข้ากับแผนของคุณ', en: 'Room for your next chapter' },
+  'rental-rooms': { image: 'rental-room', th: 'ห้องพักในแบบที่เป็นคุณ', en: 'A place to make your own' },
+  apartments: { image: 'apartment', th: 'เลือกที่พักให้เข้ากับชีวิต', en: 'Find a stay that fits your life' },
+  dormitories: { image: 'dormitory', th: 'เริ่มค้นหาที่พักในทำเลที่ชอบ', en: 'Explore your next neighborhood' },
+  flats: { image: 'flat', th: 'มองหาห้องพักที่ลงตัว', en: 'Find your kind of room' },
+  'monthly-hotels': { image: 'monthly-hotel', th: 'ที่พักสำหรับวันต่อ ๆ ไป', en: 'Settle in for a little longer' },
+  retail: { image: 'retail-space', th: 'พื้นที่สำหรับไอเดียของคุณ', en: 'Make room for your ideas' },
+  offices: { image: 'office', th: 'พื้นที่สำหรับวันทำงาน', en: 'A place for your working day' },
+  industrial: { image: 'warehouse', th: 'ค้นหาพื้นที่ให้ธุรกิจเติบโต', en: 'Room for your business to grow' },
+  hospitality: { image: 'monthly-hotel', th: 'มองหาพื้นที่สำหรับกิจการใหม่', en: 'Explore your next venture' },
+}
+
 const PropertyListingShowcase = ({
   mode = 'all',
   compact = false,
@@ -567,21 +586,44 @@ const PropertyListingShowcase = ({
                   : 'There are no published listings in this category yet.'}
           </p>
         ) : (
-          <div className="space-y-10 sm:space-y-12">
+          <div className={styles.rows}>
             {rows.map((row, rowIndex) => (
-              <section key={row.id} data-listing-row={row.id} aria-labelledby={'listing-row-' + row.id}>
-                <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
-                  <h2
-                    id={'listing-row-' + row.id}
-                    className="text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl dark:text-white"
-                  >
-                    {isThai ? row.titleTh : row.titleEn}
-                  </h2>
+              <section
+                key={row.id}
+                data-listing-row={row.id}
+                aria-labelledby={'listing-row-' + row.id}
+                className={styles.row + ' ' + (row.id === 'latest' ? styles.latest : styles.category)}
+              >
+                <div className={styles.header}>
+                  <div className={styles.intro}>
+                    {rowPresentation[row.id] && (
+                      <Image
+                        src={'/images/property-categories/' + rowPresentation[row.id].image + '.png'}
+                        alt=""
+                        width={124}
+                        height={124}
+                        sizes="(min-width: 1280px) 124px, 52px"
+                        loading="lazy"
+                        className={styles.artwork}
+                      />
+                    )}
+                    <div>
+                      <h2 id={'listing-row-' + row.id} className={styles.title}>
+                        {isThai ? row.titleTh : row.titleEn}
+                      </h2>
+                      {rowPresentation[row.id] && (
+                        <p className={styles.description}>
+                          {isThai ? rowPresentation[row.id].th : rowPresentation[row.id].en}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                   <Link
                     href={propertyLandingRowHref(row, mode, offerType)}
                     aria-label={isThai ? 'ดูทั้งหมด: ' + row.titleTh : 'View all: ' + row.titleEn}
-                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-neutral-600 transition hover:bg-black/5 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
+                    className={styles.browse}
                   >
+                    <Map className={'size-4 ' + styles.mapIcon} aria-hidden="true" />
                     {isThai ? 'ดูทั้งหมด' : 'View all'} <ArrowRight className="size-4" aria-hidden="true" />
                   </Link>
                 </div>
@@ -589,7 +631,8 @@ const PropertyListingShowcase = ({
                   role="region"
                   aria-label={isThai ? row.titleTh : row.titleEn}
                   tabIndex={0}
-                  className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pt-1 pb-3 [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 sm:gap-6 xl:grid xl:grid-cols-4 xl:overflow-visible xl:px-0"
+                  data-count={row.listings.length}
+                  className={styles.track + ' ' + (row.id === 'latest' ? styles.latestTrack : '')}
                 >
                   {row.listings.map((record, index) => {
                     const listing = toShowcaseListing(record, isThai, offerType)
@@ -603,14 +646,23 @@ const PropertyListingShowcase = ({
                     return (
                       <article
                         key={listing.id}
-                        className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-[calc((100%-1.5rem)/2)] sm:max-w-none lg:w-[calc((100%-3rem)/3)] xl:w-auto"
+                        className={
+                          'group ' + styles.card + (row.id === 'latest' && index === 0 ? ' ' + styles.featured : '')
+                        }
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
+                        <div className={styles.media}>
                           <DeferredListingImage
                             src={listing.image}
                             alt={displayListing.title}
                             eager={rowIndex === 0 && index === 0}
                             position={listing.imagePosition}
+                            sizes={
+                              row.id === 'latest'
+                                ? index === 0
+                                  ? '(min-width: 900px) 50vw, (max-width: 418px) 86vw, 360px'
+                                  : '(min-width: 900px) 22vw, (max-width: 400px) 80vw, 320px'
+                                : '(min-width: 1280px) 19vw, (max-width: 395px) 76vw, 300px'
+                            }
                           />
                           <Link
                             href={listing.href || '/real-estate-categories/all'}
@@ -623,7 +675,12 @@ const PropertyListingShowcase = ({
                                 {displayListing.offer}
                               </span>
                               {listing.badge && (
-                                <span className="rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                <span
+                                  className={
+                                    styles.secondaryBadge +
+                                    ' rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur'
+                                  }
+                                >
                                   {displayListing.badge}
                                 </span>
                               )}
@@ -651,30 +708,35 @@ const PropertyListingShowcase = ({
                           </div>
                         </div>
 
-                        <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
-                          <div className="mb-1.5 flex items-center justify-between gap-3">
-                            <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                        <Link href={listing.href || '/real-estate-categories/all'} className={styles.body}>
+                          <div className={styles.meta}>
+                            <span className="min-w-0 truncate font-medium text-neutral-500 dark:text-neutral-400">
                               {displayListing.type}
                             </span>
                             {listing.verified && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
-                                <CheckCircle2 className="size-3.5" />{' '}
-                                {isThai
-                                  ? listing.verificationLabel || 'ตรวจสอบแล้ว'
-                                  : listing.verificationLabel
-                                    ? 'Organizer checked'
-                                    : 'Verified'}
+                              <span
+                                className={styles.verified}
+                                role="img"
+                                aria-label={isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+                                title={isThai ? 'ตรวจสอบแล้ว' : 'Verified'}
+                              >
+                                <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                                <span className={styles.verifiedText}>
+                                  {isThai
+                                    ? listing.verificationLabel || 'ตรวจสอบแล้ว'
+                                    : listing.verificationLabel
+                                      ? 'Organizer checked'
+                                      : 'Verified'}
+                                </span>
                               </span>
                             )}
                           </div>
-                          <h3 className="line-clamp-1 text-base font-semibold text-neutral-950 transition group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
-                            {displayListing.title}
-                          </h3>
-                          <p className="mt-2 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                          <h3 className={styles.cardTitle}>{displayListing.title}</h3>
+                          <p className={styles.location}>
                             <MapPin className="size-4 shrink-0" strokeWidth={1.7} />
                             <span className="truncate">{displayListing.location}</span>
                           </p>
-                          <div className="mt-3 flex min-h-6 flex-wrap gap-x-2 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+                          <div className={styles.facts}>
                             {displayListing.facts.map((fact, index) => (
                               <span key={fact} className="whitespace-nowrap">
                                 {index > 0 && <span className="me-2 text-neutral-300 dark:text-neutral-600">·</span>}
@@ -682,9 +744,13 @@ const PropertyListingShowcase = ({
                               </span>
                             ))}
                           </div>
-                          <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+                          <div className={styles.price}>
                             {listing.prices ? (
-                              <PropertyPrices prices={listing.prices} className="text-neutral-950 dark:text-white" />
+                              <PropertyPrices
+                                prices={listing.prices}
+                                variant={row.id === 'latest' && index === 0 ? 'card' : 'compact'}
+                                className="text-neutral-950 dark:text-white"
+                              />
                             ) : listing.priceLabel ? (
                               <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
                                 {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}

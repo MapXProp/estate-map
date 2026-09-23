@@ -385,6 +385,7 @@ test('homepage renders real listing links and lazy image URLs before browser Jav
   const React = require('react')
   const { renderToStaticMarkup } = require('react-dom/server')
   const Showcase = load('src/components/property-home/PropertyListingShowcase.tsx', {
+    './PropertyListingShowcase.module.css': { default: {} },
     '@/components/PropertyPrices': require('./helpers/property-prices.cjs').component(),
     '@/lib/propertyPrices': require('./helpers/property-prices.cjs').prices,
     react: React,
@@ -417,8 +418,9 @@ test('homepage renders real listing links and lazy image URLs before browser Jav
     })
   )
   assert.equal((html.match(/<article /g) || []).length, 8)
-  assert.equal((html.match(/<img /g) || []).length, 8)
-  assert.equal((html.match(/loading="lazy"/g) || []).length, 7)
+  const cardsHtml = [...html.matchAll(/<article [\s\S]*?<\/article>/g)].map(([card]) => card).join('')
+  assert.equal((cardsHtml.match(/<img /g) || []).length, 8)
+  assert.equal((cardsHtml.match(/loading="lazy"/g) || []).length, 7)
   assert.ok(html.includes('href="/real-estate-listings/land-8"'))
   assert.ok(!html.includes('href="/real-estate-listings/land-9"'))
   assert.deepEqual(

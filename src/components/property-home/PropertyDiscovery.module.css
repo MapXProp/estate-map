@@ -564,27 +564,6 @@
 .listings h2 {
   font-size: clamp(24px, 2.5vw, 32px);
 }
-.listings article {
-  overflow: hidden;
-  border: 1px solid var(--home-line);
-  border-radius: 18px;
-  background: var(--home-paper);
-  box-shadow: 0 4px 14px rgb(var(--home-shadow-rgb) / 4%);
-  transition:
-    transform 180ms,
-    box-shadow 180ms;
-}
-.listings article:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgb(var(--home-shadow-rgb) / 10%);
-}
-.listings article > div:first-child {
-  border-radius: 0;
-}
-.listings article > a {
-  padding: 16px;
-}
-
 .locations {
   padding-top: 42px;
   padding-bottom: 32px;
@@ -923,9 +902,6 @@
   .categoryIcon svg {
     width: 25px;
     height: 25px;
-  }
-  .listings article > a {
-    padding: 14px;
   }
   .locations {
     padding-top: 28px;
