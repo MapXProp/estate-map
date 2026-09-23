@@ -1,5 +1,7 @@
 # Property category artwork
 
+Rooms and business artwork added on 2026-09-23 is documented in [ARTWORK-2026-09-23.md](ARTWORK-2026-09-23.md).
+
 Generated on 2026-09-18 using built-in `image_gen` through the imagegen skill. These are illustrative architectural models for category navigation, not photographs of listed properties.
 
 The seven original PNGs are retained in `C:/Users/sukoo/.codex/generated_images/01a0b00e-0cd6-7831-bbaf-c0ea4d2f2257/`. Copies live beside this README. Next.js Image serves responsive optimized versions; no originals were deleted or edited.

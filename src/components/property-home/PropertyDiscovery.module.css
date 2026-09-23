@@ -61,6 +61,7 @@
   --home-selection: #f4e6dc;
   --home-shadow-rgb: 86 56 44;
   --category-columns: 8;
+  --category-min-width: 96px;
 }
 
 .discovery {
@@ -458,10 +459,21 @@
 }
 .categoryLinks {
   display: grid;
-  grid-template-columns: repeat(var(--category-columns, 7), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--category-columns, 7), minmax(var(--category-min-width, 0px), 1fr));
   flex: 1;
   min-width: 0;
   gap: 12px;
+}
+/* Eight illustrated business categories keep their size on narrower screens. */
+.page[data-discovery-channel='business'] .categoryLinks {
+  overflow-x: auto;
+  padding: 5px 4px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--home-line) transparent;
+  scroll-snap-type: x proximity;
+}
+.page[data-discovery-channel='business'] .category {
+  scroll-snap-align: start;
 }
 .category {
   display: flex;
@@ -784,7 +796,8 @@
   .actionLabel {
     display: none;
   }
-  .categoryLinks {
+  .categoryLinks,
+  .page[data-discovery-channel='business'] .categoryLinks {
     display: flex;
     gap: 8px;
     overflow-x: auto;
