@@ -45,13 +45,13 @@
 .page[data-discovery-channel='business'] {
   --home-ink: #56382c;
   --home-accent: #a64630;
-  --home-muted: #806e62;
-  --home-tint: #fbf3ed;
-  --home-line: #ede0d6;
-  --home-background: #fffcf9;
-  --home-gradient-start: #f8ece2;
-  --home-gradient-mid: #fcf6ef;
-  --home-listings: #f8f1e9;
+  --home-muted: #70756f;
+  --home-tint: #f5f7f5;
+  --home-line: #e3e8e4;
+  --home-background: #fdfdfc;
+  --home-gradient-start: #f6f8f6;
+  --home-gradient-mid: #fafbfa;
+  --home-listings: #f7f9f7;
   --home-hero-rgb: 57 28 18;
   --home-hero-accent: #f4d4ad;
   --home-photo-position: center 45%;
@@ -59,7 +59,7 @@
   --home-button: #d94a22;
   --home-button-hover: #be3e1b;
   --home-selection: #f4e6dc;
-  --home-shadow-rgb: 86 56 44;
+  --home-shadow-rgb: 30 46 38;
   --category-columns: 8;
   --category-min-width: 96px;
 }
@@ -702,14 +702,14 @@
 :global(.dark) .page[data-discovery-channel='business'] {
   --home-ink: #f0e0d5;
   --home-accent: #efb79b;
-  --home-muted: #cdb9ac;
-  --home-paper: #30231d;
-  --home-tint: #3f2e24;
-  --home-line: #554035;
-  --home-background: #251b16;
-  --home-gradient-start: #34251c;
-  --home-gradient-mid: #2b1f19;
-  --home-listings: #34251c;
+  --home-muted: #bbc5be;
+  --home-paper: #1e2722;
+  --home-tint: #28332c;
+  --home-line: #3a473f;
+  --home-background: #161e19;
+  --home-gradient-start: #1e2922;
+  --home-gradient-mid: #19231d;
+  --home-listings: #1b251f;
   --home-button: #ffc2ad;
   --home-button-hover: #ffd0bf;
   --home-button-text: #351b14;

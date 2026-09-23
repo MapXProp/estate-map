@@ -1,26 +1,10 @@
 .footer {
-  --cta-accent: #28765b;
-  --cta-ink: #214a3a;
-  --cta-tint: #e7f0e5;
-  --cta-canvas: #f6f9f2;
-  --cta-line: #dfe9dc;
+  --cta-accent: #c3dfb1;
+  --cta-ink: #e0edcc;
+  --cta-tint: #245542;
+  --cta-canvas: #123f32;
+  --cta-line: #255343;
   background: #f5f7f4;
-}
-.footer[data-channel='rooms'] {
-  --cta-accent: #28799e;
-  --cta-ink: #285871;
-  --cta-tint: #e1eff4;
-  --cta-canvas: #f2f8fb;
-  --cta-line: #dceaf0;
-  background: #f4f8fa;
-}
-.footer[data-channel='business'] {
-  --cta-accent: #a85233;
-  --cta-ink: #79412e;
-  --cta-tint: #f6e8d6;
-  --cta-canvas: #fff9f1;
-  --cta-line: #eee1cf;
-  background: #fcf8f3;
 }
 .cta {
   position: relative;
@@ -51,11 +35,11 @@
   height: 24px;
   place-items: center;
   border-radius: 8px;
-  background: var(--cta-tint);
+  background: rgb(255 255 255 / 10%);
 }
 .title {
   margin-top: 14px;
-  color: #1c2922;
+  color: #fff;
   font-size: clamp(28px, 3.1vw, 42px);
   font-weight: 650;
   line-height: 1.32;
@@ -69,7 +53,7 @@
 .description {
   max-width: 430px;
   margin-top: 16px;
-  color: #667269;
+  color: #d2dfd7;
   font-size: 14px;
   line-height: 1.8;
   text-wrap: pretty;
@@ -131,7 +115,7 @@
   position: absolute;
   inset: 30px 8% 4px 18%;
   border-radius: 47% 53% 62% 38% / 52% 40% 60% 48%;
-  background: rgb(255 255 255 / 42%);
+  background: rgb(255 255 255 / 7%);
   transform: rotate(-12deg);
 }
 .orbit {
@@ -283,35 +267,7 @@
   }
 }
 :global(.dark) .footer {
-  background: #0a0a0a;
-  --cta-canvas: #1c2b23;
-  --cta-tint: #273e30;
-  --cta-line: #344c3d;
-  --cta-accent: #a9d6bb;
-  --cta-ink: #cce4d4;
-}
-:global(.dark) .footer[data-channel='rooms'] {
-  --cta-canvas: #1b2a35;
-  --cta-tint: #223d4c;
-  --cta-line: #314e60;
-  --cta-accent: #9ed2e8;
-  --cta-ink: #c8e6f3;
-}
-:global(.dark) .footer[data-channel='business'] {
-  --cta-canvas: #30231b;
-  --cta-tint: #463224;
-  --cta-line: #5b4332;
-  --cta-accent: #edbd94;
-  --cta-ink: #f5d6bb;
-}
-:global(.dark) .title {
-  color: #f6f6f3;
-}
-:global(.dark) .description {
-  color: #bcc6be;
-}
-:global(.dark) .backdrop {
-  background: rgb(255 255 255 / 4%);
+  background: #101a14;
 }
 @media (prefers-reduced-motion: reduce) {
   .primary {

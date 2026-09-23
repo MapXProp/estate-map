@@ -3,11 +3,9 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import SocialMediaLinks from '@/components/SocialMediaLinks'
-import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import Logo from '@/shared/Logo'
 import { CheckCircle2, ChevronDown, Flag, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import PropertyFooterPreferencesDialog from './PropertyFooterPreferencesDialog'
 import PropertyListingCta from './PropertyListingCta'
 import styles from './PropertyListingCta.module.css'
@@ -80,12 +78,10 @@ interface PropertyFooterPrototypeProps {
 
 const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterPrototypeProps) => {
   const { locale } = usePreferences()
-  const pathname = usePathname()
-  const channel = getPropertyZoneFromPathname(pathname) || 'homes'
   const isThai = locale === 'th'
 
   return (
-    <footer className={styles.footer} data-channel={channel}>
+    <footer className={styles.footer}>
       <div className="container pt-10 min-[744px]:pt-14 lg:pt-16">
         {showListingCta && <PropertyListingCta isThai={isThai} />}
 
