@@ -15,7 +15,7 @@ export default function PropertyListingCta({ isThai }: { isThai: boolean }) {
         </p>
         <h2 id="property-listing-cta-title" className={styles.title}>
           {isThai ? 'มีพื้นที่ดี ๆ' : 'Your space.'}
-          <span>{isThai ? 'ให้คนที่ใช่ได้ค้นพบ' : 'Someone’s next chapter.'}</span>
+          <span>{isThai ? 'ให้คนได้ค้นพบ' : 'Someone’s next chapter.'}</span>
         </h2>
         <p className={styles.description}>
           {isThai
