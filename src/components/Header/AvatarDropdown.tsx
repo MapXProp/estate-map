@@ -7,18 +7,20 @@ import { useAuth } from '@/hooks/useAuth'
 import { useNotificationCenter } from '@/hooks/useNotificationCenter'
 import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
-import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
+import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel, Switch } from '@headlessui/react'
 import {
   BellIcon,
   CheckIcon,
   ChevronRightIcon,
   ClipboardDocumentCheckIcon,
   GlobeAltIcon,
+  MoonIcon,
   ShieldCheckIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { FavouriteIcon, Logout01Icon, Task01Icon, UserIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useTheme } from 'next-themes'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import TopNavPopoverBackdrop from './TopNavPopoverBackdrop'
@@ -68,6 +70,8 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
   const { openAuthModal } = useAuthModal()
   const { isAuthenticated, isLoading, logout, user } = useAuth()
   const { currency, locale, setCurrency, setLocale } = usePreferences()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDarkMode = resolvedTheme === 'dark'
   const notificationCenter = useNotificationCenter({ isAuthenticated, locale })
   const displayName =
     [user?.name, user?.surname].filter(Boolean).join(' ') || user?.email || (locale === 'th' ? 'ผู้เยี่ยมชม' : 'Guest')
@@ -287,6 +291,30 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
                   </span>
                   <ChevronRightIcon className="size-4 shrink-0 text-neutral-400" />
                 </CloseButton>
+                <Switch
+                  checked={isDarkMode}
+                  onChange={(enabled) => setTheme(enabled ? 'dark' : 'light')}
+                  aria-label={locale === 'th' ? 'โหมดมืด' : 'Dark mode'}
+                  className="flex min-h-11 w-full cursor-pointer items-center rounded-2xl px-2.5 py-1.5 text-start transition hover:bg-neutral-100 focus:outline-hidden focus-visible:ring-3 focus-visible:ring-emerald-600/25 dark:hover:bg-neutral-700"
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[#176b50] dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <MoonIcon className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="ms-3 min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{locale === 'th' ? 'โหมดมืด' : 'Dark mode'}</span>
+                    <span className="mt-0.5 block text-[11px] text-neutral-500 dark:text-neutral-400">
+                      {locale === 'th' ? (isDarkMode ? 'เปิดอยู่' : 'ปิดอยู่') : isDarkMode ? 'On' : 'Off'}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`ms-3 inline-flex h-6 w-11 shrink-0 rounded-full p-0.5 transition-colors motion-reduce:transition-none ${isDarkMode ? 'bg-[#398462]' : 'bg-neutral-300'}`}
+                  >
+                    <span
+                      className={`size-5 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${isDarkMode ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </span>
+                </Switch>
               </div>
             </section>
 
