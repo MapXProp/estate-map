@@ -26,6 +26,7 @@ function load(file, imports = {}, globals = {}) {
 const seo = load('src/lib/seo.ts')
 const discoverySeo = load('src/lib/discoveryPageSeo.ts')
 const taxonomy = load('src/data/propertyTaxonomy.ts')
+const landingRows = load('src/lib/propertyLandingRows.ts', {}, { URLSearchParams })
 const catalog = load('src/lib/propertyCatalog.ts', { './seo': seo })
 const sitemap = load('src/lib/propertySitemap.ts', {
   './seo': seo,
@@ -272,6 +273,7 @@ function publicReader(responseForOffset) {
       'server-only': {},
       react: { cache: (fn) => fn },
       './auth': { getAuthApiUrl: (path) => `https://example.invalid/${path}` },
+      './propertyLandingRows': landingRows,
     },
     {
       URLSearchParams,
@@ -398,6 +400,7 @@ test('homepage renders real listing links and lazy image URLs before browser Jav
       useSavedListings: () => ({ isSaved: () => false, isBusy: () => false }),
     },
     '@/data/propertyTaxonomy': taxonomy,
+    '@/lib/propertyLandingRows': landingRows,
     '@/lib/propertySearch': {
       fetchPropertySearch: () => {
         throw Error('Server cards must not wait for a browser fetch')
@@ -405,11 +408,92 @@ test('homepage renders real listing links and lazy image URLs before browser Jav
     },
   }).default
   const html = renderToStaticMarkup(
-    React.createElement(Showcase, { mode: 'homes', initialListings: inventory.slice(0, 12) })
+    React.createElement(Showcase, {
+      mode: 'homes',
+      initialRows: landingRows.getPropertyLandingRows('homes').map((row) => ({
+        ...row,
+        listings: row.id === 'latest' ? inventory.slice(0, 4) : row.id === 'land' ? inventory.slice(0, 8) : [],
+      })),
+    })
   )
-  assert.equal((html.match(/<article /g) || []).length, 12)
-  assert.equal((html.match(/<img /g) || []).length, 12)
-  assert.equal((html.match(/loading="lazy"/g) || []).length, 11)
-  assert.ok(html.includes('href="/real-estate-listings/land-12"'))
+  assert.equal((html.match(/<article /g) || []).length, 8)
+  assert.equal((html.match(/<img /g) || []).length, 8)
+  assert.equal((html.match(/loading="lazy"/g) || []).length, 7)
+  assert.ok(html.includes('href="/real-estate-listings/land-8"'))
+  assert.ok(!html.includes('href="/real-estate-listings/land-9"'))
+  assert.deepEqual(
+    [...html.matchAll(/data-listing-row="([^"]+)"/g)].map((match) => match[1]),
+    ['latest', 'land']
+  )
+  assert.ok(html.includes('href="/properties/map?channel=homes&amp;property_type=land"'))
   assert.ok(!html.includes('ยังไม่มีประกาศที่เผยแพร่'))
+})
+
+test('landing rows cap each category, remove repeated listings, and hide empty categories', () => {
+  const rows = landingRows.getPropertyLandingRows('homes').map((row) => ({
+    ...row,
+    listings: row.id === 'latest' ? inventory.slice(0, 4) : row.id === 'land' ? inventory.slice(0, 8) : [],
+  }))
+  const result = landingRows.selectPropertyLandingRows(rows)
+  assert.deepEqual(plain(result.map((row) => row.id)), ['latest', 'land'])
+  assert.deepEqual(plain(result.map((row) => row.listings.length)), [4, 4])
+  const ids = result.flatMap((row) => row.listings.map((listing) => listing.id))
+  assert.equal(new Set(ids).size, ids.length)
+  assert.equal(rows.find((row) => row.id === 'land').listings.length, 8, 'selection never mutates the cache')
+  assert.deepEqual(plain(landingRows.selectPropertyLandingRows(rows.map((row) => ({ ...row, listings: [] })))), [])
+})
+
+test('every category view-all link retains the same channel, property types and offer as its API request', () => {
+  for (const mode of ['all', 'homes', 'rooms', 'business']) {
+    for (const offer of [undefined, 'sale', 'rent']) {
+      for (const row of landingRows.getPropertyLandingRows(mode)) {
+        const options = landingRows.propertyLandingRowOptions(row, mode, offer)
+        const url = new URL(landingRows.propertyLandingRowHref(row, mode, offer), 'https://mapxprop.com')
+        assert.equal(url.pathname, '/properties/map')
+        assert.equal(url.searchParams.get('channel'), options.discoveryChannel || null)
+        assert.deepEqual(url.searchParams.getAll('property_type'), plain(options.propertyTypes || []))
+        assert.deepEqual(url.searchParams.getAll('offer_type'), plain(options.offerTypes || []))
+        assert.equal(options.limit, row.id === 'latest' ? 4 : 8)
+      }
+    }
+  }
+})
+
+test('landing server fetches each category independently so recent land cannot crowd out houses or condos', async () => {
+  const requested = []
+  const house = { ...inventory[0], id: 1001, property_type_code: 'detached_house', slug: 'older-house' }
+  const condo = { ...inventory[0], id: 1002, property_type_code: 'condo', slug: 'older-condo' }
+  const api = load(
+    'src/lib/publishedProperties.ts',
+    {
+      'server-only': {},
+      react: { cache: (fn) => fn },
+      './auth': { getAuthApiUrl: (path) => 'https://example.invalid/' + path },
+      './propertyLandingRows': landingRows,
+    },
+    {
+      URLSearchParams,
+      AbortSignal,
+      fetch: async (url) => {
+        const params = new URL(url).searchParams
+        requested.push(params)
+        const types = params.getAll('property_type')
+        const listings = types.includes('detached_house')
+          ? [house]
+          : types.includes('condo')
+            ? [condo]
+            : types.length && !types.includes('land')
+              ? []
+              : inventory.slice(0, Number(params.get('limit')))
+        return { ok: true, json: async () => ({ listings, total: listings.length }) }
+      },
+    }
+  )
+  const rows = landingRows.selectPropertyLandingRows(await api.getPropertyLandingListings('homes', 'sale'))
+  assert.deepEqual(plain(rows.map((row) => row.id)), ['latest', 'houses', 'condos', 'land'])
+  assert.equal(rows.find((row) => row.id === 'houses').listings[0].slug, 'older-house')
+  assert.equal(rows.find((row) => row.id === 'condos').listings[0].slug, 'older-condo')
+  assert.equal(rows[0].listings[0].description, '', 'long descriptions stay off card payloads')
+  assert.equal(requested.length, 5)
+  assert.ok(requested.every((params) => params.get('channel') === 'homes' && params.get('offer_type') === 'sale'))
 })

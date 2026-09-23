@@ -13,16 +13,12 @@ export default async function PropertyLandingPage({
   channel: PropertyDiscoveryChannel
   offerType?: 'sale' | 'rent'
 }) {
-  const initialListings = await getPropertyLandingListings(channel, offerType)
+  const initialRows = await getPropertyLandingListings(channel, offerType)
   const page = offerType === 'sale' ? discoveryPageSeo.buy : discoveryPageSeo[channel]
   return (
     <>
       <JsonLd data={collectionPageStructuredData(page)} />
-      <PropertyHomePrototype
-        key={`${channel}:${offerType || 'all'}`}
-        initialListings={initialListings}
-        offerType={offerType}
-      />
+      <PropertyHomePrototype key={`${channel}:${offerType || 'all'}`} initialRows={initialRows} offerType={offerType} />
       <PropertyBrowseLinks />
     </>
   )

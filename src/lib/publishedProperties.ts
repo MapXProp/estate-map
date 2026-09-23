@@ -2,20 +2,27 @@ import 'server-only'
 
 import { cache } from 'react'
 import { getAuthApiUrl } from './auth'
+import { getPropertyLandingRows, propertyLandingRowOptions, type PropertyLandingMode } from './propertyLandingRows'
 import type { PropertySearchListing, PropertySearchResponse } from './propertySearch'
 
-export const getPropertyLandingListings = cache(async (channel: string, offerType?: 'sale' | 'rent') => {
-  const params = new URLSearchParams({ limit: '48' })
-  if (channel) params.set('channel', channel)
-  if (offerType) params.set('offer_type', offerType)
-  const response = await fetch(`${getAuthApiUrl('properties/search')}?${params}`, {
-    next: { revalidate: 300, tags: ['published-properties'] },
-    signal: AbortSignal.timeout(15000),
-  })
-  if (!response.ok) throw new Error('Property listings are temporarily unavailable')
-  const data = (await response.json()) as PropertySearchResponse
-  return data.listings.map(toPropertyCardRecord)
-})
+export const getPropertyLandingListings = cache(async (channel: PropertyLandingMode, offerType?: 'sale' | 'rent') =>
+  Promise.all(
+    getPropertyLandingRows(channel).map(async (row) => {
+      const options = propertyLandingRowOptions(row, channel, offerType)
+      const params = new URLSearchParams({ limit: String(options.limit) })
+      if (options.discoveryChannel) params.set('channel', options.discoveryChannel)
+      if (offerType) params.set('offer_type', offerType)
+      for (const type of options.propertyTypes || []) params.append('property_type', type)
+      const response = await fetch(`${getAuthApiUrl('properties/search')}?${params}`, {
+        next: { revalidate: 300, tags: ['published-properties'] },
+        signal: AbortSignal.timeout(15000),
+      })
+      if (!response.ok) throw new Error('Property listings are temporarily unavailable')
+      const data = (await response.json()) as PropertySearchResponse
+      return { ...row, listings: data.listings.map(toPropertyCardRecord) }
+    })
+  )
+)
 
 // Share a short-lived public catalogue across server-rendered browse pages and
 // sitemap generation. A failed refresh throws, preserving the last good cache

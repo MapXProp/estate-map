@@ -5,9 +5,17 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertyPrices from '@/components/PropertyPrices'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTaxonomy'
+import {
+  getPropertyLandingRows,
+  propertyLandingRowHref,
+  propertyLandingRowOptions,
+  selectPropertyLandingRows,
+  type PropertyLandingMode,
+  type PropertyLandingRowData,
+} from '@/lib/propertyLandingRows'
 import { filterPropertyPrices, getPropertyPrices, propertyOffersLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { fetchPropertySearch, type PropertySearchListing } from '@/lib/propertySearch'
-import { CheckCircle2, Heart, MapPin } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Heart, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
@@ -60,7 +68,7 @@ const DeferredListingImage = ({
           fill
           src={src}
           alt={alt}
-          sizes="(max-width: 402px) 82vw, (max-width: 640px) 330px, (max-width: 1280px) 50vw, 25vw"
+          sizes="(max-width: 402px) 82vw, (max-width: 640px) 330px, (max-width: 1023px) 50vw, (max-width: 1279px) 33vw, 25vw"
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'low'}
           preload={eager}
@@ -73,14 +81,6 @@ const DeferredListingImage = ({
     </div>
   )
 }
-
-const filters: { value: 'all' | ListingGroup; label: string; labelEn: string }[] = [
-  { value: 'all', label: 'แนะนำ', labelEn: 'Featured' },
-  { value: 'residential', label: 'ที่อยู่อาศัย', labelEn: 'Residential' },
-  { value: 'mixed_use', label: 'อยู่อาศัย + ธุรกิจ', labelEn: 'Mixed use · live + work' },
-  { value: 'commercial', label: 'ธุรกิจ', labelEn: 'Business' },
-  { value: 'land', label: 'ที่ดิน', labelEn: 'Land' },
-]
 
 // Historical visual references only. They are deliberately not rendered on
 // public pages; live cards below come from the published-listings API.
@@ -502,73 +502,43 @@ const toShowcaseListing = (listing: PropertySearchListing, isThai: boolean, offe
 const PropertyListingShowcase = ({
   mode = 'all',
   compact = false,
-  initialListings,
+  initialRows,
   offerType,
 }: {
-  mode?: 'all' | 'homes' | 'rooms' | 'business'
+  mode?: PropertyLandingMode
   compact?: boolean
-  initialListings?: PropertySearchListing[]
+  initialRows?: PropertyLandingRowData[]
   offerType?: 'sale' | 'rent'
 }) => {
   const { locale, formatCurrencyFrom } = usePreferences()
   const savedListings = useSavedListings()
   const isThai = locale === 'th'
-  const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]['value']>('all')
-  const [listingRows, setListingRows] = useState<PropertySearchListing[]>(initialListings || [])
-  const databaseListings = useMemo(
-    () => (initialListings || listingRows).map((listing) => toShowcaseListing(listing, isThai, offerType)),
-    [initialListings, listingRows, isThai, offerType]
+  const requestKey = `${mode}:${offerType || 'all'}`
+  const [result, setResult] = useState<{ key: string; rows: PropertyLandingRowData[]; error: boolean } | null>(null)
+  const loadState = result?.key !== requestKey ? 'loading' : result.error ? 'error' : 'ready'
+  const rows = useMemo(
+    () => selectPropertyLandingRows(initialRows || (result?.key === requestKey ? result.rows : [])),
+    [initialRows, result, requestKey]
   )
 
   useEffect(() => {
-    if (initialListings) return
-    let isCurrent = true
-    const discoveryChannel = mode === 'all' ? undefined : mode
-    // Fetch enough inventory before applying presentation groups locally. A
-    // channel can contain more than one group (for example mixed-use listings
-    // belong to both Homes and Business), so filtering a 12-item response can
-    // otherwise leave recent cards missing from the homepage.
-    fetchPropertySearch('', undefined, { discoveryChannel, limit: 48, offerTypes: offerType ? [offerType] : undefined })
-      .then((result) => {
-        if (isCurrent) setListingRows(result.listings)
+    if (initialRows) return
+    const controller = new AbortController()
+    Promise.all(
+      getPropertyLandingRows(mode).map(async (row) => {
+        const result = await fetchPropertySearch('', controller.signal, propertyLandingRowOptions(row, mode, offerType))
+        return { ...row, listings: result.listings }
+      })
+    )
+      .then((rows) => {
+        if (controller.signal.aborted) return
+        setResult({ key: requestKey, rows, error: false })
       })
       .catch(() => {
-        if (isCurrent) setListingRows([])
+        if (!controller.signal.aborted) setResult({ key: requestKey, rows: [], error: true })
       })
-    return () => {
-      isCurrent = false
-    }
-  }, [initialListings, mode, offerType])
-
-  const availableFilters = useMemo(() => {
-    if (mode === 'homes')
-      return filters.filter((filter) => ['all', 'residential', 'mixed_use', 'land'].includes(filter.value))
-    if (mode === 'rooms') return filters.filter((filter) => filter.value === 'all')
-    if (mode === 'business')
-      return filters.filter((filter) => ['all', 'mixed_use', 'commercial', 'land'].includes(filter.value))
-    return filters
-  }, [mode])
-
-  const availableListings = useMemo(() => {
-    if (mode === 'homes')
-      return databaseListings.filter(
-        (listing) => listing.group === 'residential' || listing.group === 'mixed_use' || listing.group === 'land'
-      )
-    if (mode === 'rooms') return databaseListings.filter((listing) => listing.group === 'rooms')
-    // Land can be suitable for a residence or future commercial development.
-    // The database assigns those listings to both discovery channels, so the
-    // homepage must not hide land from the Business surface.
-    if (mode === 'business')
-      return databaseListings.filter(
-        (listing) => listing.group === 'commercial' || listing.group === 'mixed_use' || listing.group === 'land'
-      )
-    return databaseListings
-  }, [databaseListings, mode])
-  const visibleListings = useMemo(() => {
-    const filteredListings =
-      activeFilter === 'all' ? availableListings : availableListings.filter((listing) => listing.group === activeFilter)
-    return filteredListings.slice(0, 12)
-  }, [activeFilter, availableListings])
+    return () => controller.abort()
+  }, [initialRows, mode, offerType, requestKey])
 
   return (
     <section
@@ -579,173 +549,166 @@ const PropertyListingShowcase = ({
       }
     >
       <div className="container">
-        <div className={`${compact ? 'mb-6' : 'mb-8'} flex flex-col justify-between gap-5 lg:flex-row lg:items-end`}>
-          <div>
-            <p
-              data-discovery-accent
-              className="mb-2 text-sm font-semibold tracking-wide text-[#176b50] dark:text-emerald-300"
-            >
-              {isThai ? 'อัปเดตล่าสุด' : 'Recently updated'}
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-              {mode === 'rooms'
+        {rows.length === 0 ? (
+          <p
+            role="status"
+            className="rounded-3xl border border-dashed border-neutral-300 px-6 py-12 text-center text-neutral-500 dark:border-neutral-700 dark:text-neutral-400"
+          >
+            {!initialRows && loadState === 'loading'
+              ? isThai
+                ? 'กำลังโหลดประกาศ…'
+                : 'Loading listings…'
+              : !initialRows && loadState === 'error'
                 ? isThai
-                  ? 'ห้องเช่าใหม่และน่าสนใจ'
-                  : 'Find your next room'
-                : mode === 'business'
-                  ? isThai
-                    ? 'พื้นที่ใหม่สำหรับธุรกิจคุณ'
-                    : 'New spaces for your business'
-                  : isThai
-                    ? 'ประกาศใหม่และน่าสนใจ'
-                    : 'New and notable listings'}
-            </h2>
-          </div>
+                  ? 'โหลดประกาศไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+                  : 'Listings could not load. Please try again.'
+                : isThai
+                  ? 'ยังไม่มีประกาศที่เผยแพร่ในหมวดนี้'
+                  : 'There are no published listings in this category yet.'}
+          </p>
+        ) : (
+          <div className="space-y-10 sm:space-y-12">
+            {rows.map((row, rowIndex) => (
+              <section key={row.id} data-listing-row={row.id} aria-labelledby={'listing-row-' + row.id}>
+                <div className="mb-5 flex items-center justify-between gap-3 sm:mb-6">
+                  <h2
+                    id={'listing-row-' + row.id}
+                    className="text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl dark:text-white"
+                  >
+                    {isThai ? row.titleTh : row.titleEn}
+                  </h2>
+                  <Link
+                    href={propertyLandingRowHref(row, mode, offerType)}
+                    aria-label={isThai ? 'ดูทั้งหมด: ' + row.titleTh : 'View all: ' + row.titleEn}
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-neutral-600 transition hover:bg-black/5 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  >
+                    {isThai ? 'ดูทั้งหมด' : 'View all'} <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
+                </div>
+                <div
+                  role="region"
+                  aria-label={isThai ? row.titleTh : row.titleEn}
+                  tabIndex={0}
+                  className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pt-1 pb-3 [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 sm:gap-6 xl:grid xl:grid-cols-4 xl:overflow-visible xl:px-0"
+                >
+                  {row.listings.map((record, index) => {
+                    const listing = toShowcaseListing(record, isThai, offerType)
+                    const liked = savedListings.isSaved(listing.identifier)
+                    const displayListing = listing
+                    const parsedPrice = listing.priceAmount ?? Number(listing.price.replace(/,/g, ''))
+                    const formattedPrice = Number.isFinite(parsedPrice)
+                      ? formatCurrencyFrom(parsedPrice, listing.priceCurrency)
+                      : listing.price
+                    const pricePeriod = pricePeriodLabel(listing.unit, isThai)
+                    return (
+                      <article
+                        key={listing.id}
+                        className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-[calc((100%-1.5rem)/2)] sm:max-w-none lg:w-[calc((100%-3rem)/3)] xl:w-auto"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
+                          <DeferredListingImage
+                            src={listing.image}
+                            alt={displayListing.title}
+                            eager={rowIndex === 0 && index === 0}
+                            position={listing.imagePosition}
+                          />
+                          <Link
+                            href={listing.href || '/real-estate-categories/all'}
+                            aria-label={displayListing.title}
+                            className="absolute inset-0"
+                          />
+                          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">
+                                {displayListing.offer}
+                              </span>
+                              {listing.badge && (
+                                <span className="rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                  {displayListing.badge}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              aria-label={
+                                liked
+                                  ? isThai
+                                    ? 'นำออกจากรายการโปรด'
+                                    : 'Remove from favorites'
+                                  : isThai
+                                    ? 'บันทึกเป็นรายการโปรด'
+                                    : 'Save to favorites'
+                              }
+                              disabled={savedListings.isBusy(listing.identifier)}
+                              onClick={() => listing.identifier && void savedListings.toggleSaved(listing.identifier)}
+                              className="flex size-10 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition hover:scale-105"
+                            >
+                              <Heart
+                                className={`size-5 ${liked ? 'fill-rose-500 text-rose-500' : ''}`}
+                                strokeWidth={1.8}
+                              />
+                            </button>
+                          </div>
+                        </div>
 
-          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full bg-neutral-100 p-1 dark:bg-neutral-800">
-            {availableFilters.map((filter) => (
-              <button
-                key={filter.value}
-                type="button"
-                onClick={() => setActiveFilter(filter.value)}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  activeFilter === filter.value
-                    ? 'bg-white text-neutral-950 shadow-sm dark:bg-neutral-700 dark:text-white'
-                    : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
-                }`}
-              >
-                {isThai ? filter.label : filter.labelEn}
-              </button>
+                        <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
+                          <div className="mb-1.5 flex items-center justify-between gap-3">
+                            <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                              {displayListing.type}
+                            </span>
+                            {listing.verified && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
+                                <CheckCircle2 className="size-3.5" />{' '}
+                                {isThai
+                                  ? listing.verificationLabel || 'ตรวจสอบแล้ว'
+                                  : listing.verificationLabel
+                                    ? 'Organizer checked'
+                                    : 'Verified'}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="line-clamp-1 text-base font-semibold text-neutral-950 transition group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
+                            {displayListing.title}
+                          </h3>
+                          <p className="mt-2 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+                            <MapPin className="size-4 shrink-0" strokeWidth={1.7} />
+                            <span className="truncate">{displayListing.location}</span>
+                          </p>
+                          <div className="mt-3 flex min-h-6 flex-wrap gap-x-2 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+                            {displayListing.facts.map((fact, index) => (
+                              <span key={fact} className="whitespace-nowrap">
+                                {index > 0 && <span className="me-2 text-neutral-300 dark:text-neutral-600">·</span>}
+                                {fact}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
+                            {listing.prices ? (
+                              <PropertyPrices prices={listing.prices} className="text-neutral-950 dark:text-white" />
+                            ) : listing.priceLabel ? (
+                              <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
+                                {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-lg font-bold text-neutral-950 dark:text-white">
+                                  {formattedPrice}
+                                </span>{' '}
+                                {pricePeriod ? (
+                                  <span className="text-sm text-neutral-500 dark:text-neutral-400">{pricePeriod}</span>
+                                ) : null}
+                              </>
+                            )}
+                          </div>
+                        </Link>
+                      </article>
+                    )
+                  })}
+                </div>
+              </section>
             ))}
           </div>
-        </div>
-
-        {visibleListings.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-400">
-            {isThai ? 'ยังไม่มีประกาศที่เผยแพร่ในหมวดนี้' : 'There are no published listings in this category yet.'}
-          </div>
-        ) : (
-          <div className="mx-0 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-            {visibleListings.map((listing, index) => {
-              const liked = savedListings.isSaved(listing.identifier)
-              const displayListing = listing
-              const parsedPrice = listing.priceAmount ?? Number(listing.price.replace(/,/g, ''))
-              const formattedPrice = Number.isFinite(parsedPrice)
-                ? formatCurrencyFrom(parsedPrice, listing.priceCurrency)
-                : listing.price
-              const pricePeriod = pricePeriodLabel(listing.unit, isThai)
-              return (
-                <article
-                  key={listing.id}
-                  className="group w-[82vw] max-w-[330px] shrink-0 snap-start sm:w-auto sm:max-w-none"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-neutral-100 dark:bg-neutral-800">
-                    <DeferredListingImage
-                      src={listing.image}
-                      alt={displayListing.title}
-                      eager={index === 0}
-                      position={listing.imagePosition}
-                    />
-                    <Link
-                      href={listing.href || '/real-estate-categories/all'}
-                      aria-label={displayListing.title}
-                      className="absolute inset-0"
-                    />
-                    <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-neutral-950 shadow-sm backdrop-blur">
-                          {displayListing.offer}
-                        </span>
-                        {listing.badge && (
-                          <span className="rounded-full bg-[#123f32]/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                            {displayListing.badge}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        aria-label={
-                          liked
-                            ? isThai
-                              ? 'นำออกจากรายการโปรด'
-                              : 'Remove from favorites'
-                            : isThai
-                              ? 'บันทึกเป็นรายการโปรด'
-                              : 'Save to favorites'
-                        }
-                        disabled={savedListings.isBusy(listing.identifier)}
-                        onClick={() => listing.identifier && void savedListings.toggleSaved(listing.identifier)}
-                        className="flex size-10 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition hover:scale-105"
-                      >
-                        <Heart className={`size-5 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} strokeWidth={1.8} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <Link href={listing.href || '/real-estate-categories/all'} className="block pt-4">
-                    <div className="mb-1.5 flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                        {displayListing.type}
-                      </span>
-                      {listing.verified && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#176b50] dark:text-emerald-300">
-                          <CheckCircle2 className="size-3.5" />{' '}
-                          {isThai
-                            ? listing.verificationLabel || 'ตรวจสอบแล้ว'
-                            : listing.verificationLabel
-                              ? 'Organizer checked'
-                              : 'Verified'}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="line-clamp-1 text-base font-semibold text-neutral-950 transition group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
-                      {displayListing.title}
-                    </h3>
-                    <p className="mt-2 flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400">
-                      <MapPin className="size-4 shrink-0" strokeWidth={1.7} />
-                      <span className="truncate">{displayListing.location}</span>
-                    </p>
-                    <div className="mt-3 flex min-h-6 flex-wrap gap-x-2 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
-                      {displayListing.facts.map((fact, index) => (
-                        <span key={fact} className="whitespace-nowrap">
-                          {index > 0 && <span className="me-2 text-neutral-300 dark:text-neutral-600">·</span>}
-                          {fact}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-4 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-                      {listing.prices ? (
-                        <PropertyPrices prices={listing.prices} className="text-neutral-950 dark:text-white" />
-                      ) : listing.priceLabel ? (
-                        <span className="text-base font-semibold text-[#123f32] dark:text-emerald-200">
-                          {isThai ? listing.priceLabel : 'Ask the organizer for pricing'}
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-lg font-bold text-neutral-950 dark:text-white">{formattedPrice}</span>{' '}
-                          {pricePeriod ? (
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">{pricePeriod}</span>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                  </Link>
-                </article>
-              )
-            })}
-          </div>
         )}
-
-        <div className={`${compact ? 'mt-7' : 'mt-10'} text-center`}>
-          <Link
-            href={
-              offerType ? `/properties/for-${offerType === 'sale' ? 'sale' : 'rent'}` : '/real-estate-categories/all'
-            }
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-neutral-300 px-6 text-sm font-semibold text-neutral-900 transition hover:border-neutral-950 hover:bg-neutral-950 hover:text-white dark:border-neutral-700 dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-neutral-950"
-          >
-            {isThai ? 'ดูประกาศทั้งหมด' : 'View all listings'}
-          </Link>
-        </div>
       </div>
     </section>
   )
