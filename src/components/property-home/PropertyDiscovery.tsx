@@ -1,7 +1,12 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import type { DiscoveryChannelCode, PropertyTypeCode } from '@/data/propertyTaxonomy'
+import {
+  primaryBusinessSpaceTypeCodes,
+  type BusinessSpaceTypeCode,
+  type DiscoveryChannelCode,
+  type PropertyTypeCode,
+} from '@/data/propertyTaxonomy'
 import { getHeaderMapSearchUrl, type HeaderOfferType } from '@/lib/propertyHeaderSearch'
 import {
   ArrowRight,
@@ -33,7 +38,7 @@ import PropertySearchOmnibox from './PropertySearchOmnibox'
 
 type DiscoveryCategory = {
   type: PropertyTypeCode
-  spaceType?: string
+  spaceTypes?: readonly BusinessSpaceTypeCode[]
   th: string
   en: string
   icon: typeof House
@@ -84,7 +89,7 @@ const channelCategories: Record<DiscoveryChannelCode, DiscoveryCategory[]> = {
     { type: 'retail_space', th: 'ร้านค้า', en: 'Retail spaces', icon: Store, tone: 'orange', image: 'retail-space' },
     {
       type: 'retail_space',
-      spaceType: 'event_booth',
+      spaceTypes: primaryBusinessSpaceTypeCodes.slice(0, 6),
       th: 'พื้นที่ออกบูธ',
       en: 'Event booths',
       icon: Tent,
@@ -354,10 +359,14 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
             <strong>{th ? content.categoryAccentTh : content.categoryAccentEn}</strong>
           </div>
           <div className={styles.categoryLinks}>
-            {categories.map(({ type, spaceType, icon: Icon, tone, image, ...label }) => (
+            {categories.map(({ type, spaceTypes, icon: Icon, tone, image, ...label }) => (
               <Link
-                key={`${type}:${spaceType || ''}`}
-                href={`${searchHref('')}${spaceType ? `&space_type=${spaceType}` : `&property_type=${type}`}`}
+                key={`${type}:${spaceTypes?.join(':') || ''}`}
+                href={`${searchHref('')}${
+                  spaceTypes?.length
+                    ? spaceTypes.map((spaceType) => `&space_type=${spaceType}`).join('')
+                    : `&property_type=${type}`
+                }`}
                 className={styles.category}
               >
                 {image ? (

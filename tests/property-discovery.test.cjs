@@ -53,6 +53,7 @@ function discovery(mode, locale = 'th') {
     'next/image': { default: () => null },
     'next/link': { default: () => null },
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale }) },
+    '@/data/propertyTaxonomy': taxonomy,
     '@/lib/propertyHeaderSearch': headerSearch,
     './PropertyDiscovery.module.css': { default: {} },
     './DiscoveryHero': { default: 'test-discovery-hero' },
@@ -90,7 +91,15 @@ test('discovery searches keep their channel and offer selection with Thai and En
   }
 })
 
-test('every category shortcut opens supported map filters and event booths exclude unrelated retail types', () => {
+test('every category shortcut opens supported filters and event booths select the first six retail categories', () => {
+  const boothSpaceTypes = [
+    'standalone_shop',
+    'shophouse_ground_floor',
+    'market_stall',
+    'event_booth',
+    'mall_kiosk',
+    'mall_shop',
+  ]
   for (const channel of ['homes', 'rooms', 'business']) {
     const links = discovery(channel)
       .render()
@@ -106,7 +115,14 @@ test('every category shortcut opens supported map filters and event booths exclu
       assert.equal(params.get('channel'), channel)
       assert.ok(categories.length > 0, `Unrecognized category link: ${link.props.href}`)
       if (channel === 'rooms') assert.deepEqual(params.getAll('offer_type'), ['rent'])
-      if (params.get('space_type') === 'event_booth') assert.deepEqual(plain(categories), ['business:event_booth'])
+      if (params.getAll('space_type').includes('event_booth')) {
+        assert.deepEqual(params.getAll('space_type'), boothSpaceTypes)
+        assert.equal(params.has('property_type'), false, 'A broad retail filter would also select the remaining categories')
+        assert.deepEqual(plain(categories), boothSpaceTypes.map((type) => `business:${type}`))
+        assert.deepEqual(plain(map.mapCategoryQueries(categories)), [
+          { discoveryChannel: 'business', propertyTypes: [], spaceTypes: boothSpaceTypes },
+        ])
+      }
     }
     if (channel === 'business') assert.ok(links.some((link) => link.props.href.includes('space_type=event_booth')))
   }
