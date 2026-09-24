@@ -146,6 +146,14 @@ test('the standalone detail renders both offers in its content, desktop price ca
     '@/lib/propertySearch': { getPropertyMapSearchUrl: (query) => `/properties/map?q=${encodeURIComponent(query)}` },
     'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
     '../../components/HeaderGallery': { default: () => null },
+    '../../components/MobileListingActionBar': load('src/app/(app)/(listings)/components/MobileListingActionBar.tsx', {
+      react: React,
+      'react/jsx-runtime': require('react/jsx-runtime'),
+      'lucide-react': require('lucide-react'),
+      '@/components/PropertyPrices': component(provider),
+      '@/lib/propertyPrices': api,
+      './MobileListingActionBar.module.css': { default: {} },
+    }),
     '../../components/MobileListingContactSheet': { default: () => React.createElement('button', null, 'ติดต่อ') },
   }).default
   const html = renderToStaticMarkup(
