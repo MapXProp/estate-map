@@ -235,6 +235,32 @@ test('native scrolling is never stolen after a rejected direction or a scrolled-
   }
 })
 
+test('a nested contact dock owns both drag directions without dismissing the surrounding details', () => {
+  for (const delta of [-100, 150]) {
+    const h = dragHarness()
+    const dock = new ElementStub('div', { 'data-sheet-drag-root': '', 'data-sheet-scroll': '' }, h.scroller)
+    const handle = new ElementStub('div', { 'data-sheet-drag-handle': '' }, dock)
+    const events = []
+    const cleanup = h.engine.bindVerticalSheetDrag(dock, () => ({
+      canDrag: (down) => !down,
+      onStart: () => events.push('start'),
+      onMove: () => events.push('move'),
+      onEnd: () => events.push('end'),
+    }))
+    for (const root of [dock, h.root]) root.dispatch('touchstart', handle, { touches: [{ clientX: 0, clientY: 300 }] })
+    h.advance(100)
+    for (const root of [dock, h.root]) root.dispatch('touchmove', handle, { touches: [{ clientX: 0, clientY: 300 + delta }] })
+    for (const root of [dock, h.root]) root.dispatch('touchend', handle, { touches: [] })
+    assert.deepEqual(h.events, [], 'parent must not interpret a dock gesture')
+    assert.deepEqual(events, delta < 0 ? ['start', 'move', 'end'] : [])
+    cleanup()
+    h.start(h.content)
+    h.move(0, 450)
+    h.end()
+    assert.equal(h.events.at(-1)[0], 'end', 'parent body still supports dismissal')
+  }
+})
+
 test('header actions and form inputs are clickable; the results-toggle button itself can be dragged', () => {
   for (const tag of ['button', 'a', 'input', 'select', 'textarea']) {
     const h = dragHarness()

@@ -1,5 +1,6 @@
 'use client'
 
+import MobileListingActionBar from '@/app/(app)/(listings)/components/MobileListingActionBar'
 import MobileListingContactSheet from '@/app/(app)/(listings)/components/MobileListingContactSheet'
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingViewCount from '@/components/ListingViewCount'
@@ -233,50 +234,38 @@ const PropertyPreviewModal = ({ listing }: { listing: PropertyListingDetail }) =
                 </aside>
               </div>
             </div>
-            <footer
-              data-property-preview-footer
-              className="flex shrink-0 items-center gap-2 border-t border-neutral-200 bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden dark:border-neutral-800 dark:bg-neutral-900"
-            >
-              <div className="min-w-0 flex-1">
-                {prices.length === 1 && (
-                  <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-                )}
-                <PropertyPrices prices={prices} variant="compact" className="mt-1 text-neutral-950 dark:text-white" />
-              </div>
-              <MobileListingContactSheet
-                key={listing.public_listing_id}
-                analyticsListingId={listing.public_listing_id}
-                analyticsPropertyType={listing.property_type_code}
-                contactName={listing.contact_name}
-                roleLabel={getPropertyPreviewContactRole(listing.contact_role_code, isThai)}
-                authorityLabel={getPropertyPreviewContactAuthority(listing.contact_authority_code, isThai)}
-                organizationName={listing.organization_name || listing.contact_organization_name}
-                organizationPublicId={listing.organization_public_id}
-                verificationStatus={listing.contact_verification_status}
-                trusted={listing.organization_verification_status === 'verified'}
-                phone={listing.contact_phone}
-                secondaryPhone={listing.contact_phone_secondary}
-                email={listing.contact_email}
-                lineId={listing.line_id}
-                instagramHandle={listing.instagram_handle}
-                websiteUrl={listing.organization_website_url}
-                triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
-                showOnTablet
+            <footer data-property-preview-footer className="shrink-0 lg:hidden">
+              <MobileListingActionBar
+                placement="sheet"
+                prices={prices}
                 isThai={isThai}
+                mapUrl={directionsUrl}
+                open={contactOpen}
                 onOpenChange={setContactOpen}
-              />
-              {directionsUrl && (
-                <a
-                  href={directionsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={isThai ? 'เปิดเส้นทางใน Google Maps' : 'Get directions in Google Maps'}
-                  title={isThai ? 'เปิดเส้นทางใน Google Maps' : 'Get directions in Google Maps'}
-                  className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition hover:bg-[#e7f3ee] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] active:scale-95 dark:border-[#315f50] dark:bg-[#183d32] dark:text-[#8bd49c]"
-                >
-                  <MapPin className="size-5" aria-hidden="true" />
-                </a>
-              )}
+              >
+                <MobileListingContactSheet
+                  key={listing.public_listing_id}
+                  analyticsListingId={listing.public_listing_id}
+                  analyticsPropertyType={listing.property_type_code}
+                  contactName={listing.contact_name}
+                  roleLabel={getPropertyPreviewContactRole(listing.contact_role_code, isThai)}
+                  authorityLabel={getPropertyPreviewContactAuthority(listing.contact_authority_code, isThai)}
+                  organizationName={listing.organization_name || listing.contact_organization_name}
+                  organizationPublicId={listing.organization_public_id}
+                  verificationStatus={listing.contact_verification_status}
+                  trusted={listing.organization_verification_status === 'verified'}
+                  phone={listing.contact_phone}
+                  secondaryPhone={listing.contact_phone_secondary}
+                  email={listing.contact_email}
+                  lineId={listing.line_id}
+                  instagramHandle={listing.instagram_handle}
+                  websiteUrl={listing.organization_website_url}
+                  triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
+                  showOnTablet
+                  maxWidth={1023}
+                  isThai={isThai}
+                />
+              </MobileListingActionBar>
             </footer>
           </DialogPanel>
         </div>

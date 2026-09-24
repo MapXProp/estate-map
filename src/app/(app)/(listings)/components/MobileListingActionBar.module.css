@@ -21,6 +21,18 @@
 .bar[data-sheet-dragging='true'] {
   transition: none;
 }
+.bar[data-placement='sheet'] {
+  position: relative;
+  inset: auto;
+  flex-shrink: 0;
+  z-index: auto;
+  border-radius: 0;
+}
+@media (min-width: 1024px) {
+  .bar[data-placement='sheet'] {
+    display: none;
+  }
+}
 .inner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

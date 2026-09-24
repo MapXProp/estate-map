@@ -5,7 +5,7 @@ import { useKeyboardFocus } from '@/hooks/useKeyboardFocus'
 import { propertyOfferLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { bindVerticalSheetDrag } from '@/lib/verticalSheetGesture'
 import { MapPin, MessageCircle, Phone } from 'lucide-react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { ListingContactSheetContext } from './ListingContactSheetContext'
 import styles from './MobileListingActionBar.module.css'
 
@@ -16,19 +16,41 @@ interface Props {
   mapUrl?: string | null
   quickContact?: { kind: string; href: string }
   children?: ReactNode
+  placement?: 'page' | 'sheet'
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export default function MobileListingActionBar({ prices, isThai, priceNote, mapUrl, quickContact, children }: Props) {
+export default function MobileListingActionBar({
+  prices,
+  isThai,
+  priceNote,
+  mapUrl,
+  quickContact,
+  children,
+  placement = 'page',
+  open: controlledOpen,
+  onOpenChange,
+}: Props) {
   const barRef = useRef<HTMLDivElement>(null)
   const spacerRef = useRef<HTMLDivElement>(null)
-  const [open, setOpen] = useState(false)
+  const [localOpen, setLocalOpen] = useState(false)
+  const open = controlledOpen ?? localOpen
+  const setOpen = useCallback(
+    (value: boolean) => {
+      setLocalOpen(value)
+      onOpenChange?.(value)
+    },
+    [onOpenChange]
+  )
+  const maxWidth = placement === 'sheet' ? 1023 : 1099
   const keyboardFocus = useKeyboardFocus()
   const hasContact = Boolean(children)
   useEffect(() => {
     const bar = barRef.current
     if (!bar || !hasContact) return
     return bindVerticalSheetDrag(bar, () => ({
-      maxWidth: 1099,
+      maxWidth,
       canDrag: (down) => !down,
       onStart: () => bar.setAttribute('data-sheet-dragging', 'true'),
       onMove: (dy) => bar.style.setProperty('--dock-offset', `${Math.max(-80, Math.min(0, dy * 0.6))}px`),
@@ -41,7 +63,7 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
         }
       },
     }))
-  }, [hasContact])
+  }, [hasContact, maxWidth, setOpen])
 
   useEffect(() => {
     const bar = barRef.current
@@ -58,11 +80,15 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
 
   return (
     <ListingContactSheetContext.Provider value={{ open, setOpen }}>
-      <div ref={spacerRef} className={styles.spacer} data-listing-action-spacer aria-hidden="true" />
+      {placement === 'page' && (
+        <div ref={spacerRef} className={styles.spacer} data-listing-action-spacer aria-hidden="true" />
+      )}
       <div
         ref={barRef}
         className={styles.bar}
         data-listing-contact-bar
+        data-placement={placement}
+        data-sheet-drag-root
         data-sheet-scroll
         data-keyboard-focus={keyboardFocus || undefined}
       >

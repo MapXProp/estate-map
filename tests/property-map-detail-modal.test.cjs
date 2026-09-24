@@ -127,6 +127,16 @@ const Contact = load('src/components/property-map/PropertyPreviewContactCard.tsx
 }).default
 const ContactSheetStub = ({ triggerLabel }) =>
   React.createElement('button', { 'data-contact-trigger': true }, triggerLabel)
+const ActionBar = load('src/app/(app)/(listings)/components/MobileListingActionBar.tsx', {
+  ...common,
+  '@/components/preferences/PreferencesProvider': {
+    usePreferences: () => ({ locale: 'th', formatCurrencyFrom: (v) => `${v.toLocaleString('en-US')} บาท` }),
+  },
+  '@/hooks/useKeyboardFocus': load('src/hooks/useKeyboardFocus.ts', { react: React }),
+  '@/lib/verticalSheetGesture': load('src/lib/verticalSheetGesture.ts'),
+  './ListingContactSheetContext': { ListingContactSheetContext: React.createContext(null) },
+  './MobileListingActionBar.module.css': { default: {} },
+}).default
 function modal(galleryOpen = false, activeImage = null, gestures = [], contactOpen = false, runtime = {}) {
   let stateIndex = 0
   const imports = {
@@ -136,6 +146,7 @@ function modal(galleryOpen = false, activeImage = null, gestures = [], contactOp
       useState: () => [stateIndex++ === 0 ? galleryOpen : stateIndex === 2 ? contactOpen : activeImage, () => {}],
     },
     '@/app/(app)/(listings)/components/MobileListingContactSheet': { default: ContactSheetStub },
+    '@/app/(app)/(listings)/components/MobileListingActionBar': { default: ActionBar },
     '@/components/BtnLikeIcon': { default: () => React.createElement('button', null, 'Save') },
     '@/components/ListingViewCount': { default: () => null },
     '@/components/PropertyDescription': { default: Description },
@@ -264,6 +275,9 @@ test('mobile footer always shows price, opens contact information and uses the e
   assert.ok(footer.includes('10,179,000 บาท'))
   assert.ok(footer.includes('data-contact-trigger'))
   assert.ok(footer.includes('ติดต่อ'))
+  assert.ok(footer.includes('data-placement="sheet"'))
+  assert.ok(footer.includes('data-listing-drag-handle="true"'))
+  assert.ok(!html.includes('data-listing-action-spacer'), 'an embedded footer reserves its own height without a page spacer')
   assert.ok(footer.includes('https://www.google.com/maps/dir/?api=1&amp;destination=13.7291%2C100.5032'))
   assert.ok(footer.includes('target="_blank" rel="noopener noreferrer"'))
   assert.ok(!footer.includes('tel:'), 'contact action first identifies who will be contacted')
@@ -324,13 +338,17 @@ test('opening and closing contact details preserves the listing and suspends its
   assert.equal(contact.verificationStatus, 'identity_verified')
   assert.equal(contact.websiteUrl, fixture.organization_website_url)
   assert.equal(contact.showOnTablet, true)
+  assert.equal(contact.maxWidth, 1023, 'contact sheet switches with the map desktop sidebar')
   assert.equal(gestures.at(-1).enabled, true)
-  contact.onOpenChange(true)
+  const dock = () => find(tree, (node) => node.type === ActionBar).props
+  assert.equal(dock().open, false)
+  dock().onOpenChange(true)
   render()
+  assert.equal(dock().open, true)
   assert.equal(gestures.at(-1).enabled, false)
   tree.props.onClose()
   assert.equal(back, 0, 'parent dialog cannot close under the contact sheet')
-  contact.onOpenChange(false)
+  dock().onOpenChange(false)
   render()
   assert.equal(back, 0)
   assert.equal(gestures.at(-1).enabled, true)

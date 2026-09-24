@@ -54,6 +54,10 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
       !(target instanceof Element)
     )
       return
+    // A nested dock owns its gesture; dragging it must not also dismiss the
+    // surrounding property-details sheet.
+    const dragRoot = target.closest('[data-sheet-drag-root]')
+    if (dragRoot && dragRoot !== root) return
     const handle = target.closest('[data-sheet-drag-handle]')
     const interactive = target.closest('button,a,input,select,textarea,[contenteditable="true"],[data-sheet-no-drag]')
     if (target.closest('input,select,textarea,[contenteditable="true"],[data-sheet-no-drag]')) return

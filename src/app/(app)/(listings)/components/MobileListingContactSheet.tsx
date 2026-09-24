@@ -41,6 +41,7 @@ interface Props {
   websiteUrl?: string
   triggerLabel?: string
   showOnTablet?: boolean
+  maxWidth?: number
   isThai?: boolean
   onOpenChange?: (open: boolean) => void
 }
@@ -60,9 +61,10 @@ export default function MobileListingContactSheet(props: Props) {
   const isThai = props.isThai ?? true
   const updateOpen = dock?.setOpen ?? setLocalOpen
   const { showOnTablet, onOpenChange } = props
+  const maxWidth = props.maxWidth ?? (showOnTablet ? 1099 : 743)
   useEffect(() => {
     if (!open) return
-    const desktop = window.matchMedia(`(min-width: ${showOnTablet ? 1100 : 744}px)`)
+    const desktop = window.matchMedia(`(min-width: ${maxWidth + 1}px)`)
     const closeOnDesktop = () => {
       if (!desktop.matches) return
       updateOpen(false)
@@ -71,7 +73,7 @@ export default function MobileListingContactSheet(props: Props) {
     closeOnDesktop()
     desktop.addEventListener('change', closeOnDesktop)
     return () => desktop.removeEventListener('change', closeOnDesktop)
-  }, [open, showOnTablet, updateOpen, onOpenChange])
+  }, [open, maxWidth, updateOpen, onOpenChange])
   const setOpen = (value: boolean) => {
     updateOpen(value)
     onOpenChange?.(value)
@@ -105,7 +107,11 @@ export default function MobileListingContactSheet(props: Props) {
 }
 
 function ContactPanel({ isThai = true, onClose, ...props }: Props & { onClose: () => void }) {
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, true, props.showOnTablet ? 1099 : 743)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(
+    onClose,
+    true,
+    props.maxWidth ?? (props.showOnTablet ? 1099 : 743)
+  )
   const icons = { phone: Phone, line: MessageCircle, email: Mail, instagram: Instagram, website: Globe }
   const labels = { phone: 'Phone', line: 'LINE', email: 'Email', instagram: 'Instagram', website: 'Website' }
   const contacts = getPropertyPreviewContacts({
