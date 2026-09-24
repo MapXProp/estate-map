@@ -38,8 +38,11 @@ const page = load('src/app/(app)/(other-pages)/blog/[handle]/page.tsx', {
 
 test('published articles have unique URLs, real local images and resolvable references', () => {
   const handles = content.blogPosts.map((post) => post.handle)
+  assert.ok(handles.length >= 10)
   assert.equal(new Set(handles).size, handles.length)
+  assert.equal(new Set(content.blogPosts.map((post) => post.featuredImage.src)).size, handles.length)
   for (const post of content.blogPosts) {
+    assert.ok(post.featuredImage.src.startsWith('/images/blog/'))
     assert.ok(fs.existsSync(path.join(__dirname, '..', 'public', post.featuredImage.src)))
     const ids = post.sections.map((section) => section.id)
     assert.equal(new Set(ids).size, ids.length)
@@ -60,7 +63,7 @@ test('every article renders its own full body, accessible contents links and sou
     }
     assert.ok(html.includes('application/ld+json'))
     assert.ok(html.includes(post.intro))
-    assert.doesNotMatch(html, /Lorem ipsum|Comments \(14\)|<form|blog-single/)
+    assert.doesNotMatch(html, /Lorem ipsum|Comments \(14\)|<form|blog-single|unsplash\.com/)
     const metadata = await page.generateMetadata({ params: Promise.resolve({ handle: post.handle }) })
     assert.equal(metadata.alternates.canonical, `/blog/${post.handle}`)
     assert.equal(metadata.robots.index, true)

@@ -1,4 +1,5 @@
 import BgGlassmorphism from '@/components/BgGlassmorphism'
+import SectionAds from '@/components/blog/SectionAds'
 import SectionGridPosts from '@/components/blog/SectionGridPosts'
 import SectionMagazine5 from '@/components/blog/SectionMagazine5'
 import JsonLd from '@/components/seo/JsonLd'
@@ -33,7 +34,7 @@ const BlogPage: React.FC = async () => {
       <BgGlassmorphism />
       <div className="relative container">
         <header className="pt-8 sm:pt-12">
-          <h1 className="text-2xl font-semibold text-neutral-950 sm:text-3xl dark:text-neutral-50">
+          <h1 className="text-xl leading-relaxed font-semibold text-neutral-950 sm:text-2xl dark:text-neutral-50">
             เรื่องอสังหา เข้าใจได้ง่ายขึ้น
           </h1>
           <p className="mt-3 text-sm leading-7 text-neutral-500 sm:text-base dark:text-neutral-400">
@@ -43,7 +44,8 @@ const BlogPage: React.FC = async () => {
         <div className="pt-8 pb-12 sm:pt-12 lg:pb-16">
           <SectionMagazine5 posts={blogPosts} />
         </div>
-        <SectionGridPosts posts={blogPosts} className="border-t border-neutral-200 py-12 lg:py-16 dark:border-neutral-700" />
+        <SectionAds />
+        <SectionGridPosts posts={blogPosts} className="py-12 lg:py-16" />
       </div>
     </div>
   )

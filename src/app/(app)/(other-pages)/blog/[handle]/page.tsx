@@ -104,15 +104,7 @@ export default async function BlogArticlePage({ params }: Props) {
             />
           </div>
           <figcaption className="mt-3 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-            ภาพประกอบบทความ ·{' '}
-            <a
-              href={post.imageCredit.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2"
-            >
-              {post.imageCredit.name}
-            </a>
+            ภาพประกอบบทความ
           </figcaption>
         </figure>
 
