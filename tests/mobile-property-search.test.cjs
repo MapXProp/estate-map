@@ -127,6 +127,7 @@ function harness(locale = 'th') {
     propertyZone = 'homes'
   const component = load('src/components/property-home/MobilePropertySearch.tsx', {
     react: {
+      useId: () => `mobile-search-${cursor++}`,
       useState(initial) {
         const i = cursor++
         if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial
@@ -142,6 +143,8 @@ function harness(locale = 'th') {
     },
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
+    'next/image': { default: 'test-image' },
+    './MobilePropertySearch.module.css': { default: {} },
     'next/navigation': { usePathname: () => '/homes', useSearchParams: () => new URLSearchParams() },
     './MobilePropertySearchDialog': { default: 'test-dialog' },
     '@/components/preferences/PreferencesProvider': {
@@ -191,25 +194,52 @@ function harness(locale = 'th') {
     one,
     click,
     render,
+    refine() {
+      const toggle = one((node) => node.props['data-mobile-search-refinements'])
+      if (!toggle.props['aria-expanded']) click(toggle)
+    },
     data: (name, value) => one((node) => node.props[name] === value),
     url: (query = '') =>
       new URL(one((node) => node.type === 'test-omnibox').props.buildSearchUrl(query), 'https://mapxprop.com'),
   }
 }
 
-test('the actual mobile dialog keeps icon cards, supports multi-selection and sends the selected categories to Map', () => {
+test('discovery starts with three illustrated groups and can search the whole group without opening refinements', () => {
+  const h = harness()
+  h.click(h.data('data-mobile-property-search-trigger', true))
+  assert.equal(h.nodes((node) => node.props['data-mobile-search-group']).length, 3)
+  assert.equal(h.nodes((node) => node.type === 'test-image').length, 3)
+  assert.equal(h.nodes((node) => node.props['data-mobile-search-category']).length, 0)
+  assert.equal(h.nodes((node) => node.props['data-mobile-search-budget']).length, 0)
+  for (const channel of ['homes', 'rooms', 'business']) {
+    h.click(h.data('data-mobile-search-group', channel))
+    assert.equal(h.url().searchParams.get('channel'), channel)
+    assert.equal(h.url().searchParams.has('q'), false)
+    assert.equal(h.url().searchParams.has('price_max'), false)
+    assert.deepEqual(h.url().searchParams.getAll('offer_type'), channel === 'rooms' ? ['rent'] : ['sale', 'rent'])
+    assert.deepEqual(initialCategories(h.url()).sort(), plain(map.normalizeMapCategories(map.mapCategoryGroups.find(g => g.code === channel).options.map(o => o.id))).sort())
+  }
+  const omnibox = h.one(node => node.type === 'test-omnibox').props
+  const submit = h.data('data-mobile-search-submit', true).props
+  assert.equal(omnibox.hideSubmitButton, true)
+  assert.equal(submit.type, 'submit')
+  assert.equal(submit.form, omnibox.formId)
+})
+
+test('optional refinements support multi-selection and send the selected categories to Map', () => {
   for (const locale of ['th', 'en']) {
     const h = harness(locale)
     h.click(h.data('data-mobile-property-search-trigger', true))
     assert.equal(h.one((node) => node.type === 'test-dialog').props.open, true)
+    h.refine()
     assert.equal(h.nodes((node) => node.props['data-mobile-search-category']).length, 7)
     const card = (value) => h.data('data-mobile-search-category', value)
     h.click(card('homes:detached_house'))
     h.click(card('homes:semi_detached_house'))
     assert.deepEqual(h.url().searchParams.getAll('category'), ['homes:detached_house', 'homes:semi_detached_house'])
-    for (const node of h.nodes((node) => node.props['data-mobile-search-category']))
-      assert.ok(node.props.children[1].props.children.type, 'every card keeps its property icon')
     h.click(h.data('data-mobile-search-group', 'business'))
+    assert.equal(h.data('data-mobile-search-refinements', true).props['aria-expanded'], false)
+    h.refine()
     assert.equal(h.nodes((node) => node.props['data-mobile-search-category']).length, 9)
     h.click(card('business:retail'))
     assert.equal(card('business:retail').props['aria-pressed'], true)
@@ -231,6 +261,7 @@ test('the actual mobile dialog keeps icon cards, supports multi-selection and se
 test('direct buy/rent controls send custom prices to Map, clear incompatible prices and retain the selected category', () => {
   const h = harness('en')
   h.click(h.data('data-mobile-property-search-trigger', true))
+  h.refine()
   h.click(h.data('data-mobile-search-category', 'homes:semi_detached_house'))
   h.click(h.data('data-mobile-search-offer', 'rent'))
   h.click(h.data('data-mobile-search-budget', true))
@@ -259,6 +290,7 @@ test('direct buy/rent controls send custom prices to Map, clear incompatible pri
 test('both offers can use an exact budget immediately; closing budget does not close discovery and rooms stay rent-only', () => {
   const h = harness()
   h.click(h.data('data-mobile-property-search-trigger', true))
+  h.refine()
   h.click(h.data('data-mobile-search-budget', true))
   let sheet = h.one((node) => node.type === 'test-budget').props
   assert.equal(sheet.offerType, '')
@@ -291,6 +323,7 @@ test('dismissing and reopening discovery keeps the selected category, offer and 
   const h = harness()
   h.click(h.data('data-mobile-property-search-trigger', true))
   h.click(h.data('data-mobile-search-group', 'business'))
+  h.refine()
   h.click(h.data('data-mobile-search-category', 'business:office'))
   h.click(h.data('data-mobile-search-offer', 'rent'))
   h.click(h.data('data-mobile-search-budget', true))
@@ -306,8 +339,16 @@ test('dismissing and reopening discovery keeps the selected category, offer and 
   h.click(h.data('data-mobile-property-search-trigger', true))
   assert.equal(h.one((node) => node.type === 'test-dialog').props.open, true)
   assert.equal(h.url('สาทร').href, before)
+  assert.equal(h.data('data-mobile-search-refinements', true).props['aria-expanded'], false)
+  h.refine()
   assert.equal(h.data('data-mobile-search-group', 'business').props['aria-pressed'], true)
   assert.equal(h.data('data-mobile-search-category', 'business:office').props['aria-pressed'], true)
   assert.equal(h.data('data-mobile-search-offer', 'rent').props['aria-pressed'], true)
   assert.equal(h.data('data-mobile-search-offer', 'sale').props['aria-pressed'], false)
+  h.click(h.data('data-mobile-search-group', 'business'))
+  assert.equal(h.url('สาทร').href, before, 'tapping the current group keeps refinements')
+  h.click(h.data('data-mobile-search-offer', ''))
+  assert.deepEqual(h.url().searchParams.getAll('offer_type'), ['sale', 'rent'])
+  h.click(h.data('data-mobile-search-all-types', true))
+  assert.deepEqual(initialCategories(h.url()).sort(), plain(map.normalizeMapCategories(map.mapCategoryGroups.find(group => group.code === 'business').options.map(option => option.id))).sort())
 })

@@ -32,12 +32,12 @@ export function MobilePropertySearchSheet({ blocked, th, onClose, children }: Om
       <DialogBackdrop ref={backdropRef} className={`${sheetStyles.modalBackdrop} fixed inset-0 bg-neutral-950/25`} />
       <div
         ref={viewportRef}
-        className="fixed inset-x-0 top-[var(--search-viewport-top,0px)] h-[var(--search-viewport-height,100dvh)]"
+        className="fixed inset-x-0 top-[var(--search-viewport-top,0px)] flex h-[var(--search-viewport-height,100dvh)] items-end"
       >
         <DialogPanel
           ref={panelRef}
           data-mobile-search-sheet
-          className={`${sheetStyles.modalPanel} flex h-full flex-col overflow-hidden bg-[#f4f5f6] text-neutral-950 dark:bg-neutral-950 dark:text-white`}
+          className={`${sheetStyles.modalPanel} flex max-h-full w-full flex-col overflow-hidden rounded-t-[28px] bg-[#fafcf9] text-neutral-950 dark:bg-[#111b15] dark:text-white`}
         >
           <header
             data-sheet-drag-handle

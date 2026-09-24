@@ -2,6 +2,29 @@
   position: relative;
   width: 100%;
 }
+.sheetForm {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid #dce5de;
+  border-radius: 16px;
+  background: #fff;
+}
+.sheetForm:focus-within {
+  border-color: var(--discovery-accent, #176b50);
+  box-shadow: 0 0 0 3px var(--discovery-tint, #eef6f0);
+}
+.sheetInput {
+  padding: 14px 0 14px 10px;
+  font-size: 16px;
+  outline: none;
+}
+:global(.dark) .sheetForm {
+  border-color: #344139;
+  background: #19251e;
+}
 .integratedForm {
   display: flex;
   width: 100%;

@@ -16,7 +16,9 @@ import { FormEvent, KeyboardEvent, type ReactNode, useEffect, useId, useRef, use
 import styles from './PropertySearchOmnibox.module.css'
 
 type Props = {
-  variant?: 'hero' | 'header'
+  variant?: 'hero' | 'header' | 'sheet'
+  formId?: string
+  hideSubmitButton?: boolean
   tone?: 'green' | 'mint' | 'commerce'
   autoFocus?: boolean
   initialQuery?: string
@@ -123,6 +125,8 @@ const recentHeaderSuggestions = (isThai: boolean): PropertySearchSuggestion[] =>
 
 const PropertySearchOmnibox = ({
   variant = 'hero',
+  formId,
+  hideSubmitButton = false,
   tone = 'green',
   autoFocus = false,
   initialQuery = '',
@@ -338,15 +342,18 @@ const PropertySearchOmnibox = ({
       }
     >
       <form
+        id={formId}
         data-property-search-form
         data-integrated-search={integratedHeader || undefined}
         onSubmit={submit}
         className={
           integratedHeader
             ? styles.integratedForm
-            : isHeader
-              ? `flex h-11 w-full items-center rounded-full border border-neutral-200 bg-neutral-50 ps-4 pe-1.5 transition focus-within:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:focus-within:bg-neutral-900 ${theme.headerFocus}`
-              : `flex min-h-[72px] w-full items-center rounded-[26px] border border-white/80 bg-white ps-5 pe-2.5 shadow-[0_22px_65px_-20px_rgba(15,76,58,0.30)] transition min-[744px]:min-h-[86px] min-[744px]:ps-7 min-[744px]:pe-3 dark:border-neutral-700 dark:bg-neutral-900 ${theme.heroFocus}`
+            : variant === 'sheet'
+              ? styles.sheetForm
+              : isHeader
+                ? `flex h-11 w-full items-center rounded-full border border-neutral-200 bg-neutral-50 ps-4 pe-1.5 transition focus-within:bg-white dark:border-neutral-700 dark:bg-neutral-800 dark:focus-within:bg-neutral-900 ${theme.headerFocus}`
+                : `flex min-h-[72px] w-full items-center rounded-[26px] border border-white/80 bg-white ps-5 pe-2.5 shadow-[0_22px_65px_-20px_rgba(15,76,58,0.30)] transition min-[744px]:min-h-[86px] min-[744px]:ps-7 min-[744px]:pe-3 dark:border-neutral-700 dark:bg-neutral-900 ${theme.heroFocus}`
         }
       >
         {integratedHeader ? (
@@ -388,9 +395,11 @@ const PropertySearchOmnibox = ({
           className={`min-w-0 flex-1 border-0 bg-transparent text-neutral-950 placeholder:text-neutral-400 focus:ring-0 dark:text-white dark:placeholder:text-neutral-500 ${
             integratedHeader
               ? styles.integratedInput
-              : isHeader
-                ? 'px-3 py-2 text-sm'
-                : 'px-4 py-3 text-base min-[744px]:text-lg'
+              : variant === 'sheet'
+                ? styles.sheetInput
+                : isHeader
+                  ? 'px-3 py-2 text-sm'
+                  : 'px-4 py-3 text-base min-[744px]:text-lg'
           }`}
           placeholder={
             placeholder ??
@@ -403,22 +412,24 @@ const PropertySearchOmnibox = ({
                 : 'Search location, project or transit station')
           }
         />
-        <button
-          type="submit"
-          aria-label={isThai ? 'ค้นหา' : 'Search'}
-          className={
-            integratedHeader
-              ? styles.integratedSubmit
-              : `shrink-0 font-semibold text-white shadow-lg transition active:scale-[0.98] ${theme.button} ${
-                  isHeader
-                    ? 'grid size-8 place-items-center rounded-full'
-                    : 'flex min-h-13 items-center gap-2 rounded-[20px] px-5 min-[744px]:min-h-16 min-[744px]:rounded-[22px] min-[744px]:px-7'
-                }`
-          }
-        >
-          <Search className={isHeader ? 'size-4' : 'size-5'} />
-          {!isHeader && <span className="hidden sm:inline">{isThai ? 'ค้นหา' : 'Search'}</span>}
-        </button>
+        {!hideSubmitButton && (
+          <button
+            type="submit"
+            aria-label={isThai ? 'ค้นหา' : 'Search'}
+            className={
+              integratedHeader
+                ? styles.integratedSubmit
+                : `shrink-0 font-semibold text-white shadow-lg transition active:scale-[0.98] ${theme.button} ${
+                    isHeader
+                      ? 'grid size-8 place-items-center rounded-full'
+                      : 'flex min-h-13 items-center gap-2 rounded-[20px] px-5 min-[744px]:min-h-16 min-[744px]:rounded-[22px] min-[744px]:px-7'
+                  }`
+            }
+          >
+            <Search className={isHeader ? 'size-4' : 'size-5'} />
+            {!isHeader && <span className="hidden sm:inline">{isThai ? 'ค้นหา' : 'Search'}</span>}
+          </button>
+        )}
       </form>
 
       {focused &&

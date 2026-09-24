@@ -170,7 +170,7 @@ function harness(variant, options = {}) {
 }
 
 test('station suggestions are immediately selectable on desktop and mobile while the remote search is pending', async () => {
-  for (const variant of ['header', 'hero']) {
+  for (const variant of ['header', 'hero', 'sheet']) {
     let resolveLocal
     const h = harness(variant, {
       local: () =>
@@ -192,6 +192,17 @@ test('station suggestions are immediately selectable on desktop and mobile while
     await h.suggestions()
     assert.equal(h.closed(), 1)
   }
+})
+
+test('sheet search exposes an external submit form and preserves empty or typed query submission', () => {
+  const h = harness('sheet', { props: { formId: 'mobile-discovery-search', hideSubmitButton: true } })
+  assert.equal(h.nodes(node => node.type === 'form')[0].props.id, 'mobile-discovery-search')
+  assert.equal(h.nodes(node => node.type === 'button' && node.props.type === 'submit').length, 0)
+  h.submit()
+  assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), '')
+  h.type('สาทร')
+  h.submit()
+  assert.equal(new URL(h.navigation[1], 'https://mapxprop.com').searchParams.get('q'), 'สาทร')
 })
 
 test('desktop and mobile both offer external locations; tapping one submits its complete place name', async () => {
