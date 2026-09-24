@@ -38,11 +38,11 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const closeAuthModal = useCallback(() => setModal(null), [])
   const value = useMemo(() => ({ openAuthModal, closeAuthModal }), [closeAuthModal, openAuthModal])
 
-  const handleAuthenticated = async () => {
+  const handleAuthenticated = async (completedMode: AuthMode) => {
     const completedModal = modal
     setModal(null)
     await completedModal?.onAuthenticated?.()
-    showAuthNotice(completedModal?.mode === 'signup' ? 'signup' : 'login')
+    showAuthNotice(completedMode)
     router.refresh()
   }
 
