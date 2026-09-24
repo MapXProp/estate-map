@@ -232,9 +232,15 @@ export default function AuthCard({
         <div className={styles.heroCopy}>
           <span className={styles.brand}>MapxProp</span>
           <span className={styles.heroHeadline}>
-            {listing ? say('ให้คนที่ใช่', 'Share a space.') : say('พื้นที่ดี ๆ', 'Find a place.')}
-            <br />
-            {listing ? say('ค้นพบพื้นที่ของคุณ', 'Find its people.') : say('เริ่มที่คุณ', 'Share a space.')}
+            {emailStep ? (
+              say('พื้นที่ดี ๆ เริ่มที่คุณ', 'Your space.')
+            ) : (
+              <>
+                {listing ? say('ให้คนที่ใช่', 'Share a space.') : say('พื้นที่ดี ๆ', 'Find a place.')}
+                <br />
+                {listing ? say('ค้นพบพื้นที่ของคุณ', 'Find its people.') : say('เริ่มที่คุณ', 'Share a space.')}
+              </>
+            )}
           </span>
           <span className={styles.heroNote}>{say('บ้าน · ห้องเช่า · พื้นที่ธุรกิจ', 'Homes · Rooms · Business')}</span>
         </div>
