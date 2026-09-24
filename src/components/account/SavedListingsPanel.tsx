@@ -1,17 +1,21 @@
 'use client'
 
 import PropertyCard from '@/components/PropertyCard'
+import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { toRealEstateListing } from '@/data/listings'
+import { useAuth } from '@/hooks/useAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { HeartIcon } from '@heroicons/react/24/outline'
-import { RefreshCw } from 'lucide-react'
+import { ArrowRight, RefreshCw } from 'lucide-react'
 import { useMemo } from 'react'
 
 const SavedListingsPanel = () => {
   const { locale } = usePreferences()
-  const { listings, isReady, error, refresh } = useSavedListings()
+  const { listings, savedCount, isReady, error, refresh } = useSavedListings()
+  const { isAuthenticated, status } = useAuth()
+  const { openAuthModal } = useAuthModal()
   const isThai = locale === 'th'
   const cards = useMemo(() => listings.map(toRealEstateListing), [listings])
 
@@ -26,7 +30,9 @@ const SavedListingsPanel = () => {
             {isThai ? 'ประกาศที่บันทึกไว้' : 'Saved listings'}
           </h1>
           <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-            {isThai ? 'รวมประกาศที่คุณสนใจไว้กลับมาดูและเปรียบเทียบได้ง่าย' : 'Revisit and compare the listings you are interested in.'}
+            {isThai
+              ? 'รวมประกาศที่คุณสนใจไว้กลับมาดูและเปรียบเทียบได้ง่าย'
+              : 'Revisit and compare the listings you are interested in.'}
           </p>
         </div>
         {cards.length ? (
@@ -35,6 +41,46 @@ const SavedListingsPanel = () => {
           </p>
         ) : null}
       </div>
+
+      {status === 'guest' ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-[#edf5ef] p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <div>
+            <p className="text-sm font-semibold text-[#245a3d] dark:text-emerald-200">
+              {isThai ? 'รายการของคุณในเครื่องนี้' : 'Saved on this device'}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-400">
+              {isThai
+                ? 'ดูต่อได้เลย สมัครเมื่อต้องการเก็บรายการข้ามอุปกรณ์'
+                : 'Keep browsing. Create an account when you want to sync across devices.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openAuthModal({ mode: 'signup', redirectPath: '/account-savelists' })}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#176b50] shadow-sm dark:bg-neutral-900 dark:text-emerald-300"
+          >
+            {isThai ? 'เก็บไว้ในบัญชี' : 'Save to an account'}
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      ) : null}
+
+      {error && isReady ? (
+        <div
+          role="alert"
+          className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="inline-flex min-h-11 items-center gap-2 font-semibold"
+          >
+            <RefreshCw size={16} />
+            {isThai ? 'ลองอีกครั้ง' : 'Retry'}
+          </button>
+        </div>
+      ) : null}
 
       {!isReady ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label={isThai ? 'กำลังโหลด' : 'Loading'}>
@@ -49,37 +95,38 @@ const SavedListingsPanel = () => {
             </div>
           ))}
         </div>
-      ) : error ? (
-        <section className="mt-8 rounded-3xl border border-neutral-200 bg-white px-6 py-10 text-center dark:border-neutral-700 dark:bg-neutral-800">
-          <p className="font-sarabun text-neutral-600 dark:text-neutral-300">{error}</p>
-          <button
-            type="button"
-            onClick={() => void refresh()}
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full border border-neutral-300 px-5 font-sarabun text-sm font-semibold hover:bg-neutral-50 dark:border-neutral-600 dark:hover:bg-neutral-700"
-          >
-            <RefreshCw className="size-4" /> {isThai ? 'ลองอีกครั้ง' : 'Try again'}
-          </button>
-        </section>
       ) : cards.length ? (
         <section className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((listing) => (
             <PropertyCard key={listing.id} data={listing} openInNewTab />
           ))}
         </section>
-      ) : (
+      ) : !error ? (
         <section className="mt-8 rounded-3xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-800">
           <HeartIcon className="mx-auto size-10 text-neutral-300 dark:text-neutral-600" />
           <h2 className="mt-4 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
-            {isThai ? 'ยังไม่มีประกาศที่บันทึกไว้' : 'No saved listings yet'}
+            {savedCount > 0
+              ? isThai
+                ? 'ประกาศที่เก็บไว้ยังไม่เปิดให้ดูในขณะนี้'
+                : 'Your saved listings are currently unavailable'
+              : isThai
+                ? 'เริ่มเก็บที่ที่คุณชอบ'
+                : 'Start saving places you like'}
           </h2>
           <p className="mx-auto mt-2 max-w-md font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-            {isThai ? 'กดหัวใจบนประกาศที่สนใจ แล้วกลับมาดูทั้งหมดได้จากหน้านี้' : 'Tap the heart on a listing, then return here to see it.'}
+            {savedCount > 0
+              ? isThai
+                ? 'รายการยังอยู่ อาจถูกพักหรือปิดประกาศ ลองกลับมาดูอีกครั้งได้'
+                : 'Your favorites are kept. Listings may be paused or unpublished; check back later.'
+              : isThai
+                ? `กดหัวใจบนประกาศที่สนใจ แล้วกลับมาดูจากหน้านี้${isAuthenticated ? '' : 'ได้เลย ไม่ต้องสมัครก่อน'}`
+                : 'Tap a heart on a listing and come back here. You can start without an account.'}
           </p>
           <ButtonPrimary href="/properties/map" className="mt-6 h-11">
             {isThai ? 'ค้นหาประกาศ' : 'Browse listings'}
           </ButtonPrimary>
         </section>
-      )}
+      ) : null}
     </div>
   )
 }

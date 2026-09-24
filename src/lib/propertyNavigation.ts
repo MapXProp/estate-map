@@ -6,5 +6,11 @@ export const isTransitDirectoryPath = (pathname: string) =>
 
 export const usesMobilePrimaryNavigation = (pathname: string) =>
   ['/homes', '/rooms', '/business'].includes(pathname) ||
+  pathname === '/account' ||
+  pathname.startsWith('/account-') ||
   isOrganizationPath(pathname) ||
   isTransitDirectoryPath(pathname)
+
+// These pages contain public discovery tools or device-local saved listings.
+// All other account routes still go through RequireAuth.
+export const isPublicAccountPage = (pathname: string) => pathname === '/account' || pathname === '/account-savelists'

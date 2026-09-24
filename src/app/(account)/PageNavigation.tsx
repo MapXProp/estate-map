@@ -63,7 +63,7 @@ const approvalNavigation = {
 export const PageNavigation = () => {
   const pathname = usePathname()
   const { locale } = usePreferences()
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const isThai = locale === 'th'
   const visibleNavigation =
     user?.role_code === 'super_admin' ? [...navigation, approvalNavigation, adminNavigation] : navigation
@@ -73,8 +73,10 @@ export const PageNavigation = () => {
     activeMobileItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   }, [pathname])
 
+  if (!isAuthenticated || pathname === '/account') return null
+
   return (
-    <div className="container">
+    <div className="container py-4 min-[744px]:py-5">
       <nav
         aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
         className={`hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid dark:bg-neutral-800/80 dark:ring-neutral-700 ${

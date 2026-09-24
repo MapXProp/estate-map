@@ -40,8 +40,9 @@ const common = (pathname, locale = 'th') => ({
   'lucide-react': require('lucide-react'),
   '@/lib/propertyNavigation': navigation,
   '@/components/preferences/PreferencesProvider': {
-    usePreferences: () => ({ locale, formatCurrencyFrom: (amount) => `${amount} THB` }),
+    usePreferences: () => ({ locale, propertyZone: 'homes', formatCurrencyFrom: (amount) => `${amount} THB` }),
   },
+  '@/components/saved-listings/SavedListingsProvider': { useSavedListings: () => ({ savedCount: 0, isReady: true }) },
 })
 const render = (Component, props = {}) => renderToStaticMarkup(React.createElement(Component, props))
 
@@ -51,6 +52,8 @@ test('organization index and profiles select the standard property header and fo
     '/organizations/',
     '/organizations/nick-property',
     '/real-estate-listings/land',
+    '/account',
+    '/account-savelists',
     '/stay-listings/villa',
     '/organizations-old',
   ]) {
@@ -104,10 +107,13 @@ test('organization and home routes show exactly one mobile navigation; listing c
     if (navigation.usesMobilePrimaryNavigation(pathname)) {
       assert.ok(primary.includes('<nav'), pathname)
       assert.equal(quick, '', 'the old bottom bar must not overlap the standard navigation')
-      for (const href of ['/', '/properties/map', '/add-listing/1?new=1', '/account-savelists', '/account']) {
+      for (const href of ['/homes', '/properties/map', '/account-savelists', '/account']) {
         assert.ok(primary.includes(`href="${href}"`))
       }
-      assert.equal(primary.includes('aria-current="page"'), ['/homes', '/rooms', '/business'].includes(pathname))
+      assert.equal(
+        primary.includes('aria-current="page"'),
+        ['/homes', '/rooms', '/business', '/account', '/account-savelists'].includes(pathname)
+      )
     } else if (pathname.startsWith('/real-estate-listings/')) {
       assert.equal(primary + quick, '', 'the listing retains its dedicated contact bar')
     } else {

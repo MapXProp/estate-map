@@ -1,5 +1,5 @@
 import { fetchWithAuthRetry, getAuthApiUrl } from '@/lib/auth'
-import type { PropertySearchListing } from '@/lib/propertySearch'
+import { fetchPropertyListingSummary, type PropertySearchListing } from '@/lib/propertySearch'
 
 export const GUEST_SAVED_LISTINGS_KEY = 'mapxprop_guest_saved_listings_v1'
 export const MAX_GUEST_SAVED_LISTINGS = 100
@@ -28,21 +28,47 @@ export const cleanSavedListingIdentifiers = (values: unknown) => {
   return Array.from(new Set(values.map(cleanIdentifier).filter(Boolean))).slice(0, MAX_GUEST_SAVED_LISTINGS)
 }
 
+// Public lookups are bounded so a device with many favorites does not flood the API.
+// Keep missing/unpublished references; a network error must never delete a favorite.
+export const fetchGuestSavedListings = async (identifiers: string[]) => {
+  const cleaned = cleanSavedListingIdentifiers(identifiers)
+  const results: Array<PropertySearchListing | null> = Array(cleaned.length).fill(null)
+  let cursor = 0
+  let failed = 0
+  await Promise.all(
+    Array.from({ length: Math.min(4, cleaned.length) }, async () => {
+      while (cursor < cleaned.length) {
+        const index = cursor++
+        try {
+          results[index] = await fetchPropertyListingSummary(cleaned[index])
+        } catch {
+          failed++
+        }
+      }
+    })
+  )
+  return { listings: results.filter((listing): listing is PropertySearchListing => listing !== null), failed }
+}
+
 export const readGuestSavedListings = () => {
   if (typeof window === 'undefined') return []
   try {
     return cleanSavedListingIdentifiers(JSON.parse(localStorage.getItem(GUEST_SAVED_LISTINGS_KEY) || '[]'))
   } catch {
-    localStorage.removeItem(GUEST_SAVED_LISTINGS_KEY)
     return []
   }
 }
 
 export const writeGuestSavedListings = (identifiers: string[]) => {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined') return false
   const cleaned = cleanSavedListingIdentifiers(identifiers)
-  if (cleaned.length) localStorage.setItem(GUEST_SAVED_LISTINGS_KEY, JSON.stringify(cleaned))
-  else localStorage.removeItem(GUEST_SAVED_LISTINGS_KEY)
+  try {
+    if (cleaned.length) localStorage.setItem(GUEST_SAVED_LISTINGS_KEY, JSON.stringify(cleaned))
+    else localStorage.removeItem(GUEST_SAVED_LISTINGS_KEY)
+    return true
+  } catch {
+    return false
+  }
 }
 
 const parseSavedListingsResponse = async (response: Response) => {

@@ -5,28 +5,22 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import {
+  fetchGuestSavedListings,
   fetchMySavedListings,
   mergeMySavedListings,
   readGuestSavedListings,
   saveMyListing,
-  type SavedListingReference,
-  type SavedListingsResponse,
   unsaveMyListing,
   writeGuestSavedListings,
+  type SavedListingReference,
+  type SavedListingsResponse,
 } from '@/lib/savedListings'
 import { Heart, X } from 'lucide-react'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { usePathname } from 'next/navigation'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 type SavedListingsContextValue = {
+  savedCount: number
   listings: PropertySearchListing[]
   isReady: boolean
   error: string
@@ -50,7 +44,15 @@ const referenceMatches = (reference: SavedListingReference, identifier: string) 
 const referencesFromGuest = (identifiers: string[]): SavedListingReference[] =>
   identifiers.map((identifier) => ({ public_listing_id: '', slug: identifier }))
 
-const SavedListingsToast = ({ notice, onClose, onLogin }: { notice: SavedToast; onClose: () => void; onLogin: () => void }) => {
+const SavedListingsToast = ({
+  notice,
+  onClose,
+  onLogin,
+}: {
+  notice: SavedToast
+  onClose: () => void
+  onLogin: () => void
+}) => {
   useEffect(() => {
     const timer = window.setTimeout(onClose, notice.showLogin ? 4200 : 2200)
     return () => window.clearTimeout(timer)
@@ -67,11 +69,20 @@ const SavedListingsToast = ({ notice, onClose, onLogin }: { notice: SavedToast; 
       </span>
       <span className="min-w-0 grow font-sarabun leading-5">{notice.message}</span>
       {notice.showLogin ? (
-        <button type="button" onClick={onLogin} className="shrink-0 font-sarabun font-semibold text-[#176b50] hover:underline">
+        <button
+          type="button"
+          onClick={onLogin}
+          className="shrink-0 font-sarabun font-semibold text-[#176b50] hover:underline"
+        >
           เข้าสู่ระบบ
         </button>
       ) : null}
-      <button type="button" onClick={onClose} aria-label="ปิด" className="rounded-full p-1 text-neutral-400 hover:bg-neutral-100">
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="ปิด"
+        className="rounded-full p-1 text-neutral-400 hover:bg-neutral-100"
+      >
         <X className="size-4" aria-hidden="true" />
       </button>
     </div>
@@ -79,6 +90,7 @@ const SavedListingsToast = ({ notice, onClose, onLogin }: { notice: SavedToast; 
 }
 
 export function SavedListingsProvider({ children }: { children: ReactNode }) {
+  const onSavedPage = usePathname() === '/account-savelists'
   const { locale } = usePreferences()
   const { status, user } = useAuth()
   const { openAuthModal } = useAuthModal()
@@ -90,6 +102,7 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState<SavedToast | null>(null)
   const referencesRef = useRef(references)
   const busyRef = useRef(busyIdentifiers)
+  const loadGeneration = useRef(0)
 
   const updateReferences = useCallback((next: SavedListingReference[]) => {
     referencesRef.current = next
@@ -112,22 +125,43 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
   )
 
   const refresh = useCallback(async () => {
+    if (status === 'loading') return
+    const generation = loadGeneration.current
     if (status !== 'authenticated') {
       const guestIdentifiers = readGuestSavedListings()
       updateReferences(referencesFromGuest(guestIdentifiers))
-      setListings([])
+      if (onSavedPage) {
+        setIsReady(false)
+        const result = await fetchGuestSavedListings(guestIdentifiers)
+        if (generation !== loadGeneration.current) return
+        setListings(result.listings)
+        setError(
+          result.failed
+            ? locale === 'th'
+              ? 'บางประกาศยังโหลดไม่สำเร็จ ลองอีกครั้งได้'
+              : 'Some listings could not load. Please retry.'
+            : ''
+        )
+      } else {
+        setListings([])
+        setError('')
+      }
       setIsReady(true)
       return
     }
     try {
-      applyResponse(await fetchMySavedListings())
+      const response = await fetchMySavedListings()
+      if (generation !== loadGeneration.current) return
+      applyResponse(response)
     } catch {
+      if (generation !== loadGeneration.current) return
       setError(locale === 'th' ? 'โหลดประกาศที่บันทึกไว้ไม่สำเร็จ' : 'Could not load saved listings')
       setIsReady(true)
     }
-  }, [applyResponse, locale, status, updateReferences])
+  }, [applyResponse, locale, status, onSavedPage, updateReferences])
 
   useEffect(() => {
+    const generation = ++loadGeneration.current
     if (status === 'loading') return
     let cancelled = false
 
@@ -138,6 +172,19 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
         updateReferences(referencesFromGuest(guestIdentifiers))
         setListings([])
         setError('')
+        if (onSavedPage) {
+          setIsReady(false)
+          const result = await fetchGuestSavedListings(guestIdentifiers)
+          if (cancelled) return
+          setListings(result.listings)
+          setError(
+            result.failed
+              ? locale === 'th'
+                ? 'บางประกาศยังโหลดไม่สำเร็จ ลองอีกครั้งได้'
+                : 'Some listings could not load. Please retry.'
+              : ''
+          )
+        }
         setIsReady(true)
         return
       }
@@ -161,14 +208,19 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
     void load()
     return () => {
       cancelled = true
+      loadGeneration.current = generation + 1
     }
-  }, [applyResponse, locale, status, updateReferences, user?.public_user_id])
+  }, [applyResponse, locale, status, onSavedPage, updateReferences, user?.public_user_id])
 
   const isSaved = useCallback(
-    (identifier?: string) => Boolean(identifier && references.some((reference) => referenceMatches(reference, identifier))),
+    (identifier?: string) =>
+      Boolean(identifier && references.some((reference) => referenceMatches(reference, identifier))),
     [references]
   )
-  const isBusy = useCallback((identifier?: string) => Boolean(identifier && busyIdentifiers.has(identifier)), [busyIdentifiers])
+  const isBusy = useCallback(
+    (identifier?: string) => Boolean(identifier && busyIdentifiers.has(identifier)),
+    [busyIdentifiers]
+  )
 
   const toggleSaved = useCallback(
     async (identifier: string) => {
@@ -182,8 +234,24 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
       if (status !== 'authenticated') {
         const current = readGuestSavedListings()
         const next = wasSaved ? current.filter((item) => item !== cleanedIdentifier) : [cleanedIdentifier, ...current]
-        writeGuestSavedListings(next)
+        if (!writeGuestSavedListings(next)) {
+          setNotice({
+            id: Date.now(),
+            message:
+              locale === 'th'
+                ? 'บันทึกในเครื่องไม่ได้ โปรดอนุญาตการเก็บข้อมูลของเว็บไซต์หรือลองเข้าสู่ระบบ'
+                : 'Device storage is unavailable. Allow website storage or sign in.',
+            showLogin: true,
+          })
+          return
+        }
         updateReferences(referencesFromGuest(next))
+        if (wasSaved)
+          setListings((current) =>
+            current.filter(
+              (listing) => listing.slug !== cleanedIdentifier && listing.public_listing_id !== cleanedIdentifier
+            )
+          )
         setNotice({
           id: Date.now(),
           message: wasSaved
@@ -198,6 +266,7 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      const generation = loadGeneration.current
       updateBusy(new Set([...busyRef.current, cleanedIdentifier]))
       const previousListings = listings
       if (wasSaved) {
@@ -214,7 +283,9 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
       try {
         if (wasSaved) await unsaveMyListing(cleanedIdentifier)
         else await saveMyListing(cleanedIdentifier)
-        applyResponse(await fetchMySavedListings())
+        const response = await fetchMySavedListings()
+        if (generation !== loadGeneration.current) return
+        applyResponse(response)
         setNotice({
           id: Date.now(),
           message: wasSaved
@@ -226,6 +297,7 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
               : 'Listing saved',
         })
       } catch {
+        if (generation !== loadGeneration.current) return
         updateReferences(previousReferences)
         setListings(previousListings)
         setNotice({
@@ -242,8 +314,8 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo(
-    () => ({ listings, isReady, error, isSaved, isBusy, refresh, toggleSaved }),
-    [error, isBusy, isReady, isSaved, listings, refresh, toggleSaved]
+    () => ({ listings, savedCount: references.length, isReady, error, isSaved, isBusy, refresh, toggleSaved }),
+    [error, isBusy, isReady, isSaved, listings, references.length, refresh, toggleSaved]
   )
 
   return (

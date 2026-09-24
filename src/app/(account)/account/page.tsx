@@ -1,11 +1,11 @@
-import AccountProfileForm from '@/components/account/AccountProfileForm'
+import AccountOverview from '@/components/account/AccountOverview'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'บัญชีของฉัน | MapXProp',
-  description: 'จัดการข้อมูลบัญชี MapXProp',
+  title: 'เมนูและพื้นที่ของคุณ | MapXProp',
+  description: 'ค้นหาอสังหา ดูรายการที่บันทึก และจัดการข้อมูลบัญชี MapXProp',
 }
 
-const Page = () => <AccountProfileForm />
+const Page = () => <AccountOverview />
 
 export default Page
