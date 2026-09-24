@@ -111,10 +111,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang={process.env.NEXT_PUBLIC_THEME_DIR === 'rtl' ? 'ar' : 'th'}
+      translate="no"
       dir={process.env.NEXT_PUBLIC_THEME_DIR || 'ltr'}
       suppressHydrationWarning
-      className={cn('font-sans', inter.variable, sarabun.variable, notoSansThaiFallback.variable)}
+      className={cn('notranslate font-sans', inter.variable, sarabun.variable, notoSansThaiFallback.variable)}
     >
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       <body className="bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-neutral-100">
         <JsonLd data={websiteStructuredData} />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
