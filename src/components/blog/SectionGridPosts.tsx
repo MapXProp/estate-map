@@ -1,6 +1,5 @@
 import { TBlogPost } from '@/data/data'
 import { Heading } from '@/shared/Heading'
-import { Pagination, PaginationList, PaginationNext, PaginationPage, PaginationPrevious } from '@/shared/Pagination'
 import { FC } from 'react'
 import PostCard1 from './PostCard1'
 
@@ -11,7 +10,11 @@ interface SectionLatestPostsProps {
   heading?: string
 }
 
-const SectionGridPosts: FC<SectionLatestPostsProps> = ({ className = '', posts, heading = 'Latest articles 🎈' }) => {
+const SectionGridPosts: FC<SectionLatestPostsProps> = ({
+  className = '',
+  posts,
+  heading = 'ความรู้อสังหา อ่านต่อได้ที่นี่',
+}) => {
   return (
     <div className={`relative ${className}`}>
       <Heading>{heading}</Heading>
@@ -19,20 +22,6 @@ const SectionGridPosts: FC<SectionLatestPostsProps> = ({ className = '', posts, 
         {posts.map((post) => (
           <PostCard1 size="sm" key={post.id} post={post} />
         ))}
-      </div>
-      <div className="mt-16 flex justify-center md:mt-24">
-        <Pagination className="mx-auto">
-          <PaginationPrevious href="?page=1" />
-          <PaginationList>
-            <PaginationPage href="?page=1" current>
-              1
-            </PaginationPage>
-            <PaginationPage href="?page=2">2</PaginationPage>
-            <PaginationPage href="?page=3">3</PaginationPage>
-            <PaginationPage href="?page=4">4</PaginationPage>
-          </PaginationList>
-          <PaginationNext href="?page=3" />
-        </Pagination>
       </div>
     </div>
   )

@@ -10,28 +10,28 @@ interface Props {
 }
 
 const PostCard2: FC<Props> = ({ className, post }) => {
-  const { handle, title, timeToRead, excerpt: description, date, featuredImage: image, author } = post
+  const { handle, title, excerpt: description, date, datetime, featuredImage: image, author } = post
 
   return (
-    <div className={`relative flex justify-between gap-x-8 ${className}`}>
-      <div className="flex h-full flex-col py-2">
-        <h2 className={`block text-base font-semibold nc-card-title`}>
-          <Link href={'/blog-single'} className="line-clamp-2 capitalize" title={'title'}>
+    <div className={`relative flex justify-between gap-x-4 sm:gap-x-8 ${className || ''}`}>
+      <div className="flex min-w-0 flex-1 flex-col py-2">
+        <h2 className={`nc-card-title block text-base font-semibold`}>
+          <Link href={'/blog/' + handle} className="line-clamp-3 leading-relaxed" title={title}>
             {title}
           </Link>
         </h2>
         <span className="my-3 hidden text-neutral-500 sm:block dark:text-neutral-400">
           <span className="line-clamp-2">{description}</span>
         </span>
-        <span className="mt-4 block text-sm text-neutral-500 sm:hidden">
-          {date} · {timeToRead}
-        </span>
+        <time dateTime={datetime} className="mt-3 block text-xs text-neutral-500 sm:hidden dark:text-neutral-400">
+          {date}
+        </time>
         <div className="mt-auto hidden sm:block">
-          <PostCardMeta author={author} date={date || ''} />
+          <PostCardMeta author={author} date={date} datetime={datetime} />
         </div>
       </div>
 
-      <Link href={'/blog/' + handle} className="relative block h-full w-2/5 shrink-0 sm:w-1/3">
+      <Link href={'/blog/' + handle} aria-label={title} className="relative block min-h-32 w-1/3 shrink-0">
         {image?.src && (
           <Image alt={title} src={image} className="rounded-xl object-cover sm:rounded-3xl" sizes="400px" fill />
         )}

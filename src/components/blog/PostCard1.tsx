@@ -12,7 +12,7 @@ interface Props {
 }
 
 const PostCard1: FC<Props> = ({ className = 'h-full', post, size = 'md' }) => {
-  const { handle, title, timeToRead, excerpt: description, date, featuredImage: image, author } = post
+  const { handle, title, excerpt: description, date, datetime, featuredImage: image, author } = post
 
   return (
     <div
@@ -38,12 +38,12 @@ const PostCard1: FC<Props> = ({ className = 'h-full', post, size = 'md' }) => {
             size === 'md' && 'text-lg sm:text-2xl'
           )}
         >
-          <Link href={'/blog/' + handle} className="line-clamp-1">
+          <Link href={'/blog/' + handle} className="line-clamp-2 leading-relaxed">
             {title}
           </Link>
         </h2>
         <p className="mt-4 line-clamp-2 text-neutral-500 dark:text-neutral-400">{description}</p>
-        <PostCardMeta author={author} date={date || ''} className="mt-5" />
+        <PostCardMeta author={author} date={date} datetime={datetime} className="mt-5" />
       </div>
     </div>
   )
