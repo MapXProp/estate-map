@@ -6,6 +6,7 @@ import {
   mobilePropertyCategories,
   type MobilePropertyCategory,
 } from '@/lib/mobilePropertySearch'
+import { OPEN_MOBILE_PROPERTY_SEARCH_EVENT } from '@/lib/propertyNavigation'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import {
   ArrowRight,
@@ -101,6 +102,15 @@ const MobilePropertySearch = ({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const searchFormId = useId()
   const filtersId = useId()
+
+  useEffect(() => {
+    const openFromNavigation = () => {
+      setFiltersOpen(false)
+      setOpen(true)
+    }
+    window.addEventListener(OPEN_MOBILE_PROPERTY_SEARCH_EVENT, openFromNavigation)
+    return () => window.removeEventListener(OPEN_MOBILE_PROPERTY_SEARCH_EVENT, openFromNavigation)
+  }, [])
 
   useEffect(() => {
     // Navigation changes are external to this persistent header, so reset its draft filters to the new route context.

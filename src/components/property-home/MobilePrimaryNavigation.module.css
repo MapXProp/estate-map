@@ -1,0 +1,168 @@
+.spacer {
+  height: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+
+.dock {
+  position: fixed;
+  z-index: 50;
+  inset-inline: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  height: 72px;
+  max-width: 480px;
+  margin-inline: auto;
+  padding: 5px 7px;
+  border: 1px solid rgb(222 232 226 / 85%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow:
+    0 8px 32px rgb(18 63 50 / 13%),
+    0 2px 6px rgb(18 63 50 / 5%);
+  backdrop-filter: blur(18px);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease;
+}
+.dock[data-hidden='true'] {
+  transform: translateY(calc(100% + 40px + env(safe-area-inset-bottom, 0px)));
+  opacity: 0;
+  pointer-events: none;
+}
+.item {
+  display: flex;
+  min-width: 0;
+  height: 60px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  padding-bottom: 3px;
+  border-radius: 24px;
+  color: #69756f;
+  outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.item:focus-visible {
+  outline: 2px solid #176b50;
+  outline-offset: 1px;
+}
+.icon {
+  position: relative;
+  display: grid;
+  width: 50px;
+  height: 33px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 18px;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+.label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 15px;
+  white-space: nowrap;
+}
+.active {
+  color: #176b50;
+}
+.active .icon {
+  background: #e7f2eb;
+}
+.active .label,
+.post .label {
+  font-weight: 600;
+}
+.post {
+  color: #bd490f;
+}
+.postIcon {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: linear-gradient(155deg, #ffac45 0%, #ff7b16 40%, #ef5b06 100%);
+  color: white;
+  box-shadow:
+    0 5px 12px rgb(230 97 15 / 28%),
+    inset 0 1px 1px rgb(255 255 255 / 45%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.item:active .icon,
+.item:active .postIcon {
+  transform: scale(0.93);
+}
+.badge {
+  position: absolute;
+  top: -1px;
+  right: 0;
+  min-width: 16px;
+  padding-inline: 3px;
+  border: 2px solid white;
+  border-radius: 99px;
+  background: #176b50;
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 13px;
+  text-align: center;
+}
+@media (hover: hover) {
+  .item:hover .icon {
+    background: #f0f5f1;
+  }
+  .post:hover .postIcon {
+    transform: translateY(-2px);
+  }
+}
+:global(.dark) .dock {
+  border-color: #3b4942;
+  background: rgb(24 33 28 / 96%);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 35%);
+}
+:global(.dark) .item {
+  color: #b8c4bd;
+}
+:global(.dark) .active {
+  color: #a4ebc8;
+}
+:global(.dark) .active .icon {
+  background: #294b3a;
+}
+:global(.dark) .post {
+  color: #ffb26b;
+}
+:global(.dark) .postIcon,
+:global(.dark) .badge {
+  border-color: #18211c;
+}
+:global(.dark) .item:focus-visible {
+  outline-color: #a4ebc8;
+}
+@media (hover: hover) {
+  :global(.dark) .item:hover .icon {
+    background: #304437;
+  }
+}
+@media (min-width: 744px) {
+  .dock,
+  .spacer {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock,
+  .icon,
+  .postIcon {
+    transition: none;
+  }
+}

@@ -39,6 +39,10 @@ const common = (pathname, locale = 'th') => ({
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
   'lucide-react': require('lucide-react'),
   '@/lib/propertyNavigation': navigation,
+  '@/hooks/useAutoHideBottomNavigation': {
+    useAutoHideBottomNavigation: () => ({ navRef: null, hidden: false, reveal: leaf }),
+  },
+  './MobilePrimaryNavigation.module.css': { default: {} },
   '@/components/preferences/PreferencesProvider': {
     usePreferences: () => ({ locale, propertyZone: 'homes', formatCurrencyFrom: (amount) => `${amount} THB` }),
   },
@@ -107,12 +111,13 @@ test('organization and home routes show exactly one mobile navigation; listing c
     if (navigation.usesMobilePrimaryNavigation(pathname)) {
       assert.ok(primary.includes('<nav'), pathname)
       assert.equal(quick, '', 'the old bottom bar must not overlap the standard navigation')
-      for (const href of ['/homes', '/properties/map', '/account-savelists', '/account']) {
+      for (const href of ['/homes', '/properties/map', '/add-listing/1?new=1', '/account-savelists']) {
         assert.ok(primary.includes(`href="${href}"`))
       }
+      assert.ok(primary.includes('data-mobile-bottom-search="true"'))
       assert.equal(
         primary.includes('aria-current="page"'),
-        ['/homes', '/rooms', '/business', '/account', '/account-savelists'].includes(pathname)
+        ['/homes', '/rooms', '/business', '/account-savelists'].includes(pathname)
       )
     } else if (pathname.startsWith('/real-estate-listings/')) {
       assert.equal(primary + quick, '', 'the listing retains its dedicated contact bar')

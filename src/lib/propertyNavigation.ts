@@ -1,3 +1,5 @@
+export const OPEN_MOBILE_PROPERTY_SEARCH_EVENT = 'mapx:open-mobile-property-search'
+
 export const isOrganizationPath = (pathname: string) =>
   pathname === '/organizations' || pathname.startsWith('/organizations/')
 
