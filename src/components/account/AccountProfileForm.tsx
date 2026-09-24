@@ -134,7 +134,12 @@ const AccountProfileForm = () => {
         </p>
       ) : null}
 
-      <ButtonPrimary type="submit" disabled={isSaving || !isAuthenticated} aria-busy={isSaving} className="h-12 w-full">
+      <ButtonPrimary
+        type="submit"
+        disabled={isSaving || !isAuthenticated}
+        aria-busy={isSaving}
+        className="h-12 w-full bg-[#176b50]! hover:bg-[#125b44]!"
+      >
         {isSaving ? (isThai ? 'กำลังบันทึก...' : 'Saving...') : isThai ? 'บันทึกข้อมูล' : 'Save details'}
       </ButtonPrimary>
     </form>

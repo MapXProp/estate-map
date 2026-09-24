@@ -51,7 +51,7 @@ export default function AccountOverview() {
               ? say('พื้นที่ของคุณ', 'Your space')
               : say('เริ่มจากสิ่งที่คุณสนใจ', 'Make yourself at home')}
           </h1>
-          <p>{say('ค้นหา เก็บที่ที่ชอบ หรือแบ่งปันพื้นที่ของคุณ', 'Explore, save a favorite, or share your space.')}</p>
+          <p>{say('ค้นหา เก็บไว้ หรือแบ่งปันพื้นที่ดี ๆ', 'Explore, save a favorite, or share your space.')}</p>
         </div>
         <Image
           src="/images/listing-cta/neighborhood.webp"
@@ -144,7 +144,7 @@ export default function AccountOverview() {
                 <ArrowRight size={17} />
               </Link>
             </div>
-            <Image src="/images/property-categories/home-office.png" width={180} height={180} sizes="140px" alt="" />
+            <Image src="/images/listing-cta/neighborhood.webp" width={180} height={135} sizes="140px" alt="" />
           </section>
 
           {isAuthenticated ? (

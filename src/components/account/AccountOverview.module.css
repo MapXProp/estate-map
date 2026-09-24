@@ -305,7 +305,11 @@
 .preferences {
   margin-top: 10px;
 }
+.preferences > * {
+  text-align: start;
+}
 .preferences select {
+  margin-inline-start: auto;
   max-width: 116px;
   min-height: 44px;
   border: 0;
@@ -321,6 +325,7 @@
   font-size: 18px;
 }
 .toggle {
+  flex-shrink: 0;
   display: block;
   width: 38px;
   height: 24px;
@@ -554,5 +559,20 @@
   .listingCta > img {
     width: 142px;
     right: -27px;
+  }
+}
+@media (max-width: 359px) {
+  .intro > div {
+    max-width: 72%;
+  }
+  .intro h1 {
+    font-size: 21px;
+  }
+  .intro p {
+    max-width: 165px;
+  }
+  .heroArt {
+    width: 126px;
+    right: -36px;
   }
 }
