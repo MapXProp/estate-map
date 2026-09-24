@@ -28,6 +28,7 @@
 .price {
   flex: 1;
   min-width: 0;
+  container-type: inline-size;
 }
 .label {
   margin-bottom: 2px;
@@ -55,6 +56,19 @@
 .price [data-property-prices='2'] [data-property-price-offer] > span:last-child {
   font-size: 17px;
   line-height: 23px;
+}
+@container (max-width: 300px) {
+  .price [data-property-prices='2'] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .price [data-property-prices='2'] [data-property-price-offer] {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+  .price [data-property-prices='2'] [data-property-price-offer] > span:first-child {
+    min-width: 28px;
+  }
 }
 .note {
   margin-top: 2px;
