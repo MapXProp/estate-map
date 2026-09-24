@@ -1,3 +1,35 @@
+.searchTrigger {
+  height: 44px;
+  min-height: 44px;
+  gap: 8px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid #e0e7e2;
+  border-radius: 22px;
+  background: #f7faf8;
+  box-shadow: 0 1px 3px rgb(24 49 36 / 3%);
+}
+.searchTrigger:active {
+  background: #edf5ef;
+}
+.searchTrigger:focus-visible {
+  outline: 2px solid #367b5c;
+  outline-offset: 3px;
+}
+.searchTitle {
+  font-size: 13px;
+  line-height: 18px;
+}
+.searchHint {
+  font-size: 11px;
+  line-height: 14px;
+}
+:global(.dark) .searchTrigger {
+  border-color: #344139;
+  background: #19251e;
+}
+:global(.dark) .searchTrigger:active {
+  background: #253b2e;
+}
 .flow {
   --discovery-accent: #176b50;
   --discovery-tint: #eef6f0;

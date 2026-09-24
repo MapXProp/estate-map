@@ -156,33 +156,38 @@ const MobilePropertySearch = ({
 
   return (
     <div className={`relative z-10 w-full ${className}`}>
-      <div className={`flex w-full items-center ${compactMapHeader && isMapResults ? 'gap-1.5' : 'gap-2.5'}`}>
+      <div className={`flex w-full items-center ${compactMapHeader && isMapResults ? 'gap-1.5' : 'gap-2'}`}>
         <MobilePropertyBrandMark />
         <button
           type="button"
           data-mobile-property-search-trigger
+          aria-label={isThai ? 'ค้นหาทำเลหรืออสังหาริมทรัพย์' : 'Search location or property'}
+          aria-haspopup="dialog"
+          aria-expanded={open}
           onClick={() => {
             setFiltersOpen(false)
             setOpen(true)
           }}
-          className={`flex min-w-0 flex-1 items-center rounded-full border border-neutral-200 bg-white text-start transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 ${
+          className={`flex min-w-0 flex-1 items-center text-start ${
             compactMapHeader && isMapResults
-              ? 'min-h-11 gap-2 py-1.5 ps-2.5 pe-3 shadow-sm'
-              : 'min-h-12 gap-2.5 py-1.5 ps-2.5 pe-3 shadow-[0_5px_18px_rgba(15,23,42,0.09)]'
+              ? 'min-h-11 gap-2 rounded-full border border-neutral-200 bg-white py-1.5 ps-2.5 pe-3 shadow-sm transition active:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900'
+              : styles.searchTrigger
           }`}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200">
-            <Search className="size-4.5" strokeWidth={2} />
+          <span
+            className={`grid shrink-0 place-items-center rounded-full bg-[#eaf4ef] text-[#123f32] dark:bg-emerald-950 dark:text-emerald-200 ${compactMapHeader && isMapResults ? 'size-8' : 'size-7'}`}
+          >
+            <Search className="size-4" strokeWidth={1.8} aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-neutral-950 dark:text-white">
-              {isMapResults && mapQuery
-                ? mapQuery
-                : isThai
-                  ? 'ค้นหาทำเลหรืออสังหาที่ต้องการ'
-                  : 'Search location or property'}
+            <span
+              className={`block truncate font-semibold text-neutral-950 dark:text-white ${compactMapHeader && isMapResults ? 'text-sm' : styles.searchTitle}`}
+            >
+              {isMapResults && mapQuery ? mapQuery : isThai ? 'ค้นหาอสังหา' : 'Find a property'}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
+            <span
+              className={`block truncate text-neutral-500 dark:text-neutral-400 ${compactMapHeader && isMapResults ? 'mt-0.5 text-xs' : styles.searchHint}`}
+            >
               {hasQuickFilters
                 ? [
                     offerType ? offerLabel : null,
@@ -198,10 +203,10 @@ const MobilePropertySearch = ({
                     ? compactMapHeader
                       ? '20,000 รายการ · แตะเพื่อค้นหา'
                       : 'ทุกประเภท · ไม่จำกัดงบ'
-                    : 'พิมพ์หรือแตะตัวเลือกได้เลย'
+                    : 'เลือกหมวด · ทำเล'
                   : isMapResults
                     ? 'All properties · Any budget'
-                    : 'Type or tap a quick option'}
+                    : 'Category · Location'}
             </span>
           </span>
         </button>

@@ -36,7 +36,7 @@ const ApplicationLayout: React.FC<Props> = ({
       </div>
       {/* Keep the mobile search header for phones only. */}
       <MobileAutoHideHeader>
-        <div className={`container flex items-center ${compactMobileHeader ? 'h-14 gap-2 px-3' : 'h-16 gap-2.5'}`}>
+        <div className={`container flex items-center gap-2 ${compactMobileHeader ? 'h-14 px-3' : 'h-16'}`}>
           <div className="min-w-0 flex-1">
             <Suspense
               fallback={<div className="h-12 w-full animate-pulse rounded-full bg-neutral-100 dark:bg-neutral-800" />}
@@ -46,8 +46,8 @@ const ApplicationLayout: React.FC<Props> = ({
           </div>
           <AvatarDropdown
             className="shrink-0"
-            avatarClassName={`${compactMobileHeader ? 'size-8' : 'size-9'} shadow-[0_2px_8px_rgba(15,23,42,0.10)]`}
-            buttonClassName={`flex cursor-pointer items-center justify-center rounded-full transition active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#176b50]/25 ${compactMobileHeader ? 'size-9' : 'size-10'}`}
+            avatarClassName={`${compactMobileHeader ? 'size-8' : 'size-11'} shadow-[0_1px_3px_rgba(15,23,42,0.04)]`}
+            buttonClassName={`flex cursor-pointer items-center justify-center rounded-full transition active:scale-[0.96] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#176b50]/25 ${compactMobileHeader ? 'size-9' : 'size-11'}`}
             showGuestIcon
             showMobileActions
           />
