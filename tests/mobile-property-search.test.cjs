@@ -158,6 +158,7 @@ function harness(locale = 'th') {
     },
     '@/components/PropertyCategoryLabel': { default: 'test-category-label' },
     '@/lib/propertyZone': load('src/lib/propertyZone.ts'),
+    '@/lib/propertyNavigation': load('src/lib/propertyNavigation.ts'),
     '@/lib/mobilePropertySearch': api,
     './MobileProjectSearchDialog': { default: 'test-project-search' },
     './MobilePropertyBrandMark': { default: 'test-brand' },
