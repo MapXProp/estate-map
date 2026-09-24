@@ -154,11 +154,6 @@
 .fact > p:last-child {
   color: var(--listing-muted);
 }
-.bottomBar {
-  position: fixed;
-  inset: auto 0 0;
-  z-index: 40;
-}
 .section {
   scroll-margin-top: 110px;
   margin-top: 24px;
@@ -280,16 +275,6 @@
     font-size: 17px;
     line-height: 1.5;
   }
-  .bottomBar > div {
-    max-width: 960px;
-  }
-  .bottomBar {
-    padding-inline: 32px;
-  }
-  .bottomBar [data-property-prices] [data-property-price-offer] > span:last-child {
-    font-size: 18px;
-    line-height: 24px;
-  }
 }
 @media (min-width: 1100px) {
   .layout {
@@ -298,9 +283,6 @@
   }
   .sidebar {
     display: block;
-  }
-  .bottomBar {
-    display: none;
   }
 }
 :global(.dark) .surface {

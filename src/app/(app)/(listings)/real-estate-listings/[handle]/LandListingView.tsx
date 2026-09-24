@@ -31,6 +31,7 @@ import {
   WalletCards,
 } from 'lucide-react'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
+import MobileListingActionBar from '../../components/MobileListingActionBar'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 
 const numericDetail = (listing: PropertyListingDetail, key: string) => {
@@ -122,7 +123,6 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
       ? { lat: listing.latitude, lng: listing.longitude }
       : undefined
   const locationMapURL = getMapPreviewGoogleMapsUrl(location)
-  const mapURL = getMapPreviewGoogleMapsUrl(location, true)
   const factCards = [
     { icon: LandPlot, value: `${formatThaiNumber(landAreaSquareWah)} ตร.ว.`, label: 'เนื้อที่รวม' },
     ...(plotCount ? [{ icon: SplitSquareVertical, value: `${plotCount} แปลง`, label: 'แปลงติดกัน' }] : []),
@@ -131,11 +131,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
   ]
 
   return (
-    <div
-      {...listingAnalyticsAttributes(listing, 'listing_page')}
-      data-listing-tone="homes"
-      className={`${styles.surface} pb-24 min-[1100px]:pb-0`}
-    >
+    <div {...listingAnalyticsAttributes(listing, 'listing_page')} data-listing-tone="homes" className={styles.surface}>
       <main
         data-property-listing-page
         className={`${styles.page} -mx-4 max-w-screen-xl px-3 min-[744px]:mx-auto min-[744px]:px-0 sm:px-5`}
@@ -402,63 +398,44 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
         </div>
       </main>
 
-      {(hasContacts || mapURL) && (
-        <div
-          data-listing-contact-bar
-          className={`${styles.bottomBar} border-t border-neutral-200 bg-white/96 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur`}
+      {(hasContacts || locationMapURL) && (
+        <MobileListingActionBar
+          prices={prices}
+          isThai={isThai}
+          mapUrl={locationMapURL}
+          priceNote={
+            pricePerSquareWah
+              ? `${isThai ? 'เฉลี่ย' : 'Average'} ${formattedPricePerSquareWah}/${isThai ? 'ตร.ว.' : 'sq.wah'}`
+              : undefined
+          }
+          quickContact={
+            contactLinks.find((contact) => contact.kind === 'phone') ||
+            contactLinks.find((contact) => contact.kind === 'line')
+          }
         >
-          <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              {prices.length === 1 && (
-                <p className="text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              )}
-              <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                <PropertyPrices prices={prices} variant="compact" className="text-neutral-950" />
-                {pricePerSquareWah && prices.length === 1 ? (
-                  <p className="text-[10px] leading-none font-medium whitespace-nowrap text-[#71817b]">
-                    เฉลี่ย {formattedPricePerSquareWah}/ตร.ว.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              {hasContacts && (
-                <MobileListingContactSheet
-                  showOnTablet
-                  isThai={isThai}
-                  triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
-                  analyticsListingId={listing.public_listing_id}
-                  analyticsPropertyType={listing.property_type_code}
-                  contactName={listing.contact_name}
-                  roleLabel={contactRole}
-                  authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}
-                  organizationName={listing.organization_name || listing.contact_organization_name}
-                  organizationPublicId={listing.organization_public_id}
-                  verificationStatus={listing.contact_verification_status}
-                  trusted={isTrustedContact}
-                  phone={listing.contact_phone}
-                  secondaryPhone={listing.contact_phone_secondary}
-                  email={listing.contact_email}
-                  lineId={listing.line_id}
-                  instagramHandle={listing.instagram_handle}
-                  websiteUrl={listing.organization_website_url}
-                />
-              )}
-              {mapURL && (
-                <a
-                  href={mapURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="ตำแหน่งอสังหา"
-                  title="ตำแหน่งอสังหา"
-                  className="grid size-10 place-items-center rounded-full border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition active:scale-95"
-                >
-                  <MapPin className="size-[18px]" />
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+          {hasContacts && (
+            <MobileListingContactSheet
+              showOnTablet
+              isThai={isThai}
+              triggerLabel={isThai ? 'ติดต่อผู้ประกาศ' : 'Contact advertiser'}
+              analyticsListingId={listing.public_listing_id}
+              analyticsPropertyType={listing.property_type_code}
+              contactName={listing.contact_name}
+              roleLabel={contactRole}
+              authorityLabel={contactAuthorityLabel(listing.contact_authority_code)}
+              organizationName={listing.organization_name || listing.contact_organization_name}
+              organizationPublicId={listing.organization_public_id}
+              verificationStatus={listing.contact_verification_status}
+              trusted={isTrustedContact}
+              phone={listing.contact_phone}
+              secondaryPhone={listing.contact_phone_secondary}
+              email={listing.contact_email}
+              lineId={listing.line_id}
+              instagramHandle={listing.instagram_handle}
+              websiteUrl={listing.organization_website_url}
+            />
+          )}
+        </MobileListingActionBar>
       )}
     </div>
   )

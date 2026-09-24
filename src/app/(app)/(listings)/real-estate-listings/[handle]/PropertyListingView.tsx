@@ -23,12 +23,11 @@ import {
   ExternalLink,
   MapPin,
   Maximize2,
-  MessageCircle,
-  Phone,
   ShieldCheck,
 } from 'lucide-react'
 import Link from 'next/link'
 import HeaderGallery, { type PropertyMediaItem } from '../../components/HeaderGallery'
+import MobileListingActionBar from '../../components/MobileListingActionBar'
 import MobileListingContactSheet from '../../components/MobileListingContactSheet'
 import styles from './PropertyListingView.module.css'
 
@@ -116,14 +115,11 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
   const hasContacts = Boolean(
     listing.contact_name || listing.organization_name || listing.contact_organization_name || contactLinks.length
   )
-  const phoneURL = contactLinks.find((contact) => contact.kind === 'phone')?.href || ''
-  const lineURL = contactLinks.find((contact) => contact.kind === 'line')?.href || ''
   const location =
     typeof listing.latitude === 'number' && typeof listing.longitude === 'number'
       ? { lat: listing.latitude, lng: listing.longitude }
       : undefined
   const locationMapURL = getMapPreviewGoogleMapsUrl(location)
-  const mapURL = getMapPreviewGoogleMapsUrl(location, true)
   const isTrustedContact =
     listing.organization_verification_status === 'verified' ||
     listing.contact_verification_status === 'authority_verified'
@@ -182,7 +178,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
     <div
       {...listingAnalyticsAttributes(listing, 'listing_page')}
       data-listing-tone={listingTone}
-      className={`${styles.surface} pb-24 min-[1100px]:pb-0`}
+      className={styles.surface}
     >
       <main
         data-property-listing-page
@@ -386,77 +382,38 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
         </div>
       </main>
 
-      {(hasContacts || mapURL) && (
-        <div
-          data-listing-contact-bar
-          className={`${styles.bottomBar} border-t border-neutral-200 bg-white/95 px-3 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95`}
+      {(hasContacts || locationMapURL) && (
+        <MobileListingActionBar
+          prices={prices}
+          isThai={isThai}
+          mapUrl={locationMapURL}
+          quickContact={
+            contactLinks.find((contact) => contact.kind === 'phone') ||
+            contactLinks.find((contact) => contact.kind === 'line')
+          }
         >
-          <div className="mx-auto flex max-w-md items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              {prices.length === 1 && (
-                <p className="font-sarabun text-[10px] leading-none text-neutral-500">{isThai ? 'ราคา' : 'Price'}</p>
-              )}
-              <PropertyPrices prices={prices} variant="compact" className="mt-1 text-neutral-950 dark:text-white" />
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              {hasContacts && (
-                <MobileListingContactSheet
-                  showOnTablet
-                  isThai={isThai}
-                  triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
-                  analyticsListingId={listing.public_listing_id}
-                  analyticsPropertyType={listing.property_type_code}
-                  contactName={listing.contact_name}
-                  roleLabel={contactRoleLabel(listing.contact_role_code)}
-                  organizationName={listing.organization_name || listing.contact_organization_name}
-                  organizationPublicId={listing.organization_public_id}
-                  verificationStatus={listing.contact_verification_status}
-                  trusted={isTrustedContact}
-                  phone={listing.contact_phone}
-                  secondaryPhone={listing.contact_phone_secondary}
-                  email={listing.contact_email}
-                  lineId={listing.line_id}
-                  instagramHandle={listing.instagram_handle}
-                  websiteUrl={listing.organization_website_url}
-                />
-              )}
-              {!phoneURL && lineURL ? (
-                <a
-                  href={lineURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LINE"
-                  title="LINE"
-                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                >
-                  <MessageCircle className="size-[18px]" />
-                </a>
-              ) : null}
-              {phoneURL ? (
-                <a
-                  href={phoneURL}
-                  aria-label={isThai ? 'โทรติดต่อ' : 'Call'}
-                  title={isThai ? 'โทรติดต่อ' : 'Call'}
-                  className="grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition active:scale-95 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-                >
-                  <Phone className="size-[18px]" />
-                </a>
-              ) : null}
-              {mapURL ? (
-                <a
-                  href={mapURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={isThai ? 'ตำแหน่งอสังหา' : 'Property location'}
-                  title={isThai ? 'ตำแหน่งอสังหา' : 'Property location'}
-                  className="grid size-10 place-items-center rounded-full border border-[#d7e5df] bg-[#f3f8f6] text-[#176b50] transition active:scale-95 dark:border-[#315f50] dark:bg-[#183d32] dark:text-[#8bd49c]"
-                >
-                  <MapPin className="size-[18px]" />
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </div>
+          {hasContacts && (
+            <MobileListingContactSheet
+              showOnTablet
+              isThai={isThai}
+              triggerLabel={isThai ? 'ติดต่อผู้ประกาศ' : 'Contact advertiser'}
+              analyticsListingId={listing.public_listing_id}
+              analyticsPropertyType={listing.property_type_code}
+              contactName={listing.contact_name}
+              roleLabel={contactRoleLabel(listing.contact_role_code)}
+              organizationName={listing.organization_name || listing.contact_organization_name}
+              organizationPublicId={listing.organization_public_id}
+              verificationStatus={listing.contact_verification_status}
+              trusted={isTrustedContact}
+              phone={listing.contact_phone}
+              secondaryPhone={listing.contact_phone_secondary}
+              email={listing.contact_email}
+              lineId={listing.line_id}
+              instagramHandle={listing.instagram_handle}
+              websiteUrl={listing.organization_website_url}
+            />
+          )}
+        </MobileListingActionBar>
       )}
     </div>
   )
