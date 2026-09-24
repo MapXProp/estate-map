@@ -12,6 +12,12 @@
   background: #fff;
   color: #202723;
   box-shadow: 0 -6px 24px rgb(24 49 36 / 8%);
+  transform: translate3d(0, var(--dock-offset, 0px), 0);
+  transition: transform 220ms ease-out;
+  touch-action: pan-y pinch-zoom;
+}
+.bar[data-sheet-dragging='true'] {
+  transition: none;
 }
 .inner {
   display: grid;
@@ -60,6 +66,7 @@
   flex: 1;
   min-width: 0;
   container-type: inline-size;
+  cursor: grab;
 }
 .label {
   margin-bottom: 2px;
@@ -244,4 +251,9 @@
 :global(.dark) .map:hover,
 :global(.dark) .quickContact:hover {
   background: #2d4837;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
 }

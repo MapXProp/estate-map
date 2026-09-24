@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const duration = () => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260)
-const mobile = () => window.matchMedia('(max-width: 1023px)').matches
+const mobile = (maxWidth: number) => window.matchMedia(`(max-width: ${maxWidth}px)`).matches
 
 function useSheetDrag(node: HTMLElement | null, options: SheetDragOptions) {
   const latest = useRef(options)
@@ -20,7 +20,7 @@ function useSheetDrag(node: HTMLElement | null, options: SheetDragOptions) {
   useEffect(() => (node ? bindVerticalSheetDrag(node, () => latest.current) : undefined), [node, options.maxWidth])
 }
 
-export function useSwipeDismiss(onClose: () => void, enabled = true) {
+export function useSwipeDismiss(onClose: () => void, enabled = true, maxWidth = 1023) {
   const [node, panelRef] = useState<HTMLElement | null>(null)
   const [backdrop, backdropRef] = useState<HTMLElement | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -40,7 +40,7 @@ export function useSwipeDismiss(onClose: () => void, enabled = true) {
   }
   const dismiss = () => {
     if (closing.current) return
-    if (!mobile() || !node || duration() === 0) {
+    if (!mobile(maxWidth) || !node || duration() === 0) {
       onClose()
       return
     }
@@ -53,6 +53,7 @@ export function useSwipeDismiss(onClose: () => void, enabled = true) {
   }
   useSheetDrag(node, {
     enabled,
+    maxWidth,
     canDrag: (down, handle, atTop) => !closing.current && down && (handle || atTop),
     onStart: () => {
       node?.setAttribute('data-sheet-dragging', 'true')

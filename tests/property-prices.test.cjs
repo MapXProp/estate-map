@@ -154,6 +154,7 @@ test('the standalone detail renders both offers in its content, desktop price ca
       '@/lib/propertyPrices': api,
       './MobileListingActionBar.module.css': { default: {} },
       './ListingContactSheetContext': { ListingContactSheetContext: React.createContext(null) },
+      '@/lib/verticalSheetGesture': load('src/lib/verticalSheetGesture.ts'),
     }),
     '../../components/MobileListingContactSheet': { default: () => React.createElement('button', null, 'ติดต่อ') },
   }).default

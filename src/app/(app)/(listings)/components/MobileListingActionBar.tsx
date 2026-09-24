@@ -2,8 +2,9 @@
 
 import PropertyPrices from '@/components/PropertyPrices'
 import { propertyOfferLabel, type PropertyPrice } from '@/lib/propertyPrices'
+import { bindVerticalSheetDrag } from '@/lib/verticalSheetGesture'
 import { MapPin, MessageCircle, Phone } from 'lucide-react'
-import { type PointerEvent, type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { ListingContactSheetContext } from './ListingContactSheetContext'
 import styles from './MobileListingActionBar.module.css'
 
@@ -20,23 +21,25 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
   const barRef = useRef<HTMLDivElement>(null)
   const spacerRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
-  const [lift, setLift] = useState(0)
-  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
-  const suppressClick = useRef(false)
-  const finishDrag = (event: PointerEvent<HTMLButtonElement>, cancel = false) => {
-    if (!event.isPrimary) return
-    const state = drag.current
-    if (!state) return
-    drag.current = null
-    suppressClick.current = state.moved
-    if (event.currentTarget.hasPointerCapture(event.pointerId))
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    setLift(0)
-    if (!cancel && state.y - event.clientY > 32 && Math.abs(event.clientX - state.x) < state.y - event.clientY) {
-      event.currentTarget.focus()
-      setOpen(true)
-    }
-  }
+  const hasContact = Boolean(children)
+  useEffect(() => {
+    const bar = barRef.current
+    if (!bar || !hasContact) return
+    return bindVerticalSheetDrag(bar, () => ({
+      maxWidth: 1099,
+      canDrag: (down) => !down,
+      onStart: () => bar.setAttribute('data-sheet-dragging', 'true'),
+      onMove: (dy) => bar.style.setProperty('--dock-offset', `${Math.max(-80, Math.min(0, dy * 0.6))}px`),
+      onEnd: (dy, _velocity, cancelled) => {
+        bar.removeAttribute('data-sheet-dragging')
+        bar.style.removeProperty('--dock-offset')
+        if (!cancelled && dy < -32) {
+          bar.querySelector<HTMLButtonElement>('[data-listing-drag-handle]')?.focus()
+          setOpen(true)
+        }
+      },
+    }))
+  }, [hasContact])
 
   useEffect(() => {
     const bar = barRef.current
@@ -54,33 +57,17 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
   return (
     <ListingContactSheetContext.Provider value={{ open, setOpen }}>
       <div ref={spacerRef} className={styles.spacer} data-listing-action-spacer aria-hidden="true" />
-      <div ref={barRef} className={styles.bar} data-listing-contact-bar style={{ transform: `translateY(${-lift}px)` }}>
+      <div ref={barRef} className={styles.bar} data-listing-contact-bar data-sheet-scroll>
         {children && (
           <button
             type="button"
             className={styles.grip}
             data-listing-drag-handle
+            data-sheet-drag-handle
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-label={isThai ? 'เลื่อนขึ้นหรือแตะเพื่อดูช่องทางติดต่อ' : 'Swipe up or tap for contact details'}
-            onClick={() => {
-              if (!suppressClick.current) setOpen(true)
-              suppressClick.current = false
-            }}
-            onPointerDown={(event) => {
-              if (!event.isPrimary || event.button !== 0) return
-              suppressClick.current = false
-              drag.current = { x: event.clientX, y: event.clientY, moved: false }
-              event.currentTarget.setPointerCapture(event.pointerId)
-            }}
-            onPointerMove={(event) => {
-              if (!event.isPrimary || !drag.current) return
-              const distance = drag.current.y - event.clientY
-              if (Math.abs(distance) > 6 || Math.abs(event.clientX - drag.current.x) > 6) drag.current.moved = true
-              setLift(Math.min(48, Math.max(0, distance) * 0.5))
-            }}
-            onPointerUp={(event) => finishDrag(event)}
-            onPointerCancel={(event) => finishDrag(event, true)}
+            onClick={() => setOpen(true)}
             onKeyDown={(event) => {
               if (event.key === 'ArrowUp') {
                 event.preventDefault()
@@ -93,7 +80,7 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
         )}
         <div className={styles.inner} data-dual={prices.length > 1}>
           <div className={styles.summary}>
-            <div className={styles.price}>
+            <div className={styles.price} data-sheet-drag-handle>
               {prices.length === 1 && <p className={styles.label}>{propertyOfferLabel(prices[0].offerType, isThai)}</p>}
               <PropertyPrices prices={prices} variant="compact" />
               {priceNote && prices.length === 1 && <p className={styles.note}>{priceNote}</p>}
