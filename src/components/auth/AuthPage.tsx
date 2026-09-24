@@ -72,6 +72,7 @@ export default function AuthPage({ initialMode, redirectPath, providerError, sta
         <AuthCard
           key={initialMode}
           initialMode={initialMode}
+          initialEmailStep={status === 'reset'}
           redirectPath={redirect}
           headingLevel={1}
           notice={notice}

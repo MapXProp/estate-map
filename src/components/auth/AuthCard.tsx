@@ -20,6 +20,7 @@ import { GoogleIcon, LineIcon } from './AuthProviderIcons'
 
 type Props = {
   initialMode: AuthMode
+  initialEmailStep?: boolean
   purpose?: AuthPurpose
   redirectPath?: string
   titleId?: string
@@ -34,6 +35,7 @@ type Props = {
 
 export default function AuthCard({
   initialMode,
+  initialEmailStep = false,
   purpose = 'default',
   redirectPath,
   titleId,
@@ -48,7 +50,7 @@ export default function AuthCard({
   const { locale } = usePreferences()
   const th = locale === 'th'
   const [mode, setMode] = useState(initialMode)
-  const [emailStep, setEmailStep] = useState(false)
+  const [emailStep, setEmailStep] = useState(initialEmailStep)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -220,14 +222,19 @@ export default function AuthCard({
       : say('เข้าสู่ระบบ แล้วไปต่อจากที่คุณสนใจ', 'Sign in and pick up where you left off.')
 
   return (
-    <div className={styles.card} data-email-step={emailStep || undefined}>
+    <div
+      className={styles.card}
+      data-email-step={emailStep || undefined}
+      data-locale={locale}
+      data-listing={listing || undefined}
+    >
       <div className={styles.hero} aria-hidden="true">
         <div className={styles.heroCopy}>
           <span className={styles.brand}>MapxProp</span>
           <span className={styles.heroHeadline}>
-            {listing ? say('ให้คนที่ใช่', 'Help people find') : say('พื้นที่ดี ๆ', 'A place to love.')}
+            {listing ? say('ให้คนที่ใช่', 'Share a space.') : say('พื้นที่ดี ๆ', 'Find a place.')}
             <br />
-            {listing ? say('ค้นพบพื้นที่ของคุณ', 'your space.') : say('เริ่มที่คุณ', 'A space to share.')}
+            {listing ? say('ค้นพบพื้นที่ของคุณ', 'Find its people.') : say('เริ่มที่คุณ', 'Share a space.')}
           </span>
           <span className={styles.heroNote}>{say('บ้าน · ห้องเช่า · พื้นที่ธุรกิจ', 'Homes · Rooms · Business')}</span>
         </div>
@@ -441,7 +448,11 @@ export default function AuthCard({
                     },
                   ].map((rule) => (
                     <li key={rule.text} data-passed={rule.passed}>
-                      <Check size={13} aria-hidden="true" />
+                      {rule.passed ? (
+                        <Check size={13} aria-hidden="true" />
+                      ) : (
+                        <span className={styles.requirementDot} aria-hidden="true" />
+                      )}
                       <span className="sr-only">
                         {rule.passed ? say('ครบแล้ว: ', 'Met: ') : say('ต้องมี: ', 'Required: ')}
                       </span>

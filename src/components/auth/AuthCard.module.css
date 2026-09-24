@@ -54,6 +54,12 @@
   letter-spacing: -0.5px;
   color: #214c3b;
 }
+.card[data-locale='en'] .heroHeadline {
+  font-size: 20px;
+}
+.card[data-listing] .heroHeadline {
+  font-size: 21px;
+}
 .heroNote {
   display: block;
   margin-top: 10px;
@@ -327,6 +333,14 @@
 .requirements svg {
   flex-shrink: 0;
   color: #a6b2ac;
+}
+.requirementDot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin: 4px;
+  border-radius: 50%;
+  background: #9cac9f;
 }
 .requirements li[data-passed='true'],
 .requirements li[data-passed='true'] svg {
