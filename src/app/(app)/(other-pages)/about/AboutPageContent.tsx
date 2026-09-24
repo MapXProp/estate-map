@@ -1,9 +1,23 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import BgGlassmorphism from '@/components/BgGlassmorphism'
 import aboutPropertyCollage from '@/images/about-property-collage-v3.png'
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BedDouble,
+  Building2,
+  Heart,
+  House,
+  Map,
+  MapPin,
+  Shapes,
+  Store,
+  TrainFront,
+} from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
+import styles from './AboutPage.module.css'
 
 type AboutPageContentProps = {
   listingCount: number
@@ -13,89 +27,224 @@ type AboutPageContentProps = {
 
 const aboutCopy = {
   th: {
-    factsTitle: '🚀 ข้อมูลโดยสรุป',
-    factsDescription: 'MapXProp ช่วยให้ค้นหาและลงประกาศพื้นที่สำหรับอยู่อาศัยและทำธุรกิจได้ง่ายขึ้น',
-    listingLabel: 'ประกาศที่เผยแพร่บน MapXProp',
-    channelLabel: 'เส้นทางการค้นหาหลัก — บ้าน ห้องเช่า และพื้นที่ธุรกิจ',
-    propertyTypeLabel: 'ประเภททรัพย์ที่ค้นหาและลงประกาศได้',
-    aboutTitle: '👋 เกี่ยวกับเรา',
-    aboutDescription:
-      'MapXProp คือพื้นที่สำหรับค้นหาและลงประกาศอสังหาริมทรัพย์ เรากำลังเตรียมเรื่องราวของเราไว้ให้คุณได้รู้จักมากขึ้นเร็ว ๆ นี้',
+    eyebrow: 'รู้จัก MapxProp',
+    title: 'พื้นที่ที่ใช่',
+    titleSecond: 'เริ่มจากการค้นพบ',
+    introduction: 'บ้านหลังใหม่ ห้องใกล้ที่ทำงาน หรือพื้นที่เริ่มธุรกิจ — ทุกการเริ่มต้นมีพื้นที่ของมัน',
+    description:
+      'MapxProp รวมการค้นหาและลงประกาศไว้ในที่เดียว ให้คุณเลือกพื้นที่ที่สนใจ พร้อมดูทำเลบนแผนที่ก่อนตัดสินใจ',
+    explore: 'เริ่มค้นหาบนแผนที่',
+    contact: 'คุยกับเรา',
+    collageAlt: 'ภาพบ้าน ห้องพัก หน้าร้าน ออฟฟิศ และที่ดิน',
+    collageCaption: 'พื้นที่สำหรับชีวิตและธุรกิจ',
+    facts: 'MapxProp ในภาพรวม',
+    listingLabel: 'ประกาศที่เผยแพร่',
+    channelLabel: 'กลุ่มการค้นหาหลัก',
+    propertyTypeLabel: 'ประเภททรัพย์',
+    spacesEyebrow: 'ต่างความต้องการ ก็เจอพื้นที่ที่ใช่ได้',
+    spacesTitle: 'คุณกำลังมองหาพื้นที่แบบไหน?',
+    spacesDescription: 'เลือกจุดเริ่มต้นที่เข้ากับคุณ แล้วค่อยค้นหาให้ตรงใจ',
+    homesTitle: 'พื้นที่สำหรับอยู่อาศัย',
+    homesDescription: 'บ้าน คอนโด และที่ดิน สำหรับการเริ่มต้นบทใหม่',
+    roomsTitle: 'ห้องที่เข้ากับชีวิต',
+    roomsDescription: 'ห้องเช่า หอพัก และอพาร์ตเมนต์ ใกล้ชีวิตประจำวัน',
+    businessTitle: 'พื้นที่ให้ธุรกิจเติบโต',
+    businessDescription: 'ร้านค้า ออฟฟิศ โกดัง และพื้นที่สำหรับไอเดียของคุณ',
+    toolsEyebrow: 'จากตัวเลือก สู่พื้นที่ที่ชอบ',
+    toolsTitle: 'เห็นมากกว่ารูปประกาศ',
+    mapTitle: 'ดูทำเลก่อนตัดสินใจ',
+    mapDescription: 'สำรวจประกาศและพื้นที่รอบ ๆ บนแผนที่',
+    transitTitle: 'เริ่มจากสถานีที่เดินทาง',
+    transitDescription: 'เลือกสายและสถานีรถไฟฟ้า เพื่อค้นหาพื้นที่ใกล้เคียง',
+    savedTitle: 'เก็บที่ชอบไว้ดูต่อ',
+    savedDescription: 'กดหัวใจ แล้วกลับมาดูตัวเลือกของคุณได้ในที่เดียว',
   },
   en: {
-    factsTitle: '🚀 Fast Facts',
-    factsDescription: 'MapXProp makes it easier to discover and list spaces for living and business.',
-    listingLabel: 'Published listings on MapXProp',
-    channelLabel: 'Main discovery paths — homes, rooms and business spaces',
-    propertyTypeLabel: 'Property types available to search and list',
-    aboutTitle: '👋 About Us.',
-    aboutDescription:
-      'MapXProp is a place to discover and list real estate. We are preparing our story so you can get to know us better soon.',
+    eyebrow: 'Get to know MapxProp',
+    title: 'The right space.',
+    titleSecond: 'A new beginning.',
+    introduction: 'A new home, a room near work, or a place to start a business. Every beginning needs a space.',
+    description:
+      'MapxProp brings property discovery and listing together. Find spaces that interest you and explore their location on the map before deciding.',
+    explore: 'Explore the map',
+    contact: 'Talk to us',
+    collageAlt: 'A collage of a house, a room, a storefront, an office and land',
+    collageCaption: 'Spaces for life and business',
+    facts: 'MapxProp at a glance',
+    listingLabel: 'Published listings',
+    channelLabel: 'Ways to explore',
+    propertyTypeLabel: 'Property types',
+    spacesEyebrow: 'Different needs. A space for each.',
+    spacesTitle: 'What kind of space is next for you?',
+    spacesDescription: 'Choose your starting point, then make the search your own.',
+    homesTitle: 'A place to call home',
+    homesDescription: 'Houses, condos and land for your next chapter.',
+    roomsTitle: 'A room for your routine',
+    roomsDescription: 'Monthly rooms, dorms and apartments for everyday life.',
+    businessTitle: 'Room for your business',
+    businessDescription: 'Shops, offices, warehouses and space for your ideas.',
+    toolsEyebrow: 'From possibilities to favourites',
+    toolsTitle: 'See beyond the listing photo',
+    mapTitle: 'Get to know the location',
+    mapDescription: 'Explore listings and the surrounding area on the map.',
+    transitTitle: 'Start with your station',
+    transitDescription: 'Choose a transit line and station to explore nearby spaces.',
+    savedTitle: 'Keep your favourites',
+    savedDescription: 'Tap the heart and return to your choices in one place.',
   },
 } as const
 
 const AboutPageContent = ({ listingCount, propertyTypeCount, discoveryChannelCount }: AboutPageContentProps) => {
   const { locale } = usePreferences()
-  const isThai = locale === 'th'
-  const t = aboutCopy[isThai ? 'th' : 'en']
-  const formatNumber = (value: number) => value.toLocaleString(isThai ? 'th-TH' : 'en-US')
-
+  const t = aboutCopy[locale === 'th' ? 'th' : 'en']
+  const formatNumber = (value: number) => value.toLocaleString(locale === 'th' ? 'th-TH' : 'en-US')
   const facts = [
-    { value: formatNumber(listingCount), label: t.listingLabel },
-    { value: formatNumber(discoveryChannelCount), label: t.channelLabel },
-    { value: formatNumber(propertyTypeCount), label: t.propertyTypeLabel },
+    { value: listingCount, label: t.listingLabel, icon: Building2 },
+    { value: discoveryChannelCount, label: t.channelLabel, icon: MapPin },
+    { value: propertyTypeCount, label: t.propertyTypeLabel, icon: Shapes },
+  ]
+  const spaces = [
+    {
+      href: '/homes',
+      title: t.homesTitle,
+      description: t.homesDescription,
+      image: 'home-garden.jpg',
+      icon: House,
+      tone: 'homes',
+    },
+    {
+      href: '/rooms',
+      title: t.roomsTitle,
+      description: t.roomsDescription,
+      image: 'monthly-room-turquoise.jpg',
+      icon: BedDouble,
+      tone: 'rooms',
+    },
+    {
+      href: '/business',
+      title: t.businessTitle,
+      description: t.businessDescription,
+      image: 'office-daylight.jpg',
+      icon: Store,
+      tone: 'business',
+    },
+  ]
+  const tools = [
+    { href: '/properties/map', title: t.mapTitle, description: t.mapDescription, icon: Map },
+    { href: '/all-transits', title: t.transitTitle, description: t.transitDescription, icon: TrainFront },
+    { href: '/account-savelists', title: t.savedTitle, description: t.savedDescription, icon: Heart },
   ]
 
   return (
-    <main className="relative overflow-hidden py-14 sm:py-20 lg:py-24">
-      <BgGlassmorphism />
-
-      <div className="container relative flex flex-col gap-20 sm:gap-28 lg:gap-32">
-        <section aria-labelledby="fast-facts-heading" className="order-2">
-          <div className="max-w-2xl">
-            <h1 id="fast-facts-heading" className="text-3xl font-semibold tracking-tight text-neutral-950 sm:text-4xl/10 dark:text-white">
-              {t.factsTitle}
+    <main className={styles.page}>
+      <div className={`container ${styles.container}`}>
+        <section className={styles.hero} aria-labelledby="about-title">
+          <div className={styles.heroCopy}>
+            <p className={styles.eyebrow}>
+              <span aria-hidden="true" />
+              {t.eyebrow}
+            </p>
+            <h1 id="about-title">
+              {t.title}
+              <br />
+              {t.titleSecond}
             </h1>
-            <p className="mt-3 text-base/7 text-neutral-600 sm:text-lg/8 dark:text-neutral-300">{t.factsDescription}</p>
+            <p className={styles.introduction}>{t.introduction}</p>
+            <p className={styles.description}>{t.description}</p>
+            <div className={styles.actions}>
+              <Link className={styles.primary} href="/properties/map">
+                <Map size={18} aria-hidden="true" />
+                {t.explore}
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+              <Link className={styles.secondary} href="/contact">
+                {t.contact}
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
+          <figure className={styles.heroVisual}>
+            <div className={styles.visualAccent} aria-hidden="true" />
+            <Image
+              src={aboutPropertyCollage}
+              alt={t.collageAlt}
+              sizes="(max-width: 743px) 100vw, (max-width: 1280px) 55vw, 680px"
+              className={styles.collage}
+              preload
+            />
+            <figcaption className={styles.visualCaption}>
+              <span>
+                <MapPin size={18} aria-hidden="true" />
+              </span>
+              {t.collageCaption}
+            </figcaption>
+          </figure>
+        </section>
 
-          <div className="mt-9 grid gap-4 md:grid-cols-3 lg:mt-11 lg:gap-6 xl:gap-8">
-            {facts.map((fact) => (
-              <article
-                key={fact.label}
-                className="rounded-3xl border border-neutral-100 bg-neutral-50 p-6 shadow-[0_14px_35px_rgba(16,24,40,0.035)] sm:p-7 dark:border-neutral-800 dark:bg-neutral-800/80 dark:shadow-none"
-              >
-                <p className="text-3xl leading-none font-semibold tracking-tight text-neutral-950 sm:text-4xl dark:text-white">
-                  {fact.value}
-                </p>
-                <p className="mt-4 text-sm/6 text-neutral-600 sm:text-base/7 dark:text-neutral-300">{fact.label}</p>
-              </article>
+        <section className={styles.facts} aria-label={t.facts}>
+          {facts.map(({ value, label, icon: Icon }) => (
+            <div className={styles.fact} key={label}>
+              <Icon aria-hidden="true" />
+              <div>
+                <strong>{formatNumber(value)}</strong>
+                <span>{label}</span>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className={styles.spaces} aria-labelledby="about-spaces-title">
+          <div className={styles.sectionHeading}>
+            <div>
+              <p className={styles.sectionEyebrow}>{t.spacesEyebrow}</p>
+              <h2 id="about-spaces-title">{t.spacesTitle}</h2>
+            </div>
+            <p className={styles.sectionDescription}>{t.spacesDescription}</p>
+          </div>
+          <div className={styles.spaceGrid}>
+            {spaces.map(({ href, title, description, image, icon: Icon, tone }) => (
+              <Link href={href} key={href} className={styles.spaceCard} data-tone={tone}>
+                <div className={styles.spacePhoto}>
+                  <Image
+                    src={`/images/channel-heroes/${image}`}
+                    alt=""
+                    fill
+                    sizes="(max-width: 743px) 112px, (max-width: 1280px) 33vw, 410px"
+                  />
+                  <span className={styles.spaceIcon}>
+                    <Icon size={20} aria-hidden="true" />
+                  </span>
+                </div>
+                <div className={styles.spaceCopy}>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                  <span className={styles.spaceArrow}>
+                    <ArrowUpRight size={19} aria-hidden="true" />
+                  </span>
+                </div>
+              </Link>
             ))}
           </div>
         </section>
 
-        <section aria-labelledby="about-us-heading" className="relative order-1">
-          <div className="relative flex flex-col items-center gap-10 text-center sm:gap-20 lg:flex-row lg:text-left">
-            <div className="w-screen max-w-full xl:max-w-lg">
-              <h2 id="about-us-heading" className="text-4xl font-semibold tracking-tight text-neutral-950 sm:text-5xl dark:text-white">
-                {t.aboutTitle}
-              </h2>
-              <p className="mt-7 text-base/7 text-neutral-600 xl:text-lg/8 dark:text-neutral-300">{t.aboutDescription}</p>
-            </div>
-
-            <div className="grow">
-              <Image
-                src={aboutPropertyCollage}
-                alt={
-                  isThai
-                    ? 'บ้าน ห้องพักคอนโด หน้าร้าน ออฟฟิศ และที่ดิน'
-                    : 'A house, condominium room, storefront, office and vacant land'
-                }
-                sizes="(max-width: 1024px) 100vw, 58vw"
-                className="h-auto w-full"
-                priority
-              />
-            </div>
+        <section className={styles.tools} aria-labelledby="about-tools-title">
+          <div className={styles.toolsHeading}>
+            <p className={styles.sectionEyebrow}>{t.toolsEyebrow}</p>
+            <h2 id="about-tools-title">{t.toolsTitle}</h2>
+          </div>
+          <div className={styles.toolGrid}>
+            {tools.map(({ href, title, description, icon: Icon }) => (
+              <Link href={href} key={href} className={styles.tool}>
+                <span className={styles.toolIcon}>
+                  <Icon size={22} aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </div>
+                <ArrowUpRight className={styles.toolArrow} size={17} aria-hidden="true" />
+              </Link>
+            ))}
           </div>
         </section>
       </div>
