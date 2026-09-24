@@ -197,10 +197,14 @@
   font-size: 14px;
   color: #6b786f;
 }
+.trigger:focus,
+.iconTrigger:focus {
+  outline: none;
+}
 .panel button:focus-visible,
 .panel a:focus-visible,
-.trigger:focus-visible,
-.iconTrigger:focus-visible {
+.trigger[data-keyboard-focus='true']:focus-visible,
+.iconTrigger[data-keyboard-focus='true']:focus-visible {
   outline: 2px solid #4b9376;
   outline-offset: 3px;
 }

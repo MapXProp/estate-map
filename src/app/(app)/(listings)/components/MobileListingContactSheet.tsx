@@ -1,5 +1,6 @@
 'use client'
 
+import { useKeyboardFocus } from '@/hooks/useKeyboardFocus'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
@@ -52,6 +53,7 @@ const formatPhone = (value: string) => {
 }
 
 export default function MobileListingContactSheet(props: Props) {
+  const keyboardFocus = useKeyboardFocus()
   const dock = useContext(ListingContactSheetContext)
   const [localOpen, setLocalOpen] = useState(false)
   const open = dock?.open ?? localOpen
@@ -81,6 +83,7 @@ export default function MobileListingContactSheet(props: Props) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
+        data-keyboard-focus={keyboardFocus || undefined}
         aria-label={isThai ? 'ติดต่อผู้ลงประกาศ' : 'Contact advertiser'}
         className={props.triggerLabel ? styles.trigger : styles.iconTrigger}
       >

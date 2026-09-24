@@ -45,7 +45,12 @@
 .grip:active {
   cursor: grabbing;
 }
-.grip:focus-visible {
+.grip:focus,
+.bar a:focus,
+.contact > button:focus {
+  outline: none;
+}
+.bar[data-keyboard-focus='true'] .grip:focus-visible {
   outline: 2px solid #367b5c;
   outline-offset: -2px;
   border-radius: 8px;
@@ -190,8 +195,8 @@
 .map svg {
   flex-shrink: 0;
 }
-.bar a:focus-visible,
-.contact > button:focus-visible {
+.bar[data-keyboard-focus='true'] a:focus-visible,
+.bar[data-keyboard-focus='true'] .contact > button:focus-visible {
   outline: 2px solid #367b5c;
   outline-offset: 3px;
 }

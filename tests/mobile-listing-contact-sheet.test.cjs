@@ -16,6 +16,7 @@ const Sheet = load('src/app/(app)/(listings)/components/MobileListingContactShee
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
   '@headlessui/react': { Dialog: Div, DialogPanel: Div, DialogBackdrop: () => null, DialogTitle: Div },
   '@/hooks/useMobileSheets': sheetHooks,
+  '@/hooks/useKeyboardFocus': load('src/hooks/useKeyboardFocus.ts', { react: React }),
   '@/lib/propertyPreviewDetails': load('src/lib/propertyPreviewDetails.ts'),
   './ListingContactSheetContext': { ListingContactSheetContext: React.createContext(null) },
   './MobileListingContactSheet.module.css': { default: new Proxy({}, { get: (_, key) => key }) },

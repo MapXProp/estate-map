@@ -1,6 +1,7 @@
 'use client'
 
 import PropertyPrices from '@/components/PropertyPrices'
+import { useKeyboardFocus } from '@/hooks/useKeyboardFocus'
 import { propertyOfferLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { bindVerticalSheetDrag } from '@/lib/verticalSheetGesture'
 import { MapPin, MessageCircle, Phone } from 'lucide-react'
@@ -21,6 +22,7 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
   const barRef = useRef<HTMLDivElement>(null)
   const spacerRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  const keyboardFocus = useKeyboardFocus()
   const hasContact = Boolean(children)
   useEffect(() => {
     const bar = barRef.current
@@ -57,7 +59,13 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
   return (
     <ListingContactSheetContext.Provider value={{ open, setOpen }}>
       <div ref={spacerRef} className={styles.spacer} data-listing-action-spacer aria-hidden="true" />
-      <div ref={barRef} className={styles.bar} data-listing-contact-bar data-sheet-scroll>
+      <div
+        ref={barRef}
+        className={styles.bar}
+        data-listing-contact-bar
+        data-sheet-scroll
+        data-keyboard-focus={keyboardFocus || undefined}
+      >
         {children && (
           <button
             type="button"
