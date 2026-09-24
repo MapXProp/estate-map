@@ -368,10 +368,24 @@ const ListingRow = ({
           </button>
         ) : null}
         {live ? (
-          <Link href={'/real-estate-listings/' + listing.slug} className={styles.secondaryAction}>
-            {isThai ? 'ดูประกาศ' : 'View listing'}
-            <ArrowUpRight size={16} />
-          </Link>
+          <>
+            <Link
+              href={'/real-estate-listings/' + listing.slug}
+              className={`${styles.secondaryAction} ${styles.mobileView}`}
+            >
+              {isThai ? 'ดูประกาศ' : 'View listing'}
+              <ArrowUpRight size={16} />
+            </Link>
+            <Link
+              href={'/real-estate-listings/' + listing.slug}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.secondaryAction} ${styles.desktopView}`}
+            >
+              {isThai ? 'ดูประกาศ' : 'View listing'}
+              <ArrowUpRight size={16} />
+            </Link>
+          </>
         ) : null}
         {listing.can_delete !== false ? (
           <Menu>

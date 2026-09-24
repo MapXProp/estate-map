@@ -256,6 +256,17 @@
   background: #ef691b;
   color: white;
 }
+.desktopView {
+  display: none;
+}
+@media (min-width: 744px) {
+  .mobileView {
+    display: none;
+  }
+  .desktopView {
+    display: inline-flex;
+  }
+}
 .orangeAction:hover {
   background: #d85b15;
 }
