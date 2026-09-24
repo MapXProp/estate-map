@@ -5,6 +5,7 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
 import type { PropertySearchListing } from '@/lib/propertySearch'
 import {
+  cleanSavedListingIdentifiers,
   fetchGuestSavedListings,
   fetchMySavedListings,
   mergeMySavedListings,
@@ -233,7 +234,9 @@ export function SavedListingsProvider({ children }: { children: ReactNode }) {
 
       if (status !== 'authenticated') {
         const current = readGuestSavedListings()
-        const next = wasSaved ? current.filter((item) => item !== cleanedIdentifier) : [cleanedIdentifier, ...current]
+        const next = cleanSavedListingIdentifiers(
+          wasSaved ? current.filter((item) => item !== cleanedIdentifier) : [cleanedIdentifier, ...current]
+        )
         if (!writeGuestSavedListings(next)) {
           setNotice({
             id: Date.now(),
