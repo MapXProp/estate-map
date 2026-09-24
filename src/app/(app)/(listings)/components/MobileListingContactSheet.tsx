@@ -64,10 +64,23 @@ export default function MobileListingContactSheet(props: Props) {
   const [localOpen, setLocalOpen] = useState(false)
   const open = dock?.open ?? localOpen
   const isThai = props.isThai ?? true
+  const updateOpen = dock?.setOpen ?? setLocalOpen
+  const { showOnTablet, onOpenChange } = props
+  useEffect(() => {
+    if (!open) return
+    const desktop = window.matchMedia(`(min-width: ${showOnTablet ? 1100 : 744}px)`)
+    const closeOnDesktop = () => {
+      if (!desktop.matches) return
+      updateOpen(false)
+      onOpenChange?.(false)
+    }
+    closeOnDesktop()
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => desktop.removeEventListener('change', closeOnDesktop)
+  }, [open, showOnTablet, updateOpen, onOpenChange])
   const setOpen = (value: boolean) => {
-    if (dock) dock.setOpen(value)
-    else setLocalOpen(value)
-    props.onOpenChange?.(value)
+    updateOpen(value)
+    onOpenChange?.(value)
   }
   return (
     <>

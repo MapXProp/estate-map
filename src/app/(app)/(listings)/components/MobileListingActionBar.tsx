@@ -24,6 +24,7 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
   const finishDrag = (event: PointerEvent<HTMLButtonElement>, cancel = false) => {
+    if (!event.isPrimary) return
     const state = drag.current
     if (!state) return
     drag.current = null
@@ -73,9 +74,9 @@ export default function MobileListingActionBar({ prices, isThai, priceNote, mapU
               event.currentTarget.setPointerCapture(event.pointerId)
             }}
             onPointerMove={(event) => {
-              if (!drag.current) return
+              if (!event.isPrimary || !drag.current) return
               const distance = drag.current.y - event.clientY
-              if (Math.abs(distance) > 6) drag.current.moved = true
+              if (Math.abs(distance) > 6 || Math.abs(event.clientX - drag.current.x) > 6) drag.current.moved = true
               setLift(Math.min(48, Math.max(0, distance) * 0.5))
             }}
             onPointerUp={(event) => finishDrag(event)}
