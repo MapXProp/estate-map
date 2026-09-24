@@ -1,7 +1,6 @@
 import PostCard1 from '@/components/blog/PostCard1'
 import PostCardMeta from '@/components/blog/PostCardMeta'
 import JsonLd from '@/components/seo/JsonLd'
-import { BLOG_PUBLISHED_AT } from '@/data/blogPosts'
 import { getBlogPosts, getBlogPostsByHandle } from '@/data/data'
 import { absoluteUrl, breadcrumbStructuredData, createPageMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
@@ -30,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       ...metadata.openGraph,
       type: 'article',
-      publishedTime: BLOG_PUBLISHED_AT,
+      publishedTime: post.datetime,
       modifiedTime: post.updatedAt,
       authors: [absoluteUrl('/about')],
     },
@@ -55,10 +54,10 @@ export default async function BlogArticlePage({ params }: Props) {
             mainEntityOfPage: absoluteUrl(`/blog/${post.handle}`),
             image: [absoluteUrl(post.featuredImage.src)],
             inLanguage: 'th-TH',
-            datePublished: BLOG_PUBLISHED_AT,
+            datePublished: post.datetime,
             dateModified: post.updatedAt,
-            author: { '@type': 'Organization', name: 'MapxProp', url: absoluteUrl('/about') },
-            publisher: { '@type': 'Organization', name: 'MapxProp', url: absoluteUrl('/') },
+            author: { '@type': 'Organization', name: post.author.name, url: absoluteUrl('/about') },
+            publisher: { '@id': absoluteUrl('/#organization') },
             citation: post.sources.map((source) => source.url),
           },
           {

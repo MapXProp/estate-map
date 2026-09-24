@@ -52,8 +52,9 @@ export function getPropertyPrices(source: PriceSource): PropertyPrice[] {
   return prices.length ? prices : [{ offerType, currency }]
 }
 
-export function filterPropertyPrices(prices: PropertyPrice[], offers: string[] = []) {
-  if (!offers.length) return prices
+export function filterPropertyPrices(prices: PropertyPrice[], offers: string[] | null = []) {
+  // The search API returns null when no buy/rent intent was selected.
+  if (!offers?.length) return prices
   const selected = prices.filter(
     (price) =>
       offers.includes(price.offerType) ||

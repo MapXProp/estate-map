@@ -20,6 +20,7 @@ function load(file, imports = {}) {
 }
 const content = load('src/data/blogPosts.ts')
 const seo = load('src/lib/seo.ts')
+const sitemap = load('src/lib/blogSitemap.ts', { './seo': seo })
 const common = {
   'react/jsx-runtime': require('react/jsx-runtime'),
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
@@ -49,7 +50,8 @@ test('published articles have unique URLs, real local images and resolvable refe
     assert.ok(post.sources.length)
     for (const section of post.sections) for (const id of section.sourceIds || []) assert.ok(post.sources.some((source) => source.id === id))
     for (const handle of post.relatedHandles) assert.ok(handle !== post.handle && content.findBlogPost(handle))
-    assert.equal(new Date(post.updatedAt).toISOString().slice(0, 10), post.datetime)
+    assert.ok(Number.isFinite(Date.parse(post.datetime)))
+    assert.ok(Date.parse(post.updatedAt) >= Date.parse(post.datetime), 'An update cannot precede publication')
   }
 })
 
@@ -67,7 +69,61 @@ test('every article renders its own full body, accessible contents links and sou
     const metadata = await page.generateMetadata({ params: Promise.resolve({ handle: post.handle }) })
     assert.equal(metadata.alternates.canonical, `/blog/${post.handle}`)
     assert.equal(metadata.robots.index, true)
-    assert.equal(metadata.openGraph.publishedTime, content.BLOG_PUBLISHED_AT)
+    assert.equal(metadata.openGraph.publishedTime, post.datetime)
+  }
+})
+
+test('blog sitemap follows new articles and later edits without changing publication dates', () => {
+  const original = content.blogPosts[0]
+  const newer = { ...content.blogPosts[1], handle: 'new-article', datetime: '2026-09-26', updatedAt: '2026-09-26' }
+  const updated = { ...original, updatedAt: '2026-09-27' }
+  const entries = sitemap.buildBlogSitemap([newer, updated])
+  assert.equal(entries[0].url, seo.absoluteUrl('/blog'))
+  assert.equal(entries[0].lastModified.toISOString(), '2026-09-27T00:00:00.000Z')
+  assert.equal(entries[1].url, seo.absoluteUrl('/blog/new-article'))
+  assert.equal(entries[1].lastModified.toISOString(), '2026-09-26T00:00:00.000Z')
+  assert.deepEqual(Array.from(entries[2].images), [seo.absoluteUrl(original.featuredImage.src)])
+  assert.equal(updated.datetime, original.datetime)
+  assert.equal(sitemap.buildBlogSitemap([])[0].lastModified, undefined)
+})
+
+test('later publication uses the article date in both social metadata and structured data', async () => {
+  const post = content.blogPosts[0]
+  const previous = { datetime: post.datetime, updatedAt: post.updatedAt }
+  try {
+    post.datetime = '2026-09-26'
+    post.updatedAt = '2026-09-27'
+    const props = { params: Promise.resolve({ handle: post.handle }) }
+    const metadata = await page.generateMetadata(props)
+    const html = renderToStaticMarkup(await page.default(props))
+    const schema = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])
+    const article = schema.find((item) => item['@type'] === 'BlogPosting')
+    assert.equal(metadata.openGraph.publishedTime, post.datetime)
+    assert.equal(metadata.openGraph.modifiedTime, post.updatedAt)
+    assert.equal(article.datePublished, post.datetime)
+    assert.equal(article.dateModified, post.updatedAt)
+    assert.equal(article.author.name, post.author.name)
+    assert.equal(article.author.url, seo.absoluteUrl('/about'))
+    assert.equal(article.publisher['@id'], seo.absoluteUrl('/#organization'))
+  } finally {
+    Object.assign(post, previous)
+  }
+})
+
+test('public sitemap includes every article alongside the property sitemap', async () => {
+  const route = load('src/app/sitemap.ts', {
+    '@/data/blogPosts': content,
+    '@/lib/blogSitemap': sitemap,
+    '@/lib/propertySitemap': { buildPropertySitemap: () => [{ url: seo.absoluteUrl('/homes') }] },
+    '@/lib/publicOrganizations': { getPublicOrganizations: async () => [] },
+    '@/lib/publishedProperties': { getPublishedProperties: async () => [] },
+  })
+  const entries = await route.default()
+  assert.equal(entries.length, content.blogPosts.length + 2)
+  assert.equal(new Set(entries.map((entry) => entry.url)).size, entries.length)
+  for (const post of content.blogPosts) {
+    const entry = entries.find((item) => item.url === seo.absoluteUrl(`/blog/${post.handle}`))
+    assert.equal(entry.lastModified.toISOString().slice(0, 10), post.updatedAt)
   }
 })
 

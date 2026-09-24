@@ -21,7 +21,7 @@ const PostCardMeta: FC<PostCardMetaProps> = ({
     <div
       className={`inline-flex flex-wrap items-center gap-y-2 text-xs text-neutral-800 sm:text-sm dark:text-neutral-200 ${className}`}
     >
-      <Link href={'/blog'} className="relative flex shrink-0 items-center space-x-2">
+      <Link href="/about" className="relative flex shrink-0 items-center space-x-2">
         {!hiddenAvatar && (
           <span
             aria-hidden="true"

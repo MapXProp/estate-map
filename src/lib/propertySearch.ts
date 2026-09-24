@@ -36,7 +36,7 @@ export type PropertySearchIntent = {
   property_groups?: string[]
   discovery_channels?: Array<'homes' | 'rooms' | 'business'>
   use_cases?: string[]
-  offer_types?: string[]
+  offer_types?: string[] | null
   space_types?: string[]
   features?: string[]
   locations?: Array<{

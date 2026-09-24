@@ -32,7 +32,7 @@ test('the same dual-offer property has both exact prices in search and detail, w
 
 test('buy/rent filters select the actual matching amount; both and unfiltered scopes retain both offers', () => {
   const prices = api.getPropertyPrices(city)
-  for (const offers of [[], ['sale', 'rent']])
+  for (const offers of [undefined, null, [], ['sale', 'rent']])
     assert.deepEqual(plain(api.filterPropertyPrices(prices, offers)), plain(prices))
   assert.equal(api.filterPropertyPrices(prices, ['sale'])[0].amount, 11900000)
   assert.equal(api.filterPropertyPrices(prices, ['rent'])[0].amount, 65000)
