@@ -142,7 +142,7 @@ const MyListingsPanel = () => {
 
   return (
     <div>
-      <header className={styles.heading}>
+      <header className={styles.heading} data-compact>
         <div>
           <span className={styles.eyebrow}>MY LISTINGS</span>
           <h1>{isThai ? 'ประกาศของฉัน' : 'My listings'}</h1>
@@ -152,9 +152,13 @@ const MyListingsPanel = () => {
               : 'Track, edit and manage your listings in one place.'}
           </p>
         </div>
-        <Link href="/add-listing/1?new=1" className={styles.primaryAction}>
+        <Link
+          href="/add-listing/1?new=1"
+          className={styles.primaryAction}
+          aria-label={isThai ? 'ลงประกาศใหม่' : 'Create listing'}
+        >
           <DocumentPlusIcon className="size-5" />
-          {isThai ? 'ลงประกาศใหม่' : 'Create listing'}
+          <span>{isThai ? 'ลงประกาศใหม่' : 'Create listing'}</span>
         </Link>
       </header>
       <div className={styles.toolbar}>

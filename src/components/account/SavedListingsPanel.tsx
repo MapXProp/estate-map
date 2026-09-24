@@ -35,7 +35,7 @@ const SavedListingsPanel = () => {
 
   return (
     <div>
-      <header className={styles.heading}>
+      <header className={styles.heading} data-compact>
         <div>
           <span className={styles.eyebrow}>SAVED PLACES</span>
           <h1>{isThai ? 'ประกาศที่บันทึกไว้' : 'Saved listings'}</h1>
@@ -45,9 +45,13 @@ const SavedListingsPanel = () => {
               : 'Revisit and compare the listings you are interested in.'}
           </p>
         </div>
-        <Link href="/properties/map" className={styles.secondaryAction}>
+        <Link
+          href="/properties/map"
+          className={styles.secondaryAction}
+          aria-label={isThai ? 'ค้นหาเพิ่มเติม' : 'Explore more'}
+        >
           <Search size={17} />
-          {isThai ? 'ค้นหาเพิ่มเติม' : 'Explore more'}
+          <span>{isThai ? 'ค้นหาเพิ่มเติม' : 'Explore more'}</span>
         </Link>
       </header>
 
