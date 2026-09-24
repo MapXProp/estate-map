@@ -2,6 +2,7 @@
 
 import Header from '@/components/Header/Header'
 import PropertyHeaderPrototype from '@/components/Header/PropertyHeaderPrototype'
+import { isBlogPath } from '@/lib/propertyNavigation'
 import { usePathname } from 'next/navigation'
 
 const OtherPagesHeader = () => {
@@ -11,7 +12,7 @@ const OtherPagesHeader = () => {
     return <PropertyHeaderPrototype />
   }
 
-  if (pathname.startsWith('/contact') || pathname.startsWith('/about')) {
+  if (pathname.startsWith('/contact') || pathname.startsWith('/about') || isBlogPath(pathname)) {
     return <PropertyHeaderPrototype />
   }
 

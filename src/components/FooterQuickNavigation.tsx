@@ -1,7 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
+import { isBlogPath, usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
 import { Bars3Icon, HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -48,6 +48,7 @@ const FooterQuickNavigation = () => {
   const hideOnPrimaryNavigation = usesMobilePrimaryNavigation(pathname)
   const hideOnContact = pathname.startsWith('/contact')
   const hideOnAbout = pathname.startsWith('/about')
+  const hideOnBlog = isBlogPath(pathname)
   const hideOnAccount = pathname.startsWith('/account')
   const hideOnListingWizard = pathname.startsWith('/add-listing')
   const hideOnPropertyMap =
@@ -109,6 +110,7 @@ const FooterQuickNavigation = () => {
     hideOnPrimaryNavigation ||
     hideOnContact ||
     hideOnAbout ||
+    hideOnBlog ||
     hideOnAccount ||
     hideOnPropertyMap ||
     hideOnListingWizard

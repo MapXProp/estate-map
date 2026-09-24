@@ -2,6 +2,7 @@
 
 import Footer2 from '@/components/Footer2'
 import PropertyFooterPrototype from '@/components/property-home/PropertyFooterPrototype'
+import { isBlogPath } from '@/lib/propertyNavigation'
 import { usePathname } from 'next/navigation'
 
 const OtherPagesFooter = () => {
@@ -11,7 +12,7 @@ const OtherPagesFooter = () => {
     return <PropertyFooterPrototype />
   }
 
-  if (pathname.startsWith('/contact')) {
+  if (pathname.startsWith('/contact') || isBlogPath(pathname)) {
     return <PropertyFooterPrototype showListingCta={false} />
   }
 
