@@ -2,13 +2,15 @@
 
 import SocialMediaLinks from '@/components/SocialMediaLinks'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { ArrowUpRight, Building2, Mail, MapPin, MessageCircle, Phone, Send } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, ChevronDown, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
+import Image from 'next/image'
 import type { FormEvent } from 'react'
+import styles from './ContactPage.module.css'
 
 const contactEmail = 'mapxprop@gmail.com'
 const contactPhone = '094-517-4626'
-const lineId = 'mapxprop'
 const lineUrl = 'https://line.me/ti/p/~mapxprop'
+const photoUrl = 'https://unsplash.com/photos/modern-cafe-interior-with-tables-chairs-and-plants-IXzM29iGAz8'
 const mapUrl =
   'https://www.google.com/maps/search/?api=1&query=8%20Somkij%20Building%2C%20Vibhavadi%20Rangsit%20Road%2C%20Chomphon%2C%20Chatuchak%2C%20Bangkok%2010900'
 
@@ -22,60 +24,69 @@ const topicOptions = [
 const contactCopy = {
   th: {
     eyebrow: 'ติดต่อ MapxProp',
-    title: 'มีเรื่องพื้นที่ คุยกับเราได้เลย',
-    description: 'สอบถามการค้นหาอสังหา การลงประกาศ หรือแจ้งข้อมูลที่ต้องการให้ทีมงานช่วยตรวจสอบ',
-    address: 'ที่อยู่',
-    addressPrimary: '8 อาคารสมกิจ ถนนวิภาวดีรังสิต แขวงจอมพล เขตจตุจักร กทม. 10900',
-    addressSecondary: '8 Somkij Building, Vibhavadi Rangsit Road, Chomphon, Chatuchak, Bangkok 10900',
-    openMap: 'เปิดแผนที่',
-    phone: 'โทรศัพท์',
-    email: 'อีเมล',
-    follow: 'ติดตาม MapxProp',
-    formEyebrow: 'ส่งข้อความถึงทีมงาน',
-    formTitle: 'ให้เราช่วยเรื่องอะไร?',
+    title: 'มีคำถาม?',
+    titleSecond: 'คุยกับเราได้เลย',
+    description: 'เรื่องลงประกาศ การใช้งาน หรือร่วมงานกับเรา',
+    hello: 'สวัสดีครับ',
+    greeting: 'ให้เราช่วยอะไรดี?',
+    photo: 'มุมนั่งคุยริมหน้าต่าง โต๊ะไม้และต้นไม้ในแสงธรรมชาติ',
+    photoCredit: 'ภาพ',
+    channels: 'เลือกช่องทางติดต่อ',
+    line: 'แชตผ่าน LINE',
+    lineHint: 'LINE ID: mapxprop',
+    phone: 'โทรคุยกับเรา',
+    email: 'ส่งอีเมล',
+    address: 'ที่อยู่ติดต่อ',
+    addressText: '8 อาคารสมกิจ ถนนวิภาวดีรังสิต แขวงจอมพล เขตจตุจักร กรุงเทพฯ 10900',
+    openMap: 'ดูเส้นทาง',
+    follow: 'เจอกันบนโซเชียล',
+    formTitle: 'อยากเล่ารายละเอียดเพิ่มเติม?',
+    formDescription: 'เขียนข้อความ แล้วส่งผ่านแอปอีเมลของคุณ',
     name: 'ชื่อ',
     namePlaceholder: 'ชื่อผู้ติดต่อ',
-    topic: 'หัวข้อ',
+    emailLabel: 'อีเมลติดต่อกลับ',
+    topic: 'เรื่องที่อยากคุย',
     message: 'ข้อความ',
-    messagePlaceholder: 'เขียนรายละเอียดที่ต้องการให้เราช่วย...',
-    formHint: 'ระบบจะเตรียมข้อความและเปิดแอปอีเมลให้คุณตรวจสอบก่อนส่ง',
-    submit: 'เตรียมส่งข้อความ',
-    subjectName: 'ชื่อ',
-    subjectEmail: 'อีเมลติดต่อกลับ',
+    messagePlaceholder: 'ให้เราช่วยเรื่องอะไรดี…',
+    formHint: 'ตรวจสอบและกดส่งอีกครั้งในแอปอีเมล',
+    submit: 'เปิดแอปอีเมล',
   },
   en: {
     eyebrow: 'Contact MapxProp',
-    title: "Let's talk about the space you need",
-    description: 'Ask about finding a property, listing your space, or reporting information for our team to review.',
-    address: 'Address',
-    addressPrimary: '8 Somkij Building, Vibhavadi Rangsit Road, Chomphon, Chatuchak, Bangkok 10900',
-    addressSecondary: '8 อาคารสมกิจ ถนนวิภาวดีรังสิต แขวงจอมพล เขตจตุจักร กทม. 10900',
-    openMap: 'Open map',
-    phone: 'Phone',
-    email: 'Email',
-    follow: 'Follow MapxProp',
-    formEyebrow: 'Send us a message',
-    formTitle: 'How can we help?',
+    title: 'Got a question?',
+    titleSecond: 'Let’s talk.',
+    description: 'Help with listings, using MapxProp, or working together.',
+    hello: 'Hello there',
+    greeting: 'How can we help?',
+    photo: 'A sunlit cafe corner with a wooden table, chairs and indoor plants',
+    photoCredit: 'Photo',
+    channels: 'Choose how to get in touch',
+    line: 'Chat on LINE',
+    lineHint: 'LINE ID: mapxprop',
+    phone: 'Give us a call',
+    email: 'Email us',
+    address: 'Contact address',
+    addressText: '8 Somkij Building, Vibhavadi Rangsit Road, Chomphon, Chatuchak, Bangkok 10900',
+    openMap: 'Get directions',
+    follow: 'Find us on social',
+    formTitle: 'Have more to share?',
+    formDescription: 'Write a message to send from your email app.',
     name: 'Name',
     namePlaceholder: 'Your name',
-    topic: 'Topic',
+    emailLabel: 'Reply email',
+    topic: 'What’s on your mind?',
     message: 'Message',
-    messagePlaceholder: 'Tell us how we can help...',
-    formHint: 'We will prepare your message and open your email app for review before sending.',
-    submit: 'Prepare email',
-    subjectName: 'Name',
-    subjectEmail: 'Reply email',
+    messagePlaceholder: 'Tell us how we can help…',
+    formHint: 'Review and send from your email app.',
+    submit: 'Open email app',
   },
 } as const
-
-const normalizeTopic = (topic?: string) =>
-  topicOptions.some((option) => option.value === topic) ? topic : 'general'
 
 const ContactPageContent = ({ initialTopic }: { initialTopic?: string }) => {
   const { locale } = usePreferences()
   const isThai = locale === 'th'
   const t = contactCopy[isThai ? 'th' : 'en']
-  const selectedTopic = normalizeTopic(initialTopic)
+  const selectedTopic = topicOptions.find((option) => option.value === initialTopic)?.value || 'general'
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -87,138 +98,130 @@ const ContactPageContent = ({ initialTopic }: { initialTopic?: string }) => {
     const topicOption = topicOptions.find((option) => option.value === topic) || topicOptions[0]
     const topicLabel = isThai ? topicOption.labelTh : topicOption.labelEn
     const subject = `[MapxProp] ${topicLabel}${name ? ` — ${name}` : ''}`
-    const body = [`${t.subjectName}: ${name}`, `${t.subjectEmail}: ${replyEmail}`, '', message].join('\n')
+    const body = [`${t.name}: ${name}`, `${t.emailLabel}: ${replyEmail}`, '', message].join('\n')
 
     window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   return (
-    <main className="bg-white pb-10 min-[744px]:pb-16 dark:bg-neutral-900">
-      <div className="container pt-3 min-[744px]:pt-5 lg:pt-6">
-        <section className="relative overflow-hidden rounded-[28px] bg-[#eaf5f0] px-5 py-8 min-[744px]:px-9 min-[744px]:py-10 lg:px-12 dark:bg-emerald-950/50">
-          <div className="pointer-events-none absolute -top-24 -right-20 size-72 rounded-full border border-[#176b50]/10" />
-          <div className="pointer-events-none absolute -right-10 -bottom-36 size-72 rounded-full bg-[#176b50]/5" />
-          <div className="absolute top-5 right-5 z-10 inline-flex size-11 items-center justify-center rounded-2xl bg-white/80 text-[#176b50] shadow-sm min-[744px]:top-7 min-[744px]:right-7 lg:top-8 lg:right-9 dark:bg-neutral-900/70 dark:text-emerald-300">
-            <Building2 className="size-5" strokeWidth={1.8} aria-hidden="true" />
-          </div>
-          <div className="relative max-w-3xl pr-14 min-[744px]:pr-16">
-            <p className="text-sm font-semibold text-[#176b50] dark:text-emerald-300">{t.eyebrow}</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-neutral-950 min-[744px]:text-4xl lg:text-5xl dark:text-white">
-              {t.title}
-            </h1>
-            <p className="mt-3 max-w-2xl text-base/7 text-neutral-600 min-[744px]:text-lg/8 dark:text-neutral-300">
-              {t.description}
+    <main className={styles.page}>
+      <div className={`container ${styles.container}`}>
+        <section className={styles.hero} aria-labelledby="contact-title">
+          <div className={styles.intro}>
+            <p className={styles.eyebrow}>
+              <span aria-hidden="true" />
+              {t.eyebrow}
             </p>
+            <h1 id="contact-title">
+              {t.title}
+              <br />
+              {t.titleSecond}
+            </h1>
+            <p className={styles.description}>{t.description}</p>
+            <div className={styles.introMark} aria-hidden="true">
+              <MessageCircle />
+              <span>LET’S CONNECT</span>
+            </div>
           </div>
+
+          <figure className={styles.visual}>
+            <div className={styles.photoFrame}>
+              <Image
+                src="/images/contact/conversation-corner.webp"
+                alt={t.photo}
+                fill
+                sizes="(max-width: 743px) 100vw, (max-width: 1280px) 52vw, 660px"
+                preload
+                className={styles.photo}
+              />
+            </div>
+            <div className={styles.greeting} aria-hidden="true">
+              <span className={styles.greetingIcon}>
+                <MessageCircle strokeWidth={1.8} />
+              </span>
+              <span>
+                <small>{t.hello}</small>
+                <strong>{t.greeting}</strong>
+              </span>
+              <span className={styles.chatDots}>
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+            <figcaption className={styles.photoCredit}>
+              <a href={photoUrl} target="_blank" rel="noreferrer">
+                {t.photoCredit}: Kouji Tsuru / Unsplash <ArrowUpRight size={12} aria-hidden="true" />
+              </a>
+            </figcaption>
+          </figure>
         </section>
 
-        <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
-          <div className="space-y-4">
-            <section className="rounded-[26px] border border-neutral-200 bg-white p-5 min-[744px]:p-7 dark:border-neutral-800 dark:bg-neutral-900">
-              <div className="flex items-start gap-4">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#edf7f3] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-300">
-                  <MapPin className="size-5" strokeWidth={1.8} />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-neutral-950 dark:text-white">{t.address}</h2>
-                  <address className="mt-3 space-y-2 text-sm/6 not-italic text-neutral-600 dark:text-neutral-300">
-                    <p>{t.addressPrimary}</p>
-                    <p className="text-neutral-500 dark:text-neutral-400">{t.addressSecondary}</p>
-                  </address>
-                  <a
-                    href={mapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#176b50] transition hover:text-[#123f32] dark:text-emerald-300 dark:hover:text-emerald-200"
-                  >
-                    {t.openMap} <ArrowUpRight className="size-4" />
-                  </a>
-                </div>
-              </div>
-            </section>
+        <section className={styles.channels} aria-label={t.channels}>
+          <a className={`${styles.channel} ${styles.lineChannel}`} href={lineUrl} target="_blank" rel="noreferrer">
+            <span className={styles.channelIcon}>
+              <MessageCircle aria-hidden="true" />
+            </span>
+            <span className={styles.channelCopy}>
+              <strong>{t.line}</strong>
+              <span>{t.lineHint}</span>
+            </span>
+            <span className={styles.channelArrow}>
+              <ArrowUpRight aria-hidden="true" />
+            </span>
+          </a>
+          <a className={styles.channel} href={`tel:${contactPhone.replace(/-/g, '')}`}>
+            <span className={styles.channelIcon}>
+              <Phone aria-hidden="true" />
+            </span>
+            <span className={styles.channelCopy}>
+              <span>{t.phone}</span>
+              <strong>{contactPhone}</strong>
+            </span>
+            <span className={styles.channelArrow}>
+              <ArrowUpRight aria-hidden="true" />
+            </span>
+          </a>
+          <a className={styles.channel} href={`mailto:${contactEmail}`}>
+            <span className={styles.channelIcon}>
+              <Mail aria-hidden="true" />
+            </span>
+            <span className={styles.channelCopy}>
+              <span>{t.email}</span>
+              <strong>{contactEmail}</strong>
+            </span>
+            <span className={styles.channelArrow}>
+              <ArrowUpRight aria-hidden="true" />
+            </span>
+          </a>
+        </section>
 
-            <div className="grid gap-3 min-[520px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <a
-                href={`tel:${contactPhone.replace(/-/g, '')}`}
-                className="group rounded-[22px] border border-neutral-200 bg-white p-5 transition hover:border-[#176b50]/30 hover:bg-[#f5faf8] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
-              >
-                <Phone className="size-5 text-[#176b50] dark:text-emerald-300" strokeWidth={1.8} />
-                <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">{t.phone}</p>
-                <p className="mt-0.5 font-semibold text-neutral-950 group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
-                  {contactPhone}
-                </p>
-              </a>
-              <a
-                href={`mailto:${contactEmail}`}
-                className="group min-w-0 rounded-[22px] border border-neutral-200 bg-white p-5 transition hover:border-[#176b50]/30 hover:bg-[#f5faf8] dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30"
-              >
-                <Mail className="size-5 text-[#176b50] dark:text-emerald-300" strokeWidth={1.8} />
-                <p className="mt-4 text-sm text-neutral-500 dark:text-neutral-400">{t.email}</p>
-                <p className="mt-0.5 truncate font-semibold text-neutral-950 group-hover:text-[#176b50] dark:text-white dark:group-hover:text-emerald-300">
-                  {contactEmail}
-                </p>
-              </a>
-              <a
-                href={lineUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="group rounded-[22px] border border-neutral-200 bg-white p-5 transition hover:border-[#06c755]/30 hover:bg-[#f4fbf6] min-[520px]:col-span-2 lg:col-span-1 xl:col-span-2 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-[#06c755]/40 dark:hover:bg-[#06c755]/5"
-              >
-                <MessageCircle className="size-5 text-[#06a94a] dark:text-[#3adb7a]" strokeWidth={1.8} />
-                <div className="mt-4 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">LINE ID</p>
-                    <p className="mt-0.5 font-semibold text-neutral-950 group-hover:text-[#06a94a] dark:text-white dark:group-hover:text-[#3adb7a]">
-                      {lineId}
-                    </p>
-                  </div>
-                  <ArrowUpRight className="size-4 text-neutral-400 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#06a94a]" />
-                </div>
-              </a>
-            </div>
-
-            <section className="rounded-[22px] border border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900">
-              <p className="text-sm font-semibold text-neutral-950 dark:text-white">{t.follow}</p>
-              <SocialMediaLinks className="mt-1" />
-            </section>
-          </div>
-
-          <section className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-[0_20px_60px_rgba(18,63,50,0.07)] min-[744px]:p-8 dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none">
-            <div>
-              <p className="text-sm font-semibold text-[#176b50] dark:text-emerald-300">{t.formEyebrow}</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-950 dark:text-white">{t.formTitle}</h2>
-            </div>
-            <form className="mt-6 grid gap-5" onSubmit={handleSubmit}>
-              <div className="grid gap-5 min-[600px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <label className="grid gap-2 text-sm font-medium text-neutral-800 dark:text-neutral-200">
+        <div className={styles.detailsGrid}>
+          <details className={styles.messagePanel} key={selectedTopic} open={selectedTopic !== 'general'}>
+            <summary className={styles.messageSummary}>
+              <span className={styles.formIcon}>
+                <Mail aria-hidden="true" />
+              </span>
+              <span>
+                <h2>{t.formTitle}</h2>
+                <span className={styles.formDescription}>{t.formDescription}</span>
+              </span>
+              <ChevronDown className={styles.expandIcon} aria-hidden="true" />
+            </summary>
+            <form className={styles.form} onSubmit={handleSubmit}>
+              <div className={styles.formRow}>
+                <label>
                   {t.name}
-                  <input
-                    name="name"
-                    required
-                    autoComplete="name"
-                    placeholder={t.namePlaceholder}
-                    className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-base font-normal text-neutral-950 outline-hidden transition placeholder:text-neutral-400 focus:border-[#176b50] focus:ring-4 focus:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
+                  <input name="name" required autoComplete="name" maxLength={120} placeholder={t.namePlaceholder} />
                 </label>
-                <label className="grid gap-2 text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                  {t.email}
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="name@example.com"
-                    className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-base font-normal text-neutral-950 outline-hidden transition placeholder:text-neutral-400 focus:border-[#176b50] focus:ring-4 focus:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                  />
+                <label>
+                  {t.emailLabel}
+                  <input name="email" type="email" required autoComplete="email" placeholder="name@example.com" />
                 </label>
               </div>
-              <label className="grid gap-2 text-sm font-medium text-neutral-800 dark:text-neutral-200">
+              <label>
                 {t.topic}
-                <select
-                  name="topic"
-                  defaultValue={selectedTopic}
-                  className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-base font-normal text-neutral-950 outline-hidden transition focus:border-[#176b50] focus:ring-4 focus:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                >
+                <select name="topic" defaultValue={selectedTopic}>
                   {topicOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {isThai ? option.labelTh : option.labelEn}
@@ -226,29 +229,39 @@ const ContactPageContent = ({ initialTopic }: { initialTopic?: string }) => {
                   ))}
                 </select>
               </label>
-              <label className="grid gap-2 text-sm font-medium text-neutral-800 dark:text-neutral-200">
+              <label>
                 {t.message}
-                <textarea
-                  name="message"
-                  required
-                  rows={6}
-                  placeholder={t.messagePlaceholder}
-                  className="min-h-36 resize-y rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-normal text-neutral-950 outline-hidden transition placeholder:text-neutral-400 focus:border-[#176b50] focus:ring-4 focus:ring-[#176b50]/10 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
-                />
+                <textarea name="message" required rows={4} placeholder={t.messagePlaceholder} />
               </label>
-              <div className="flex flex-col gap-3 min-[520px]:flex-row min-[520px]:items-center min-[520px]:justify-between">
-                <p className="text-xs/5 text-neutral-500 dark:text-neutral-400">
-                  {t.formHint}
-                </p>
-                <button
-                  type="submit"
-                  className="inline-flex min-h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#176b50] px-6 text-sm font-semibold text-white shadow-lg shadow-[#176b50]/15 transition hover:bg-[#123f32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50]"
-                >
-                  {t.submit} <Send className="size-4" />
+              <div className={styles.formBottom}>
+                <p>{t.formHint}</p>
+                <button type="submit">
+                  {t.submit}
+                  <ArrowRight size={18} aria-hidden="true" />
                 </button>
               </div>
             </form>
-          </section>
+          </details>
+
+          <aside className={styles.addressPanel}>
+            <div className={styles.addressRow}>
+              <span className={styles.addressIcon}>
+                <MapPin aria-hidden="true" />
+              </span>
+              <div>
+                <h2>{t.address}</h2>
+                <address>{t.addressText}</address>
+                <a className={styles.mapLink} href={mapUrl} target="_blank" rel="noreferrer">
+                  {t.openMap}
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+            <div className={styles.socialRow}>
+              <p>{t.follow}</p>
+              <SocialMediaLinks />
+            </div>
+          </aside>
         </div>
       </div>
     </main>
