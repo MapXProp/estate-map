@@ -284,6 +284,28 @@
   outline: 2px solid var(--discovery-accent);
   outline-offset: 3px;
 }
+@media (max-height: 650px) {
+  .content {
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+  .groupImage {
+    height: 64px;
+  }
+  .offers,
+  .refinements {
+    margin-top: 12px;
+  }
+  .location {
+    margin-top: 16px;
+  }
+  .refinementToggle {
+    min-height: 60px;
+  }
+  .footer p {
+    display: none;
+  }
+}
 :global(.dark) .flow {
   --discovery-accent: #a7d8bc;
   --discovery-tint: #203c2e;
