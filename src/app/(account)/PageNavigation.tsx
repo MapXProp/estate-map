@@ -1,142 +1,136 @@
 'use client'
 
+import styles from '@/components/account/AccountDashboard.module.css'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
-import { Building, Building2, ClipboardCheck, CreditCard, Heart, ShieldCheck, UserCog, UserRound } from 'lucide-react'
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import {
+  Building,
+  Building2,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  CreditCard,
+  Heart,
+  ShieldCheck,
+  UserCog,
+  UserRound,
+  X,
+} from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useState } from 'react'
 
-const navigation = [
-  {
-    titleTh: 'ข้อมูลส่วนตัว',
-    titleEn: 'Personal details',
-    href: '/account',
-    icon: UserRound,
-  },
-  {
-    titleTh: 'ประกาศของฉัน',
-    titleEn: 'My listings',
-    href: '/account-listings',
-    icon: Building2,
-  },
-  {
-    titleTh: 'องค์กรและทีม',
-    titleEn: 'Organizations',
-    href: '/account-organizations',
-    icon: Building,
-  },
-  {
-    titleTh: 'ที่บันทึกไว้',
-    titleEn: 'Saved',
-    href: '/account-savelists',
-    icon: Heart,
-  },
-  {
-    titleTh: 'ความปลอดภัย',
-    titleEn: 'Security',
-    href: '/account-password',
-    icon: ShieldCheck,
-  },
-  {
-    titleTh: 'แพ็กเกจและบิล',
-    titleEn: 'Plan & billing',
-    href: '/account-billing',
-    icon: CreditCard,
-  },
+const primary = [
+  { th: 'ข้อมูลส่วนตัว', en: 'Personal details', href: '/account', icon: UserRound },
+  { th: 'ประกาศของฉัน', en: 'My listings', href: '/account-listings', icon: Building2 },
+  { th: 'ประกาศที่บันทึกไว้', en: 'Saved listings', href: '/account-savelists', icon: Heart },
+  { th: 'แพ็กเกจและการชำระเงิน', en: 'Plan & billing', href: '/account-billing', icon: CreditCard },
 ]
-
-const adminNavigation = {
-  titleTh: 'จัดการสิทธิ์',
-  titleEn: 'Role management',
-  href: '/account-admin',
-  icon: UserCog,
-}
-
-const approvalNavigation = {
-  titleTh: 'อนุมัติประกาศ',
-  titleEn: 'Listing approvals',
-  href: '/account-approvals',
-  icon: ClipboardCheck,
-}
+const settings = [
+  { th: 'องค์กรและทีม', en: 'Organizations & teams', href: '/account-organizations', icon: Building },
+  { th: 'ความปลอดภัย', en: 'Security', href: '/account-password', icon: ShieldCheck },
+]
+const admin = [
+  { th: 'อนุมัติประกาศ', en: 'Listing approvals', href: '/account-approvals', icon: ClipboardCheck },
+  { th: 'จัดการสิทธิ์', en: 'Role management', href: '/account-admin', icon: UserCog },
+]
 
 export const PageNavigation = () => {
   const pathname = usePathname()
+  const { user } = useAuth()
+  return user ? <AccountNavigation key={pathname} pathname={pathname} /> : null
+}
+
+function AccountNavigation({ pathname }: { pathname: string }) {
   const { locale } = usePreferences()
-  const { user, isAuthenticated } = useAuth()
-  const isThai = locale === 'th'
-  const visibleNavigation =
-    user?.role_code === 'super_admin' ? [...navigation, approvalNavigation, adminNavigation] : navigation
-  const activeMobileItemRef = useRef<HTMLAnchorElement>(null)
-
-  useEffect(() => {
-    activeMobileItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-  }, [pathname])
-
-  if (!isAuthenticated || pathname === '/account') return null
-
-  return (
-    <div className="container py-4 min-[744px]:py-5">
-      <nav
-        aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className={`hidden grid-cols-3 gap-1.5 rounded-[24px] bg-neutral-100 p-1.5 ring-1 ring-neutral-200/80 min-[744px]:grid dark:bg-neutral-800/80 dark:ring-neutral-700 ${
-          visibleNavigation.length === 8 ? 'xl:grid-cols-8' : 'xl:grid-cols-6'
-        }`}
-      >
-        {visibleNavigation.map((item) => {
-          const isActive = pathname === item.href
-          const label = isThai ? item.titleTh : item.titleEn
-          return (
+  const { user } = useAuth()
+  const [open, setOpen] = useState(false)
+  const th = locale === 'th'
+  const groups = [
+    { title: th ? 'พื้นที่ของฉัน' : 'My space', items: primary },
+    { title: th ? 'การตั้งค่า' : 'Settings', items: settings },
+    ...(user?.role_code === 'super_admin' ? [{ title: th ? 'สำหรับผู้ดูแล' : 'Administration', items: admin }] : []),
+  ]
+  const active = [...primary, ...settings, ...admin].find((item) => item.href === pathname)
+  const CurrentIcon = active?.icon || UserRound
+  const label = active ? (th ? active.th : active.en) : th ? 'บัญชีของฉัน' : 'My account'
+  const links = (mobile = false) =>
+    groups.map((group, index) => (
+      <section key={group.title} className={styles.navGroup}>
+        <h2>{group.title}</h2>
+        <div className={mobile && index === 0 ? styles.mobileNavGrid : undefined}>
+          {group.items.map((item) => (
             <Link
-              key={`desktop-${item.href}`}
               href={item.href}
-              aria-current={isActive ? 'page' : undefined}
-              className={`group flex min-h-16 min-w-0 items-center gap-3 rounded-[18px] px-3 py-2.5 transition-all duration-200 focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-hidden ${
-                isActive
-                  ? 'bg-white text-[#124e3c] shadow-[0_5px_18px_rgba(15,61,47,0.09)] ring-1 ring-[#176b50]/10 dark:bg-neutral-900 dark:text-emerald-300 dark:ring-emerald-700/30'
-                  : 'text-neutral-600 hover:bg-white/70 hover:text-neutral-950 dark:text-neutral-300 dark:hover:bg-neutral-900/60 dark:hover:text-white'
-              }`}
+              key={item.href}
+              aria-current={pathname === item.href ? 'page' : undefined}
+              className={styles.navLink}
+              onClick={() => setOpen(false)}
             >
-              <span
-                className={`grid size-9 shrink-0 place-items-center rounded-xl transition-colors ${
-                  isActive
-                    ? 'bg-[#124e3c] text-white shadow-sm dark:bg-emerald-700'
-                    : 'bg-white text-neutral-500 ring-1 ring-neutral-200 group-hover:text-[#176b50] dark:bg-neutral-800 dark:text-neutral-400 dark:ring-neutral-700'
-                }`}
-              >
-                <item.icon className="size-[18px]" strokeWidth={1.8} />
+              <span className={styles.navIcon}>
+                <item.icon size={19} strokeWidth={1.8} aria-hidden="true" />
               </span>
-              <span className="min-w-0 text-sm leading-5 font-medium">{label}</span>
+              <span>{th ? item.th : item.en}</span>
+              {pathname === item.href ? (
+                <Check size={16} aria-hidden="true" />
+              ) : (
+                <ChevronRight size={15} aria-hidden="true" />
+              )}
             </Link>
-          )
-        })}
-      </nav>
-
-      <nav
-        aria-label={isThai ? 'เมนูบัญชี' : 'Account navigation'}
-        className="-mx-4 hidden-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 py-1 min-[744px]:hidden"
+          ))}
+        </div>
+      </section>
+    ))
+  return (
+    <>
+      <aside className={styles.sidebar}>
+        <Link href="/account" className={styles.sidebarIdentity}>
+          <span>{Array.from(user?.name || 'M')[0]}</span>
+          <div>
+            <strong>{user?.name || (th ? 'สมาชิก MapxProp' : 'MapxProp member')}</strong>
+            <small>{th ? 'บัญชีของฉัน' : 'My account'}</small>
+          </div>
+        </Link>
+        <nav aria-label={th ? 'เมนูบัญชี' : 'Account navigation'}>{links()}</nav>
+      </aside>
+      <button
+        type="button"
+        data-account-menu-trigger
+        className={styles.mobileNavTrigger}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
       >
-        {visibleNavigation.map((item) => {
-          const isActive = pathname === item.href
-          const label = isThai ? item.titleTh : item.titleEn
-          return (
-            <Link
-              key={`mobile-${item.href}`}
-              ref={isActive ? activeMobileItemRef : undefined}
-              href={item.href}
-              aria-current={isActive ? 'page' : undefined}
-              className={`flex min-h-11 shrink-0 snap-center items-center gap-2 rounded-full border px-3.5 text-sm font-medium transition focus-visible:ring-3 focus-visible:ring-[#176b50]/25 focus-visible:outline-hidden ${
-                isActive
-                  ? 'border-[#124e3c] bg-[#124e3c] text-white shadow-[0_5px_16px_rgba(18,78,60,0.22)] dark:border-emerald-700 dark:bg-emerald-700'
-                  : 'border-neutral-200 bg-white text-neutral-600 active:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
-              }`}
-            >
-              <item.icon className="size-[17px]" strokeWidth={1.9} />
-              <span>{label}</span>
-            </Link>
-          )
-        })}
-      </nav>
-    </div>
+        <span className={styles.navIcon}>
+          <CurrentIcon size={20} aria-hidden="true" />
+        </span>
+        <span>
+          <small>{th ? 'บัญชีของฉัน' : 'My account'}</small>
+          <strong>{label}</strong>
+        </span>
+        <span className={styles.changePage}>{th ? 'เปลี่ยนหน้า' : 'Switch'}</span>
+        <ChevronDown size={18} aria-hidden="true" />
+      </button>
+      <Dialog open={open} onClose={() => setOpen(false)} className="relative z-[100]">
+        <DialogBackdrop className="fixed inset-0 bg-neutral-950/35 backdrop-blur-xs" />
+        <div className={styles.menuPosition}>
+          <DialogPanel className={styles.menuPanel}>
+            <header>
+              <DialogTitle>{th ? 'บัญชีของฉัน' : 'My account'}</DialogTitle>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label={th ? 'ปิดเมนูบัญชี' : 'Close account menu'}
+              >
+                <X size={20} />
+              </button>
+            </header>
+            <nav aria-label={th ? 'เลือกหน้าบัญชี' : 'Choose account page'}>{links(true)}</nav>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
   )
 }

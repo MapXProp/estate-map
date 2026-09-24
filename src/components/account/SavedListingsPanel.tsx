@@ -8,8 +8,10 @@ import { toRealEstateListing } from '@/data/listings'
 import { useAuth } from '@/hooks/useAuth'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import { HeartIcon } from '@heroicons/react/24/outline'
-import { ArrowRight, RefreshCw } from 'lucide-react'
-import { useMemo } from 'react'
+import { ArrowRight, RefreshCw, Search, X } from 'lucide-react'
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
+import styles from './AccountDashboard.module.css'
 
 const SavedListingsPanel = () => {
   const { locale } = usePreferences()
@@ -17,30 +19,60 @@ const SavedListingsPanel = () => {
   const { isAuthenticated, status } = useAuth()
   const { openAuthModal } = useAuthModal()
   const isThai = locale === 'th'
+  const [query, setQuery] = useState('')
   const cards = useMemo(() => listings.map(toRealEstateListing), [listings])
+  const visibleCards = useMemo(
+    () =>
+      cards.filter((card) =>
+        [card.title, card.titleEn, card.address, card.addressEn]
+          .filter(Boolean)
+          .join(' ')
+          .toLocaleLowerCase()
+          .includes(query.trim().toLocaleLowerCase())
+      ),
+    [cards, query]
+  )
 
   return (
     <div>
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <header className={styles.heading}>
         <div>
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-950/30 dark:text-rose-300">
-            <HeartIcon className="size-6" />
-          </span>
-          <h1 className="mt-4 font-sarabun text-3xl font-semibold text-neutral-900 dark:text-white">
-            {isThai ? 'ประกาศที่บันทึกไว้' : 'Saved listings'}
-          </h1>
-          <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
+          <span className={styles.eyebrow}>SAVED PLACES</span>
+          <h1>{isThai ? 'ประกาศที่บันทึกไว้' : 'Saved listings'}</h1>
+          <p>
             {isThai
               ? 'รวมประกาศที่คุณสนใจไว้กลับมาดูและเปรียบเทียบได้ง่าย'
               : 'Revisit and compare the listings you are interested in.'}
           </p>
         </div>
-        {cards.length ? (
-          <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
-            {isThai ? `${cards.length} ประกาศ` : `${cards.length} listings`}
+        <Link href="/properties/map" className={styles.secondaryAction}>
+          <Search size={17} />
+          {isThai ? 'ค้นหาเพิ่มเติม' : 'Explore more'}
+        </Link>
+      </header>
+
+      {isReady && cards.length > 0 ? (
+        <div className={styles.toolbar}>
+          <label className={styles.search}>
+            <Search size={19} aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label={isThai ? 'ค้นหาในประกาศที่บันทึกไว้' : 'Search saved listings'}
+              placeholder={isThai ? 'ค้นหาในรายการที่บันทึกไว้' : 'Search your saved places'}
+            />
+            {query ? (
+              <button type="button" onClick={() => setQuery('')} aria-label={isThai ? 'ล้างคำค้น' : 'Clear search'}>
+                <X size={16} />
+              </button>
+            ) : null}
+          </label>
+          <p role="status" className={styles.resultCount}>
+            {isThai ? `${visibleCards.length} ประกาศ` : `${visibleCards.length} listings`}
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {status === 'guest' ? (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-100 bg-[#edf5ef] p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
@@ -83,7 +115,7 @@ const SavedListingsPanel = () => {
       ) : null}
 
       {!isReady ? (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label={isThai ? 'กำลังโหลด' : 'Loading'}>
+        <div className={styles.savedGrid} aria-label={isThai ? 'กำลังโหลด' : 'Loading'}>
           {[0, 1, 2].map((item) => (
             <div key={item} className="animate-pulse overflow-hidden rounded-2xl bg-white dark:bg-neutral-800">
               <div className="aspect-4/3 bg-neutral-200 dark:bg-neutral-700" />
@@ -96,13 +128,28 @@ const SavedListingsPanel = () => {
           ))}
         </div>
       ) : cards.length ? (
-        <section className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((listing) => (
-            <PropertyCard key={listing.id} data={listing} openInNewTab />
-          ))}
-        </section>
+        visibleCards.length ? (
+          <section className={styles.savedGrid}>
+            {visibleCards.map((listing) => (
+              <PropertyCard key={listing.id} data={listing} openInNewTab />
+            ))}
+          </section>
+        ) : (
+          <section className={styles.empty}>
+            <Search size={32} />
+            <h2>{isThai ? 'ไม่พบรายการที่ตรงกับคำค้น' : 'No matching saved places'}</h2>
+            <p>
+              {isThai
+                ? 'ลองค้นหาชื่อหรือทำเลอื่น รายการที่บันทึกไว้ยังอยู่ครบ'
+                : 'Try another title or location. Your saved places are still here.'}
+            </p>
+            <button type="button" className={styles.secondaryAction} onClick={() => setQuery('')}>
+              {isThai ? 'ดูรายการทั้งหมด' : 'Show all saved places'}
+            </button>
+          </section>
+        )
       ) : !error ? (
-        <section className="mt-8 rounded-3xl border border-dashed border-neutral-300 bg-white px-6 py-12 text-center dark:border-neutral-700 dark:bg-neutral-800">
+        <section className={styles.empty}>
           <HeartIcon className="mx-auto size-10 text-neutral-300 dark:text-neutral-600" />
           <h2 className="mt-4 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
             {savedCount > 0

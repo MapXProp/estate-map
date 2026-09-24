@@ -1,45 +1,81 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import ButtonPrimary from '@/shared/ButtonPrimary'
-import { BanknotesIcon } from '@heroicons/react/24/outline'
+import { ArrowRight, CheckCircle2, CreditCard, FileText, Plus, ShieldCheck } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import styles from './AccountDashboard.module.css'
 
-const AccountBillingPanel = () => {
+export default function AccountBillingPanel() {
   const { locale } = usePreferences()
-  const isThai = locale === 'th'
-
+  const th = locale === 'th'
+  const say = (thai: string, english: string) => (th ? thai : english)
   return (
-    <div className="max-w-2xl">
-      <span className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-        <BanknotesIcon className="size-6" />
-      </span>
-      <h1 className="mt-4 font-sarabun text-3xl font-semibold text-neutral-900 dark:text-white">
-        {isThai ? 'แพ็กเกจและการชำระเงิน' : 'Plan & billing'}
-      </h1>
-      <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-500 dark:text-neutral-400">
-        {isThai
-          ? 'ปัจจุบันการลงประกาศบน MapXProp ไม่มีค่าใช้จ่าย และระบบยังไม่มีการเรียกเก็บเงินหรือข้อมูลบัตรของคุณ'
-          : 'Listing on MapXProp is currently free. We do not charge you or store payment card details.'}
-      </p>
-
-      <section className="mt-8 rounded-3xl border border-emerald-100 bg-emerald-50/70 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/20">
-        <p className="font-sarabun text-sm font-medium text-emerald-800 dark:text-emerald-200">
-          {isThai ? 'แพ็กเกจปัจจุบัน' : 'Current plan'}
+    <div>
+      <header className={styles.heading}>
+        <div>
+          <span className={styles.eyebrow}>PLAN & BILLING</span>
+          <h1>{say('แพ็กเกจและการชำระเงิน', 'Plan & billing')}</h1>
+          <p>{say('เริ่มแบ่งปันพื้นที่ดี ๆ ได้ฟรีบน MapxProp', 'Sharing your space on MapxProp is currently free.')}</p>
+        </div>
+      </header>
+      <section className={styles.plan}>
+        <div>
+          <small>
+            <CheckCircle2 size={15} />
+            {say('แพ็กเกจปัจจุบัน', 'Current plan')}
+          </small>
+          <h2>{say('ลงประกาศฟรี', 'Free listings')}</h2>
+          <p>
+            {say(
+              'เพิ่มรูปและรายละเอียด ส่งให้ทีมงานตรวจสอบ แล้วติดตามสถานะได้จากประกาศของฉัน',
+              'Add your photos and details, submit for review, and track progress in My listings.'
+            )}
+          </p>
+          <Link href="/add-listing/1?new=1" className={`${styles.primaryAction} ${styles.orangeAction}`}>
+            <Plus size={18} />
+            {say('ลงประกาศใหม่', 'Create listing')}
+          </Link>
+        </div>
+        <Image src="/images/listing-cta/neighborhood.webp" width={240} height={180} sizes="200px" alt="" />
+      </section>
+      <div className={styles.billingFacts}>
+        <div>
+          <CheckCircle2 size={21} />
+          <h3>{say('ไม่มีค่าลงประกาศ', 'No listing fee')}</h3>
+          <p>{say('การลงประกาศในปัจจุบันไม่มีค่าใช้จ่าย', 'Creating a listing is currently free.')}</p>
+        </div>
+        <div>
+          <CreditCard size={21} />
+          <h3>{say('ไม่ต้องเพิ่มบัตร', 'No card required')}</h3>
+          <p>{say('เริ่มลงประกาศได้โดยไม่กรอกข้อมูลบัตร', 'Start without entering payment card details.')}</p>
+        </div>
+        <div>
+          <ShieldCheck size={21} />
+          <h3>{say('ไม่มีการเรียกเก็บเงิน', 'No active charges')}</h3>
+          <p>{say('ขณะนี้ MapxProp ยังไม่มีระบบเรียกเก็บเงิน', 'MapxProp does not currently collect payments.')}</p>
+        </div>
+      </div>
+      <section className={styles.panel}>
+        <h2>{say('การชำระเงินและใบเสร็จ', 'Payments & receipts')}</h2>
+        <p className={styles.panelDescription}>
+          {say(
+            'ยังไม่มีรายการชำระเงินหรือใบเสร็จ เนื่องจากการลงประกาศในปัจจุบันให้บริการฟรี',
+            'There are no payments or receipts while listings are offered free of charge.'
+          )}
         </p>
-        <p className="mt-2 font-sarabun text-xl font-semibold text-neutral-900 dark:text-white">
-          {isThai ? 'ลงประกาศฟรี' : 'Free listings'}
-        </p>
-        <p className="mt-2 font-sarabun text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-          {isThai
-            ? 'ส่งประกาศเพื่อให้ทีมงานตรวจสอบ แล้วติดตามสถานะได้จากหน้า “ประกาศของฉัน”'
-            : 'Submit a listing for review, then track its status from My listings.'}
-        </p>
-        <ButtonPrimary href="/add-listing/1?new=1" className="mt-5 h-11">
-          {isThai ? 'ลงประกาศใหม่' : 'Create listing'}
-        </ButtonPrimary>
+        <div className={styles.settingsRows}>
+          <Link href="/account-listings">
+            <FileText size={18} />
+            <span>{say('จัดการประกาศของฉัน', 'Manage my listings')}</span>
+            <ArrowRight size={16} />
+          </Link>
+          <Link href="/contact">
+            <span>{say('สอบถามเรื่องแพ็กเกจ', 'Ask about plans')}</span>
+            <ArrowRight size={16} />
+          </Link>
+        </div>
       </section>
     </div>
   )
 }
-
-export default AccountBillingPanel

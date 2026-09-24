@@ -6,7 +6,9 @@ import { fetchWithAuthRetry, getAuthApiUrl, setStoredUser, type AuthUser } from 
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import Input from '@/shared/Input'
 import { CheckCircleIcon } from '@heroicons/react/24/outline'
+import Link from 'next/link'
 import { FormEvent, useEffect, useRef, useState } from 'react'
+import styles from './AccountDashboard.module.css'
 
 const AccountProfileForm = () => {
   const { locale } = usePreferences()
@@ -18,6 +20,7 @@ const AccountProfileForm = () => {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const pending = useRef(false)
+  const dirty = name.trim() !== (user?.name || '') || surname.trim() !== (user?.surname || '')
 
   useEffect(() => {
     setName(user?.name || '')
@@ -26,7 +29,7 @@ const AccountProfileForm = () => {
 
   const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (pending.current || !isAuthenticated) return
+    if (pending.current || !isAuthenticated || !dirty) return
     pending.current = true
     setIsSaving(true)
     setMessage('')
@@ -63,13 +66,11 @@ const AccountProfileForm = () => {
   return (
     <form onSubmit={saveProfile} method="post" className="space-y-5">
       <div>
-        <h3 className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">
-          {isThai ? 'ข้อมูลส่วนตัว' : 'Personal details'}
-        </h3>
+        <h2>{isThai ? 'ชื่อที่แสดงในบัญชี' : 'Your display name'}</h2>
         <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
           {isThai
-            ? 'ชื่อที่ใช้แสดงในบัญชีของคุณ ไม่ต้องกรอกเพิ่มเพื่อเริ่มค้นหา'
-            : 'The name shown on your account. Optional for browsing.'}
+            ? 'แก้ไขชื่อและนามสกุล แล้วกดบันทึกเมื่อพร้อม'
+            : 'Update your first and last name, then save when ready.'}
         </p>
       </div>
 
@@ -84,7 +85,10 @@ const AccountProfileForm = () => {
             className="mt-2"
             fontClass="text-base"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value)
+              setMessage('')
+            }}
             maxLength={120}
             readOnly={isSaving || !isAuthenticated}
           />
@@ -99,7 +103,10 @@ const AccountProfileForm = () => {
             className="mt-2"
             fontClass="text-base"
             value={surname}
-            onChange={(event) => setSurname(event.target.value)}
+            onChange={(event) => {
+              setSurname(event.target.value)
+              setMessage('')
+            }}
             maxLength={120}
             readOnly={isSaving || !isAuthenticated}
           />
@@ -107,12 +114,21 @@ const AccountProfileForm = () => {
       </div>
 
       <label className="block">
-        <span className="font-sarabun text-sm font-medium text-neutral-800 dark:text-neutral-200">Email</span>
-        <Input className="mt-2" fontClass="text-base" value={user?.email || ''} readOnly aria-readonly="true" />
+        <span className="font-sarabun text-sm font-medium text-neutral-800 dark:text-neutral-200">
+          {isThai ? 'อีเมลบัญชี' : 'Account email'}
+        </span>
+        <Input
+          className="mt-2 bg-neutral-50 dark:bg-neutral-800"
+          fontClass="text-base"
+          value={user?.email || ''}
+          readOnly
+          aria-readonly="true"
+        />
         <span className="mt-2 block font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-          {isThai
-            ? 'หากต้องการเปลี่ยนอีเมล โปรดติดต่อทีมงานเพื่อยืนยันตัวตน'
-            : 'Contact support to change your email securely.'}
+          {isThai ? 'ต้องการเปลี่ยนอีเมล? ' : 'Need to change your email? '}
+          <Link href="/contact" className="underline">
+            {isThai ? 'ติดต่อทีมงาน' : 'Contact support'}
+          </Link>
         </span>
       </label>
 
@@ -134,14 +150,31 @@ const AccountProfileForm = () => {
         </p>
       ) : null}
 
-      <ButtonPrimary
-        type="submit"
-        disabled={isSaving || !isAuthenticated}
-        aria-busy={isSaving}
-        className="h-12 w-full bg-[#176b50]! text-white! hover:bg-[#125b44]!"
-      >
-        {isSaving ? (isThai ? 'กำลังบันทึก...' : 'Saving...') : isThai ? 'บันทึกข้อมูล' : 'Save details'}
-      </ButtonPrimary>
+      <div className="flex flex-wrap items-center gap-3 border-t border-neutral-200 pt-5 dark:border-neutral-700">
+        <ButtonPrimary
+          type="submit"
+          disabled={isSaving || !isAuthenticated || !dirty}
+          aria-busy={isSaving}
+          className="h-12 w-full bg-[#176b50]! text-white! hover:bg-[#125b44]! sm:w-auto"
+        >
+          {isSaving ? (isThai ? 'กำลังบันทึก...' : 'Saving...') : isThai ? 'บันทึกข้อมูล' : 'Save details'}
+        </ButtonPrimary>
+        {dirty ? (
+          <button
+            type="button"
+            disabled={isSaving}
+            className={styles.secondaryAction}
+            onClick={() => {
+              setName(user?.name || '')
+              setSurname(user?.surname || '')
+              setMessage('')
+              setError('')
+            }}
+          >
+            {isThai ? 'ยกเลิกการเปลี่ยนแปลง' : 'Discard changes'}
+          </button>
+        ) : null}
+      </div>
     </form>
   )
 }

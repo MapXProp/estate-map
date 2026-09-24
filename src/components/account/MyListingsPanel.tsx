@@ -6,7 +6,16 @@ import { getPropertyType } from '@/data/propertyTaxonomy'
 import { clearListingDraft, getListingDraft, loadMyListingForEdit } from '@/lib/listingDraft'
 import { deleteMyListing, getListingMediaUrl, getMyListings, type MyListing } from '@/lib/myListings'
 import ButtonPrimary from '@/shared/ButtonPrimary'
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+} from '@headlessui/react'
 import {
   ArrowPathIcon,
   CheckCircleIcon,
@@ -17,9 +26,11 @@ import {
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline'
+import { ArrowUpRight, Ellipsis, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import styles from './AccountDashboard.module.css'
 
 type ListingFilter = 'all' | 'pending' | 'active'
 
@@ -29,6 +40,7 @@ const MyListingsPanel = () => {
   const isThai = locale === 'th'
   const [listings, setListings] = useState<MyListing[]>([])
   const [filter, setFilter] = useState<ListingFilter>('all')
+  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
@@ -113,94 +125,140 @@ const MyListingsPanel = () => {
   }
 
   const visibleListings = useMemo(
-    () => listings.filter((listing) => filter === 'all' || listingGroup(listing) === filter),
-    [filter, listings]
+    () =>
+      listings.filter(
+        (listing) =>
+          (filter === 'all' || listingGroup(listing) === filter) &&
+          [listing.title, listing.address, listing.organization_name]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase()
+            .includes(query.trim().toLocaleLowerCase())
+      ),
+    [filter, listings, query]
   )
   const pendingCount = listings.filter((listing) => listingGroup(listing) === 'pending').length
   const activeCount = listings.filter((listing) => listingGroup(listing) === 'active').length
 
   return (
     <div>
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <header className={styles.heading}>
         <div>
-          <h1 className="font-sarabun text-3xl font-semibold text-neutral-900 dark:text-white">
-            {isThai ? 'ประกาศของฉัน' : 'My listings'}
-          </h1>
-          <p className="mt-2 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
+          <span className={styles.eyebrow}>MY LISTINGS</span>
+          <h1>{isThai ? 'ประกาศของฉัน' : 'My listings'}</h1>
+          <p>
             {isThai
-              ? 'ดูสถานะของทุกประกาศ รวมถึงประกาศที่กำลังรอทีมงานตรวจสอบ'
-              : 'See every listing you submitted, including listings waiting for review.'}
+              ? 'ดูสถานะ แก้ไข และจัดการประกาศของคุณในที่เดียว'
+              : 'Track, edit and manage your listings in one place.'}
           </p>
         </div>
-        <ButtonPrimary href="/add-listing/1?new=1" className="h-11 shrink-0">
+        <Link href="/add-listing/1?new=1" className={styles.primaryAction}>
           <DocumentPlusIcon className="size-5" />
           {isThai ? 'ลงประกาศใหม่' : 'Create listing'}
-        </ButtonPrimary>
-      </div>
-
-      <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex gap-5 overflow-x-auto">
-          <FilterButton active={filter === 'all'} onClick={() => setFilter('all')}>
-            {isThai ? `ทั้งหมด (${listings.length})` : `All (${listings.length})`}
-          </FilterButton>
-          <FilterButton active={filter === 'pending'} onClick={() => setFilter('pending')}>
-            {isThai ? `รอตรวจสอบ (${pendingCount})` : `In review (${pendingCount})`}
-          </FilterButton>
-          <FilterButton active={filter === 'active'} onClick={() => setFilter('active')}>
-            {isThai ? `เผยแพร่แล้ว (${activeCount})` : `Live (${activeCount})`}
-          </FilterButton>
-        </div>
+        </Link>
+      </header>
+      <div className={styles.toolbar}>
+        <label className={styles.search}>
+          <Search size={19} aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            aria-label={isThai ? 'ค้นหาในประกาศของฉัน' : 'Search my listings'}
+            placeholder={isThai ? 'ค้นหาชื่อประกาศ หรือทำเล' : 'Search title or location'}
+          />
+          {query ? (
+            <button type="button" onClick={() => setQuery('')} aria-label={isThai ? 'ล้างคำค้น' : 'Clear search'}>
+              <X size={16} />
+            </button>
+          ) : null}
+        </label>
         <button
           type="button"
           onClick={() => void loadListings()}
           disabled={loading}
-          className="mb-2 inline-flex h-9 items-center gap-1.5 rounded-full px-3 font-sarabun text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className={styles.secondaryAction}
+          aria-label={isThai ? 'รีเฟรชประกาศ' : 'Refresh listings'}
         >
-          <ArrowPathIcon className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-          {isThai ? 'รีเฟรช' : 'Refresh'}
+          <ArrowPathIcon className={loading ? 'size-4 animate-spin' : 'size-4'} />
+          <span>{isThai ? 'รีเฟรช' : 'Refresh'}</span>
         </button>
       </div>
-
-      {error ? (
-        <div className="mt-7 rounded-3xl border border-red-200 bg-red-50 p-5 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-          <p>{error}</p>
-          <button type="button" className="mt-3 font-semibold underline" onClick={() => void loadListings()}>
-            {isThai ? 'ลองอีกครั้ง' : 'Try again'}
-          </button>
+      <div className={styles.filterRow}>
+        <div className={styles.filters} role="group" aria-label={isThai ? 'สถานะประกาศ' : 'Listing status'}>
+          {(
+            [
+              { value: 'all', th: 'ทั้งหมด', en: 'All', count: listings.length },
+              { value: 'active', th: 'เผยแพร่แล้ว', en: 'Live', count: activeCount },
+              { value: 'pending', th: 'รอดำเนินการ', en: 'Pending', count: pendingCount },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={filter === item.value}
+              onClick={() => setFilter(item.value)}
+            >
+              {isThai ? item.th : item.en}
+              <small>{loading ? '—' : item.count}</small>
+            </button>
+          ))}
         </div>
-      ) : null}
-
-      {editError ? (
-        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-          <p>{editError}</p>
-          <button type="button" className="shrink-0 font-semibold underline" onClick={() => setEditError('')}>
-            {isThai ? 'ปิด' : 'Close'}
-          </button>
+        {!loading && !error ? (
+          <p className={styles.resultCount} role="status">
+            {isThai ? visibleListings.length + ' ประกาศ' : visibleListings.length + ' listings'}
+          </p>
+        ) : null}
+      </div>
+      {[error, editError, deleteError].filter(Boolean).map((message, index) => (
+        <div
+          key={index}
+          role="alert"
+          className="mb-4 rounded-2xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300"
+        >
+          <p>{message}</p>
+          {message === error ? (
+            <button type="button" onClick={() => void loadListings()} className="mt-2 min-h-11 underline">
+              {isThai ? 'ลองอีกครั้ง' : 'Retry'}
+            </button>
+          ) : null}
         </div>
-      ) : null}
-
-      {deleteError ? (
-        <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
-          <p>{deleteError}</p>
-          <button type="button" className="shrink-0 font-semibold underline" onClick={() => setDeleteError('')}>
-            {isThai ? 'ปิด' : 'Close'}
-          </button>
-        </div>
-      ) : null}
-
+      ))}
       {loading ? <ListingSkeleton /> : null}
       {!loading && !error && visibleListings.length === 0 ? (
-        <EmptyState isThai={isThai} hasListings={listings.length > 0} />
+        query.trim() ? (
+          <section className={styles.empty}>
+            <Search size={32} />
+            <h2>{isThai ? 'ไม่พบประกาศที่ตรงกับคำค้น' : 'No matching listings'}</h2>
+            <p>
+              {isThai
+                ? 'ลองใช้ชื่อหรือทำเลอื่น หรือดูประกาศทั้งหมดของคุณ'
+                : 'Try another title or location, or view all your listings.'}
+            </p>
+            <button
+              type="button"
+              className={styles.secondaryAction}
+              onClick={() => {
+                setQuery('')
+                setFilter('all')
+              }}
+            >
+              {isThai ? 'ดูประกาศทั้งหมด' : 'View all listings'}
+            </button>
+          </section>
+        ) : (
+          <EmptyState isThai={isThai} hasListings={listings.length > 0} />
+        )
       ) : null}
       {!loading && !error && visibleListings.length > 0 ? (
-        <div className="mt-7 grid gap-4">
+        <div className={styles.listingList}>
           {visibleListings.map((listing) => (
             <ListingRow
               key={listing.public_listing_id || listing.id}
               listing={listing}
               isThai={isThai}
               editing={editingListingId === listing.public_listing_id}
-              editDisabled={Boolean(editingListingId)}
+              editDisabled={Boolean(editingListingId || deletingListingId)}
               onEdit={() => void handleEdit(listing)}
               actionDisabled={Boolean(editingListingId || deletingListingId)}
               onDelete={() => {
@@ -211,11 +269,11 @@ const MyListingsPanel = () => {
           ))}
         </div>
       ) : null}
-
       <DeleteListingDialog
         listing={deleteTarget}
         isThai={isThai}
         deleting={Boolean(deleteTarget && deletingListingId === deleteTarget.public_listing_id)}
+        error={deleteError}
         onClose={closeDeleteConfirmation}
         onConfirm={() => void handleDelete()}
       />
@@ -246,93 +304,90 @@ const ListingRow = ({
   const propertyLabel = isThai
     ? propertyType?.nameTh || listing.property_type_code
     : propertyType?.nameEn || listing.property_type_code
-  const listingIsLive = listingGroup(listing) === 'active'
-
+  const live = listingGroup(listing) === 'active'
   return (
-    <article className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm sm:flex dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="relative h-44 bg-neutral-100 sm:h-auto sm:w-56 dark:bg-neutral-800">
+    <article className={styles.listing} data-my-listing={listing.public_listing_id}>
+      <div className={styles.listingImage}>
         <ListingCardImage url={listing.primary_image_url} />
       </div>
-      <div className="min-w-0 flex-1 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={styles.listingBody}>
+        <div className={styles.listingStatus}>
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sarabun text-xs font-semibold ${status.className}`}
+            className={
+              'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-medium ' + status.className
+            }
           >
-            {status.kind === 'active' ? <CheckCircleIcon className="size-4" /> : <ClockIcon className="size-4" />}
+            {status.kind === 'active' ? <CheckCircleIcon className="size-3.5" /> : <ClockIcon className="size-3.5" />}
             {status.label}
           </span>
-          <time className="font-sarabun text-xs text-neutral-400 dark:text-neutral-500" dateTime={listing.updated_at}>
-            {isThai
-              ? `อัปเดต ${formatDate(listing.updated_at, 'th-TH')}`
-              : `Updated ${formatDate(listing.updated_at, 'en-US')}`}
+          <time dateTime={listing.updated_at}>
+            {isThai ? 'อัปเดต ' : 'Updated '}
+            {formatDate(listing.updated_at, isThai ? 'th-TH' : 'en-US')}
           </time>
         </div>
-        <h2 className="mt-3 line-clamp-2 font-sarabun text-lg font-semibold text-neutral-900 dark:text-white">
-          {listing.title}
-        </h2>
+        <h2>{listing.title}</h2>
+        <p className={styles.listingAddress}>
+          <MapPinIcon className="size-3.5" />
+          <span>
+            {propertyLabel}
+            {listing.address ? ' · ' + listing.address : ''}
+          </span>
+        </p>
+        <p className={styles.listingPrice}>{formatPrice(listing, isThai, formatCurrencyFrom)}</p>
+      </div>
+      <div className={styles.listingActions}>
         {listing.organization_name ? (
-          <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 font-sarabun text-xs font-semibold text-[#176b50] dark:bg-emerald-950/40 dark:text-emerald-300">
+          <p>
             {listing.organization_name}
             {listing.organization_verification_status === 'verified' ? (isThai ? ' · ตรวจสอบแล้ว' : ' · Verified') : ''}
           </p>
-        ) : null}
-        <p className="mt-1 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
-          {propertyLabel}
-          {listing.address ? ` · ${listing.address}` : ''}
-        </p>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="font-sarabun text-base font-semibold text-neutral-900 dark:text-white">
-            {formatPrice(listing, isThai, formatCurrencyFrom)}
+        ) : !live ? (
+          <p>
+            {listing.moderation_status === 'rejected'
+              ? isThai
+                ? 'แก้ไขข้อมูลเพื่อส่งตรวจอีกครั้ง'
+                : 'Edit and resubmit for review'
+              : isThai
+                ? 'ยังไม่แสดงในผลการค้นหา'
+                : 'Not yet visible in search'}
           </p>
-          {!listingIsLive ? (
-            <span className="inline-flex items-center gap-1.5 font-sarabun text-xs text-neutral-500 dark:text-neutral-400">
-              <MapPinIcon className="size-4" />
-              {isThai ? 'ยังไม่แสดงในผลการค้นหาจนกว่าจะอนุมัติ' : 'Hidden from public search until approved'}
-            </span>
-          ) : null}
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            {listing.can_edit !== false ? (
-              <button
-                type="button"
-                onClick={onEdit}
-                disabled={editDisabled || !listing.public_listing_id}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[#176b50]/30 bg-white px-4 font-sarabun text-sm font-semibold text-[#176b50] transition hover:border-[#176b50] hover:bg-emerald-50 disabled:cursor-wait disabled:opacity-60 dark:bg-neutral-900 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
-              >
-                {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
-                {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
-              </button>
-            ) : null}
-            {listing.can_delete !== false ? (
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={actionDisabled || !listing.public_listing_id}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 font-sarabun text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30"
-              >
-                <TrashIcon className="size-4" />
-                {isThai ? 'ลบประกาศ' : 'Delete'}
-              </button>
-            ) : null}
-            {listingIsLive ? (
-              <>
-                <Link
-                  href={`/real-estate-listings/${listing.slug}`}
-                  className="inline-flex h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 min-[744px]:hidden dark:border-neutral-700 dark:text-neutral-200"
-                >
-                  {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
-                </Link>
-                <Link
-                  href={`/real-estate-listings/${listing.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden h-10 items-center rounded-full border border-neutral-200 px-4 font-sarabun text-sm font-semibold text-neutral-700 transition hover:border-emerald-400 hover:text-emerald-700 min-[744px]:inline-flex dark:border-neutral-700 dark:text-neutral-200"
-                >
-                  {isThai ? 'ดูหน้าประกาศ' : 'View listing'}
-                </Link>
-              </>
-            ) : null}
-          </div>
-        </div>
+        ) : null}
+        {listing.can_edit !== false ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            disabled={editDisabled || !listing.public_listing_id}
+            className={styles.primaryAction}
+          >
+            {editing ? <ArrowPathIcon className="size-4 animate-spin" /> : <PencilSquareIcon className="size-4" />}
+            {editing ? (isThai ? 'กำลังเปิด…' : 'Opening…') : isThai ? 'แก้ไขประกาศ' : 'Edit listing'}
+          </button>
+        ) : null}
+        {live ? (
+          <Link href={'/real-estate-listings/' + listing.slug} className={styles.secondaryAction}>
+            {isThai ? 'ดูประกาศ' : 'View listing'}
+            <ArrowUpRight size={16} />
+          </Link>
+        ) : null}
+        {listing.can_delete !== false ? (
+          <Menu>
+            <MenuButton
+              className={styles.moreButton}
+              disabled={actionDisabled || !listing.public_listing_id}
+              aria-label={(isThai ? 'ตัวเลือกเพิ่มเติม: ' : 'More actions: ') + listing.title}
+            >
+              <Ellipsis size={20} />
+            </MenuButton>
+            <MenuItems anchor="bottom end" className={styles.moreMenu}>
+              <MenuItem>
+                <button type="button" onClick={onDelete}>
+                  <TrashIcon className="size-4" />
+                  {isThai ? 'ลบประกาศ' : 'Delete listing'}
+                </button>
+              </MenuItem>
+            </MenuItems>
+          </Menu>
+        ) : null}
       </div>
     </article>
   )
@@ -344,12 +399,14 @@ const DeleteListingDialog = ({
   deleting,
   onClose,
   onConfirm,
+  error,
 }: {
   listing: MyListing | null
   isThai: boolean
   deleting: boolean
   onClose: () => void
   onConfirm: () => void
+  error: string
 }) => (
   <Dialog open={Boolean(listing)} onClose={onClose} className="relative z-[100]">
     <DialogBackdrop className="fixed inset-0 bg-neutral-950/45 backdrop-blur-[1px]" />
@@ -369,9 +426,14 @@ const DeleteListingDialog = ({
           </p>
           <p className="mt-3 rounded-2xl bg-neutral-50 px-4 py-3 font-sarabun text-xs leading-5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
             {isThai
-              ? 'ข้อมูลและสื่อจะยังถูกเก็บไว้แบบ Soft delete ไม่ได้ถูกลบออกจากฐานข้อมูลถาวร'
-              : 'The listing and its media will be soft-deleted, not permanently erased from the database.'}
+              ? 'หากต้องการเปลี่ยนข้อมูลอย่างเดียว ให้ยกเลิกแล้วเลือกแก้ไขประกาศ'
+              : 'If you only need to change the details, cancel and choose Edit listing instead.'}
           </p>
+          {error ? (
+            <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-300">
+              {error}
+            </p>
+          ) : null}
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -410,20 +472,6 @@ const ListingCardImage = ({ url }: { url: string }) => {
   )
 }
 
-const FilterButton = ({ active, children, onClick }: { active: boolean; children: ReactNode; onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`shrink-0 border-b-2 px-1 pb-3 font-sarabun text-sm font-medium transition ${
-      active
-        ? 'border-emerald-700 text-emerald-800 dark:border-emerald-400 dark:text-emerald-300'
-        : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-    }`}
-  >
-    {children}
-  </button>
-)
-
 const ListingSkeleton = () => (
   <div className="mt-7 grid gap-4">
     {[1, 2].map((item) => (
@@ -447,8 +495,8 @@ const EmptyState = ({ isThai, hasListings }: { isThai: boolean; hasListings: boo
     <p className="mt-2 font-sarabun text-sm text-neutral-500 dark:text-neutral-400">
       {hasListings
         ? isThai
-          ? 'เลือกดูแท็บอื่นเพื่อพบประกาศของคุณ'
-          : 'Try another tab to see your listings.'
+          ? 'ลองเลือกสถานะอื่นเพื่อดูประกาศของคุณ'
+          : 'Choose another status to see your listings.'
         : isThai
           ? 'เริ่มลงประกาศได้ฟรี แล้วติดตามสถานะการตรวจสอบจากหน้านี้'
           : 'Create a listing for free, then track its review status here.'}

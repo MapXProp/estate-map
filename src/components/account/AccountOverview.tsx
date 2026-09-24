@@ -26,9 +26,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import styles from './AccountOverview.module.css'
+import AccountPersonalPanel from './AccountPersonalPanel'
 import AccountProfileForm from './AccountProfileForm'
 
 export default function AccountOverview() {
+  const { user } = useAuth()
+  return user ? <AccountPersonalPanel /> : <GuestAccountOverview />
+}
+
+function GuestAccountOverview() {
   const { locale, currency, setLocale, setCurrency } = usePreferences()
   const { isAuthenticated, isLoading, user, logout } = useAuth()
   const { savedCount, isReady } = useSavedListings()
