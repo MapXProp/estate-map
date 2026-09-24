@@ -206,6 +206,35 @@ test('a second finger or touch cancellation restores an active pull without comm
   }
 })
 
+test('a new drag can start after the browser releases an earlier scroll fling', () => {
+  for (const target of ['handle', 'content']) {
+    const h = dragHarness()
+    h.start(h[target])
+    // Chrome may deliver an uncancelable first move while stopping momentum,
+    // then return control on the next move of this same touch.
+    assert.equal(h.move(0, 325, 30, { cancelable: false }).prevented, undefined)
+    assert.deepEqual(h.events, [])
+    assert.equal(h.move(0, 345).prevented, true)
+    assert.deepEqual(h.events.slice(0, 2), [['start'], ['move', 20]], 'rebase rather than jump by the native movement')
+    h.move(0, 485)
+    h.end()
+    assert.equal(h.events.at(-1)[3], false)
+  }
+})
+
+test('native scrolling is never stolen after a rejected direction or a scrolled-content start', () => {
+  for (const kind of ['scrolled', 'horizontal', 'up']) {
+    const h = dragHarness()
+    if (kind === 'scrolled') h.scroller.scrollTop = 80
+    h.start(h.content)
+    h.move(kind === 'horizontal' ? 80 : 0, kind === 'up' ? 220 : 340, 40, { cancelable: false })
+    h.scroller.scrollTop = 0
+    assert.equal(h.move(0, 480).prevented, undefined)
+    h.end()
+    assert.deepEqual(h.events, [], kind)
+  }
+})
+
 test('header actions and form inputs are clickable; the results-toggle button itself can be dragged', () => {
   for (const tag of ['button', 'a', 'input', 'select', 'textarea']) {
     const h = dragHarness()

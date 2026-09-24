@@ -67,6 +67,7 @@
 .header {
   flex-shrink: 0;
   padding: 0 20px;
+  touch-action: pan-x pinch-zoom;
 }
 .grip {
   display: flex;

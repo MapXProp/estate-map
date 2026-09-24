@@ -14,7 +14,9 @@
   box-shadow: 0 -6px 24px rgb(24 49 36 / 8%);
   transform: translate3d(0, var(--dock-offset, 0px), 0);
   transition: transform 220ms ease-out;
-  touch-action: pan-y pinch-zoom;
+  /* The dock is a drag surface, not a page scroller. Reserve vertical pulls
+     before the browser can latch them onto an in-progress page fling. */
+  touch-action: pan-x pinch-zoom;
 }
 .bar[data-sheet-dragging='true'] {
   transition: none;

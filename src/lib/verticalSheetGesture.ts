@@ -87,7 +87,13 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
         return
       }
       if (!event.cancelable) {
-        g.ignored = true
+        // A touch that stops an earlier scroll fling can start uncancelable,
+        // then become cancelable. Keep it pending and rebase so taking over
+        // does not jump the sheet by the distance already handled natively.
+        g.x = x
+        g.y = y
+        g.lastY = y
+        g.lastTime = now()
         return
       }
       g.locked = true
