@@ -11,6 +11,7 @@ import {
 } from '@/lib/authForm'
 import { withAuthNotice } from '@/lib/authNotice'
 import { syncListingDraftAfterAuth } from '@/lib/listingDraft'
+import { DialogTitle } from '@headlessui/react'
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Heart, Mail, Plus, X } from 'lucide-react'
 import Image from 'next/image'
 import { useEffect, useId, useRef, useState } from 'react'
@@ -25,6 +26,7 @@ type Props = {
   redirectPath?: string
   titleId?: string
   headingLevel?: 1 | 2
+  dialogTitle?: boolean
   initialError?: string
   notice?: string
   onClose?: () => void
@@ -40,6 +42,7 @@ export default function AuthCard({
   redirectPath,
   titleId,
   headingLevel = 2,
+  dialogTitle = false,
   initialError = '',
   notice,
   onClose,
@@ -65,7 +68,7 @@ export default function AuthCard({
   const id = useId()
   const signup = mode === 'signup'
   const listing = purpose === 'listing'
-  const Heading = headingLevel === 1 ? 'h1' : 'h2'
+  const Heading = dialogTitle ? DialogTitle : headingLevel === 1 ? 'h1' : 'h2'
   const requirements = passwordRequirements(password)
   const say = (thai: string, english: string) => (th ? thai : english)
 

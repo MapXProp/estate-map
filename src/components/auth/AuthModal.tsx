@@ -45,6 +45,7 @@ export default function AuthModal({
               purpose={purpose}
               redirectPath={redirectPath}
               titleId={titleId}
+              dialogTitle
               onClose={close}
               onBusyChange={setBusy}
               onAuthenticated={onAuthenticated}
