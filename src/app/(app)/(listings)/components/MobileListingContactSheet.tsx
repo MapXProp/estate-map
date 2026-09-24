@@ -1,10 +1,12 @@
 'use client'
 
+import { contactSheetSnap } from '@/lib/contactSheetGesture'
 import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import {
   Building2,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
   ContactRound,
   Globe,
@@ -18,16 +20,17 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import {
+  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
-  type TouchEvent as ReactTouchEvent,
+  useContext,
   useEffect,
   useRef,
   useState,
 } from 'react'
+import { ListingContactSheetContext } from './ListingContactSheetContext'
+import styles from './MobileListingContactSheet.module.css'
 
-type VerificationStatus = 'unverified' | 'identity_verified' | 'authority_verified' | ''
-
-interface MobileListingContactSheetProps {
+interface Props {
   analyticsListingId?: string
   analyticsPropertyType?: string
   contactName: string
@@ -35,7 +38,7 @@ interface MobileListingContactSheetProps {
   authorityLabel?: string
   organizationName?: string
   organizationPublicId?: string
-  verificationStatus: VerificationStatus
+  verificationStatus: 'unverified' | 'identity_verified' | 'authority_verified' | ''
   trusted?: boolean
   phone?: string
   secondaryPhone?: string
@@ -51,430 +54,377 @@ interface MobileListingContactSheetProps {
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, '')
+  if (digits.length === 9 && digits.startsWith('02'))
+    return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`
   return digits.length === 10 ? `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}` : value
 }
 
-const MobileListingContactSheet = ({
-  analyticsListingId,
-  analyticsPropertyType,
-  contactName,
-  roleLabel,
-  authorityLabel,
-  organizationName,
-  organizationPublicId,
-  verificationStatus,
-  trusted = false,
-  phone,
-  secondaryPhone,
-  email,
-  lineId,
-  instagramHandle,
-  websiteUrl,
-  triggerLabel,
-  showOnTablet = false,
-  isThai = true,
-  onOpenChange,
-}: MobileListingContactSheetProps) => {
-  const [open, setOpen] = useState(false)
-  const [dragOffset, setDragOffset] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const [isDismissing, setIsDismissing] = useState(false)
-  const dragState = useRef({ startY: 0, lastY: 0, lastTime: 0, velocity: 0 })
-  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const touchStartYRef = useRef(0)
-  const touchStartXRef = useRef(0)
-  const touchStartTimeRef = useRef(0)
-  const touchDragOffsetRef = useRef(0)
-  const canStartTouchDragRef = useRef(false)
-  const touchDragLockedRef = useRef(false)
-  const isAuthorityVerified = verificationStatus === 'authority_verified' || trusted
-  const isIdentityVerified = verificationStatus === 'identity_verified'
-
-  const verification = isAuthorityVerified
-    ? {
-        title: isThai ? 'ตรวจสอบตัวตนและสิทธิแล้ว' : 'Identity and authority verified',
-        description: isThai
-          ? 'ระบบตรวจสอบตัวตนและสิทธิในการลงประกาศแล้ว'
-          : 'Identity and authority to list have been checked.',
-        icon: ShieldCheck,
-        className: 'border-[#cfe5dc] bg-[#eff7f3] text-[#176b50]',
-      }
-    : isIdentityVerified
-      ? {
-          title: isThai ? 'ยืนยันตัวตนแล้ว' : 'Identity verified',
-          description: isThai
-            ? 'ยืนยันตัวตนแล้ว แต่ยังไม่ได้ตรวจสอบสิทธิในการลงประกาศ'
-            : 'Identity checked; authority to list has not been verified.',
-          icon: CheckCircle2,
-          className: 'border-amber-200 bg-amber-50 text-amber-700',
-        }
-      : {
-          title: isThai ? 'ยังไม่ได้รับการตรวจสอบ' : 'Not yet verified',
-          description: isThai
-            ? 'บทบาทและความเกี่ยวข้องเป็นข้อมูลที่ผู้ลงประกาศระบุเอง'
-            : 'Role and affiliation are provided by the advertiser.',
-          icon: ShieldQuestion,
-          className: 'border-neutral-200 bg-neutral-50 text-neutral-600',
-        }
-  const VerificationIcon = verification.icon
-
-  const closeSheet = () => {
-    if (dismissTimerRef.current) {
-      clearTimeout(dismissTimerRef.current)
-      dismissTimerRef.current = null
-    }
-    setOpen(false)
-    onOpenChange?.(false)
-    setIsDragging(false)
-    setIsDismissing(false)
-    setDragOffset(0)
-    touchDragOffsetRef.current = 0
-    canStartTouchDragRef.current = false
-    touchDragLockedRef.current = false
+export default function MobileListingContactSheet(props: Props) {
+  const dock = useContext(ListingContactSheetContext)
+  const [localOpen, setLocalOpen] = useState(false)
+  const open = dock?.open ?? localOpen
+  const isThai = props.isThai ?? true
+  const setOpen = (value: boolean) => {
+    if (dock) dock.setOpen(value)
+    else setLocalOpen(value)
+    props.onOpenChange?.(value)
   }
-
-  const dismissSheet = () => {
-    if (isDismissing) return
-
-    setIsDragging(false)
-    setIsDismissing(true)
-    setDragOffset(window.innerHeight)
-    touchDragOffsetRef.current = window.innerHeight
-    canStartTouchDragRef.current = false
-    touchDragLockedRef.current = false
-
-    dismissTimerRef.current = setTimeout(() => {
-      // Keep the panel translated below the viewport while Headless UI removes
-      // it. Resetting the transform here caused a one-frame white flash.
-      setOpen(false)
-      onOpenChange?.(false)
-      dismissTimerRef.current = null
-    }, 220)
-  }
-
-  useEffect(
-    () => () => {
-      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
-    },
-    []
-  )
-
-  const handleDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isDismissing || !event.isPrimary || event.pointerType !== 'mouse' || event.button !== 0) return
-    if ((event.target as HTMLElement).closest('button')) return
-    const now = performance.now()
-    dragState.current = { startY: event.clientY, lastY: event.clientY, lastTime: now, velocity: 0 }
-    setIsDragging(true)
-    event.currentTarget.setPointerCapture(event.pointerId)
-  }
-
-  const handleDragMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isDismissing || !isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
-    const offset = Math.max(0, event.clientY - dragState.current.startY)
-    const now = performance.now()
-    const elapsed = Math.max(1, now - dragState.current.lastTime)
-    setDragOffset(offset)
-    dragState.current.velocity = Math.max(0, event.clientY - dragState.current.lastY) / elapsed
-    dragState.current.lastY = event.clientY
-    dragState.current.lastTime = now
-  }
-
-  const handleDragEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (isDismissing || !isDragging || !event.isPrimary || event.pointerType !== 'mouse') return
-    const now = performance.now()
-    const elapsed = Math.max(1, now - dragState.current.lastTime)
-    const velocity = Math.max(
-      dragState.current.velocity,
-      Math.max(0, event.clientY - dragState.current.lastY) / elapsed
-    )
-    const shouldClose = dragOffset >= 96 || velocity >= 0.55
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
-    setIsDragging(false)
-    if (shouldClose) dismissSheet()
-    else setDragOffset(0)
-  }
-
-  const handleDragCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'mouse') return
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId)
-    }
-    setIsDragging(false)
-    setDragOffset(0)
-  }
-
-  const resetTouchDrag = () => {
-    setIsDragging(false)
-    setDragOffset(0)
-    touchDragOffsetRef.current = 0
-    canStartTouchDragRef.current = false
-    touchDragLockedRef.current = false
-  }
-
-  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
-    if (isDismissing || event.touches.length !== 1) return
-
-    const touch = event.touches[0]
-    const target = event.target as HTMLElement
-    const startedOnDragHandle = Boolean(target.closest?.('[data-contact-drag-handle]'))
-
-    touchStartYRef.current = touch.clientY
-    touchStartXRef.current = touch.clientX
-    touchStartTimeRef.current = performance.now()
-    touchDragOffsetRef.current = 0
-    touchDragLockedRef.current = false
-    canStartTouchDragRef.current = startedOnDragHandle || (scrollContainerRef.current?.scrollTop ?? 0) <= 1
-  }
-
-  const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
-    if (isDismissing || !canStartTouchDragRef.current || event.touches.length !== 1) return
-
-    const touch = event.touches[0]
-    const deltaY = touch.clientY - touchStartYRef.current
-    const deltaX = touch.clientX - touchStartXRef.current
-
-    if (!touchDragLockedRef.current) {
-      if (Math.abs(deltaY) < 6 && Math.abs(deltaX) < 6) return
-
-      // Keep normal vertical scrolling and horizontal gestures intact. Once a
-      // gesture chooses one path, it cannot change into a dismiss mid-swipe.
-      if (deltaY <= 0 || Math.abs(deltaX) > deltaY) {
-        canStartTouchDragRef.current = false
-        return
-      }
-
-      touchDragLockedRef.current = true
-      setIsDragging(true)
-    }
-
-    event.preventDefault()
-    const nextOffset = Math.min(Math.max(0, deltaY) * 0.88, window.innerHeight)
-    touchDragOffsetRef.current = nextOffset
-    setDragOffset(nextOffset)
-  }
-
-  const handleTouchEnd = () => {
-    if (!touchDragLockedRef.current) {
-      resetTouchDrag()
-      return
-    }
-
-    const elapsed = Math.max(performance.now() - touchStartTimeRef.current, 1)
-    const offset = touchDragOffsetRef.current
-    const velocity = offset / elapsed
-    const shouldClose = offset > 110 || velocity > 0.55
-
-    if (shouldClose) return dismissSheet()
-
-    resetTouchDrag()
-  }
-
-  const handleTouchCancel = () => {
-    resetTouchDrag()
-  }
-
-  const contactIcons = { phone: Phone, line: MessageCircle, email: Mail, instagram: Instagram, website: Globe }
-  const contactLabels = { phone: 'Phone', line: 'LINE', email: 'Email', instagram: 'Instagram', website: 'Website' }
-  const contactLinks = getPropertyPreviewContacts({
-    contact_phone: phone || '',
-    contact_phone_secondary: secondaryPhone || '',
-    contact_email: email || '',
-    line_id: lineId || '',
-    instagram_handle: instagramHandle || '',
-    organization_website_url: websiteUrl,
-  }).map((contact) => ({
-    ...contact,
-    label: isThai ? contact.label : contactLabels[contact.kind],
-    value: contact.kind === 'phone' ? formatPhone(contact.value) : contact.value,
-    icon: contactIcons[contact.kind],
-    external: contact.href.startsWith('http'),
-  }))
-
   return (
     <>
       <button
         type="button"
-        onClick={() => {
-          if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
-          dismissTimerRef.current = null
-          setIsDismissing(false)
-          setIsDragging(false)
-          setDragOffset(0)
-          touchDragOffsetRef.current = 0
-          setOpen(true)
-          onOpenChange?.(true)
-        }}
-        aria-label={isThai ? 'ข้อมูลผู้ติดต่อ' : 'Contact details'}
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
         aria-expanded={open}
-        title={isThai ? 'ข้อมูลผู้ติดต่อ' : 'Contact details'}
-        className={
-          triggerLabel
-            ? 'flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#123f32] px-3 text-sm font-semibold text-white transition outline-none focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95'
-            : 'grid size-10 place-items-center rounded-full border border-neutral-200 bg-white text-neutral-600 transition outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-2 focus-visible:ring-[#176b50]/30 focus-visible:ring-offset-2 active:scale-95'
-        }
+        aria-label={isThai ? 'ติดต่อผู้ลงประกาศ' : 'Contact advertiser'}
+        className={props.triggerLabel ? styles.trigger : styles.iconTrigger}
       >
-        <ContactRound className="size-[19px] shrink-0" aria-hidden="true" />
-        {triggerLabel && <span>{triggerLabel}</span>}
+        <ContactRound size={19} aria-hidden="true" />
+        {props.triggerLabel && <span>{props.triggerLabel}</span>}
       </button>
-
       <Dialog
         open={open}
-        onClose={closeSheet}
+        onClose={() => setOpen(false)}
+        className={`relative z-[100] ${props.showOnTablet ? '' : 'min-[744px]:hidden'}`}
         data-analytics-surface="mobile_contact_sheet"
-        data-analytics-listing-id={analyticsListingId}
-        data-analytics-property-type={analyticsPropertyType}
-        className={`relative z-[100] ${showOnTablet ? '' : 'min-[744px]:hidden'}`}
+        data-analytics-listing-id={props.analyticsListingId}
+        data-analytics-property-type={props.analyticsPropertyType}
       >
-        <DialogBackdrop
-          transition
-          style={dragOffset > 0 ? { opacity: Math.max(0, 1 - dragOffset / 360) } : undefined}
-          className="fixed inset-0 bg-neutral-950/45 transition duration-200 ease-out data-closed:opacity-0"
-        />
-        <div className="fixed inset-0 flex items-end justify-center">
-          <DialogPanel
-            transition
-            style={dragOffset > 0 ? { transform: `translate3d(0, ${dragOffset}px, 0)` } : undefined}
-            className={`relative flex max-h-[86dvh] min-h-[68dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[28px] bg-white shadow-[0_-18px_60px_rgba(15,23,42,0.20)] ease-out will-change-transform data-closed:translate-y-full ${
-              isDragging
-                ? 'transition-none'
-                : isDismissing
-                  ? 'transition-transform duration-[220ms] [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]'
-                  : 'transition duration-300'
-            }`}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            onTouchCancel={handleTouchCancel}
-          >
-            <div
-              data-contact-drag-handle
-              className="shrink-0 cursor-grab touch-none px-4 pt-2.5 select-none active:cursor-grabbing"
-              onPointerDown={handleDragStart}
-              onPointerMove={handleDragMove}
-              onPointerUp={handleDragEnd}
-              onPointerCancel={handleDragCancel}
-            >
-              <div className="mx-auto h-1.5 w-11 rounded-full bg-neutral-200" aria-hidden="true" />
-              <div className="flex items-center justify-between gap-3 py-3">
-                <div>
-                  <DialogTitle className="text-lg font-semibold text-neutral-950">
-                    {isThai ? 'ข้อมูลผู้ลงประกาศ' : 'Advertiser details'}
-                  </DialogTitle>
-                </div>
-                <button
-                  type="button"
-                  onClick={closeSheet}
-                  aria-label={isThai ? 'ปิดข้อมูลผู้ติดต่อ' : 'Close contact details'}
-                  className="grid size-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-neutral-600 transition active:scale-95"
-                >
-                  <X className="size-5" />
-                </button>
-              </div>
-            </div>
-
-            <div
-              ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-            >
-              <section className="rounded-2xl border border-neutral-200 p-4">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#e7f3ee] text-[#176b50]">
-                    <ContactRound className="size-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-xs text-neutral-500">{isThai ? 'ผู้ลงประกาศ' : 'Advertiser'}</p>
-                    <h2 className="mt-0.5 text-lg font-semibold text-neutral-950">
-                      {contactName || (isThai ? 'ไม่ระบุชื่อ' : 'Name not provided')}
-                    </h2>
-                    <p className="mt-1 text-sm font-medium text-[#176b50]">
-                      {roleLabel || (isThai ? 'ไม่ได้ระบุบทบาท' : 'Role not provided')}
-                    </p>
-                  </div>
-                </div>
-
-                <dl className="mt-4 divide-y divide-neutral-100 border-t border-neutral-100 text-sm">
-                  {authorityLabel && (
-                    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-3">
-                      <dt className="text-neutral-500">{isThai ? 'สิทธิลงประกาศจาก' : 'Authority from'}</dt>
-                      <dd className="font-medium text-neutral-800">{authorityLabel}</dd>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-3">
-                    <dt className="text-neutral-500">{isThai ? 'บริษัท / สังกัด' : 'Organization'}</dt>
-                    <dd className="font-medium text-neutral-800">
-                      {organizationPublicId && organizationName ? (
-                        <Link
-                          href={`/organizations/${encodeURIComponent(organizationPublicId)}`}
-                          className="inline-flex items-center gap-1.5 text-[#176b50]"
-                        >
-                          <Building2 className="size-4 shrink-0" /> {organizationName}
-                          <ChevronRight className="size-4 shrink-0" />
-                        </Link>
-                      ) : (
-                        organizationName || (isThai ? 'ไม่ได้ระบุ' : 'Not provided')
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className={`mt-3 rounded-2xl border p-4 ${verification.className}`}>
-                <div className="flex items-start gap-3">
-                  <VerificationIcon className="mt-0.5 size-5 shrink-0" />
-                  <div>
-                    <h2 className="font-semibold">{verification.title}</h2>
-                    <p className="mt-1 text-xs leading-5 opacity-80">{verification.description}</p>
-                  </div>
-                </div>
-              </section>
-
-              <section className="mt-5">
-                <h2 className="text-sm font-semibold text-neutral-950">
-                  {isThai ? 'ช่องทางติดต่อ' : 'Contact channels'}
-                </h2>
-                {contactLinks.length > 0 ? (
-                  <div className="mt-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                    {contactLinks.map((item) => (
-                      <a
-                        key={`${item.label}-${item.value}`}
-                        href={item.href}
-                        target={item.external ? '_blank' : undefined}
-                        rel={item.external ? 'noopener noreferrer' : undefined}
-                        className="flex min-h-14 items-center gap-3 border-b border-neutral-100 px-3.5 transition last:border-b-0 active:bg-neutral-50"
-                      >
-                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#eff7f3] text-[#176b50]">
-                          <item.icon className="size-4" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-xs text-neutral-500">{item.label}</span>
-                          <span className="block truncate text-sm font-semibold text-neutral-800">{item.value}</span>
-                        </span>
-                        <ChevronRight className="size-4 shrink-0 text-neutral-300" />
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 rounded-2xl bg-neutral-50 p-4 text-sm text-neutral-500">
-                    {isThai ? 'ยังไม่มีช่องทางติดต่อเพิ่มเติม' : 'No contact channels provided.'}
-                  </p>
-                )}
-              </section>
-
-              <p className="mt-4 text-xs leading-5 text-neutral-400">
-                {isThai
-                  ? 'ควรตรวจสอบเอกสารสิทธิและอำนาจของผู้ลงประกาศก่อนชำระเงินหรือทำสัญญา'
-                  : 'Check ownership documents and the advertiser’s authority before paying or signing.'}
-              </p>
-            </div>
-          </DialogPanel>
-        </div>
+        <ContactPanel {...props} isThai={isThai} onClose={() => setOpen(false)} />
       </Dialog>
     </>
   )
 }
 
-export default MobileListingContactSheet
+function ContactPanel({ isThai = true, onClose, ...props }: Props & { onClose: () => void }) {
+  const [expanded, setExpanded] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [delta, setDelta] = useState(0)
+  const [dragStartHeight, setDragStartHeight] = useState(460)
+  const [bounds, setBounds] = useState({ compact: 460, full: 720 })
+  const panelRef = useRef<HTMLDivElement>(null)
+  const gesture = useRef<{
+    startY: number
+    lastY: number
+    lastTime: number
+    velocity: number
+    height: number
+    moved: boolean
+  } | null>(null)
+  const suppressClick = useRef(false)
+
+  useEffect(() => {
+    const measure = () => {
+      const viewport = window.visualViewport?.height || window.innerHeight
+      setBounds({ compact: Math.min(460, viewport * 0.74), full: Math.min(800, viewport - 24) })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('resize', measure)
+    }
+  }, [])
+
+  const start = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!event.isPrimary || event.button !== 0) return
+    if (
+      event.target !== event.currentTarget &&
+      (event.target as HTMLElement).closest('a,button,input,summary') !== event.currentTarget &&
+      (event.target as HTMLElement).closest('a,button,input,summary')
+    )
+      return
+    suppressClick.current = false
+    const y = event.clientY
+    const currentHeight = panelRef.current?.getBoundingClientRect().height || bounds.compact
+    setDragStartHeight(currentHeight)
+    gesture.current = {
+      startY: y,
+      lastY: y,
+      lastTime: performance.now(),
+      velocity: 0,
+      height: currentHeight,
+      moved: false,
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  const move = (event: ReactPointerEvent<HTMLElement>) => {
+    if (!event.isPrimary) return
+    const state = gesture.current
+    if (!state) return
+    const next = event.clientY - state.startY
+    if (Math.abs(next) < 5 && !state.moved) return
+    const now = performance.now()
+    state.velocity = (event.clientY - state.lastY) / Math.max(1, now - state.lastTime)
+    state.lastY = event.clientY
+    state.lastTime = now
+    state.moved = true
+    setDragging(true)
+    setDelta(next)
+  }
+  const end = (event: ReactPointerEvent<HTMLElement>, cancelled = false) => {
+    if (!event.isPrimary) return
+    const state = gesture.current
+    if (!state) return
+    gesture.current = null
+    if (event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    suppressClick.current = state.moved
+    setDragging(false)
+    if (cancelled || !state.moved) {
+      setDelta(0)
+      return
+    }
+    const snap = contactSheetSnap({
+      startHeight: state.height,
+      compactHeight: bounds.compact,
+      expandedHeight: bounds.full,
+      delta: event.clientY - state.startY,
+      velocity: performance.now() - state.lastTime < 100 ? state.velocity : 0,
+    })
+    if (snap === 'closed') {
+      setDelta(Math.max(0, event.clientY - state.startY - (state.height - bounds.compact)))
+      setExpanded(false)
+      onClose()
+      return
+    }
+    setExpanded(snap === 'expanded')
+    setDelta(0)
+  }
+  const dragHandlers = {
+    onPointerDown: start,
+    onPointerMove: move,
+    onPointerUp: (e: ReactPointerEvent<HTMLElement>) => end(e),
+    onPointerCancel: (e: ReactPointerEvent<HTMLElement>) => end(e, true),
+  }
+  const startHeight = dragging ? dragStartHeight : expanded ? bounds.full : bounds.compact
+  const height = dragging ? Math.max(bounds.compact, Math.min(bounds.full, startHeight - delta)) : startHeight
+  const offset = dragging ? Math.max(0, delta - (startHeight - bounds.compact)) : Math.max(0, delta)
+  const icons = { phone: Phone, line: MessageCircle, email: Mail, instagram: Instagram, website: Globe }
+  const labels = { phone: 'Phone', line: 'LINE', email: 'Email', instagram: 'Instagram', website: 'Website' }
+  const contacts = getPropertyPreviewContacts({
+    contact_phone: props.phone || '',
+    contact_phone_secondary: props.secondaryPhone || '',
+    contact_email: props.email || '',
+    line_id: props.lineId || '',
+    instagram_handle: props.instagramHandle || '',
+    organization_website_url: props.websiteUrl,
+  }).map((item) => ({
+    ...item,
+    icon: icons[item.kind],
+    label: isThai ? item.label : labels[item.kind],
+    value: item.kind === 'phone' ? formatPhone(item.value) : item.value,
+  }))
+  const primaryPhone = contacts.find((item) => item.kind === 'phone')
+  const primary = contacts.filter((item) => item === primaryPhone || item.kind === 'line')
+  const others = contacts.filter((item) => !primary.includes(item))
+  const authorityVerified = props.verificationStatus === 'authority_verified'
+  const identityVerified = props.verificationStatus === 'identity_verified'
+  const VerificationIcon = authorityVerified ? ShieldCheck : identityVerified ? CheckCircle2 : ShieldQuestion
+  const verificationTitle = authorityVerified
+    ? isThai
+      ? 'ตรวจสอบตัวตนและสิทธิแล้ว'
+      : 'Identity and authority verified'
+    : identityVerified
+      ? isThai
+        ? 'ยืนยันตัวตนแล้ว'
+        : 'Identity verified'
+      : isThai
+        ? 'ยังไม่ได้รับการตรวจสอบ'
+        : 'Not yet verified'
+
+  return (
+    <>
+      <DialogBackdrop
+        transition
+        className={styles.backdrop}
+        style={{ opacity: Math.max(0.1, 1 - offset / bounds.compact) }}
+      />
+      <div className={styles.position}>
+        <DialogPanel
+          ref={panelRef}
+          transition
+          className={styles.panel}
+          data-dragging={dragging || undefined}
+          data-snap={expanded ? 'expanded' : 'compact'}
+          style={{ height, '--sheet-offset': `${offset}px` } as CSSProperties}
+        >
+          <div className={styles.header}>
+            <button
+              type="button"
+              {...dragHandlers}
+              data-contact-drag-handle
+              className={styles.grip}
+              aria-label={
+                isThai
+                  ? expanded
+                    ? 'ย่อแผงติดต่อ'
+                    : 'ขยายแผงติดต่อ'
+                  : expanded
+                    ? 'Collapse contact panel'
+                    : 'Expand contact panel'
+              }
+              aria-expanded={expanded}
+              onClick={() => {
+                if (!suppressClick.current) setExpanded(!expanded)
+                suppressClick.current = false
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  setExpanded(event.key === 'ArrowUp')
+                }
+              }}
+            >
+              <span aria-hidden="true" />
+            </button>
+            <div className={styles.headingRow}>
+              <DialogTitle className={styles.title}>{isThai ? 'คุยกับผู้ลงประกาศ' : 'Contact advertiser'}</DialogTitle>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={isThai ? 'ปิดข้อมูลผู้ติดต่อ' : 'Close contact details'}
+                className={styles.close}
+                data-autofocus
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+          <div className={styles.content}>
+            <section aria-label={isThai ? 'ข้อมูลผู้ลงประกาศ' : 'Advertiser details'}>
+              <div className={styles.identity} {...dragHandlers}>
+                <span className={styles.avatar} aria-hidden="true">
+                  {props.organizationName ? <Building2 size={24} /> : <ContactRound size={24} />}
+                </span>
+                <div className={styles.identityText}>
+                  <h2>{props.contactName || props.organizationName || (isThai ? 'ผู้ลงประกาศ' : 'Advertiser')}</h2>
+                  <p>{props.roleLabel || (isThai ? 'ติดต่อสอบถามข้อมูลทรัพย์' : 'Ask about this property')}</p>
+                </div>
+              </div>
+              <div className={styles.verification} data-verified={authorityVerified || identityVerified}>
+                <VerificationIcon size={15} aria-hidden="true" />
+                <span>{verificationTitle}</span>
+              </div>
+            </section>
+            <section aria-label={isThai ? 'ช่องทางติดต่อ' : 'Contact channels'} className={styles.channels}>
+              {primary.length > 0 && (
+                <div className={styles.primary} data-count={primary.length}>
+                  {primary.map((item) => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target={item.href.startsWith('http') ? '_blank' : undefined}
+                      rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      data-contact-channel={item.kind}
+                      className={item.kind === 'phone' ? styles.call : styles.line}
+                    >
+                      <span className={styles.actionLabel}>
+                        <item.icon size={21} aria-hidden="true" />
+                        {item.kind === 'phone'
+                          ? isThai
+                            ? 'โทรสอบถาม'
+                            : 'Call'
+                          : isThai
+                            ? 'คุยทาง LINE'
+                            : 'Chat on LINE'}
+                      </span>
+                      <span className={styles.actionValue}>{item.value}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+              {contacts.length === 0 && (
+                <p className={styles.empty}>
+                  {isThai ? 'ยังไม่มีช่องทางติดต่อเพิ่มเติม' : 'No contact channels provided.'}
+                </p>
+              )}
+              {(expanded || primary.length === 0) && others.length > 0 && (
+                <div className={styles.otherContacts}>
+                  {others.map((item) => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      target={item.href.startsWith('http') ? '_blank' : undefined}
+                      rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      data-contact-channel={item.kind}
+                    >
+                      <item.icon size={19} aria-hidden="true" />
+                      <span>
+                        <small>
+                          {item.kind === 'phone' ? (isThai ? 'โทรเบอร์สำรอง' : 'Alternate phone') : item.label}
+                        </small>
+                        <strong>{item.value}</strong>
+                      </span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </section>
+            <button
+              type="button"
+              className={styles.more}
+              aria-expanded={expanded}
+              onClick={() => setExpanded(!expanded)}
+            >
+              <span>
+                {expanded
+                  ? isThai
+                    ? 'แสดงแบบกระชับ'
+                    : 'Show less'
+                  : isThai
+                    ? 'ช่องทางและข้อมูลเพิ่มเติม'
+                    : 'More contacts and details'}
+              </span>
+              <ChevronDown size={17} className={expanded ? '' : styles.up} aria-hidden="true" />
+            </button>
+            {expanded && (
+              <section className={styles.details} aria-label={isThai ? 'ข้อมูลเพิ่มเติม' : 'More details'}>
+                {props.organizationName &&
+                  (props.organizationPublicId ? (
+                    <Link
+                      href={`/organizations/${encodeURIComponent(props.organizationPublicId)}`}
+                      className={styles.organization}
+                    >
+                      <Building2 size={18} aria-hidden="true" />
+                      <span>
+                        {props.organizationName}
+                        <small>{isThai ? 'ดูข้อมูลองค์กรและประกาศอื่น' : 'Organization and other listings'}</small>
+                      </span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </Link>
+                  ) : (
+                    <p>{props.organizationName}</p>
+                  ))}
+                {props.authorityLabel && (
+                  <p>
+                    <span>{isThai ? 'สิทธิลงประกาศจาก: ' : 'Authority from: '}</span>
+                    {props.authorityLabel}
+                  </p>
+                )}
+                {!authorityVerified && (
+                  <p>
+                    {identityVerified
+                      ? isThai
+                        ? 'ยืนยันตัวตนแล้ว แต่ยังไม่ได้ตรวจสอบสิทธิในการลงประกาศ'
+                        : 'Identity checked; authority to list has not been verified.'
+                      : isThai
+                        ? 'บทบาทและสังกัดเป็นข้อมูลที่ผู้ลงประกาศระบุ'
+                        : 'Role and affiliation are provided by the advertiser.'}
+                  </p>
+                )}
+                <p className={styles.note}>
+                  {isThai
+                    ? 'ก่อนโอนเงินหรือทำสัญญา ควรตรวจสอบเอกสารสิทธิและอำนาจผู้ลงประกาศ'
+                    : 'Check ownership documents and listing authority before paying or signing.'}
+                </p>
+              </section>
+            )}
+          </div>
+        </DialogPanel>
+      </div>
+    </>
+  )
+}

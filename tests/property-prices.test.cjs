@@ -153,6 +153,7 @@ test('the standalone detail renders both offers in its content, desktop price ca
       '@/components/PropertyPrices': component(provider),
       '@/lib/propertyPrices': api,
       './MobileListingActionBar.module.css': { default: {} },
+      './ListingContactSheetContext': { ListingContactSheetContext: React.createContext(null) },
     }),
     '../../components/MobileListingContactSheet': { default: () => React.createElement('button', null, 'ติดต่อ') },
   }).default
@@ -188,7 +189,7 @@ test('the standalone detail renders both offers in its content, desktop price ca
   assert.equal((html.match(/11,900,000 บาท/g) || []).length, 3)
   assert.equal((html.match(/65,000 บาท\/เดือน/g) || []).length, 3)
   assert.ok(html.includes('ขาย / เช่า'))
-  assert.ok(html.includes('tel:020000000'))
+  assert.ok(html.includes('data-listing-drag-handle'), 'price dock opens contact channels without a direct call')
 })
 
 test('map result cards show two offers together, and a rent-only card cannot display the sale amount', () => {

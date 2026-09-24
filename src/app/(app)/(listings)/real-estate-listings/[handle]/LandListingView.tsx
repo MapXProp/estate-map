@@ -417,7 +417,7 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             <MobileListingContactSheet
               showOnTablet
               isThai={isThai}
-              triggerLabel={isThai ? 'ติดต่อผู้ประกาศ' : 'Contact advertiser'}
+              triggerLabel={isThai ? 'ติดต่อ' : 'Contact'}
               analyticsListingId={listing.public_listing_id}
               analyticsPropertyType={listing.property_type_code}
               contactName={listing.contact_name}
