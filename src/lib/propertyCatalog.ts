@@ -3,6 +3,8 @@ import { absoluteUrl } from './seo'
 
 export const CATALOG_PAGE_SIZE = 24
 export const CATALOG_PATH = '/real-estate-categories/all'
+// Actual catalogue content/link revision; never substitute the build date.
+export const CATALOG_CONTENT_UPDATED_AT = '2026-09-25'
 export type PropertyCatalog = {
   slug: string
   title: string

@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { discoveryPageContentUpdatedAt, discoveryPageSeo } from './discoveryPageSeo'
 import type { Organization } from './organizations'
 import {
+  CATALOG_CONTENT_UPDATED_AT,
   CATALOG_PAGE_SIZE,
   CATALOG_PATH,
   catalogPagePath,
@@ -39,7 +40,10 @@ export function buildPropertySitemap(
   ]
   for (const collection of collections) {
     for (let page = 1; page <= Math.max(1, Math.ceil(collection.count / CATALOG_PAGE_SIZE)); page++)
-      entries.push({ url: absoluteUrl(catalogPagePath(collection.path, page)) })
+      entries.push({
+        url: absoluteUrl(catalogPagePath(collection.path, page)),
+        ...(collection.path === CATALOG_PATH ? { lastModified: new Date(CATALOG_CONTENT_UPDATED_AT) } : {}),
+      })
   }
   for (const listing of listings)
     entries.push({

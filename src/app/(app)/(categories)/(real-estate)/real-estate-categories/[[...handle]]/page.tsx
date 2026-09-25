@@ -18,7 +18,7 @@ type Props = {
 }
 const title = 'รวมประกาศอสังหาริมทรัพย์ ขายและให้เช่า'
 const description =
-  'รวมประกาศบ้าน คอนโด ที่ดิน ห้องเช่า ร้านค้า ออฟฟิศ โกดัง และพื้นที่ธุรกิจ ทั้งขายและให้เช่าทั่วประเทศไทย'
+  'ค้นหาประกาศขายและเช่า บ้าน คอนโด ที่ดิน ห้องเช่า และพื้นที่ธุรกิจ ตามทำเล โครงการ หรือรายละเอียด กรองประเภทและราคา พร้อมรูปภาพและแผนที่'
 export async function generateMetadata({ searchParams }: Props) {
   const search = await searchParams
   const page = catalogPageNumber(search.page)
