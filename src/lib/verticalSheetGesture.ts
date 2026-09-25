@@ -2,8 +2,6 @@ export type SheetSnap = 'peek' | 'full'
 export type SheetDragOptions = {
   enabled?: boolean
   maxWidth?: number
-  /** Only for surfaces whose CSS touch-action reserves vertical dragging. */
-  touchInput?: 'pointer'
   canDrag: (down: boolean, handle: boolean, atTop: boolean) => boolean
   onStart: () => void
   onMove: (dy: number) => void
@@ -24,7 +22,6 @@ export function chooseSheetSnap(height: number, velocity: number, points: Record
 // Native non-passive touch listeners allow downward pulls at scrollTop=0,
 // while leaving ordinary scrolling, horizontal photo swipes and pinching native.
 export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => SheetDragOptions) {
-  const touchPointers = getOptions().touchInput === 'pointer' && 'PointerEvent' in window
   let gesture: {
     x: number
     y: number
@@ -40,17 +37,16 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
   } | null = null
   let suppressClick = false
   const now = () => performance.now()
-  const releasePointer = (id = gesture?.pointerId) => {
+  const releasePointer = () => {
+    const id = gesture?.pointerId
     if (id !== undefined && root.hasPointerCapture(id)) root.releasePointerCapture(id)
   }
   const cancel = () => {
-    const previous = gesture
+    if (gesture?.locked) getOptions().onEnd(gesture.dy, 0, true)
+    releasePointer()
     gesture = null
-    if (previous?.locked) getOptions().onEnd(previous.dy, 0, true)
-    releasePointer(previous?.pointerId)
   }
-  const start = (target: EventTarget | null, x: number, y: number, pointerId?: number, capture = true) => {
-    cancel()
+  const start = (target: EventTarget | null, x: number, y: number, pointerId?: number) => {
     suppressClick = false
     if (
       getOptions().enabled === false ||
@@ -81,7 +77,7 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
       ignored: false,
       pointerId,
     }
-    if (pointerId !== undefined && capture) root.setPointerCapture(pointerId)
+    if (pointerId !== undefined) root.setPointerCapture(pointerId)
   }
   const move = (x: number, y: number, event: Event) => {
     const g = gesture
@@ -94,7 +90,7 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
         g.ignored = true
         return
       }
-      if (!event.cancelable && !(touchPointers && g.pointerId !== undefined)) {
+      if (!event.cancelable) {
         // A touch that stops an earlier scroll fling can start uncancelable,
         // then become cancelable. Keep it pending and rebase so taking over
         // does not jump the sheet by the distance already handled natively.
@@ -105,13 +101,9 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
         return
       }
       g.locked = true
-      // Leave taps on their original button/link. Capture only once a touch
-      // becomes a drag so movement survives the finger leaving the dock.
-      if (g.pointerId !== undefined && !root.hasPointerCapture(g.pointerId)) root.setPointerCapture(g.pointerId)
       getOptions().onStart()
     }
-    // Pointer panning is negotiated by touch-action, not preventDefault.
-    if (event.cancelable) event.preventDefault()
+    event.preventDefault()
     const time = now()
     const elapsed = time - g.lastTime
     if (elapsed > 0) g.velocity = (y - g.lastY) / elapsed
@@ -123,12 +115,12 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
   const finish = () => {
     const g = gesture
     if (!g) return
-    gesture = null
     if (g.locked) {
       suppressClick = true
       getOptions().onEnd(g.dy, now() - g.lastTime > 100 ? 0 : g.velocity, false)
     }
-    releasePointer(g.pointerId)
+    releasePointer()
+    gesture = null
   }
   const touchStart = (event: TouchEvent) => {
     if (event.touches.length !== 1) {
@@ -150,33 +142,19 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
     else finish()
   }
   const pointerDown = (event: PointerEvent) => {
-    if (event.pointerType === 'touch') {
-      if (!touchPointers) return
-      if (!event.isPrimary) {
-        cancel()
-        return
-      }
-      start(event.target, event.clientX, event.clientY, event.pointerId, false)
-      return
-    }
-    if (!event.isPrimary || event.button !== 0) return
+    if (event.pointerType === 'touch' || !event.isPrimary || event.button !== 0) return
     if (!(event.target instanceof Element) || !event.target.closest('[data-sheet-drag-handle]')) return
     start(event.target, event.clientX, event.clientY, event.pointerId)
   }
   const pointerMove = (event: PointerEvent) => {
-    if ((touchPointers || event.pointerType !== 'touch') && gesture?.pointerId === event.pointerId)
+    if (event.pointerType !== 'touch' && gesture?.pointerId === event.pointerId)
       move(event.clientX, event.clientY, event)
   }
   const pointerUp = (event: PointerEvent) => {
-    if ((touchPointers || event.pointerType !== 'touch') && gesture?.pointerId === event.pointerId) finish()
+    if (event.pointerType !== 'touch' && gesture?.pointerId === event.pointerId) finish()
   }
   const pointerCancel = (event: PointerEvent) => {
-    if ((touchPointers || event.pointerType !== 'touch') && gesture?.pointerId === event.pointerId) cancel()
-  }
-  const lostPointerCapture = (event: PointerEvent) => {
-    // Moving implicit capture from a child button to the dock bubbles a loss
-    // from that child first; only loss of the dock's own capture cancels it.
-    if (event.target === root) pointerCancel(event)
+    if (event.pointerType !== 'touch' && gesture?.pointerId === event.pointerId) cancel()
   }
   const click = (event: MouseEvent) => {
     if (!suppressClick || event.detail === 0) return
@@ -184,17 +162,14 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
     event.preventDefault()
     event.stopImmediatePropagation()
   }
-  if (!touchPointers) {
-    root.addEventListener('touchstart', touchStart, { passive: true })
-    root.addEventListener('touchmove', touchMove, { passive: false })
-    root.addEventListener('touchend', touchEnd)
-    root.addEventListener('touchcancel', cancel)
-  }
+  root.addEventListener('touchstart', touchStart, { passive: true })
+  root.addEventListener('touchmove', touchMove, { passive: false })
+  root.addEventListener('touchend', touchEnd)
+  root.addEventListener('touchcancel', cancel)
   root.addEventListener('pointerdown', pointerDown)
   root.addEventListener('pointermove', pointerMove)
   root.addEventListener('pointerup', pointerUp)
   root.addEventListener('pointercancel', pointerCancel)
-  root.addEventListener('lostpointercapture', lostPointerCapture)
   root.addEventListener('click', click, true)
   return () => {
     releasePointer()
@@ -207,7 +182,6 @@ export function bindVerticalSheetDrag(root: HTMLElement, getOptions: () => Sheet
     root.removeEventListener('pointermove', pointerMove)
     root.removeEventListener('pointerup', pointerUp)
     root.removeEventListener('pointercancel', pointerCancel)
-    root.removeEventListener('lostpointercapture', lostPointerCapture)
     root.removeEventListener('click', click, true)
   }
 }

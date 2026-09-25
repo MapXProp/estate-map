@@ -51,7 +51,6 @@ export default function MobileListingActionBar({
     if (!bar || !hasContact) return
     return bindVerticalSheetDrag(bar, () => ({
       maxWidth,
-      touchInput: 'pointer',
       canDrag: (down) => !down,
       onStart: () => bar.setAttribute('data-sheet-dragging', 'true'),
       onMove: (dy) => bar.style.setProperty('--dock-offset', `${Math.max(-80, Math.min(0, dy * 0.6))}px`),
