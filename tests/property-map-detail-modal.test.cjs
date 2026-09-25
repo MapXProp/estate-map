@@ -129,6 +129,8 @@ const ContactSheetStub = ({ triggerLabel }) =>
   React.createElement('button', { 'data-contact-trigger': true }, triggerLabel)
 const ActionBar = load('src/app/(app)/(listings)/components/MobileListingActionBar.tsx', {
   ...common,
+  'react-dom': require('react-dom'),
+  './ListingPageViewport': { ListingDockPortalContext: React.createContext(null) },
   '@/components/preferences/PreferencesProvider': {
     usePreferences: () => ({ locale: 'th', formatCurrencyFrom: (v) => `${v.toLocaleString('en-US')} บาท` }),
   },

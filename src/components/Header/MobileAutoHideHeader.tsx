@@ -44,7 +44,10 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
   const [mode, setMode] = useState<HeaderMode>('natural')
 
   useEffect(() => {
-    lastScrollYRef.current = Math.max(window.scrollY, 0)
+    const pageScroller = () =>
+      headerRef.current?.closest<HTMLElement>('[data-listing-page-scroll][data-isolated="true"]')
+    const scrollTop = () => Math.max(pageScroller()?.scrollTop ?? window.scrollY, 0)
+    lastScrollYRef.current = scrollTop()
     lastUpdateTimeRef.current = performance.now()
     directionRef.current = null
     directionTravelRef.current = 0
@@ -58,7 +61,7 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
     }
 
     const updateHeader = (now: number) => {
-      const currentScrollY = Math.max(window.scrollY, 0)
+      const currentScrollY = scrollTop()
       const delta = currentScrollY - lastScrollYRef.current
       const nextDirection = delta > 0 ? 'down' : delta < 0 ? 'up' : null
       const elapsed = Math.max(now - lastUpdateTimeRef.current, 16)
@@ -109,12 +112,22 @@ function AutoHideHeaderForPath({ children, autoHideEnabled }: { children: ReactN
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    const handlePageScroll = (event: Event) => {
+      if (event.target === pageScroller()) handleScroll()
+    }
+    document.addEventListener('scroll', handlePageScroll, { passive: true, capture: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('scroll', handlePageScroll, true)
+    }
   }, [autoHideEnabled])
 
   if (!autoHideEnabled) {
     return (
-      <div data-top-nav-boundary className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900">
+      <div
+        data-top-nav-boundary
+        className="sticky top-0 z-20 bg-white shadow-xs min-[744px]:hidden dark:bg-neutral-900"
+      >
         {children}
       </div>
     )

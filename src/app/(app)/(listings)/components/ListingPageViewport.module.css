@@ -1,0 +1,7 @@
+.viewport[data-isolated='true'] {
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-padding-top: 80px;
+}

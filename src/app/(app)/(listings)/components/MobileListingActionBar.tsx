@@ -5,8 +5,10 @@ import { useKeyboardFocus } from '@/hooks/useKeyboardFocus'
 import { propertyOfferLabel, type PropertyPrice } from '@/lib/propertyPrices'
 import { bindVerticalSheetDrag } from '@/lib/verticalSheetGesture'
 import { MapPin, MessageCircle, Phone } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ListingContactSheetContext } from './ListingContactSheetContext'
+import { ListingDockPortalContext } from './ListingPageViewport'
 import styles from './MobileListingActionBar.module.css'
 
 interface Props {
@@ -34,6 +36,8 @@ export default function MobileListingActionBar({
 }: Props) {
   const barRef = useRef<HTMLDivElement>(null)
   const spacerRef = useRef<HTMLDivElement>(null)
+  const pagePortal = useContext(ListingDockPortalContext)
+  const portal = placement === 'page' ? pagePortal : null
   const [localOpen, setLocalOpen] = useState(false)
   const open = controlledOpen ?? localOpen
   const setOpen = useCallback(
@@ -63,7 +67,7 @@ export default function MobileListingActionBar({
         }
       },
     }))
-  }, [hasContact, maxWidth, setOpen])
+  }, [hasContact, maxWidth, setOpen, portal])
 
   useEffect(() => {
     const bar = barRef.current
@@ -76,83 +80,87 @@ export default function MobileListingActionBar({
     const observer = new ResizeObserver(measure)
     observer.observe(bar)
     return () => observer.disconnect()
-  }, [])
+  }, [portal])
+
+  const bar = (
+    <div
+      ref={barRef}
+      className={styles.bar}
+      data-listing-contact-bar
+      data-placement={placement}
+      data-sheet-drag-root
+      data-sheet-scroll
+      data-keyboard-focus={keyboardFocus || undefined}
+    >
+      {children && (
+        <button
+          type="button"
+          className={styles.grip}
+          data-listing-drag-handle
+          data-sheet-drag-handle
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={isThai ? 'เลื่อนขึ้นหรือแตะเพื่อดูช่องทางติดต่อ' : 'Swipe up or tap for contact details'}
+          onClick={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key === 'ArrowUp') {
+              event.preventDefault()
+              setOpen(true)
+            }
+          }}
+        >
+          <span aria-hidden="true" />
+        </button>
+      )}
+      <div className={styles.inner} data-dual={prices.length > 1}>
+        <div className={styles.summary}>
+          <div className={styles.price} data-sheet-drag-handle>
+            {prices.length === 1 && <p className={styles.label}>{propertyOfferLabel(prices[0].offerType, isThai)}</p>}
+            <PropertyPrices prices={prices} variant="compact" />
+            {priceNote && prices.length === 1 && <p className={styles.note}>{priceNote}</p>}
+          </div>
+          {quickContact && !children && (
+            <a
+              href={quickContact.href}
+              target={quickContact.kind === 'line' ? '_blank' : undefined}
+              rel={quickContact.kind === 'line' ? 'noopener noreferrer' : undefined}
+              className={styles.quickContact}
+              aria-label={quickContact.kind === 'phone' ? (isThai ? 'โทรหาผู้ประกาศ' : 'Call advertiser') : 'LINE'}
+            >
+              {quickContact.kind === 'phone' ? (
+                <Phone size={18} aria-hidden="true" />
+              ) : (
+                <MessageCircle size={18} aria-hidden="true" />
+              )}
+              {quickContact.kind === 'phone' ? (isThai ? 'โทร' : 'Call') : 'LINE'}
+            </a>
+          )}
+        </div>
+        <div className={styles.actions} data-has-contact={Boolean(children)} data-has-map={Boolean(mapUrl)}>
+          {children && <div className={styles.contact}>{children}</div>}
+          {mapUrl && (
+            <a
+              href={mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.map}
+              aria-label={isThai ? 'ดูแผนที่' : 'View map'}
+            >
+              <MapPin size={20} aria-hidden="true" />
+              <span>{isThai ? 'ดูแผนที่' : 'View map'}</span>
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <ListingContactSheetContext.Provider value={{ open, setOpen }}>
       {placement === 'page' && (
         <div ref={spacerRef} className={styles.spacer} data-listing-action-spacer aria-hidden="true" />
       )}
-      <div
-        ref={barRef}
-        className={styles.bar}
-        data-listing-contact-bar
-        data-placement={placement}
-        data-sheet-drag-root
-        data-sheet-scroll
-        data-keyboard-focus={keyboardFocus || undefined}
-      >
-        {children && (
-          <button
-            type="button"
-            className={styles.grip}
-            data-listing-drag-handle
-            data-sheet-drag-handle
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            aria-label={isThai ? 'เลื่อนขึ้นหรือแตะเพื่อดูช่องทางติดต่อ' : 'Swipe up or tap for contact details'}
-            onClick={() => setOpen(true)}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowUp') {
-                event.preventDefault()
-                setOpen(true)
-              }
-            }}
-          >
-            <span aria-hidden="true" />
-          </button>
-        )}
-        <div className={styles.inner} data-dual={prices.length > 1}>
-          <div className={styles.summary}>
-            <div className={styles.price} data-sheet-drag-handle>
-              {prices.length === 1 && <p className={styles.label}>{propertyOfferLabel(prices[0].offerType, isThai)}</p>}
-              <PropertyPrices prices={prices} variant="compact" />
-              {priceNote && prices.length === 1 && <p className={styles.note}>{priceNote}</p>}
-            </div>
-            {quickContact && !children && (
-              <a
-                href={quickContact.href}
-                target={quickContact.kind === 'line' ? '_blank' : undefined}
-                rel={quickContact.kind === 'line' ? 'noopener noreferrer' : undefined}
-                className={styles.quickContact}
-                aria-label={quickContact.kind === 'phone' ? (isThai ? 'โทรหาผู้ประกาศ' : 'Call advertiser') : 'LINE'}
-              >
-                {quickContact.kind === 'phone' ? (
-                  <Phone size={18} aria-hidden="true" />
-                ) : (
-                  <MessageCircle size={18} aria-hidden="true" />
-                )}
-                {quickContact.kind === 'phone' ? (isThai ? 'โทร' : 'Call') : 'LINE'}
-              </a>
-            )}
-          </div>
-          <div className={styles.actions} data-has-contact={Boolean(children)} data-has-map={Boolean(mapUrl)}>
-            {children && <div className={styles.contact}>{children}</div>}
-            {mapUrl && (
-              <a
-                href={mapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.map}
-                aria-label={isThai ? 'ดูแผนที่' : 'View map'}
-              >
-                <MapPin size={20} aria-hidden="true" />
-                <span>{isThai ? 'ดูแผนที่' : 'View map'}</span>
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
+      {portal ? createPortal(bar, portal) : bar}
     </ListingContactSheetContext.Provider>
   )
 }

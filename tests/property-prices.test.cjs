@@ -136,6 +136,7 @@ test('the standalone detail renders both offers in its content, desktop price ca
     '@/components/ListingViewCount': { default: () => null },
     '@/components/PropertyDescription': { default: () => null },
     '@/components/property-home/ListingContactDetails': { default: () => null },
+    '@/components/property-home/ListingDetailActions': { default: () => null },
     '@/lib/propertyPreviewDetails': load('src/lib/propertyPreviewDetails.ts'),
     '@/components/property-home/ListingLocationSection': { default: () => null },
     '@/data/propertyTaxonomy': {
@@ -148,6 +149,8 @@ test('the standalone detail renders both offers in its content, desktop price ca
     '../../components/HeaderGallery': { default: () => null },
     '../../components/MobileListingActionBar': load('src/app/(app)/(listings)/components/MobileListingActionBar.tsx', {
       react: React,
+      'react-dom': require('react-dom'),
+      './ListingPageViewport': { ListingDockPortalContext: React.createContext(null) },
       'react/jsx-runtime': require('react/jsx-runtime'),
       'lucide-react': require('lucide-react'),
       '@/components/PropertyPrices': component(provider),
