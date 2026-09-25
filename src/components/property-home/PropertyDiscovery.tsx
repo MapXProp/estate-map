@@ -254,7 +254,13 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
   const searchHref = (query: string) => getHeaderMapSearchUrl(query, mode, selectedOffers)
 
   return (
-    <section className={styles.discovery} aria-labelledby={`${mode}-hero-title`}>
+    <section
+      id="discovery-start"
+      data-section-nav="start"
+      data-section-label={th ? 'เริ่มค้นหา' : 'Start exploring'}
+      className={styles.discovery}
+      aria-labelledby={`${mode}-hero-title`}
+    >
       <div className="container">
         <DiscoveryHero
           key={mode}
