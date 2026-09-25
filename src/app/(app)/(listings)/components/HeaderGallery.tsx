@@ -2,7 +2,9 @@
 
 import BtnLikeIcon from '@/components/BtnLikeIcon'
 import PropertyPrices from '@/components/PropertyPrices'
+import gallerySheetStyles from '@/components/property-map/GallerySheet.module.css'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
+import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import type { PropertyPrice } from '@/lib/propertyPrices'
 import { Button } from '@/shared/Button'
 import T from '@/utils/getT'
@@ -819,17 +821,30 @@ const DesktopPhotoGallery = ({
     }, 180)
   }
 
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(handleClose, open, 1366)
+
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={dismiss}
       data-analytics-surface="gallery"
       className="relative z-50 hidden min-[744px]:block"
     >
-      <DialogBackdrop className="fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]" />
+      <DialogBackdrop
+        ref={backdropRef}
+        className={`${gallerySheetStyles.modalBackdrop} fixed inset-0 bg-neutral-950/70 backdrop-blur-[2px]`}
+      />
       <div className="fixed inset-0 flex items-center justify-center p-3 lg:p-5">
-        <DialogPanel className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900">
-          <header className="relative z-10 shrink-0 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+        <DialogPanel
+          ref={panelRef}
+          data-listing-media-gallery
+          className={`${gallerySheetStyles.modalPanel} flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1800px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl lg:max-h-[calc(100dvh-2.5rem)] dark:bg-neutral-900`}
+        >
+          <header
+            data-sheet-drag-handle
+            className={`${gallerySheetStyles.handle} relative z-10 shrink-0 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900`}
+          >
+            <span className={gallerySheetStyles.grip} aria-hidden="true" />
             <div className="flex min-h-20 items-center justify-between gap-4 px-6 lg:px-8">
               <div className="min-w-0">
                 <h2 className="truncate text-xl font-semibold text-neutral-950 dark:text-white">สื่อทั้งหมด</h2>
@@ -856,6 +871,7 @@ const DesktopPhotoGallery = ({
             <div className="relative min-h-0 min-w-0 flex-1">
               <div
                 ref={mediaScrollRef}
+                data-sheet-scroll
                 className="h-full min-h-0 overflow-y-auto overscroll-contain bg-neutral-50 px-3 lg:px-4 dark:bg-neutral-950/60"
                 onScroll={handleGalleryScroll}
               >
@@ -891,7 +907,7 @@ const DesktopPhotoGallery = ({
 
             {propertyDetails && (
               <aside className="hidden w-[310px] shrink-0 flex-col border-l border-neutral-200 bg-white lg:flex xl:w-[350px] dark:border-neutral-800 dark:bg-neutral-900">
-                <div className="min-h-0 flex-1 overflow-y-auto p-5 xl:p-6">
+                <div data-sheet-scroll className="min-h-0 flex-1 overflow-y-auto p-5 xl:p-6">
                   <div className="flex items-start justify-between gap-3">
                     {propertyDetails.isVerified && (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eff7f3] px-3 py-1.5 text-xs font-semibold text-[#176b50] dark:bg-emerald-950/50 dark:text-emerald-200">
@@ -1206,7 +1222,7 @@ const HeaderGallery = ({
         imageAlt={galleryImageAlt}
       />
 
-      {gridType === 'grid2' && (
+      {gridType === 'grid2' && isDesktopGalleryOpen && (
         <DesktopPhotoGallery
           images={images}
           media={mediaItems}

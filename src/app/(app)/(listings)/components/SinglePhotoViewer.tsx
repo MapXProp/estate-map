@@ -1,7 +1,9 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import { CloseButton, DialogTitle } from '@headlessui/react'
+import gallerySheetStyles from '@/components/property-map/GallerySheet.module.css'
+import { useSwipeDismiss } from '@/hooks/useMobileSheets'
+import { CloseButton, DialogTitle, useClose } from '@headlessui/react'
 import { ChevronLeft, ChevronRight, Minimize2, X, ZoomIn } from 'lucide-react'
 import Image, { getImageProps } from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -19,6 +21,8 @@ export default function SinglePhotoViewer({
   const th = locale === 'th'
   const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, Math.min(initialIndex, images.length - 1)))
   const [zoomed, setZoomed] = useState(false)
+  const close = useClose()
+  const { panelRef } = useSwipeDismiss(close, !zoomed, 1366)
   const stageRef = useRef<HTMLDivElement>(null)
   const thumbnails = useRef<(HTMLButtonElement | null)[]>([])
   const touch = useRef<{ x: number; y: number; horizontal: boolean | null } | null>(null)
@@ -68,8 +72,9 @@ export default function SinglePhotoViewer({
   return (
     <div
       data-single-photo-viewer
+      ref={panelRef}
       data-photo-index={selectedIndex}
-      className="relative size-full text-white"
+      className={`${gallerySheetStyles.modalPanel} relative size-full text-white`}
       onKeyDown={(event) => {
         if (event.altKey || event.ctrlKey || event.metaKey) return
         if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -82,6 +87,8 @@ export default function SinglePhotoViewer({
       <div
         ref={stageRef}
         data-single-photo-stage
+        data-sheet-scroll
+        data-sheet-no-drag={zoomed || undefined}
         className={`size-full overscroll-contain py-16 select-none sm:pb-24 ${zoomed ? 'touch-auto overflow-auto' : 'flex touch-pan-y touch-pinch-zoom items-center justify-center px-3 sm:px-16'}`}
         onTouchStart={(event) => {
           const point = event.touches[0]

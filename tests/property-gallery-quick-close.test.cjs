@@ -45,7 +45,7 @@ function harness(isThai = true) {
     'lucide-react': require('lucide-react'),
     'next/image': { default: 'test-image' },
     '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogBackdrop: 'test-backdrop', DialogTitle: 'test-title' },
-    '@/components/property-map/MobileSheet.module.css': { default: {} },
+    '@/components/property-map/GallerySheet.module.css': { default: {} },
     '@/hooks/useGalleryQuickClose': quickClose,
     '@/hooks/useMobileSheets': { useSwipeDismiss(onClose, enabled) {
       swipeEnabled = enabled

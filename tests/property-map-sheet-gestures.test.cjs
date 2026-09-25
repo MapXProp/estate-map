@@ -376,7 +376,7 @@ function hookHarness(kind, config = {}) {
     'lucide-react': require('lucide-react'),
     'next/image': { default: 'test-image' },
     '@headlessui/react': { Dialog: 'test-dialog', DialogPanel: 'test-panel', DialogBackdrop: 'test-backdrop', DialogTitle: 'test-title' },
-    '@/components/property-map/MobileSheet.module.css': { default: {} },
+    '@/components/property-map/GallerySheet.module.css': { default: {} },
     '@/hooks/useMobileSheets': hook,
     '@/hooks/useGalleryQuickClose': {},
     '@/lib/propertyMapPreview': {},
@@ -824,6 +824,25 @@ test('the full-size photo follows a downward pull and returns to its gallery aft
     assert.equal(h.root.dispatch('click', h.content).prevented, true)
     h.unmount()
   }
+})
+
+test('tablet full photos dismiss in portrait and landscape without widening other modal gestures', () => {
+  for (const width of [744, 820, 1024, 1180, 1366]) {
+    const photo = hookHarness('photo', { width })
+    photo.photoStart()
+    assert.equal(photo.photoMove(0, 150, 250).prevented, true)
+    photo.photoEnd()
+    photo.advance(260)
+    assert.equal(photo.closed, 1, `photo at ${width}px`)
+    photo.unmount()
+  }
+  const desktop = hookHarness('photo', { width: 1367 })
+  desktop.photoStart()
+  assert.equal(desktop.photoMove(0, 150, 250).prevented, undefined)
+  desktop.photoEnd()
+  desktop.advance(260)
+  assert.equal(desktop.closed, 0)
+  desktop.unmount()
 })
 
 test('short, upward and cancelled photo pulls settle without closing or switching photos', () => {

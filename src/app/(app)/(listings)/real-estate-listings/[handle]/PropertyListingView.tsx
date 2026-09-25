@@ -311,16 +311,11 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
 
             {prices.length > 0 ? (
               <section
-                className={`mt-5 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-4 min-[1100px]:hidden dark:border-[#205e30] dark:bg-[#173520] ${listing.property_type_code !== 'retail_space' && prices.length === 1 ? 'max-[743px]:hidden' : ''}`}
+                data-listing-inline-price
+                className="mt-5 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-4 min-[1100px]:hidden dark:border-[#205e30] dark:bg-[#173520]"
               >
                 <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-300">
-                  {listing.property_type_code === 'retail_space'
-                    ? isThai
-                      ? 'ค่าเช่าและเงื่อนไข'
-                      : 'Rent & terms'
-                    : isThai
-                      ? 'ราคา'
-                      : 'Price'}
+                  {retailTerms.length > 0 ? (isThai ? 'ราคาและเงื่อนไข' : 'Price & terms') : isThai ? 'ราคา' : 'Price'}
                 </p>
                 <PropertyPrices prices={prices} variant="detail" className="mt-2 text-[#123f32] dark:text-white" />
                 <RetailTerms items={retailTerms} />

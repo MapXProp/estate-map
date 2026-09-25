@@ -134,7 +134,7 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </span>
             </div>
 
-            <div className={styles.eventPrice}>
+            <div className={styles.eventPrice} data-listing-inline-price>
               <p className="text-sm text-neutral-500">
                 {isContactOrganizer ? 'การรับราคาและรายละเอียด' : 'ค่าเช่าพื้นที่ชั่วคราว'}
               </p>

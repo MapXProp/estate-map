@@ -1,6 +1,6 @@
 'use client'
 
-import sheetStyles from '@/components/property-map/MobileSheet.module.css'
+import sheetStyles from '@/components/property-map/GallerySheet.module.css'
 import { useGalleryQuickClose } from '@/hooks/useGalleryQuickClose'
 import { useSwipeDismiss } from '@/hooks/useMobileSheets'
 import { stepMapPreviewImage } from '@/lib/propertyMapPreview'
@@ -22,7 +22,7 @@ export default function PropertyPhotoGallery({
   onClose: () => void
 }) {
   const [activeImage, setActiveImage] = useState<number | null>(null)
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, activeImage === null)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, activeImage === null, 1366)
   const quickClose = useGalleryQuickClose()
   const quickCloseVisible = quickClose.visible && activeImage === null
   const closeGallery = () => {
@@ -148,7 +148,7 @@ export function FullPhotoDialog({
   onClose: () => void
 }) {
   const touchRef = useRef<{ x: number; y: number; horizontal: boolean | null } | null>(null)
-  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose)
+  const { panelRef, backdropRef, dismiss } = useSwipeDismiss(onClose, true, 1366)
 
   return (
     <Dialog open onClose={dismiss} className="relative z-[100]">
@@ -239,7 +239,7 @@ export function FullPhotoDialog({
               </button>
             </>
           )}
-          <p className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 rounded-full bg-black/30 px-3 py-1.5 text-xs whitespace-nowrap text-white/60 lg:hidden">
+          <p className="pointer-events-none absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 rounded-full bg-black/30 px-3 py-1.5 text-xs whitespace-nowrap text-white/60 min-[1367px]:hidden">
             {isThai ? 'รูดลงเพื่อปิด' : 'Swipe down to close'}
           </p>
         </DialogPanel>

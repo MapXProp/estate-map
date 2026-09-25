@@ -299,6 +299,21 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               ))}
             </section>
 
+            <section
+              data-listing-inline-price
+              className="order-1 mt-5 rounded-2xl border border-[#dce9e4] bg-[#f7faf8] p-4 min-[744px]:order-none min-[1100px]:hidden dark:border-[#205e30] dark:bg-[#173520]"
+            >
+              <p className="font-sarabun text-sm text-neutral-500 dark:text-neutral-300">{isThai ? 'ราคา' : 'Price'}</p>
+              <PropertyPrices prices={prices} variant="detail" className="mt-2 text-[#123f32] dark:text-white" />
+              {pricePerSquareWah ? (
+                <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-300">
+                  {isThai
+                    ? `เฉลี่ย ${formattedPricePerSquareWah}/ตร.ว.`
+                    : `Average ${formattedPricePerSquareWah}/sq.wah`}
+                </p>
+              ) : null}
+            </section>
+
             {hasContacts && (
               <details
                 className={`${styles.mobileContact} group order-2 mt-4 overflow-hidden rounded-2xl border border-[#dce9e4] bg-[#f7faf8] min-[744px]:hidden`}
