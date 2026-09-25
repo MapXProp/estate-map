@@ -10,7 +10,7 @@ const ts = require('typescript')
 function load(relative, imports = {}) {
   const filename = path.join(__dirname, '..', relative)
   const context = {
-    exports: {},
+    exports: {}, URLSearchParams,
     require: (id) => {
       if (!(id in imports)) throw new Error(`Unexpected import ${id}`)
       return imports[id]
@@ -35,10 +35,12 @@ const leaf = () => null
 const common = (pathname, locale = 'th') => ({
   react: React,
   'react/jsx-runtime': require('react/jsx-runtime'),
-  'next/navigation': { usePathname: () => pathname },
+  'next/navigation': { usePathname: () => pathname, useSearchParams: () => new URLSearchParams() },
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
   'lucide-react': require('lucide-react'),
   '@/lib/propertyNavigation': navigation,
+  '@/lib/propertyCatalog': { CATALOG_PATH: '/real-estate-categories/all' },
+  '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
   '@/hooks/useAutoHideBottomNavigation': {
     useAutoHideBottomNavigation: () => ({ navRef: null, hidden: false, reveal: leaf }),
   },

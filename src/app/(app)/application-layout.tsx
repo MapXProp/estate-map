@@ -56,7 +56,9 @@ const ApplicationLayout: React.FC<Props> = ({
       {/*  */}
       {children}
       {/*  */}
-      <MobilePrimaryNavigation />
+      <Suspense fallback={null}>
+        <MobilePrimaryNavigation />
+      </Suspense>
       {/* FooterQuickNavigation - Displays on mobile devices and is fixed at the bottom of the screen */}
       <FooterQuickNavigation />
       {/* Chose footer style here!!!! */}

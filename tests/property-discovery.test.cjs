@@ -40,6 +40,7 @@ function discovery(mode, locale = 'th') {
   let selected = 'all'
   const Omnibox = () => null
   const component = load('src/components/property-home/PropertyDiscovery.tsx', {
+    '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
     react: {
@@ -70,7 +71,7 @@ test('discovery searches keep their channel and offer selection with Thai and En
       const check = (offers) => {
         const query = 'อารีย์ & B ?offer_type=sale'
         const url = new URL(view.search().buildSearchUrl(query), 'https://mapxprop.com')
-        assert.equal(url.pathname, '/properties/map')
+        assert.equal(url.pathname, '/real-estate-categories/all')
         assert.equal(url.searchParams.get('q'), query)
         assert.equal(url.searchParams.get('channel'), channel)
         assert.deepEqual(url.searchParams.getAll('offer_type'), offers)

@@ -1,8 +1,14 @@
-import PropertyCatalogResults from '@/components/property-home/PropertyCatalogResults'
-import PropertySearchResults from '@/components/property-home/PropertySearchResults'
-import { CATALOG_PAGE_SIZE, CATALOG_PATH, catalogPageNumber, catalogPagePath } from '@/lib/propertyCatalog'
-import { fetchPropertySearch } from '@/lib/propertySearch'
-import { getPublishedProperties } from '@/lib/publishedProperties'
+import PropertyBrowseResults from '@/components/property-home/PropertyBrowseResults'
+import JsonLd from '@/components/seo/JsonLd'
+import { browseHref, parseBrowseState } from '@/lib/propertyBrowse'
+import { getBrowseResults } from '@/lib/propertyBrowseServer'
+import {
+  CATALOG_PAGE_SIZE,
+  CATALOG_PATH,
+  catalogPageNumber,
+  catalogPagePath,
+  catalogStructuredData,
+} from '@/lib/propertyCatalog'
 import { createPageMetadata } from '@/lib/seo'
 import { notFound, permanentRedirect } from 'next/navigation'
 
@@ -32,25 +38,20 @@ export default async function Page({ params, searchParams }: Props) {
   if (handle && (handle.length !== 1 || handle[0] !== 'all')) notFound()
   const page = catalogPageNumber(search.page)
   if (!page) notFound()
-  const query = (Array.isArray(search.q) ? search.q[0] : search.q)?.trim()
   if (!handle || (search.page === '1' && Object.keys(search).length === 1)) permanentRedirect(CATALOG_PATH)
-  if (query) {
-    const response = await fetchPropertySearch(query, undefined, {
-      limit: CATALOG_PAGE_SIZE,
-      offset: (page - 1) * CATALOG_PAGE_SIZE,
-    })
-    if (page > 1 && !response.listings.length) notFound()
-    return <PropertySearchResults key={`${query}:${page}`} query={query} initialData={response} page={page} />
-  }
-  const listings = await getPublishedProperties()
-  if (page > Math.max(1, Math.ceil(listings.length / CATALOG_PAGE_SIZE))) notFound()
+  const values = new URLSearchParams()
+  Object.entries(search).forEach(([key, value]) =>
+    (Array.isArray(value) ? value : value ? [value] : []).forEach((item) => values.append(key, item))
+  )
+  const state = parseBrowseState(values)
+  const results = await getBrowseResults(values, page)
+  if (page > 1 && !results.listings.length) notFound()
   return (
-    <PropertyCatalogResults
-      title={title}
-      description={description}
-      path={CATALOG_PATH}
-      listings={listings}
-      page={page}
-    />
+    <>
+      <JsonLd
+        data={catalogStructuredData(title, browseHref(state, page), results.listings, (page - 1) * CATALOG_PAGE_SIZE)}
+      />
+      <PropertyBrowseResults key={browseHref(state, page)} state={state} initial={results} />
+    </>
   )
 }

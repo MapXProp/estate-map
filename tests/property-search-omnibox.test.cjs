@@ -60,6 +60,7 @@ function harness(variant, options = {}) {
     },
     '@/lib/propertyRecentSearches': { getPropertyRecentSearches: () => [], savePropertyRecentSearch() {} },
     '@/lib/propertySearch': {
+      getPropertySearchUrl: query => `/real-estate-categories/all?${new URLSearchParams({q:query})}`,
       fetchPropertySearchSuggestions: async (query, signal, config) => {
         localLookups.push({ query, config })
         return options.local ? options.local(query, signal) : []
@@ -203,6 +204,15 @@ test('sheet search exposes an external submit form and preserves empty or typed 
   h.type('สาทร')
   h.submit()
   assert.equal(new URL(h.navigation[1], 'https://mapxprop.com').searchParams.get('q'), 'สาทร')
+})
+
+test('default search opens listing cards without requiring a map', () => {
+  const h = harness('sheet', { props: { buildSearchUrl: undefined } })
+  h.type('Town')
+  h.submit()
+  const url = new URL(h.navigation[0], 'https://mapxprop.com')
+  assert.equal(url.pathname, '/real-estate-categories/all')
+  assert.equal(url.searchParams.get('q'), 'Town')
 })
 
 test('desktop and mobile both offer external locations; tapping one submits its complete place name', async () => {

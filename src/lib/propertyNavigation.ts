@@ -10,6 +10,7 @@ export const isTransitDirectoryPath = (pathname: string) =>
 
 export const usesMobilePrimaryNavigation = (pathname: string) =>
   ['/homes', '/rooms', '/business'].includes(pathname) ||
+  pathname.startsWith('/real-estate-categories/') ||
   pathname === '/account' ||
   pathname.startsWith('/account-') ||
   isOrganizationPath(pathname) ||

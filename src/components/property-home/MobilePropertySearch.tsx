@@ -6,6 +6,7 @@ import {
   mobilePropertyCategories,
   type MobilePropertyCategory,
 } from '@/lib/mobilePropertySearch'
+import { asBrowseHref } from '@/lib/propertyBrowse'
 import { OPEN_MOBILE_PROPERTY_SEARCH_EVENT } from '@/lib/propertyNavigation'
 import { getPropertyZoneFromPathname } from '@/lib/propertyZone'
 import {
@@ -138,7 +139,7 @@ const MobilePropertySearch = ({
   const openBudget = () => setBudgetOpen(true)
 
   const buildMapSearchUrl = (query: string) => {
-    return getMobilePropertyMapSearchUrl({
+    const href = getMobilePropertyMapSearchUrl({
       query,
       channel: propertyGroup,
       selectedCategories: selectedPropertyTypes.map((property) => property.value),
@@ -146,6 +147,7 @@ const MobilePropertySearch = ({
       minPrice: budget.minPrice ? Number(budget.minPrice) : undefined,
       maxPrice: budget.maxPrice ? Number(budget.maxPrice) : undefined,
     })
+    return isMapResults ? href : asBrowseHref(href)
   }
 
   const hasBudget = Boolean(budget.minPrice || budget.maxPrice)

@@ -1,6 +1,8 @@
 'use client'
 
+import { browseHref } from '@/lib/propertyBrowse'
 import { filterPropertyPrices } from '@/lib/propertyPrices'
+import Link from 'next/link'
 
 import AvatarDropdown from '@/components/Header/AvatarDropdown'
 import LongdoPropertyMap, {
@@ -55,6 +57,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Grid2X2,
   House,
   KeyRound,
   Link2,
@@ -124,6 +127,7 @@ export default function PropertyMapSearch({
   initialProject = '',
   initialMapMode = 'listings',
   initialProjectCategory = 'all',
+  initialSort = 'recommended',
 }: {
   query?: string
   initialMapCenter?: { lat: number; lon: number }
@@ -134,6 +138,7 @@ export default function PropertyMapSearch({
   initialProject?: string
   initialMapMode?: PropertyMapMode
   initialProjectCategory?: ProjectCategoryFilter
+  initialSort?: PropertyMapSort
 }) {
   const { locale } = usePreferences()
   const th = locale === 'th'
@@ -166,7 +171,7 @@ export default function PropertyMapSearch({
   const [selectedProject, setSelectedProject] = useState<{ id: string; seed?: MapProject } | null>(
     initialProject ? { id: initialProject } : null
   )
-  const [sort, setSort] = useState<PropertyMapSort>('recommended')
+  const [sort, setSort] = useState<PropertyMapSort>(initialSort)
   const [pagination, setPagination] = useState({ key: '', count: 20 })
   const [area, setArea] = useState<PropertyMapBounds | null>(null)
   const [viewportDirty, setViewportDirty] = useState(false)
@@ -308,6 +313,8 @@ export default function PropertyMapSearch({
       'project_category',
     ].forEach((key) => params.delete(key))
     if (keyword) params.set('q', keyword)
+    if (sort === 'recommended') params.delete('sort')
+    else params.set('sort', sort)
     if (mapMode === 'projects') params.set('map_mode', 'projects')
     if (mapMode === 'projects' && projectCategory !== 'all') params.set('project_category', projectCategory)
     if (selectedProject) params.set('project', selectedProject.seed?.slug || selectedProject.id)
@@ -327,7 +334,7 @@ export default function PropertyMapSearch({
     }
     if (window.location.pathname === '/properties/map')
       window.history.replaceState(window.history.state, '', `/properties/map${params.size ? `?${params}` : ''}`)
-  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode, projectCategory])
+  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode, projectCategory, sort])
 
   useEffect(() => {
     const container = resultsRef.current
@@ -625,6 +632,7 @@ export default function PropertyMapSearch({
         <header className={styles.categoryHeading} data-map-topbar>
           <div className={styles.brand} data-map-brand>
             <Logo className={styles.logo} />
+
             {mapMode === 'listings' && categories.length > 0 && (
               <span className={styles.selectionSummary}>
                 {isLandOnlyMapSelection(categories)
@@ -735,7 +743,24 @@ export default function PropertyMapSearch({
               </div>
             )}
           </div>
-          <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode} />
+          <MapViewControls mode={mapMode} th={th} onModeChange={changeMapMode}>
+            <Link
+              data-map-browse-link
+              href={browseHref({
+                query: keyword,
+                station: '',
+                categories,
+                filters,
+                sort: sort === 'price_low' || sort === 'price_high' ? sort : 'newest',
+              })}
+              className="flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 text-xs font-medium text-[#176b50] hover:bg-emerald-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-emerald-200"
+              aria-label={th ? 'ดูรายการประกาศพร้อมตัวกรองเดิม' : 'Browse listings with these filters'}
+              title={th ? 'ดูแบบการ์ด' : 'Card view'}
+            >
+              <Grid2X2 size={16} />
+              <span className="hidden min-[1024px]:inline">{th ? 'รายการ' : 'Listings'}</span>
+            </Link>
+          </MapViewControls>
           <div className={styles.accountControl}>
             <AvatarDropdown avatarClassName="size-8" buttonClassName={styles.accountButton} />
           </div>

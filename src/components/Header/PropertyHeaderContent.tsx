@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import PropertySearchOmnibox from '@/components/property-home/PropertySearchOmnibox'
+import { asBrowseHref } from '@/lib/propertyBrowse'
 import {
   defaultHeaderOffers,
   getHeaderMapSearchUrl,
@@ -44,7 +45,7 @@ const SearchFirstHeader = () => {
               variant="header"
               tone={searchTone}
               placeholder={isThai ? 'ค้นหาทำเล โครงการ หรือสถานี' : 'Location, project or station'}
-              buildSearchUrl={(query) => getHeaderMapSearchUrl(query, siteMode, offers)}
+              buildSearchUrl={(query) => asBrowseHref(getHeaderMapSearchUrl(query, siteMode, offers))}
               allowEmptyQuery
               showTypeLabels
             >

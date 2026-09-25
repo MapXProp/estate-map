@@ -120,7 +120,7 @@ test('empty card selection scopes to the chosen channel and rooms remain rental-
   }
 })
 
-function harness(locale = 'th') {
+function harness(locale = 'th', pathname = '/homes') {
   const slots = []
   let cursor = 0,
     tree,
@@ -141,11 +141,12 @@ function harness(locale = 'th') {
       useEffect() {},
       useMemo: (fn) => fn(),
     },
+    '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
     'react/jsx-runtime': require('react/jsx-runtime'),
     'lucide-react': require('lucide-react'),
     'next/image': { default: 'test-image' },
     './MobilePropertySearch.module.css': { default: {} },
-    'next/navigation': { usePathname: () => '/homes', useSearchParams: () => new URLSearchParams() },
+    'next/navigation': { usePathname: () => pathname, useSearchParams: () => new URLSearchParams() },
     './MobilePropertySearchDialog': { default: 'test-dialog' },
     '@/components/preferences/PreferencesProvider': {
       usePreferences: () => ({
@@ -353,3 +354,7 @@ test('dismissing and reopening discovery keeps the selected category, offer and 
   h.click(h.data('data-mobile-search-all-types', true))
   assert.deepEqual(initialCategories(h.url()).sort(), plain(map.normalizeMapCategories(map.mapCategoryGroups.find(group => group.code === 'business').options.map(option => option.id))).sort())
 })
+
+ test('generic mobile search opens cards while explicit map search stays on the map', () => {
+ for (const route of ['/homes', '/properties/map']) { const h = harness('th', route); assert.equal(h.url('Town').pathname, route === '/properties/map' ? route : '/real-estate-categories/all') }
+ })

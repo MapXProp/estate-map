@@ -6,7 +6,7 @@ import { getPropertyRecentSearches, savePropertyRecentSearch } from '@/lib/prope
 import {
   fetchLongdoPropertyLocationSuggestions,
   fetchPropertySearchSuggestions,
-  getPropertyMapSearchUrl,
+  getPropertySearchUrl,
   PropertySearchSuggestion,
 } from '@/lib/propertySearch'
 import { getTransitSearchSuggestions, getTransitStationMapUrl } from '@/lib/transitStations'
@@ -269,7 +269,7 @@ const PropertySearchOmnibox = ({
     setActiveIndex(-1)
     onSubmitQuery?.(value)
     router.push(
-      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion?.stationId)
+      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertySearchUrl(value), selectedSuggestion?.stationId)
     )
   }
 
@@ -533,7 +533,7 @@ const PropertySearchOmnibox = ({
                           {isThai ? `ค้นหาด้วยคำว่า “${normalizedQuery}”` : `Search for “${normalizedQuery}”`}
                         </span>
                         <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                          {isThai ? 'ดูผลทั้งหมดบนแผนที่' : 'View all results on the map'}
+                          {isThai ? 'ดูประกาศที่ตรงกับคำค้น' : 'View matching listings'}
                         </span>
                       </span>
                     </button>

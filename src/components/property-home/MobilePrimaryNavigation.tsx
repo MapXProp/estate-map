@@ -3,10 +3,12 @@
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useSavedListings } from '@/components/saved-listings/SavedListingsProvider'
 import { useAutoHideBottomNavigation } from '@/hooks/useAutoHideBottomNavigation'
-import { OPEN_MOBILE_PROPERTY_SEARCH_EVENT, usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
+import { browseHref, parseBrowseState } from '@/lib/propertyBrowse'
+import { CATALOG_PATH } from '@/lib/propertyCatalog'
+import { usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
 import { Heart, House, Map, Plus, Search } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import styles from './MobilePrimaryNavigation.module.css'
 
 export default function MobilePrimaryNavigation() {
@@ -17,6 +19,7 @@ export default function MobilePrimaryNavigation() {
 }
 
 function FloatingNavigation({ pathname }: { pathname: string }) {
+  const params = useSearchParams()
   const { locale, propertyZone } = usePreferences()
   const { savedCount, isReady } = useSavedListings()
   const { navRef, hidden, reveal } = useAutoHideBottomNavigation()
@@ -29,7 +32,16 @@ function FloatingNavigation({ pathname }: { pathname: string }) {
       icon: House,
       active: ['/homes', '/rooms', '/business'].includes(pathname),
     },
-    { th: 'แผนที่', en: 'Map', href: '/properties/map', icon: Map, active: false },
+    {
+      th: 'แผนที่',
+      en: 'Map',
+      href:
+        pathname === CATALOG_PATH
+          ? browseHref(parseBrowseState(new URLSearchParams(params.toString())), 1, true)
+          : '/properties/map',
+      icon: Map,
+      active: false,
+    },
     { th: 'ลงประกาศ', en: 'Post', href: '/add-listing/1?new=1', icon: Plus, active: false, post: true },
     {
       th: 'บันทึก',
@@ -76,18 +88,17 @@ function FloatingNavigation({ pathname }: { pathname: string }) {
             <span className={styles.label}>{th ? item.th : item.en}</span>
           </Link>
         ))}
-        <button
-          type="button"
+        <Link
+          href={CATALOG_PATH}
           data-mobile-bottom-search
-          aria-haspopup="dialog"
-          onClick={() => window.dispatchEvent(new Event(OPEN_MOBILE_PROPERTY_SEARCH_EVENT))}
-          className={styles.item}
+          aria-current={pathname === CATALOG_PATH ? 'page' : undefined}
+          className={`${styles.item} ${pathname === CATALOG_PATH ? styles.active : ''}`}
         >
           <span className={styles.icon}>
             <Search size={23} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <span className={styles.label}>{th ? 'ค้นหา' : 'Search'}</span>
-        </button>
+        </Link>
       </nav>
     </>
   )

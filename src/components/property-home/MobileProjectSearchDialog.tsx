@@ -21,9 +21,17 @@ const projectTypes = [
 ] as const
 
 const projectExamples = [
-  { name: 'เซ็นทรัล ลาดพร้าว', descriptionTh: 'ห้างและศูนย์การค้า · จตุจักร', descriptionEn: 'Shopping centre · Chatuchak' },
+  {
+    name: 'เซ็นทรัล ลาดพร้าว',
+    descriptionTh: 'ห้างและศูนย์การค้า · จตุจักร',
+    descriptionEn: 'Shopping centre · Chatuchak',
+  },
   { name: 'ศุภาลัย ดอนเมือง', descriptionTh: 'โครงการคอนโด · ดอนเมือง', descriptionEn: 'Condo project · Don Mueang' },
-  { name: 'แสนสิริ ปทุมธานี', descriptionTh: 'โครงการที่อยู่อาศัย · ปทุมธานี', descriptionEn: 'Residential project · Pathum Thani' },
+  {
+    name: 'แสนสิริ ปทุมธานี',
+    descriptionTh: 'โครงการที่อยู่อาศัย · ปทุมธานี',
+    descriptionEn: 'Residential project · Pathum Thani',
+  },
 ] as const
 
 const MobileProjectSearchDialog = ({ open, onClose }: Props) => {
@@ -67,6 +75,7 @@ const MobileProjectSearchDialog = ({ open, onClose }: Props) => {
             showSuggestionsOnEmpty={false}
             placeholder={isThai ? 'พิมพ์ชื่อโครงการ ห้าง อาคาร หรือตลาด' : 'Project, mall, building, or market name'}
             onSubmitQuery={onClose}
+            buildSearchUrl={getPropertyMapSearchUrl}
           />
 
           <section className="mt-6">
@@ -111,7 +120,9 @@ const MobileProjectSearchDialog = ({ open, onClose }: Props) => {
                     <Building2 className="size-4.5" strokeWidth={1.8} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-white">{project.name}</span>
+                    <span className="block truncate text-sm font-semibold text-neutral-900 dark:text-white">
+                      {project.name}
+                    </span>
                     <span className="mt-0.5 block truncate text-xs text-neutral-500 dark:text-neutral-400">
                       {isThai ? project.descriptionTh : project.descriptionEn}
                     </span>

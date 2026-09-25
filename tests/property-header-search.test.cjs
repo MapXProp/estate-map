@@ -81,7 +81,8 @@ test('clicking a header offer selects exactly that offer and submits it, includi
     const Omnibox = () => null
     const leaf = () => null
     const header = load('src/components/Header/PropertyHeaderContent.tsx', {
-      'react/jsx-runtime': require('react/jsx-runtime'),
+      '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
+    'react/jsx-runtime': require('react/jsx-runtime'),
       react: {
         useState: (initial) => {
           if (state === undefined) state = initial()

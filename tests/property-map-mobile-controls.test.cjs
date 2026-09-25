@@ -62,6 +62,8 @@ function harness(width, locale = 'th', entryProps = {}) {
       react: hooks,
       'react/jsx-runtime': jsx,
       'lucide-react': require('lucide-react'),
+      'next/link': { default: 'test-link' },
+      '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
       'framer-motion': { AnimatePresence: 'test-presence' },
       '@/components/Header/AvatarDropdown': { default: 'test-account' },
       '@/components/map/LongdoPropertyMap': { default: 'test-map' },
@@ -199,6 +201,20 @@ test('entry location search reaches the map on desktop and mobile and preserves 
     h.click(h.tab('homes'))
     assert.equal(h.data('data-map-category', 'homes:condo').props['aria-pressed'], true)
   }
+})
+
+test('switching from map to cards retains query, category, budget and price sorting', () => {
+  const h = harness(390, 'th', { query: 'Town', initialCategories: ['homes:condo'],
+    initialFilters: { offerTypes: ['rent'], minPrice: '20000', maxPrice: '60000', bedrooms: 2 }, initialSort: 'price_low' })
+  const link = new URL(h.data('data-map-browse-link', true).props.href, 'https://mapxprop.com')
+  assert.equal(link.pathname, '/real-estate-categories/all')
+  assert.equal(link.searchParams.get('q'), 'Town')
+  assert.equal(link.searchParams.get('category'), 'homes:condo')
+  assert.equal(link.searchParams.get('price_min'), '20000')
+  assert.equal(link.searchParams.get('price_max'), '60000')
+  assert.equal(link.searchParams.get('sort'), 'price_low')
+  assert.equal(link.searchParams.get('bedrooms'), '2')
+  assert.equal(link.searchParams.get('offer_type'), 'rent')
 })
 
 test('explicit coordinates and project deep links do not trigger another location lookup', () => {

@@ -1,4 +1,8 @@
-import type { PropertyMapFeature, PropertyMapFilterState } from '@/components/property-map/PropertyMapFilterBar'
+import type {
+  PropertyMapFeature,
+  PropertyMapFilterState,
+  PropertyMapSort,
+} from '@/components/property-map/PropertyMapFilterBar'
 import PropertyMapSearch from '@/components/property-map/PropertyMapSearch'
 import {
   discoveryChannels,
@@ -37,6 +41,7 @@ type PageSearchParams = Promise<{
   bathrooms?: string | string[]
   area_min?: string | string[]
   feature?: string | string[]
+  sort?: string | string[]
 }>
 
 const getFirstSearchParam = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value)?.trim() || ''
@@ -95,6 +100,9 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
       : coordinates || (location ? { lat: location.latitude, lon: location.longitude } : undefined),
     mapZoom: station ? undefined : zoom || location?.zoom,
     initialFilters: getInitialFilters(search),
+    initialSort: (['newest', 'price_low', 'price_high', 'area_large'].includes(getFirstSearchParam(search.sort))
+      ? getFirstSearchParam(search.sort)
+      : 'recommended') as PropertyMapSort,
     initialCategories: getSearchParamValues(search.category),
     offerLayout: getFirstSearchParam(search.offer_ui) === 'classic' ? ('classic' as const) : ('compact' as const),
   }
@@ -134,6 +142,7 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
     initialProject,
     initialMapMode,
     initialProjectCategory,
+    initialSort,
   } = await getMapSearch(searchParams)
 
   return (
@@ -148,6 +157,7 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
         initialProject,
         initialMapMode,
         initialProjectCategory,
+        initialSort,
       })}
       query={query}
       initialMapCenter={mapCenter}
@@ -158,6 +168,7 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
       initialProject={initialProject}
       initialMapMode={initialMapMode}
       initialProjectCategory={initialProjectCategory}
+      initialSort={initialSort}
     />
   )
 }
