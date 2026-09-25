@@ -59,6 +59,8 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
             : '360',
       url: item.url,
       thumbnailUrl: item.thumbnail_url,
+      width: item.width,
+      height: item.height,
       caption: item.title || item.alt_text,
     }))
   const fullAddress = [address, subdistrict, district, province, listing.postal_code].filter(Boolean).join(' ')

@@ -93,6 +93,8 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
             : '360',
       url: item.url,
       thumbnailUrl: item.thumbnail_url,
+      width: item.width,
+      height: item.height,
       caption: item.title || item.alt_text,
     }))
   const landAreaSquareWah = numericDetail(listing, 'land_area_square_wah') ?? (listing.land_area_sqm || 0) / 4

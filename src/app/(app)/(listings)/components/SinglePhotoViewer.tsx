@@ -2,7 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { CloseButton, DialogTitle } from '@headlessui/react'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Minimize2, X, ZoomIn } from 'lucide-react'
 import Image, { getImageProps } from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
@@ -18,10 +18,31 @@ export default function SinglePhotoViewer({
   const { locale } = usePreferences()
   const th = locale === 'th'
   const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, Math.min(initialIndex, images.length - 1)))
+  const [zoomed, setZoomed] = useState(false)
+  const stageRef = useRef<HTMLDivElement>(null)
   const thumbnails = useRef<(HTMLButtonElement | null)[]>([])
   const touch = useRef<{ x: number; y: number; horizontal: boolean | null } | null>(null)
+  const selectImage = (index: number) => {
+    setZoomed(false)
+    setSelectedIndex(index)
+    stageRef.current?.scrollTo({ top: 0, left: 0 })
+  }
   const changeImage = (direction: number) => {
-    if (images.length > 1) setSelectedIndex((index) => (index + direction + images.length) % images.length)
+    if (images.length > 1) selectImage((selectedIndex + direction + images.length) % images.length)
+  }
+  const toggleZoom = () => {
+    const next = !zoomed
+    setZoomed(next)
+    touch.current = null
+    window.requestAnimationFrame(() => {
+      const stage = stageRef.current
+      if (stage) {
+        stage.scrollTo({
+          left: next ? (stage.scrollWidth - stage.clientWidth) / 2 : 0,
+          top: next ? (stage.scrollHeight - stage.clientHeight) / 2 : 0,
+        })
+      }
+    })
   }
 
   useEffect(() => {
@@ -59,11 +80,13 @@ export default function SinglePhotoViewer({
     >
       <DialogTitle className="sr-only">{th ? 'รูปภาพขนาดใหญ่' : 'Full size photo'}</DialogTitle>
       <div
+        ref={stageRef}
         data-single-photo-stage
-        className="flex size-full touch-pan-y items-center justify-center px-3 py-16 select-none sm:px-16 sm:pb-24"
+        className={`size-full overscroll-contain py-16 select-none sm:pb-24 ${zoomed ? 'touch-auto overflow-auto' : 'flex touch-pan-y touch-pinch-zoom items-center justify-center px-3 sm:px-16'}`}
         onTouchStart={(event) => {
           const point = event.touches[0]
-          touch.current = event.touches.length === 1 ? { x: point.clientX, y: point.clientY, horizontal: null } : null
+          touch.current =
+            !zoomed && event.touches.length === 1 ? { x: point.clientX, y: point.clientY, horizontal: null } : null
         }}
         onTouchMove={(event) => {
           const start = touch.current
@@ -95,12 +118,23 @@ export default function SinglePhotoViewer({
           alt={`${imageAlt} ${th ? 'รูปที่' : 'photo'} ${selectedIndex + 1}`}
           width={1280}
           height={853}
-          sizes="100vw"
+          sizes={zoomed ? '200vw' : '100vw'}
           priority
           draggable={false}
-          className="max-h-full w-auto max-w-full object-contain"
+          className={zoomed ? 'block h-auto w-[200%] max-w-none' : 'max-h-full w-auto max-w-full object-contain'}
         />
       </div>
+
+      <button
+        type="button"
+        data-photo-zoom
+        aria-pressed={zoomed}
+        aria-label={zoomed ? (th ? 'แสดงภาพเต็มกรอบ' : 'Fit photo to screen') : th ? 'ขยายภาพ' : 'Zoom in'}
+        onClick={toggleZoom}
+        className="absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[max(0.5rem,env(safe-area-inset-left))] grid size-11 place-items-center rounded-full bg-black/40 hover:bg-black/60 focus-visible:outline-2 focus-visible:outline-white"
+      >
+        {zoomed ? <Minimize2 className="size-5" /> : <ZoomIn className="size-5" />}
+      </button>
 
       <div
         aria-live="polite"
@@ -148,7 +182,7 @@ export default function SinglePhotoViewer({
                   type="button"
                   aria-label={th ? `ดูรูปที่ ${index + 1}` : `View photo ${index + 1}`}
                   aria-current={index === selectedIndex ? 'true' : undefined}
-                  onClick={() => setSelectedIndex(index)}
+                  onClick={() => selectImage(index)}
                   className={`relative h-12 w-20 shrink-0 overflow-hidden rounded-md border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${index === selectedIndex ? 'border-white' : 'border-transparent brightness-50 hover:brightness-100'}`}
                 >
                   <Image src={src} alt="" fill sizes="80px" className="object-cover" />

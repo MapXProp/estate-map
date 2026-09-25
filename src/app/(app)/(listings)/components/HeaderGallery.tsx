@@ -41,6 +41,8 @@ export interface PropertyMediaItem {
   url: string
   thumbnailUrl?: string
   caption?: string
+  width?: number
+  height?: number
 }
 
 const MEDIA_FILTERS: { value: PropertyMediaFilter; label: string }[] = [
@@ -325,15 +327,19 @@ const DeferredMediaSection = ({
       ) : (
         <div
           className={
-            layout === 'mobile' ? 'columns-2 gap-2' : 'grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3'
+            layout === 'mobile'
+              ? 'grid grid-cols-1 gap-3'
+              : 'grid grid-cols-2 gap-2.5 min-[1280px]:grid-cols-3 lg:gap-3'
           }
         >
           {items.map((item, index) => {
             const imageIndex = item.type === 'photo' || item.type === 'floor-plan' ? images.indexOf(item.url) : -1
+            const fullWidthPhoto = layout === 'mobile' && (item.type === 'photo' || item.type === 'floor-plan')
 
             return (
               <button
                 key={`${item.id}-${layout}-section`}
+                data-media-item={item.id}
                 type="button"
                 onClick={() => {
                   if (imageIndex >= 0) onOpenImage(imageIndex)
@@ -342,20 +348,28 @@ const DeferredMediaSection = ({
                 aria-label={`เปิด${MEDIA_LABELS[item.type]}รายการที่ ${index + 1}`}
                 className={clsx(
                   'group relative min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] dark:bg-neutral-800',
-                  layout === 'mobile'
-                    ? [
-                        'mb-2 block w-full break-inside-avoid rounded-xl',
-                        index % 5 === 1 || index % 5 === 3 ? 'aspect-[4/5]' : 'aspect-[4/3]',
-                      ]
-                    : 'aspect-[4/3] rounded-xl'
+                  fullWidthPhoto ? 'block w-full rounded-xl' : 'aspect-[4/3] rounded-xl'
                 )}
               >
-                {item.type === 'photo' || item.type === 'floor-plan' || item.thumbnailUrl ? (
+                {fullWidthPhoto ? (
+                  <Image
+                    src={item.url}
+                    alt={`${imageAlt} ${MEDIA_LABELS[item.type]}ที่ ${index + 1}`}
+                    width={item.width || 1200}
+                    height={item.height || 900}
+                    sizes="calc(100vw - 20px)"
+                    className="block h-auto w-full bg-white object-contain dark:bg-neutral-900"
+                  />
+                ) : item.type === 'photo' || item.type === 'floor-plan' || item.thumbnailUrl ? (
                   <Image
                     src={item.thumbnailUrl || item.url}
                     alt={`${imageAlt} ${MEDIA_LABELS[item.type]}ที่ ${index + 1}`}
                     fill
-                    sizes={layout === 'mobile' ? '50vw' : '(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw'}
+                    sizes={
+                      layout === 'mobile'
+                        ? 'calc(100vw - 20px)'
+                        : '(max-width: 1023px) 50vw, (max-width: 1279px) 35vw, 27vw'
+                    }
                     className={clsx(
                       item.type === 'floor-plan' ? 'bg-white object-contain' : 'object-cover',
                       'transition duration-300 group-hover:scale-[1.015] group-hover:brightness-95 group-active:scale-[0.99]'
@@ -367,7 +381,7 @@ const DeferredMediaSection = ({
                   </span>
                 )}
 
-                {item.type !== 'photo' && (
+                {item.type !== 'photo' && !fullWidthPhoto && (
                   <span className="absolute inset-0 flex items-center justify-center bg-neutral-950/18 text-white">
                     <span className="grid size-12 place-items-center rounded-full bg-white/92 text-[#176b50] shadow-lg min-[744px]:size-14">
                       {item.type === 'video' ? (
@@ -379,8 +393,14 @@ const DeferredMediaSection = ({
                   </span>
                 )}
 
-                {layout === 'desktop' && (
-                  <span className="absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white opacity-0 backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                {(layout === 'desktop' || item.type === 'photo') && (
+                  <span
+                    className={clsx(
+                      'pointer-events-none absolute right-3 bottom-3 rounded-full bg-neutral-950/62 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm',
+                      layout === 'desktop' &&
+                        'opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100'
+                    )}
+                  >
                     {index + 1} / {items.length}
                   </span>
                 )}
@@ -1271,15 +1291,6 @@ const HeaderGalleryGrid1 = ({
   )
 }
 
-const getMobilePreviewLayoutClass = (imageCount: number, index: number) => {
-  if (imageCount === 1) return 'col-span-6 aspect-[4/3]'
-  if (imageCount === 2) return 'col-span-3 aspect-[4/3]'
-  if (imageCount === 3) return index === 0 ? 'col-span-6 aspect-video' : 'col-span-3 aspect-[4/3]'
-  if (imageCount === 4) return 'col-span-3 aspect-[4/3]'
-
-  return index < 2 ? 'col-span-3 aspect-[4/3]' : 'col-span-2 aspect-square'
-}
-
 const HeaderGalleryGrid2 = ({
   images,
   mediaCount,
@@ -1305,8 +1316,6 @@ const HeaderGalleryGrid2 = ({
   listingPresentation: boolean
   previewImages?: string[]
 }) => {
-  const mobilePreviewImages = images.slice(0, 5)
-  const mobilePreviewImageCount = mobilePreviewImages.length
   const hasAdditionalMedia = mediaCount > images.length
   const tabletSideImages = images.slice(1, 3)
   const tabletThumbnailImages = images.slice(3, 8)
@@ -1314,71 +1323,45 @@ const HeaderGalleryGrid2 = ({
   return (
     <header className="relative">
       <div
+        data-listing-mobile-cover
         className={clsx(
-          'relative left-1/2 grid w-screen -translate-x-1/2 grid-cols-6 gap-1 overflow-hidden bg-neutral-100 min-[744px]:hidden',
+          'relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-neutral-100 min-[744px]:hidden dark:bg-neutral-800',
           !squareMobileCorners && 'rounded-b-xl'
         )}
       >
-        {mobilePreviewImages.map((image, index) => {
-          const isAllMediaTile = mobilePreviewImageCount >= 5 && index === 4
-          const isWideMobileTile = mobilePreviewImageCount === 1 || (mobilePreviewImageCount === 3 && index === 0)
-
-          return (
-            <button
-              key={`${image}-${index}`}
-              type="button"
-              onClick={() => (isAllMediaTile ? handleOpenAllMedia() : handleOpenImage(index))}
-              aria-label={isAllMediaTile ? `ดูสื่อทั้งหมด ${mediaCount} รายการ` : `เปิดรูปที่ ${index + 1} แบบเต็มจอ`}
-              className={clsx(
-                'relative block min-w-0 overflow-hidden bg-neutral-200 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]',
-                getMobilePreviewLayoutClass(mobilePreviewImageCount, index)
-              )}
-            >
-              <Image
-                alt={`${imageAlt} รูปที่ ${index + 1}`}
-                src={image}
-                fill
-                sizes={isWideMobileTile ? '100vw' : mobilePreviewImageCount >= 5 && index >= 2 ? '34vw' : '50vw'}
-                priority={index < 2}
-                fetchPriority={index === 0 ? 'high' : 'auto'}
-                className="object-cover transition duration-200 active:scale-[0.98]"
-              />
-              {isAllMediaTile && (
-                <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-neutral-950/48 px-2 text-center text-sm font-semibold text-white">
-                  <Squares2X2Icon className="size-5" />
-                  ดูสื่อทั้งหมด
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {mobilePreviewImageCount > 0 && mobilePreviewImageCount < 5 ? (
         <button
           type="button"
-          onClick={() =>
-            mobilePreviewImageCount === 1 && !hasAdditionalMedia ? handleOpenImage(0) : handleOpenAllMedia()
-          }
-          aria-label={
-            hasAdditionalMedia
-              ? `ดูสื่อทั้งหมด ${mediaCount} รายการ`
-              : mobilePreviewImageCount === 1
-                ? 'เปิดรูปแบบเต็มจอ'
-                : `ดูรูปทั้งหมด ${mobilePreviewImageCount} รูป`
-          }
-          className="absolute right-3 bottom-3 z-10 flex min-h-10 items-center gap-1.5 rounded-full bg-neutral-950/68 px-3.5 text-sm font-semibold text-white shadow-lg backdrop-blur-sm transition active:scale-[0.98] min-[744px]:hidden"
+          onClick={() => (images.length ? handleOpenImage(0) : handleOpenAllMedia())}
+          aria-label={images.length ? 'เปิดรูปหลักแบบเต็มจอ' : 'ดูสื่อทั้งหมด'}
+          className="relative block aspect-[4/3] w-full overflow-hidden focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-[#176b50]"
         >
-          <Squares2X2Icon className="size-[18px]" />
-          <span>
-            {hasAdditionalMedia
-              ? `ดูสื่อทั้งหมด ${mediaCount}`
-              : mobilePreviewImageCount === 1
-                ? 'ดูรูป'
-                : `ดูทั้งหมด ${mobilePreviewImageCount} รูป`}
-          </span>
+          {images[0] ? (
+            <Image
+              alt={`${imageAlt} รูปหลัก`}
+              src={images[0]}
+              fill
+              sizes="100vw"
+              priority
+              fetchPriority="high"
+              className="object-cover transition duration-200 active:scale-[0.98]"
+            />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center text-neutral-400">
+              <Images className="size-12" />
+            </span>
+          )}
         </button>
-      ) : null}
+        <button
+          type="button"
+          data-listing-mobile-all-media
+          onClick={handleOpenAllMedia}
+          aria-label={hasAdditionalMedia ? `ดูสื่อทั้งหมด ${mediaCount} รายการ` : `ดูรูปทั้งหมด ${images.length} รูป`}
+          className="absolute right-3 bottom-3 flex min-h-11 items-center gap-2 rounded-full border border-white/80 bg-white/95 px-4 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b50] active:scale-[0.98]"
+        >
+          <Images className="size-4" />
+          <span>{hasAdditionalMedia ? `ดูสื่อทั้งหมด · ${mediaCount}` : `ดูทั้งหมด · ${images.length} รูป`}</span>
+        </button>
+      </div>
 
       {listingIdentifier ? (
         <BtnLikeIcon
