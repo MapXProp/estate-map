@@ -164,6 +164,97 @@ function dragHarness(config) {
   return { ...h, options, events, cleanup: h.engine.bindVerticalSheetDrag(h.root, () => options) }
 }
 
+function pointerDockHarness() {
+  const h = environment()
+  h.globals.window.PointerEvent = function PointerEvent() {}
+  const events = []
+  const cleanup = h.engine.bindVerticalSheetDrag(h.root, () => ({
+    touchInput: 'pointer',
+    canDrag: (down) => !down,
+    onStart: () => events.push(['start']),
+    onMove: (dy) => events.push(['move', dy]),
+    onEnd: (dy, velocity, cancelled) => events.push(['end', dy, cancelled]),
+  }))
+  const pointer = (type, y, values = {}, target = h.content) => {
+    h.advance(16)
+    return h.root.dispatch(type, target, {
+      pointerType: 'touch', pointerId: 1, isPrimary: true, button: 0, clientX: 10, clientY: y, ...values,
+    })
+  }
+  return { ...h, events, pointer, cleanup }
+}
+
+test('a dock uses its reserved pointer stream even when legacy touch moves cannot be cancelled', () => {
+  const h = pointerDockHarness()
+  assert.equal(h.root.listeners.has('touchmove'), false, 'do not run two gesture engines for one finger')
+  h.pointer('pointerdown', 400)
+  assert.equal(h.root.hasPointerCapture(1), false, 'leave ordinary tap target unchanged')
+  h.pointer('pointermove', 385, { cancelable: false })
+  assert.equal(h.root.hasPointerCapture(1), true)
+  h.pointer('pointermove', 310, { cancelable: false })
+  h.pointer('pointerup', 310)
+  assert.deepEqual(h.events, [['start'], ['move', -15], ['move', -90], ['end', -90, false]])
+  assert.equal(h.root.hasPointerCapture(1), false)
+  assert.equal(h.root.dispatch('click', h.root).prevented, true)
+  h.cleanup()
+})
+
+test('dock touch cancellation, lost capture and a second finger never leave a dead drag', () => {
+  for (const reason of ['pointercancel', 'lostpointercapture', 'second-finger']) {
+    const h = pointerDockHarness()
+    h.pointer('pointerdown', 400)
+    h.pointer('pointermove', 350)
+    if (reason === 'second-finger') h.pointer('pointerdown', 350, { pointerId: 2, isPrimary: false })
+    else h.pointer(reason, 350, {}, h.root)
+    assert.deepEqual(h.events.at(-1), ['end', -50, true], reason)
+    assert.equal(h.root.hasPointerCapture(1), false)
+    h.pointer('pointerup', 350)
+    h.pointer('pointerdown', 400)
+    h.pointer('pointermove', 300)
+    h.pointer('pointerup', 300)
+    assert.deepEqual(h.events.at(-1), ['end', -100, false], reason)
+    assert.equal(h.events.filter(e => e[0] === 'end').length, 2)
+    h.cleanup()
+  }
+})
+
+test('pointer dock preserves button and link taps, rejects sideways drags and resets the next touch', () => {
+  const h = pointerDockHarness()
+  const button = new ElementStub('button', {}, h.scroller)
+  for (const target of [button, h.content]) {
+    h.pointer('pointerdown', 400, {}, target)
+    h.pointer('pointerup', 400, {}, target)
+    assert.equal(h.root.hasPointerCapture(1), false)
+    assert.equal(h.root.dispatch('click', target).prevented, undefined)
+  }
+  h.pointer('pointerdown', 400)
+  h.pointer('pointermove', 395, { clientX: 90 })
+  h.pointer('pointerup', 395)
+  assert.deepEqual(h.events, [])
+  h.pointer('pointerdown', 400)
+  h.pointer('pointermove', 320)
+  h.pointer('lostpointercapture', 320, {}, h.content)
+  assert.equal(h.events.filter(e => e[0] === 'end').length, 0, 'transfer of implicit capture from the child is not cancellation')
+  h.pointer('pointerup', 320)
+  assert.deepEqual(h.events.at(-1), ['end', -80, false])
+  h.cleanup()
+  assert.equal(h.root.listeners.size, 0)
+})
+
+test('pointer dock opt-in keeps the existing touch fallback on browsers without PointerEvent', () => {
+  const h = environment()
+  const events = []
+  h.engine.bindVerticalSheetDrag(h.root, () => ({
+    touchInput: 'pointer', canDrag: down => !down,
+    onStart() {}, onMove() {}, onEnd: dy => events.push(dy),
+  }))
+  assert.equal(h.root.listeners.get('touchmove').options.passive, false)
+  h.start(h.content)
+  h.move(0, 200)
+  h.end()
+  assert.deepEqual(events, [-100])
+})
+
 test('a downward pull at the top follows the finger, settles once and suppresses its ghost click', () => {
   const h = dragHarness()
   assert.equal(h.root.listeners.get('touchmove').options.passive, false)
