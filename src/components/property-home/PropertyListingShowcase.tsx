@@ -590,9 +590,6 @@ const PropertyListingShowcase = ({
             {rows.map((row, rowIndex) => (
               <section
                 key={row.id}
-                id={`discovery-${row.id}`}
-                data-section-nav={row.id}
-                data-section-label={isThai ? row.titleTh : row.titleEn}
                 data-listing-row={row.id}
                 aria-labelledby={'listing-row-' + row.id}
                 className={styles.row + ' ' + (row.id === 'latest' ? styles.latest : styles.category)}

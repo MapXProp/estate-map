@@ -2,7 +2,6 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ChannelDiscoveryHero from '@/components/property-home/ChannelDiscoveryHero'
-import DiscoverySectionNav from '@/components/property-home/DiscoverySectionNav'
 import PropertyDiscovery from '@/components/property-home/PropertyDiscovery'
 import discoveryStyles from '@/components/property-home/PropertyDiscovery.module.css'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
@@ -303,7 +302,6 @@ const PropertyHomePrototype = ({
       data-discovery-channel={mode}
       className={`overflow-hidden ${isChannelHomepage ? discoveryStyles.page : 'bg-white dark:bg-neutral-900'}`}
     >
-      {isChannelHomepage && <DiscoverySectionNav th={isThai} />}
       {isMainLanding ? (
         <section className="container pt-3 sm:pt-6 lg:pt-10">
           <div className={`relative overflow-hidden rounded-[32px] lg:rounded-[44px] ${theme.hero}`}>
@@ -471,9 +469,6 @@ const PropertyHomePrototype = ({
       </div>
 
       <section
-        id="discovery-locations"
-        data-section-nav="locations"
-        data-section-label={isThai ? 'ทำเลน่าสนใจ' : 'Explore locations'}
         className={`container ${isChannelHomepage ? discoveryStyles.locations : 'pt-8 pb-8 sm:pt-10 sm:pb-10 lg:pt-10 lg:pb-12'}`}
       >
         <div className="mb-6 flex items-end justify-between gap-5 sm:mb-8">

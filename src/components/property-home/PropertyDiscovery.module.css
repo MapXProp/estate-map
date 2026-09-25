@@ -21,17 +21,6 @@
   background: var(--home-background);
 }
 
-.page [data-section-nav] {
-  scroll-margin-top: 100px;
-}
-
-/* Reserve a slim gutter only on small desktops; larger screens already have it. */
-@media (min-width: 1280px) and (max-width: 1535px) and (hover: hover) and (pointer: fine) {
-  .page {
-    padding-left: 56px;
-  }
-}
-
 .page[data-discovery-channel='rooms'] {
   --home-ink: #193e55;
   --home-accent: #216a8c;
