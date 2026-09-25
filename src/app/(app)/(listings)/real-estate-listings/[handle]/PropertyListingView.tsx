@@ -4,6 +4,7 @@ import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import ListingContactDetails from '@/components/property-home/ListingContactDetails'
+import ListingDetailActions from '@/components/property-home/ListingDetailActions'
 import ListingLocationSection from '@/components/property-home/ListingLocationSection'
 import PropertyDescription from '@/components/PropertyDescription'
 import PropertyPrices from '@/components/PropertyPrices'
@@ -239,12 +240,14 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                   <h1 className="max-w-4xl font-sarabun text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem] dark:text-white">
                     {title}
                   </h1>
-                  <ListingViewCount
-                    listingId={listing.public_listing_id}
-                    initialCount={listing.view_count}
-                    source="listing_page"
-                    className="mt-2"
-                  />
+                  <div className={styles.listingTools}>
+                    <ListingViewCount
+                      listingId={listing.public_listing_id}
+                      initialCount={listing.view_count}
+                      source="listing_page"
+                    />
+                    <ListingDetailActions identifier={listing.slug || listing.public_listing_id} title={title} />
+                  </div>
                 </div>
               </div>
               {projectDisplayName ? (

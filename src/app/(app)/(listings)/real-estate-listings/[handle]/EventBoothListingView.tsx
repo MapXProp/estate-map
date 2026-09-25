@@ -1,9 +1,9 @@
 'use client'
 
-import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingDetailActions from '@/components/property-home/ListingDetailActions'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import {
   Building2,
@@ -110,22 +110,18 @@ const EventBoothListingView = ({ listing }: { listing: PropertyListingDetail }) 
               </span>
             </div>
             <p className="mt-5 text-sm font-medium text-[#176b50]">{event.name}</p>
-            <ListingViewCount
-              listingId={listing.public_listing_id}
-              initialCount={listing.view_count}
-              source="listing_page"
-              className="mt-2"
-            />
             <div className="mt-2 flex items-start justify-between gap-4">
               <h1 className="text-[1.625rem] leading-[1.28] font-semibold tracking-tight text-neutral-950 sm:text-[2rem] lg:text-[2.25rem]">
                 {title}
               </h1>
-              <BtnLikeIcon
-                listingIdentifier={listing.slug || listing.public_listing_id}
-                className="shrink-0"
-                colorClass="border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
-                sizeClass="size-11"
+            </div>
+            <div className={styles.listingTools}>
+              <ListingViewCount
+                listingId={listing.public_listing_id}
+                initialCount={listing.view_count}
+                source="listing_page"
               />
+              <ListingDetailActions identifier={listing.slug || listing.public_listing_id} title={title} />
             </div>
             <div className="mt-4 flex items-start gap-2 text-sm leading-6 text-neutral-600 sm:text-base">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />

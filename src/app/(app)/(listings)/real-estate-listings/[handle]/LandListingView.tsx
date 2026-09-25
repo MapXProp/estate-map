@@ -10,10 +10,10 @@ import ListingContactDetails, { ListingContactChannels } from '@/components/prop
 import ListingLocationSection from '@/components/property-home/ListingLocationSection'
 import { getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 
-import BtnLikeIcon from '@/components/BtnLikeIcon'
 import ListingImageFallback from '@/components/ListingImageFallback'
 import ListingViewCount from '@/components/ListingViewCount'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import ListingDetailActions from '@/components/property-home/ListingDetailActions'
 import { listingAnalyticsAttributes } from '@/lib/contactAnalytics'
 import { getMapPreviewGoogleMapsUrl } from '@/lib/propertyMapPreview'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
@@ -148,12 +148,6 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
               </span>
               <span className="truncate text-neutral-500">{isVacantLand ? 'ที่ดินเปล่า' : 'ที่ดิน'}</span>
             </p>
-            <BtnLikeIcon
-              listingIdentifier={listing.slug || listing.public_listing_id}
-              className="shrink-0 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#176b50] [&>svg]:!size-[18px]"
-              colorClass="bg-transparent text-neutral-500 hover:bg-neutral-100 active:bg-neutral-100"
-              sizeClass="size-10"
-            />
           </div>
           <p
             aria-hidden="true"
@@ -161,6 +155,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
           >
             {title}
           </p>
+          <div className={styles.listingTools}>
+            <ListingDetailActions identifier={listing.slug || listing.public_listing_id} title={title} />
+          </div>
           {fullAddress && (
             <div data-listing-address className="mt-2.5 flex items-start gap-2 text-sm leading-6 text-neutral-600">
               <MapPin className="mt-0.5 size-5 shrink-0 text-[#176b50]" />
@@ -248,6 +245,9 @@ const LandListingView = ({ listing }: { listing: PropertyListingDetail }) => {
                 >
                   {title}
                 </p>
+                <div className={styles.listingTools}>
+                  <ListingDetailActions identifier={listing.slug || listing.public_listing_id} title={title} />
+                </div>
                 {fullAddress && (
                   <div
                     data-listing-address

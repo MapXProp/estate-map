@@ -1400,7 +1400,7 @@ const HeaderGalleryGrid2 = ({
         </button>
       ) : null}
 
-      {listingIdentifier ? (
+      {listingIdentifier && !listingPresentation ? (
         <BtnLikeIcon
           listingIdentifier={listingIdentifier}
           isLiked={initiallySaved}
