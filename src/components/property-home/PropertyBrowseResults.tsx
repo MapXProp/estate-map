@@ -9,19 +9,11 @@ import { getPropertyType, normalizeLegacyPropertyType } from '@/data/propertyTax
 import { browseCategoryLabels, browseDefaults, browseHref, browseParams, type BrowseState } from '@/lib/propertyBrowse'
 import type { BrowseResults } from '@/lib/propertyBrowseServer'
 import { CATALOG_PAGE_SIZE } from '@/lib/propertyCatalog'
-import { isDefaultMapOffers, mapCategoryGroups, toggleMapCategory } from '@/lib/propertyMapSearch'
+import { isDefaultMapOffers } from '@/lib/propertyMapSearch'
 import { filterPropertyPrices, getPropertyPrices, propertyOffersLabel } from '@/lib/propertyPrices'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
 import type { PropertySearchListing } from '@/lib/propertySearch'
-import {
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-} from '@headlessui/react'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import {
   ArrowDown,
   Banknote,
@@ -41,6 +33,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
+import BrowseTypePicker from './BrowseTypePicker'
 import styles from './PropertyBrowseResults.module.css'
 import PropertyPagination from './PropertyPagination'
 import PropertySearchOmnibox from './PropertySearchOmnibox'
@@ -59,7 +52,6 @@ export default function PropertyBrowseResults({ state, initial }: { state: Brows
   const [loadError, setLoadError] = useState(false)
   const [typesOpen, setTypesOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
-  const [draftCategories, setDraftCategories] = useState(state.categories)
   const request = useRef<AbortController | null>(null)
   const searchRoot = useRef<HTMLDivElement>(null)
   const href = browseHref(state, initial.page)
@@ -218,14 +210,7 @@ export default function PropertyBrowseResults({ state, initial }: { state: Brows
                 )}
               </PopoverPanel>
             </Popover>
-            <button
-              className={styles.filter}
-              data-browse-types
-              onClick={() => {
-                setDraftCategories(state.categories)
-                setTypesOpen(true)
-              }}
-            >
+            <button className={styles.filter} data-browse-types onClick={() => setTypesOpen(true)}>
               <span>
                 {categoryLabels.length
                   ? th
@@ -357,52 +342,17 @@ export default function PropertyBrowseResults({ state, initial }: { state: Brows
           if (JSON.stringify(filters) !== JSON.stringify(state.filters)) update({ ...state, filters })
         }}
       />
-      <Dialog open={typesOpen} onClose={() => setTypesOpen(false)} className="relative z-[70]">
-        <DialogBackdrop className="fixed inset-0 bg-black/35 backdrop-blur-sm" />
-        <div className="fixed inset-0 flex items-end justify-center sm:items-center sm:p-5">
-          <DialogPanel className={styles.typePanel}>
-            <header>
-              <DialogTitle>{th ? 'เลือกประเภททรัพย์' : 'Choose property types'}</DialogTitle>
-              <button aria-label={th ? 'ปิด' : 'Close'} onClick={() => setTypesOpen(false)}>
-                <X size={22} />
-              </button>
-            </header>
-            <div className={styles.typeContent}>
-              {mapCategoryGroups.map((group) => (
-                <section key={group.code}>
-                  <h3>{th ? group.nameTh : group.nameEn}</h3>
-                  <div>
-                    {group.options.map((option) => (
-                      <button
-                        key={option.id}
-                        data-browse-category={option.id}
-                        aria-pressed={draftCategories.includes(option.id)}
-                        onClick={() => setDraftCategories((current) => toggleMapCategory(current, option.id))}
-                      >
-                        <span>{th ? option.nameTh : option.nameEn}</span>
-                        {draftCategories.includes(option.id) && <Check size={17} />}
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-            <footer>
-              <button onClick={() => setDraftCategories([])}>{th ? 'ล้างประเภท' : 'Clear types'}</button>
-              <button
-                data-browse-apply-types
-                className={styles.more}
-                onClick={() => {
-                  setTypesOpen(false)
-                  update({ ...state, categories: draftCategories })
-                }}
-              >
-                {th ? 'ดูประกาศ' : 'Show listings'}
-              </button>
-            </footer>
-          </DialogPanel>
-        </div>
-      </Dialog>
+      {typesOpen && (
+        <BrowseTypePicker
+          value={state.categories}
+          th={th}
+          onClose={() => setTypesOpen(false)}
+          onApply={(categories) => {
+            setTypesOpen(false)
+            update({ ...state, categories })
+          }}
+        />
+      )}
     </main>
   )
 }

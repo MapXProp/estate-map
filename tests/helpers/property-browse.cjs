@@ -23,4 +23,5 @@ function server(fetch) { return load('src/lib/propertyBrowseServer.ts', {
   'server-only': {}, './auth': { getAuthApiUrl: route => `https://api.test/${route}` },
   './propertyBrowse': browse, './propertyCatalog': catalog, './propertyMapSearch': map,
 }, { fetch }) }
-module.exports = { ...browse, server, map }
+const typeSelection = load('src/lib/browseTypeSelection.ts', { './propertyMapSearch': map })
+module.exports = { ...browse, server, map, typeSelection }

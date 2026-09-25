@@ -323,79 +323,6 @@
   opacity: 0.55;
   cursor: wait;
 }
-.typePanel {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 640px;
-  max-height: 88dvh;
-  overflow: hidden;
-  border-radius: 24px;
-  background: #fff;
-  color: #203f33;
-}
-.typePanel header,
-.typePanel footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 22px;
-}
-.typePanel header {
-  border-bottom: 1px solid #e0e8e3;
-  font-weight: 600;
-}
-.typePanel header button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #f4f6f4;
-}
-.typePanel footer {
-  border-top: 1px solid #e0e8e3;
-  font-size: 14px;
-}
-.typeContent {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 18px 22px;
-}
-.typeContent section + section {
-  margin-top: 24px;
-}
-.typeContent h3 {
-  margin-bottom: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.typeContent section > div {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.typeContent button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  min-height: 48px;
-  padding: 9px 12px;
-  border: 1px solid #dfe7e1;
-  border-radius: 12px;
-  font-size: 13px;
-  text-align: left;
-}
-.typeContent button[aria-pressed='true'] {
-  background: #edf6f0;
-  border-color: #79ab91;
-  color: #176b50;
-}
-.typeContent svg {
-  flex-shrink: 0;
-}
 @media (max-width: 1099px) {
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -503,16 +430,12 @@
     font-size: 0;
     gap: 0;
   }
-  .typePanel {
-    border-radius: 24px 24px 0 0;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
 }
 :global(.dark) .page {
   background: #181e1b;
   color: #deede3;
 }
-:global(.dark) :is(.tools, .card, .views, .offerPanel, .typePanel) {
+:global(.dark) :is(.tools, .card, .views, .offerPanel) {
   background: #202823;
   border-color: #34483b;
   color: #deede3;
@@ -525,7 +448,7 @@
   background-color: #26322b;
   border-color: #3b5143;
 }
-:global(.dark) :is(.chips button, .typeContent button[aria-pressed='true']) {
+:global(.dark) .chips button {
   background: #294434;
   color: #c8ead6;
 }
@@ -535,7 +458,7 @@
 :global(.dark) :is(.type, .location, .facts, .heading p, .loadMore p) {
   color: #a3b6aa;
 }
-:global(.dark) :is(.facts, .typeContent button, .typePanel header, .typePanel footer) {
+:global(.dark) .facts {
   border-color: #34483b;
 }
 @media (prefers-reduced-motion: reduce) {
