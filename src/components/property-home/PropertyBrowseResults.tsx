@@ -168,7 +168,7 @@ export default function PropertyBrowseResults({ state, initial }: { state: Brows
               variant="sheet"
               initialQuery={state.query}
               allowEmptyQuery
-              placeholder={th ? 'ค้นหาทำเล โครงการ หรือประกาศ' : 'Location, project or listing'}
+              placeholder={th ? 'ค้นหาจากทุกข้อมูลในประกาศ' : 'Search all listing details'}
               buildSearchUrl={(query) => browseHref({ ...state, query, station: '' })}
             />
           </div>

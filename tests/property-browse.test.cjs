@@ -58,6 +58,7 @@ test('server sorts and applies advanced filters across every API page before ret
   assert.deepEqual(plain([...first.listings, ...second.listings].map(x => x.id)), Array.from({ length: 38 }, (_, i) => i*2+1))
   assert.deepEqual(calls.map(p => p.get('offset')), ['0','60','0','60'])
   assert.equal(calls[0].get('view'), 'map')
+  assert.equal(calls[0].get('search_mode'), 'keyword')
   assert.equal(calls[0].get('offer_type'), 'sale')
 })
 
@@ -82,4 +83,18 @@ test('upstream failures and incomplete pages report an error rather than mislead
   const empty = await browse.server(async () => { fetched = true }).getBrowseResults(params('price_min=10&price_max=5'))
   assert.equal(empty.total, 0)
   assert.equal(fetched, false)
+})
+
+test('all offers keeps transfer/sublease listings and sends keywords without inferred filters', async () => {
+  let sent
+  const api = browse.server(async href => {
+    sent = new URL(href).searchParams
+    return { ok: true, json: async () => ({ listings: [listing(1, { offer_type: 'business_transfer' })], total: 1 }) }
+  })
+  const query = 'คาเฟ่ ใกล้คอนโด 3 ห้องนอน'
+  const result = await api.getBrowseResults(params({ q: query }))
+  assert.equal(result.total, 1)
+  assert.equal(sent.get('q'), query)
+  assert.equal(sent.get('search_mode'), 'keyword')
+  for (const key of ['offer_type', 'property_type', 'channel', 'bedrooms', 'price_max']) assert.equal(sent.has(key), false)
 })

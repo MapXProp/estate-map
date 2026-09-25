@@ -2,7 +2,7 @@ import 'server-only'
 import { getAuthApiUrl } from './auth'
 import { parseBrowseState, sortBrowseListings } from './propertyBrowse'
 import { CATALOG_PAGE_SIZE } from './propertyCatalog'
-import { mapCategoryQueries, matchesMapDetails } from './propertyMapSearch'
+import { isDefaultMapOffers, mapCategoryQueries, matchesMapDetails } from './propertyMapSearch'
 import type { PropertySearchListing, PropertySearchResponse } from './propertySearch'
 
 // Reuse the public map/category predicates and short-lived public fetch cache.
@@ -14,12 +14,13 @@ export async function getBrowseResults(params: URLSearchParams, page = 1) {
     return { listings: [] as PropertySearchListing[], total: 0, page }
   const groups = await Promise.all(
     mapCategoryQueries(state.categories).map(async (category) => {
-      const search = new URLSearchParams({ view: 'map', limit: '60' })
+      const search = new URLSearchParams({ view: 'map', search_mode: 'keyword', limit: '60' })
       if (state.query) search.set('q', state.query)
       if (category.discoveryChannel) search.set('channel', category.discoveryChannel)
       category.propertyTypes?.forEach((value) => search.append('property_type', value))
       category.spaceTypes?.forEach((value) => search.append('space_type', value))
-      filters.offerTypes.forEach((value) => search.append('offer_type', value))
+      if (!isDefaultMapOffers(filters.offerTypes))
+        filters.offerTypes.forEach((value) => search.append('offer_type', value))
       if (filters.minPrice) search.set('price_min', filters.minPrice)
       if (filters.maxPrice) search.set('price_max', filters.maxPrice)
       const found = new Map<number, PropertySearchListing>()
