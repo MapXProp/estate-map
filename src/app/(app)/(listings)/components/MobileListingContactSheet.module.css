@@ -31,11 +31,15 @@
   opacity: 0 !important;
 }
 .position {
+  --sheet-top-space: max(16px, env(safe-area-inset-top, 0px));
+  --sheet-bottom-space: max(clamp(40px, 8dvh, 80px), env(safe-area-inset-bottom, 0px));
   position: fixed;
   inset: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: var(--sheet-top-space) max(12px, env(safe-area-inset-right, 0px)) var(--sheet-bottom-space)
+    max(12px, env(safe-area-inset-left, 0px));
   pointer-events: none;
 }
 .panel {
@@ -45,20 +49,20 @@
   flex-direction: column;
   width: 100%;
   max-width: 560px;
-  height: min(880px, calc(100dvh - 24px));
-  max-height: calc(100dvh - 24px);
+  height: auto;
+  max-height: min(760px, 80dvh, calc(100dvh - var(--sheet-top-space) - var(--sheet-bottom-space)));
   overflow: hidden;
-  border-radius: 28px 28px 0 0;
+  border-radius: 28px;
   background: #fff;
   color: #202723;
-  box-shadow: 0 -12px 60px rgb(11 43 29 / 14%);
+  box-shadow: 0 18px 60px rgb(11 43 29 / 20%);
   transform: translate3d(0, var(--sheet-offset), 0);
   transition: transform 260ms cubic-bezier(0.22, 0.7, 0.2, 1);
   will-change: transform;
   touch-action: pan-y pinch-zoom;
 }
 .panel[data-closed] {
-  transform: translate3d(0, 100%, 0);
+  transform: translate3d(0, 100dvh, 0);
 }
 .panel[data-sheet-dragging='true'],
 .backdrop[data-sheet-dragging='true'] {
@@ -115,7 +119,7 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  flex: 1;
+  flex: 0 1 auto;
   padding: 0 20px max(20px, env(safe-area-inset-bottom, 0px));
 }
 .identity {
