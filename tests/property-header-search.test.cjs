@@ -81,7 +81,6 @@ test('clicking a header offer selects exactly that offer and submits it, includi
     const Omnibox = () => null
     const leaf = () => null
     const header = load('src/components/Header/PropertyHeaderContent.tsx', {
-      '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
     'react/jsx-runtime': require('react/jsx-runtime'),
       react: {
         useState: (initial) => {
@@ -150,6 +149,7 @@ test('clicking a header offer selects exactly that offer and submits it, includi
         find(tree, (node) => node.type === Omnibox).props.buildSearchUrl('อ่อนนุช'),
         'https://mapxprop.com'
       )
+      assert.equal(url.pathname, '/properties/map')
       assert.deepEqual(url.searchParams.getAll('offer_type'), [clicked])
       assert.equal(url.searchParams.get('channel'), channel)
       assert.equal(url.searchParams.get('q'), 'อ่อนนุช')

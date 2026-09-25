@@ -7,7 +7,6 @@ import {
   type DiscoveryChannelCode,
   type PropertyTypeCode,
 } from '@/data/propertyTaxonomy'
-import { asBrowseHref } from '@/lib/propertyBrowse'
 import { getHeaderMapSearchUrl, type HeaderOfferType } from '@/lib/propertyHeaderSearch'
 import {
   ArrowRight,
@@ -337,7 +336,7 @@ export default function PropertyDiscovery({ mode }: { mode: DiscoveryChannelCode
               variant="hero"
               tone={content.tone}
               placeholder={th ? content.placeholderTh : content.placeholderEn}
-              buildSearchUrl={(query) => asBrowseHref(searchHref(query))}
+              buildSearchUrl={searchHref}
               allowEmptyQuery
               showTypeLabels
             />

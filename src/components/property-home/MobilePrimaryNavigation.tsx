@@ -5,7 +5,7 @@ import { useSavedListings } from '@/components/saved-listings/SavedListingsProvi
 import { useAutoHideBottomNavigation } from '@/hooks/useAutoHideBottomNavigation'
 import { browseHref, parseBrowseState } from '@/lib/propertyBrowse'
 import { CATALOG_PATH } from '@/lib/propertyCatalog'
-import { usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
+import { OPEN_MOBILE_PROPERTY_SEARCH_EVENT, usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
 import { Heart, House, Map, Plus, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
@@ -88,17 +88,18 @@ function FloatingNavigation({ pathname }: { pathname: string }) {
             <span className={styles.label}>{th ? item.th : item.en}</span>
           </Link>
         ))}
-        <Link
-          href={CATALOG_PATH}
+        <button
+          type="button"
           data-mobile-bottom-search
-          aria-current={pathname === CATALOG_PATH ? 'page' : undefined}
-          className={`${styles.item} ${pathname === CATALOG_PATH ? styles.active : ''}`}
+          aria-haspopup="dialog"
+          onClick={() => window.dispatchEvent(new Event(OPEN_MOBILE_PROPERTY_SEARCH_EVENT))}
+          className={styles.item}
         >
           <span className={styles.icon}>
             <Search size={23} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <span className={styles.label}>{th ? 'ค้นหา' : 'Search'}</span>
-        </Link>
+        </button>
       </nav>
     </>
   )

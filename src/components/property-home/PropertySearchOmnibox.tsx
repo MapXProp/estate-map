@@ -6,7 +6,7 @@ import { getPropertyRecentSearches, savePropertyRecentSearch } from '@/lib/prope
 import {
   fetchLongdoPropertyLocationSuggestions,
   fetchPropertySearchSuggestions,
-  getPropertySearchUrl,
+  getPropertyMapSearchUrl,
   PropertySearchSuggestion,
 } from '@/lib/propertySearch'
 import { getTransitSearchSuggestions, getTransitStationMapUrl } from '@/lib/transitStations'
@@ -269,7 +269,7 @@ const PropertySearchOmnibox = ({
     setActiveIndex(-1)
     onSubmitQuery?.(value)
     router.push(
-      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertySearchUrl(value), selectedSuggestion?.stationId)
+      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion?.stationId)
     )
   }
 
