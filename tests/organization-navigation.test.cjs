@@ -39,6 +39,7 @@ const common = (pathname, locale = 'th') => ({
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
   'lucide-react': require('lucide-react'),
   '@/lib/propertyNavigation': navigation,
+  '@/lib/publicInformationPages': load('src/lib/publicInformationPages.ts'),
   '@/lib/propertyCatalog': { CATALOG_PATH: '/real-estate-categories/all' },
   '@/lib/propertyBrowse': require('./helpers/property-browse.cjs'),
   '@/hooks/useAutoHideBottomNavigation': {
@@ -93,6 +94,7 @@ test('organization and home routes show exactly one mobile navigation; listing c
     '/organizations/nick-property',
     '/stay-listings/villa',
     '/all-transits',
+    '/privacy', '/terms', '/cookies', '/listing-plans',
     '/real-estate-listings/land',
   ]) {
     const Primary = load('src/components/property-home/MobilePrimaryNavigation.tsx', common(pathname)).default
@@ -121,7 +123,7 @@ test('organization and home routes show exactly one mobile navigation; listing c
         primary.includes('aria-current="page"'),
         ['/homes', '/rooms', '/business', '/account-savelists'].includes(pathname)
       )
-    } else if (pathname.startsWith('/real-estate-listings/')) {
+    } else if (pathname.startsWith('/real-estate-listings/') || ['/privacy', '/terms', '/cookies', '/listing-plans'].includes(pathname)) {
       assert.equal(primary + quick, '', 'the listing retains its dedicated contact bar')
     } else {
       assert.equal(primary, '')
@@ -137,6 +139,7 @@ test('organization mobile headers use property search with its compact setting p
     '/organizations',
     '/organizations/nick-property',
     '/homes',
+    '/privacy', '/terms', '/cookies', '/listing-plans',
     '/all-transits',
     '/real-estate-listings/land',
   ]) {

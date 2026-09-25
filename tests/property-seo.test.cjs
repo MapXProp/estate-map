@@ -32,6 +32,7 @@ const sitemap = load('src/lib/propertySitemap.ts', {
   './seo': seo,
   './propertyCatalog': catalog,
   './discoveryPageSeo': discoverySeo,
+  './publicInformationPages': load('src/lib/publicInformationPages.ts'),
 })
 const detailSeo = load('src/lib/propertyListingSeo.ts', {
   './seo': seo,
@@ -498,4 +499,15 @@ test('landing server fetches each category independently so recent land cannot c
   assert.equal(rows[0].listings[0].description, '', 'long descriptions stay off card payloads')
   assert.equal(requested.length, 5)
   assert.ok(requested.every((params) => params.get('channel') === 'homes' && params.get('offer_type') === 'sale'))
+})
+
+test('legal and free-listing pages are canonical sitemap URLs with real publication dates', () => {
+  const entries = sitemap.buildPropertySitemap([], [])
+  for (const slug of ['privacy', 'terms', 'cookies', 'listing-plans']) {
+    const entry = entries.find((item) => item.url === seo.absoluteUrl('/' + slug))
+    assert.ok(entry, slug)
+    assert.equal(new Date(entry.lastModified).toISOString().slice(0, 10), '2026-09-25')
+  }
+  for (const slug of ['subscription', 'checkout', 'pay-done', 'privacy-policy', 'terms-of-service'])
+    assert.ok(!entries.some((item) => item.url === seo.absoluteUrl('/' + slug)))
 })

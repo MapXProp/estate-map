@@ -12,6 +12,7 @@ import {
   validModifiedDate,
 } from './propertyCatalog'
 import type { PropertySearchListing } from './propertySearch'
+import { PUBLIC_INFORMATION_UPDATED_AT, publicInformationPaths } from './publicInformationPages'
 import { absoluteUrl } from './seo'
 
 export function buildPropertySitemap(
@@ -19,6 +20,10 @@ export function buildPropertySitemap(
   organizations: Organization[]
 ): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [
+    ...publicInformationPaths.map((path) => ({
+      url: absoluteUrl(path),
+      lastModified: new Date(PUBLIC_INFORMATION_UPDATED_AT),
+    })),
     ...Object.values(discoveryPageSeo).map((page) => ({
       url: absoluteUrl(page.path),
       lastModified: new Date(discoveryPageContentUpdatedAt),

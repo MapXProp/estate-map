@@ -15,6 +15,7 @@ function load(relative, imports = {}) {
     require: (name) => {
       if (name === '@/lib/propertyPrices') return require('./helpers/property-prices.cjs').prices
       if (name === '@/components/PropertyPrices') return require('./helpers/property-prices.cjs').component(imports['@/components/preferences/PreferencesProvider'])
+      if (name === './analyticsConsent') return load('src/lib/analyticsConsent.ts')
       if (!(name in imports)) throw new Error(`Unexpected import: ${name}`)
       return imports[name]
     },

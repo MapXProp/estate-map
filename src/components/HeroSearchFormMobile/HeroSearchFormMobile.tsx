@@ -1,6 +1,7 @@
 'use client'
 
 import { isBlogPath, isOrganizationPath, isTransitDirectoryPath } from '@/lib/propertyNavigation'
+import { isPublicInformationPath } from '@/lib/publicInformationPages'
 import { ButtonCircle } from '@/shared/Button'
 import ButtonPrimary from '@/shared/ButtonPrimary'
 import ButtonThird from '@/shared/ButtonThird'
@@ -67,6 +68,7 @@ const HeroSearchFormMobile = ({
     isOrganizationPath(pathname) ||
     isTransitDirectoryPath(pathname) ||
     isBlogPath(pathname) ||
+    isPublicInformationPath(pathname) ||
     pathname.startsWith('/contact') ||
     pathname.startsWith('/about') ||
     pathname.startsWith('/account') ||

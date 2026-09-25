@@ -2,6 +2,7 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { isBlogPath, usesMobilePrimaryNavigation } from '@/lib/propertyNavigation'
+import { isPublicInformationPath } from '@/lib/publicInformationPages'
 import { Bars3Icon, HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -111,6 +112,7 @@ const FooterQuickNavigation = () => {
     hideOnContact ||
     hideOnAbout ||
     hideOnBlog ||
+    isPublicInformationPath(pathname) ||
     hideOnAccount ||
     hideOnPropertyMap ||
     hideOnListingWizard

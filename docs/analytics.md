@@ -3,11 +3,11 @@
 Production uses `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID`. The existing stream is
 `G-SL2JTL4WE7`. Development builds do not load GA4.
 
-`DeferredGoogleAnalytics` initializes the Google-compatible queue immediately
-after hydration and loads gtag during idle time, within two seconds, or on the
-first interaction. A contact event is queued before requesting the tag. There
-is one initial config/page view; SPA views use GA4 Enhanced Measurement history
-tracking. Do not add a manual page-view listener without changing that setting.
+`DeferredGoogleAnalytics` initializes the Google-compatible queue and loads
+gtag only after a valid explicit analytics opt-in. Before consent and after
+withdrawal, contact and funnel events are dropped. There is one initial
+config/page view; SPA views use GA4 Enhanced Measurement history tracking.
+Do not add a manual page-view listener without changing that setting.
 
 ## Event contract
 
@@ -143,3 +143,6 @@ success, retry, missing files, upload/save failure and restored success.
 Post-deploy browser QA must intercept all API writes and Analytics collectors
 in an isolated profile; do not publish test listings or create fake conversions
 in the live account.
+## Consent update — 25 September 2026
+
+Google Analytics now requires explicit analytics opt-in. Missing, rejected, invalid or expired choices do not load the tag or queue contact/funnel events. Footer and `/cookies` settings support withdrawal and cross-tab updates. Analytics cookies and the local choice have a 180-day lifetime; advertising consent remains denied. Conversion reports now represent opted-in visitors, not all visitors. See [legal launch notes](./legal-launch-2026-09-25.md) for implementation and validation details.

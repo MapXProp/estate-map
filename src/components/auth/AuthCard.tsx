@@ -298,6 +298,29 @@ export default function AuthCard({
           </p>
         ) : null}
 
+        {signup && (
+          <p className="mt-4 text-xs/6 text-neutral-500 dark:text-neutral-400" data-signup-legal>
+            {say('การสร้างบัญชีแสดงว่าคุณยอมรับ', 'By creating an account, you accept our ')}{' '}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#176b50] underline underline-offset-4 dark:text-emerald-300"
+            >
+              {say('เงื่อนไขใช้งาน', 'Terms')}
+            </a>{' '}
+            {say('และรับทราบ', 'and acknowledge our ')}{' '}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#176b50] underline underline-offset-4 dark:text-emerald-300"
+            >
+              {say('นโยบายความเป็นส่วนตัว', 'Privacy Policy')}
+            </a>
+          </p>
+        )}
+
         {!emailStep ? (
           <>
             <div className={styles.methods}>

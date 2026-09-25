@@ -1,3 +1,5 @@
+import { hasAnalyticsConsent, type ConsentWindow } from './analyticsConsent'
+
 export type ContactMethod = 'phone' | 'line'
 export type ContactSurface =
   | 'listing_page'
@@ -8,7 +10,7 @@ export type ContactSurface =
   | 'organization'
   | 'site'
 
-export type AnalyticsWindow = Window & {
+export type AnalyticsWindow = ConsentWindow & {
   dataLayer?: unknown[]
   gtag?: (...args: unknown[]) => void
   __mapxpropAnalyticsId?: string
@@ -25,7 +27,7 @@ const surfaces = new Set<ContactSurface>([
 ])
 
 export function initializeAnalytics(gaId: string, win: AnalyticsWindow = window) {
-  if (!/^G-[A-Z0-9]+$/.test(gaId)) return false
+  if (!/^G-[A-Z0-9]+$/.test(gaId) || !hasAnalyticsConsent(win)) return false
   if (win.__mapxpropAnalyticsId === gaId) return true
   win.dataLayer = win.dataLayer || []
   win.gtag =
@@ -35,10 +37,21 @@ export function initializeAnalytics(gaId: string, win: AnalyticsWindow = window)
       win.dataLayer!.push(arguments)
     }
   win.__mapxpropAnalyticsId = gaId
+  win.gtag('consent', 'default', {
+    analytics_storage: 'granted',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  })
   win.gtag('js', new Date())
   // One initial page view. Subsequent SPA views use GA4's existing enhanced
   // history measurement; no second manual page-view listener is installed.
-  win.gtag('config', gaId, { page_location: win.location.href })
+  win.gtag('config', gaId, {
+    page_location: new URL(win.location.href).origin + new URL(win.location.href).pathname,
+    allow_google_signals: false,
+    allow_ad_personalization_signals: false,
+    cookie_expires: 15552000,
+  })
   return true
 }
 
@@ -94,7 +107,7 @@ export function installContactAnalytics(win: AnalyticsWindow, doc: Document, loa
     const target = event.target
     if (!(target instanceof Element)) return
     const anchor = target.closest('a[href]')
-    if (!anchor || !win.__mapxpropAnalyticsId) return
+    if (!anchor || !win.__mapxpropAnalyticsId || !hasAnalyticsConsent(win)) return
     const params = getContactEvent(
       anchor,
       win.location.pathname,

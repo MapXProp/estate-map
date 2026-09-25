@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import CookieSettingsLink from '@/components/privacy/CookieSettingsLink'
 import PropertyCategoryLabel from '@/components/PropertyCategoryLabel'
 import SocialMediaLinks from '@/components/SocialMediaLinks'
 import Logo from '@/shared/Logo'
@@ -33,6 +34,7 @@ const footerNavigation = [
       ['องค์กรและบริษัทอสังหา', 'Property organizations', '/organizations'],
       ['จัดการบัญชี', 'Manage account', '/account'],
       ['ประกาศของฉัน', 'My listings', '/account-listings'],
+      ['รายละเอียดลงประกาศฟรี', 'Free listing service', '/listing-plans'],
       ['สอบถามการลงประกาศ', 'Listing support', '/contact?topic=listing'],
     ],
   },
@@ -166,6 +168,16 @@ const PropertyFooterPrototype = ({ showListingCta = true }: PropertyFooterProtot
             <Link href="/contact" className="transition hover:text-neutral-900 dark:hover:text-white">
               {isThai ? 'ติดต่อเรา' : 'Contact us'}
             </Link>
+            <Link href="/privacy" className="transition hover:text-neutral-900 dark:hover:text-white">
+              {isThai ? 'ความเป็นส่วนตัว' : 'Privacy'}
+            </Link>
+            <Link href="/terms" className="transition hover:text-neutral-900 dark:hover:text-white">
+              {isThai ? 'เงื่อนไขใช้งาน' : 'Terms'}
+            </Link>
+            <Link href="/cookies" className="transition hover:text-neutral-900 dark:hover:text-white">
+              {isThai ? 'คุกกี้' : 'Cookies'}
+            </Link>
+            <CookieSettingsLink className="transition hover:text-neutral-900 dark:hover:text-white" />
             <PropertyFooterPreferencesDialog />
           </div>
         </div>

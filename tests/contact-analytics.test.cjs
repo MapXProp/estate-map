@@ -22,7 +22,25 @@ class ElementFixture {
     return null
   }
 }
-const context = { exports: {}, URL, Set, Element: ElementFixture, Date }
+const consentContext = { exports: {}, Date, Event }
+vm.runInNewContext(
+  ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/analyticsConsent.ts'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  consentContext
+)
+const consent = consentContext.exports
+const context = {
+  exports: {},
+  URL,
+  Set,
+  Element: ElementFixture,
+  Date,
+  require(name) {
+    if (name === './analyticsConsent') return consent
+    throw Error('Unexpected import: ' + name)
+  },
+}
 vm.runInNewContext(
   ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/contactAnalytics.ts'), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -32,6 +50,7 @@ vm.runInNewContext(
 const { initializeAnalytics, getContactMethod, getContactEvent, installContactAnalytics } = context.exports
 const plain = (value) => JSON.parse(JSON.stringify(value))
 const fixtureWindow = () => ({
+  __mapxpropCookieChoice: { version: 1, analytics: true, updatedAt: Date.now() },
   location: {
     href: 'https://mapxprop.com/real-estate-listings/house?source=map',
     origin: 'https://mapxprop.com',
@@ -52,14 +71,19 @@ test('GA initializes once and preserves the existing Google-compatible queue', (
   assert.equal(initializeAnalytics('G-SL2JTL4WE7', win), true)
   assert.equal(initializeAnalytics('G-SL2JTL4WE7', win), true)
   assert.equal(win.dataLayer, existing)
-  assert.equal(win.dataLayer.length, 3)
-  assert.deepEqual(plain(Array.from(win.dataLayer[2])), [
+  assert.equal(win.dataLayer.length, 4)
+  assert.deepEqual(plain(Array.from(win.dataLayer[3])), [
     'config',
     'G-SL2JTL4WE7',
-    { page_location: win.location.href },
+    {
+      page_location: win.location.origin + win.location.pathname,
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false,
+      cookie_expires: 15552000,
+    },
   ])
   assert.equal(initializeAnalytics('invalid-tag<script>', win), false)
-  assert.equal(win.dataLayer.length, 3)
+  assert.equal(win.dataLayer.length, 4)
 })
 
 test('only telephone and exact HTTPS LINE hosts are measured', () => {
@@ -157,7 +181,7 @@ test('first click queues once before external loading and preserves native link 
     preventDefault: () => assert.fail('navigation prevented'),
   })
   assert.equal(loads, 1)
-  assert.equal(win.dataLayer.length, 3)
+  assert.equal(win.dataLayer.length, 4)
   const event = Array.from(win.dataLayer.at(-1))
   assert.equal(event[1], 'contact_click')
   assert.equal(event[2].page_location, 'https://mapxprop.com/real-estate-listings/house')
@@ -167,4 +191,38 @@ test('first click queues once before external loading and preserves native link 
   assert.equal(loads, 1)
   cleanup()
   assert.equal(listeners.size, 0)
+})
+
+test('unknown, rejected and expired consent cannot initialize or queue analytics', () => {
+  for (const choice of [
+    undefined,
+    { version: 1, analytics: false, updatedAt: Date.now() },
+    { version: 1, analytics: true, updatedAt: Date.now() - consent.CONSENT_MAX_AGE },
+  ]) {
+    const win = fixtureWindow()
+    win.__mapxpropCookieChoice = choice
+    assert.equal(initializeAnalytics('G-SL2JTL4WE7', win), false)
+    assert.equal(win.dataLayer, undefined)
+  }
+})
+test('withdrawing consent gates an already initialized tag and its contact listener', () => {
+  const win = fixtureWindow()
+  initializeAnalytics('G-SL2JTL4WE7', win)
+  const listeners = new Map()
+  const doc = {
+    addEventListener: (name, fn) => listeners.set(name, fn),
+    removeEventListener: (name) => listeners.delete(name),
+    querySelector: () => listing,
+  }
+  const cleanup = installContactAnalytics(win, doc, () => assert.fail('must not load'))
+  const before = win.dataLayer.length
+  win.__mapxpropCookieChoice = { version: 1, analytics: false, updatedAt: Date.now() }
+  assert.equal(initializeAnalytics('G-SL2JTL4WE7', win), false)
+  listeners.get('click')({
+    target: new ElementFixture({ href: 'tel:0812345678' }, listing),
+    button: 0,
+    defaultPrevented: false,
+  })
+  assert.equal(win.dataLayer.length, before)
+  cleanup()
 })

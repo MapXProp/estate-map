@@ -29,10 +29,10 @@ const navigation: {
     { name: 'Press', href: '#' },
   ],
   legal: [
-    { name: 'Terms of service', href: '#' },
-    { name: 'Privacy policy', href: '#' },
-    { name: 'License', href: '#' },
-    { name: 'Insights', href: '#' },
+    { name: 'Terms of service', href: '/terms' },
+    { name: 'Privacy policy', href: '/privacy' },
+    { name: 'Cookies', href: '/cookies' },
+    { name: 'Free listings', href: '/listing-plans' },
   ],
 }
 
