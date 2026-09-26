@@ -159,6 +159,7 @@ function harness(width, locale = 'th', entryProps = {}) {
     tab,
     click,
     center,
+    request: () => JSON.parse(slots.find(slot => typeof slot === 'string' && slot.startsWith('{"keyword":'))),
     seedRows(rows) {
       const index = slots.findIndex((slot) => slot?.rows && slot.status)
       const key = slots.find((slot) => typeof slot === 'string' && slot.startsWith('{"keyword":'))
@@ -179,6 +180,29 @@ function harness(width, locale = 'th', entryProps = {}) {
     },
   }
 }
+
+test('a selected place or raw location query searches geography without requiring listings to contain that text', () => {
+  for (const width of [390, 820, 1440]) {
+    for (const identified of [false, true]) {
+      const h = harness(width, 'th', {
+        query: 'ถนนวิภาวดีรังสิต', locationSearch: true,
+        initialLocationLabel: identified ? 'ถนนวิภาวดีรังสิต' : '',
+        initialMapCenter: identified ? { lat: 13.85, lon: 100.56 } : undefined,
+        initialMapZoom: 14,
+        initialCategories: ['homes:condo'],
+        initialFilters: { offerTypes: ['rent'], maxPrice: '60000' },
+      })
+      assert.equal(h.request().keyword, '')
+      assert.equal(h.map().initialSearchQuery, identified ? '' : 'ถนนวิภาวดีรังสิต')
+      assert.equal(h.map().initialSearchLabel, identified ? 'ถนนวิภาวดีรังสิต' : '')
+      h.map().onLocationSearch({ lat: 13.7, lon: 100.5 }, 'สถานที่ใหม่', 15)
+      h.render()
+      assert.equal(h.map().initialSearchLabel, 'สถานที่ใหม่')
+      assert.equal(h.request().keyword, '')
+      assert.match(JSON.stringify(h.request()), /60000/)
+    }
+  }
+})
 
 test('entry location search reaches the map on desktop and mobile and preserves selected filters when resolved', () => {
   for (const width of [320, 390, 820, 1440]) {

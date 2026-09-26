@@ -75,6 +75,17 @@ function harness(variant, options = {}) {
     },
     './PropertySearchOmnibox.module.css': { default: {} },
   }
+  imports['@/lib/locationSearch'] = {
+    ...require('./helpers/location-search.cjs')().location,
+    fetchLocationSearchSuggestions: async (query, signal) => {
+      const [local, external] = await Promise.all([
+        imports['@/lib/propertySearch'].fetchPropertySearchSuggestions(query, signal, { scope: 'location', limit: 12 }),
+        imports['@/lib/propertySearch'].fetchLongdoPropertyLocationSuggestions(query, signal),
+      ])
+      signal.throwIfAborted()
+      return require('./helpers/location-search.cjs')().location.mergeLocationSuggestions(query, local, external)
+    },
+  }
   const context = {
     exports: {},
     AbortController,
@@ -170,7 +181,7 @@ function harness(variant, options = {}) {
   }
 }
 
-test('station suggestions are immediately selectable on desktop and mobile while the remote search is pending', async () => {
+test('all entry points resolve one stable suggestion list and preserve an explicitly selected station and filters', async () => {
   for (const variant of ['header', 'hero', 'sheet']) {
     let resolveLocal
     const h = harness(variant, {
@@ -179,7 +190,10 @@ test('station suggestions are immediately selectable on desktop and mobile while
           resolveLocal = resolve
         }),
     })
-    h.type('อารีย์')
+    h.type('BTS อารีย์')
+    await h.suggestions()
+    assert.equal(h.nodes((n) => n.props?.role === 'option').length, 0)
+    resolveLocal([])
     await h.suggestions()
     const options = h.nodes((n) => n.props?.role === 'option')
     options[0].props.onClick()
@@ -189,8 +203,6 @@ test('station suggestions are immediately selectable on desktop and mobile while
     assert.equal(url.searchParams.get('channel'), 'homes')
     assert.equal(url.searchParams.get('offer_type'), 'rent')
     h.render()
-    resolveLocal([])
-    await h.suggestions()
     assert.equal(h.closed(), 1)
   }
 })
@@ -218,21 +230,21 @@ test('default search opens the map as the primary destination', () => {
 test('desktop and mobile both offer external locations; tapping one submits its complete place name', async () => {
   for (const variant of ['header', 'hero']) {
     const h = harness(variant)
-    h.type('สถานีอารีย์')
+    h.type('ถนนวิภาวดีรังสิต')
     await h.suggestions()
-    assert.deepEqual(h.lookups, ['สถานีอารีย์'])
+    assert.deepEqual(h.lookups, ['ถนนวิภาวดีรังสิต'])
     assert.equal(h.input().enterKeyHint, 'search')
     const options = h.nodes((n) => n.props?.role === 'option')
     options[0].props.onClick()
     const url = new URL(h.navigation[0], 'https://mapxprop.com')
     assert.equal(url.pathname, '/properties/map')
-    assert.equal(url.searchParams.get('q'), 'สถานีอารีย์ กรุงเทพมหานคร')
+    assert.equal(url.searchParams.get('q'), 'ถนนวิภาวดีรังสิต กรุงเทพมหานคร')
     assert.equal(url.searchParams.get('offer_type'), 'rent')
     assert.equal(h.closed(), 1)
   }
 })
 
-test('mobile place autocomplete uses location scope, exposes local matches before external lookup completes and reveals suggestions above the keyboard', async () => {
+test('mobile autocomplete keeps loading rows unclickable and reveals the completed place list above the keyboard', async () => {
   let resolveExternal
   const h = harness('hero', {
     props: { suggestionScope: 'location', scrollSuggestionsIntoView: true, showSuggestionsOnEmpty: true },
@@ -247,7 +259,7 @@ test('mobile place autocomplete uses location scope, exposes local matches befor
   assert.equal(h.localLookups[0].config.scope, 'location')
   assert.equal(h.input()['aria-autocomplete'], 'list')
   assert.equal(h.input()['aria-expanded'], true)
-  assert.ok(h.nodes((node) => node.props?.role === 'option').length > 0, 'local match is already tappable')
+  assert.equal(h.nodes((node) => node.props?.role === 'option').length, 0)
   assert.ok(h.scrollCalls.length > 0)
   h.viewportListeners.get('resize')()
   assert.equal(h.scrollCalls.at(-1).block, 'start')

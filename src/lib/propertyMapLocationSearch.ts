@@ -1,11 +1,20 @@
 import { getAuthApiUrl } from './auth'
+import { explicitTransitQuery, fetchLocationSearchSuggestions } from './locationSearch'
 import { getPropertyMapLocationPreset } from './propertyMapLocations'
 import type { MapProjectDetails, PropertyMapMode } from './propertyMapProjects'
-import { findTransitStation, getTransitSearchSuggestions, transitStationPlace } from './transitStations'
+import type { PropertySearchSuggestion } from './propertySearch'
+import { findTransitStation, transitStationPlace } from './transitStations'
 
 export type MapSearchSuggestion =
   | { kind: 'project'; label: string; project: MapProjectDetails }
-  | { kind: 'place'; label: string; direct?: boolean }
+  | {
+      kind: 'place'
+      label: string
+      query?: string
+      detail?: string
+      place?: PropertySearchSuggestion['place']
+      direct?: boolean
+    }
   | { kind: 'station'; label: string; stationId: string; detail: string }
 
 export const mapSearchName = (value: string) =>
@@ -27,7 +36,7 @@ export function preferredMapProject(query: string, projects: MapProjectDetails[]
       (alias) => alias && mapSearchName(alias) === name
     )
   )
-  return exact.length === 1 ? exact[0] : projects.length === 1 ? projects[0] : undefined
+  return exact.length === 1 ? exact[0] : undefined
 }
 
 export async function searchMapProjects(query: string, signal: AbortSignal): Promise<MapProjectDetails[]> {
@@ -51,62 +60,41 @@ export async function fetchMapSearchSuggestions(
   apiKey: string,
   signal: AbortSignal
 ): Promise<MapSearchSuggestion[]> {
-  const places = async (): Promise<MapSearchSuggestion[]> => {
-    const params = new URLSearchParams({ keyword: query, limit: mode === 'projects' ? '4' : '7', key: apiKey })
-    const response = await fetch(`https://search.longdo.com/mapsearch/json/suggest?${params}`, { signal })
-    if (!response.ok) throw new Error('Place suggestions unavailable')
-    const result = (await response.json()) as { meta?: { keyword?: string }; data?: Array<{ w?: string }> }
-    if (result.meta?.keyword && result.meta.keyword !== query) return []
-    const seen = new Set<string>()
-    return (result.data || [])
-      .filter((item) => {
-        if (!item.w?.trim() || seen.has(mapSearchName(item.w))) return false
-        seen.add(mapSearchName(item.w))
-        return true
-      })
-      .map((item) => ({ kind: 'place', label: item.w!.trim() }))
-  }
-  const results = await Promise.allSettled([
-    mode === 'projects' ? searchMapProjects(query, signal) : Promise.resolve([]),
-    places(),
-  ])
-  signal.throwIfAborted()
-  const projects = results[0].status === 'fulfilled' ? results[0].value : []
-  const locations = results[1].status === 'fulfilled' ? results[1].value : []
-  if (mode === 'projects' && !locations.some((item) => mapSearchName(item.label) === mapSearchName(query)))
-    locations.push({ kind: 'place', label: query, direct: true })
-  const stations: MapSearchSuggestion[] = getTransitSearchSuggestions(query).map((item) => ({
-    kind: 'station',
-    label: item.label,
-    stationId: item.stationId,
-    detail: item.detail,
-  }))
-  return [
-    ...projects.map(projectSearchSuggestion),
-    ...stations,
-    ...locations.filter((item) => !findTransitStation(item.label)),
-  ]
+  // All entry points use the same sources, ranking, labels and place identity.
+  const items = await fetchLocationSearchSuggestions(query, signal)
+  return items.map(
+    (item): MapSearchSuggestion =>
+      item.project
+        ? { kind: 'project', label: item.label, project: item.project }
+        : item.stationId
+          ? { kind: 'station', label: item.label, stationId: item.stationId, detail: item.detail || '' }
+          : {
+              kind: 'place',
+              label: item.label,
+              query: item.label.replace(/\s*·\s*/g, ' '),
+              detail: item.detail || item.description,
+              place: item.place,
+            }
+  )
 }
 
 export async function searchMapPlace(query: string, apiKey: string, th: boolean, signal: AbortSignal) {
-  const params = new URLSearchParams({ keyword: query, limit: '8', locale: th ? 'th' : 'en', key: apiKey })
-  const response = await fetch(`https://search.longdo.com/mapsearch/json/search?${params}`, { signal })
+  const params = new URLSearchParams({ q: query, locale: th ? 'th' : 'en' })
+  const response = await fetch('/api/location-search?' + params, { signal, cache: 'no-store' })
   if (!response.ok) throw new Error('Place search unavailable')
   const result = (await response.json()) as {
-    data?: Array<{ name?: string; address?: string; lat?: unknown; lon?: unknown }>
+    place?: { name: string; address: string; lat: number; lon: number; zoom?: number }
   }
   signal.throwIfAborted()
-  const coordinate = (value: unknown) =>
-    typeof value === 'number' || (typeof value === 'string' && value.trim()) ? Number(value) : NaN
-  const place = result.data?.find(
-    (item) =>
-      Number.isFinite(coordinate(item.lat)) &&
-      Math.abs(coordinate(item.lat)) <= 90 &&
-      Number.isFinite(coordinate(item.lon)) &&
-      Math.abs(coordinate(item.lon)) <= 180
-  )
-  return place
-    ? { name: place.name || query, address: place.address || '', lat: Number(place.lat), lon: Number(place.lon) }
+  const place = result.place
+  return place &&
+    Number.isFinite(place.lat) &&
+    place.lat >= 5 &&
+    place.lat <= 21 &&
+    Number.isFinite(place.lon) &&
+    place.lon >= 97 &&
+    place.lon <= 106
+    ? place
     : undefined
 }
 
@@ -130,7 +118,7 @@ export async function resolveMapSearchPlace(
       zoom: preset.zoom,
     }
 
-  const station = findTransitStation(query)
+  const station = explicitTransitQuery(query) ? findTransitStation(query) : undefined
   if (station) return transitStationPlace(station, th)
 
   if (includeProjects) {
@@ -167,5 +155,5 @@ export async function resolveMapSearchPlace(
   const place = await searchMapPlace(query, apiKey, th, signal)
   if (!place) return undefined
   const zoom = /^(?:จ\.|จังหวัด)/.test(place.name) ? 10 : /^(?:เขต|อ\.|อำเภอ)/.test(place.name) ? 13 : 15
-  return { ...place, zoom }
+  return { ...place, zoom: place.zoom || zoom }
 }

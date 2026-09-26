@@ -119,6 +119,8 @@ const sectionActionNames = {
 } as const
 export default function PropertyMapSearch({
   query = '',
+  initialLocationLabel = '',
+  locationSearch = false,
   initialMapCenter,
   initialMapZoom,
   initialFilters = {},
@@ -130,6 +132,8 @@ export default function PropertyMapSearch({
   initialSort = 'recommended',
 }: {
   query?: string
+  initialLocationLabel?: string
+  locationSearch?: boolean
   initialMapCenter?: { lat: number; lon: number }
   initialMapZoom?: number
   initialFilters?: Partial<PropertyMapFilterState>
@@ -150,7 +154,8 @@ export default function PropertyMapSearch({
     ...initialFilters,
     offerTypes: initialMapOfferTypes(initialFilters.offerTypes),
   }))
-  const [keyword, setKeyword] = useState(query)
+  const [keyword, setKeyword] = useState(locationSearch || initialLocationLabel ? '' : query)
+  const [locationLabel, setLocationLabel] = useState(initialLocationLabel)
   const [mobileGroup, setMobileGroup] = useState<DiscoveryChannelCode>(
     () => initialFilters.discoveryChannels?.[0] || 'homes'
   )
@@ -313,6 +318,12 @@ export default function PropertyMapSearch({
       'project_category',
     ].forEach((key) => params.delete(key))
     if (keyword) params.set('q', keyword)
+    else if (locationSearch && !locationLabel && !center && !selectedProject && query) params.set('q', query)
+    if (locationLabel) {
+      params.set('place', locationLabel)
+      params.set('search', 'location')
+      params.delete('station')
+    }
     if (sort === 'recommended') params.delete('sort')
     else params.set('sort', sort)
     if (mapMode === 'projects') params.set('map_mode', 'projects')
@@ -334,7 +345,20 @@ export default function PropertyMapSearch({
     }
     if (window.location.pathname === '/properties/map')
       window.history.replaceState(window.history.state, '', `/properties/map${params.size ? `?${params}` : ''}`)
-  }, [categories, center, filters, keyword, zoom, selectedProject, mapMode, projectCategory, sort])
+  }, [
+    categories,
+    center,
+    filters,
+    keyword,
+    zoom,
+    selectedProject,
+    mapMode,
+    projectCategory,
+    sort,
+    locationLabel,
+    locationSearch,
+    query,
+  ])
 
   useEffect(() => {
     const container = resultsRef.current
@@ -452,6 +476,7 @@ export default function PropertyMapSearch({
   )
   const selectSearchedProject = useCallback(
     (project: MapProjectDetails) => {
+      setLocationLabel(project.display_name || project.name_th || project.name_en)
       setHoveredProjectId('')
       if (!matchesProjectCategory(project.project_category, projectCategory)) setProjectCategory('all')
       const seed = mapProjectSearchSeed(
@@ -929,6 +954,7 @@ export default function PropertyMapSearch({
               initialCenter={center}
               initialZoom={zoom}
               initialSearchQuery={initialMapCenter || initialProject ? '' : query}
+              initialSearchLabel={locationLabel}
               exactCoordinates
               searchContainerClassName={styles.locationSearch}
               zoomControlsClassName={styles.zoomControls}
@@ -940,6 +966,7 @@ export default function PropertyMapSearch({
                 setSelectedProject(null)
                 setPreviewSelection(null)
                 setCenter(location)
+                setLocationLabel(_label)
                 setZoom(locationZoom)
                 setKeyword('')
                 setArea(null)

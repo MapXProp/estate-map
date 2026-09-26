@@ -1,15 +1,13 @@
 'use client'
 
+import { locationSearchDestination } from '@/lib/locationSearch'
 import { getMapListingPrices, propertyPinPricesText, propertyPricesText } from '@/lib/propertyPrices'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
 import {
   fetchMapSearchSuggestions,
-  preferredMapProject,
-  projectSearchSuggestion,
   resolveMapSearchPlace,
-  searchMapProjects,
   type MapSearchSuggestion,
 } from '@/lib/propertyMapLocationSearch'
 import { layoutProjectLabels, projectMarkerSize, type ProjectLabelPlacement } from '@/lib/propertyMapProjectLayout'
@@ -22,7 +20,6 @@ import {
   type PropertyMapMode,
 } from '@/lib/propertyMapProjects'
 import { rememberPropertyResultsLocation } from '@/lib/propertyReturnNavigation'
-import { findTransitStation } from '@/lib/transitStations'
 import {
   Building2,
   House,
@@ -282,6 +279,7 @@ interface Props {
   initialCenter?: LongdoLocation
   initialZoom?: number
   initialSearchQuery?: string
+  initialSearchLabel?: string
   exactCoordinates?: boolean
   searchContainerClassName?: string
   zoomControlsClassName?: string
@@ -313,6 +311,7 @@ const LongdoPropertyMap = ({
   initialCenter,
   initialZoom = 12,
   initialSearchQuery = '',
+  initialSearchLabel = '',
   exactCoordinates = false,
   searchContainerClassName,
   zoomControlsClassName,
@@ -361,10 +360,12 @@ const LongdoPropertyMap = ({
   const hoveredProjectIdRef = useRef(hoveredProjectId)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
-  const [searchText, setSearchText] = useState(initialSearchQuery)
+  const [searchText, setSearchText] = useState(initialSearchLabel || initialSearchQuery)
   const initialSearchStartedRef = useRef('')
   const [suggestions, setSuggestions] = useState<MapSearchSuggestion[]>([])
   const searchRequestRef = useRef<AbortController | null>(null)
+  const suggestionRequestRef = useRef<AbortController | null>(null)
+  const submittedSearchRef = useRef('')
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const [isSuggesting, setIsSuggesting] = useState(false)
@@ -861,7 +862,7 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     const keyword = searchText.trim()
-    if (!isSearchFocused || keyword.length < 3) {
+    if (!isSearchFocused || keyword.length < 2 || submittedSearchRef.current === keyword) {
       // Reset the asynchronous suggestion UI when the input is no longer eligible for lookup.
       setSuggestions([])
       setActiveSuggestionIndex(-1)
@@ -870,7 +871,9 @@ const LongdoPropertyMap = ({
     }
 
     const controller = new AbortController()
+    suggestionRequestRef.current = controller
     const timer = setTimeout(async () => {
+      if (controller.signal.aborted || submittedSearchRef.current === keyword) return
       setIsSuggesting(true)
       setSearchMessage('')
       try {
@@ -892,7 +895,7 @@ const LongdoPropertyMap = ({
       } finally {
         if (!controller.signal.aborted) setIsSuggesting(false)
       }
-    }, 350)
+    }, 180)
 
     return () => {
       clearTimeout(timer)
@@ -918,6 +921,10 @@ const LongdoPropertyMap = ({
       if (!keyword || !map || !longdo) return
 
       searchRequestRef.current?.abort()
+      suggestionRequestRef.current?.abort()
+      submittedSearchRef.current = keyword
+      setIsSuggesting(false)
+      setIsSearchFocused(false)
       clearSearchMarker()
       const controller = new AbortController()
       searchRequestRef.current = controller
@@ -927,37 +934,35 @@ const LongdoPropertyMap = ({
       setIsSearching(true)
       setSearchMessage('')
       try {
-        let project = suggestion?.kind === 'project' ? suggestion.project : undefined
-        if (mapMode === 'projects' && !suggestion && !findTransitStation(keyword)) {
-          const matches = await searchMapProjects(keyword, controller.signal).catch((error) => {
-            if (controller.signal.aborted) throw error
-            return []
-          })
-          project = preferredMapProject(keyword, matches)
-          if (!project && matches.length > 1) {
-            setSuggestions([...matches.map(projectSearchSuggestion), { kind: 'place', label: keyword, direct: true }])
-            setSearchMessage(
-              isThai
-                ? 'เลือกโครงการที่ต้องการ หรือค้นหาสถานที่ด้วยคำนี้'
-                : 'Choose a project or search places with this name.'
-            )
-            setIsSearchFocused(true)
-            return
-          }
-        }
+        const project = suggestion?.kind === 'project' ? suggestion.project : undefined
         controller.signal.throwIfAborted()
         if (project) {
-          if (onProjectSearchSelect) onProjectSearchSelect(project)
+          if (onProjectSearchSelect && mapMode === 'projects') onProjectSearchSelect(project)
           else
             router.push(
-              `/properties/map?map_mode=projects&project=${encodeURIComponent(project.slug || project.public_project_id)}`
+              locationSearchDestination('/properties/map' + window.location.search, {
+                type: 'project',
+                label: project.display_name || project.name_th || project.name_en,
+                query: keyword,
+                description: 'project',
+                project,
+              })
             )
-          setSearchText(project.display_name || project.name_en || project.name_th)
+          setSearchText(project.display_name || project.name_th || project.name_en)
           setIsSearchFocused(false)
           searchInputRef.current?.blur()
           return
         }
-        const place = await resolveMapSearchPlace(keyword, apiKey, isThai, controller.signal, mapMode !== 'projects')
+        const place =
+          suggestion?.kind === 'place' && suggestion.place
+            ? { ...suggestion.place, zoom: suggestion.place.zoom || 15 }
+            : await resolveMapSearchPlace(
+                suggestion?.kind === 'place' ? suggestion.query || keyword : keyword,
+                apiKey,
+                isThai,
+                controller.signal,
+                !suggestion
+              )
         controller.signal.throwIfAborted()
         if (!place) {
           setSearchMessage(
@@ -1715,11 +1720,12 @@ const LongdoPropertyMap = ({
                     ? 'ค้นหาชื่อห้าง โครงการ หมู่บ้าน หรือสถานที่'
                     : 'Search malls, projects, housing estates or places'
                   : isThai
-                    ? 'ค้นหาเขต ย่าน ถนน หรือสถานที่'
+                    ? 'ค้นหาย่าน ถนน หรือสถานที่'
                     : 'Search districts, neighborhoods, roads or places'
               }
               className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-0"
               onChange={(event) => {
+                submittedSearchRef.current = ''
                 searchRequestRef.current?.abort()
                 clearSearchMarker()
                 setIsSearching(false)
@@ -1729,6 +1735,7 @@ const LongdoPropertyMap = ({
                 setSearchMessage('')
               }}
               onFocus={() => {
+                submittedSearchRef.current = ''
                 setIsSearchFocused(true)
                 onLocationSearchFocus?.()
               }}
@@ -1795,9 +1802,11 @@ const LongdoPropertyMap = ({
                       ? isThai
                         ? 'ค้นหาสถานที่ด้วยคำนี้'
                         : 'Search places with this name'
-                      : isThai
-                        ? 'สถานที่'
-                        : 'Place'
+                      : suggestion.kind === 'place' && suggestion.detail
+                        ? suggestion.detail
+                        : isThai
+                          ? 'สถานที่'
+                          : 'Place'
                 return (
                   <button
                     id={`longdo-location-suggestion-${index}`}

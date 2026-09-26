@@ -1,6 +1,7 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
+import { fetchLocationSearchSuggestions, locationSearchDestination } from '@/lib/locationSearch'
 import { getPropertyRecentLocations, savePropertyRecentLocation } from '@/lib/propertyRecentLocations'
 import { getPropertyRecentSearches, savePropertyRecentSearch } from '@/lib/propertyRecentSearches'
 import {
@@ -35,7 +36,7 @@ type Props = {
   children?: ReactNode
 }
 
-const HEADER_SUGGESTION_LIMIT = 5
+const HEADER_SUGGESTION_LIMIT = 8
 
 const externalLocationPattern =
   /(?:ถนน|ซอย|หมู่บ้าน|คอนโด|อาคาร|ตึก|โครงการ|ตลาด|ห้าง|โรงเรียน|มหาวิทยาลัย|โรงพยาบาล|สถานี|วัด|road|soi|village|condo|building|project|market|mall|school|university|hospital|station)/i
@@ -103,6 +104,7 @@ const recentHeaderSuggestions = (isThai: boolean): PropertySearchSuggestion[] =>
       label: item.label,
       description: `${item.description || locationTypeLabels[item.type]?.[isThai ? 'th' : 'en'] || (isThai ? 'คำค้น' : 'Search')} · ${recentLabel}`,
       query: item.query,
+      ...item.selection,
     },
   }))
   const savedLocations = getPropertyRecentLocations().map((item) => ({
@@ -136,7 +138,7 @@ const PropertySearchOmnibox = ({
   allowEmptyQuery = false,
   showTypeLabels = false,
   suggestionsMode = 'popover',
-  suggestionScope = 'all',
+  suggestionScope = 'location',
   scrollSuggestionsIntoView = false,
   showSuggestionsOnEmpty = true,
   placeholder,
@@ -167,6 +169,20 @@ const PropertySearchOmnibox = ({
     const timer = window.setTimeout(
       async () => {
         setLoading(true)
+        if (suggestionScope === 'location') {
+          try {
+            const items = await fetchLocationSearchSuggestions(normalizedQuery, controller.signal)
+            if (!controller.signal.aborted) {
+              setSuggestions(items)
+              setActiveIndex(-1)
+            }
+          } catch {
+            if (!controller.signal.aborted) setSuggestions([])
+          } finally {
+            if (!controller.signal.aborted) setLoading(false)
+          }
+          return
+        }
         setSuggestions(getTransitSearchSuggestions(normalizedQuery, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
         const localItems = await fetchPropertySearchSuggestions(normalizedQuery, controller.signal, {
           limit: isHeader ? 8 : undefined,
@@ -255,7 +271,14 @@ const PropertySearchOmnibox = ({
             ? suggestionDescription(selectedSuggestion, isThai)
             : isThai
               ? 'คำค้น'
-              : 'Search'
+              : 'Search',
+        selectedSuggestion
+          ? {
+              place: selectedSuggestion.place,
+              stationId: selectedSuggestion.stationId,
+              project: selectedSuggestion.project,
+            }
+          : undefined
       )
       if (selectedSuggestion?.type === 'location' || selectedSuggestion?.type === 'longdo') {
         savePropertyRecentLocation(
@@ -269,7 +292,12 @@ const PropertySearchOmnibox = ({
     setActiveIndex(-1)
     onSubmitQuery?.(value)
     router.push(
-      getTransitStationMapUrl(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion?.stationId)
+      suggestionScope === 'location'
+        ? locationSearchDestination(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion)
+        : getTransitStationMapUrl(
+            buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value),
+            selectedSuggestion?.stationId
+          )
     )
   }
 
@@ -480,7 +508,7 @@ const PropertySearchOmnibox = ({
                         id={`${listboxId}-option-${index}`}
                         role="option"
                         aria-selected={isActive}
-                        key={`${suggestion.type}-${suggestion.query}`}
+                        key={`${suggestion.type}-${suggestion.query}-${suggestion.place?.lat}-${suggestion.place?.lon}-${suggestion.project?.public_project_id}-${index}`}
                         type="button"
                         onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => selectSuggestion(suggestion)}
@@ -533,7 +561,13 @@ const PropertySearchOmnibox = ({
                           {isThai ? `ค้นหาด้วยคำว่า “${normalizedQuery}”` : `Search for “${normalizedQuery}”`}
                         </span>
                         <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
-                          {isThai ? 'ดูประกาศที่ตรงกับคำค้น' : 'View matching listings'}
+                          {suggestionScope === 'location'
+                            ? isThai
+                              ? 'ไปยังทำเลนี้บนแผนที่'
+                              : 'Find this area on the map'
+                            : isThai
+                              ? 'ดูประกาศที่ตรงกับคำค้น'
+                              : 'View matching listings'}
                         </span>
                       </span>
                     </button>

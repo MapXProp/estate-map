@@ -123,6 +123,7 @@ test('known landmarks and all station selections resolve without external geocod
     {
       './auth': { getAuthApiUrl: (value) => value },
       './propertyMapLocations': locations,
+      './locationSearch': require('./helpers/location-search.cjs')().location,
       './transitStations': transit,
     },
     {
@@ -178,6 +179,7 @@ test('local stations remain in both autocomplete clients when remote search serv
     {
       './auth': { getAuthApiUrl: (value) => value },
       './propertyMapLocations': locations,
+      './locationSearch': require('./helpers/location-search.cjs')(fetch).location,
       './transitStations': transit,
     },
     { fetch }

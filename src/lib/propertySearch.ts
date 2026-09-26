@@ -1,4 +1,5 @@
 import { getAuthApiUrl } from './auth'
+import type { MapProjectDetails } from './propertyMapProjects'
 import { getTransitSearchSuggestions } from './transitStations'
 
 export type PropertySearchSuggestion = {
@@ -8,6 +9,8 @@ export type PropertySearchSuggestion = {
   query: string
   stationId?: string
   detail?: string
+  place?: PropertyLocationMatch & { zoom?: number }
+  project?: MapProjectDetails
 }
 
 export type PropertySearchSuggestionOptions = {

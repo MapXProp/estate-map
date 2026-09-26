@@ -159,6 +159,7 @@ export default function PropertyBrowseResults({ state, initial }: { state: Brows
             <PropertySearchOmnibox
               variant="sheet"
               initialQuery={state.query}
+              suggestionScope="all"
               allowEmptyQuery
               placeholder={th ? 'ค้นหาจากทุกข้อมูลในประกาศ' : 'Search all listing details'}
               buildSearchUrl={(query) => browseHref({ ...state, query, station: '' })}

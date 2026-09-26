@@ -43,7 +43,7 @@ const SearchFirstHeader = () => {
             <PropertySearchOmnibox
               variant="header"
               tone={searchTone}
-              placeholder={isThai ? 'ค้นหาทำเล โครงการ หรือสถานี' : 'Location, project or station'}
+              placeholder={isThai ? 'ค้นหาย่าน ถนน หรือสถานที่' : 'Area, road or place'}
               buildSearchUrl={(query) => getHeaderMapSearchUrl(query, siteMode, offers)}
               allowEmptyQuery
               showTypeLabels

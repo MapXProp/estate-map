@@ -21,6 +21,8 @@ import type { Metadata } from 'next'
 
 type PageSearchParams = Promise<{
   q?: string | string[]
+  place?: string | string[]
+  search?: string | string[]
   station?: string | string[]
   project?: string | string[]
   map_mode?: string | string[]
@@ -92,6 +94,8 @@ const getMapSearch = async (searchParams: PageSearchParams) => {
   const initialMapMode = normalizeMapMode(getFirstSearchParam(search.map_mode), Boolean(project))
   return {
     query,
+    initialLocationLabel: coordinates || project ? getFirstSearchParam(search.place).slice(0, 200) : '',
+    locationSearch: getFirstSearchParam(search.search) === 'location',
     initialMapMode,
     initialProjectCategory: normalizeProjectCategoryFilter(getFirstSearchParam(search.project_category)),
     initialProject: !station && initialMapMode === 'projects' ? project : '',
@@ -134,6 +138,8 @@ export async function generateMetadata({ searchParams }: { searchParams: PageSea
 const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
   const {
     query,
+    initialLocationLabel,
+    locationSearch,
     mapCenter,
     mapZoom,
     initialFilters,
@@ -149,6 +155,8 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
     <PropertyMapSearch
       key={JSON.stringify({
         query,
+        initialLocationLabel,
+        locationSearch,
         mapCenter,
         mapZoom,
         initialFilters,
@@ -160,6 +168,8 @@ const Page = async ({ searchParams }: { searchParams: PageSearchParams }) => {
         initialSort,
       })}
       query={query}
+      initialLocationLabel={initialLocationLabel}
+      locationSearch={locationSearch}
       initialMapCenter={mapCenter}
       initialMapZoom={mapZoom}
       initialFilters={initialFilters}

@@ -90,7 +90,7 @@ const MobilePropertySearch = ({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isMapResults = pathname === '/properties/map'
-  const mapQuery = searchParams.get('q')?.trim() || ''
+  const mapQuery = searchParams.get('place')?.trim() || searchParams.get('q')?.trim() || ''
   const activePropertyGroup: PropertyGroup = getPropertyZoneFromPathname(pathname) ?? propertyZone
   const [open, setOpen] = useState(false)
   const [projectSearchOpen, setProjectSearchOpen] = useState(false)
@@ -357,7 +357,7 @@ const MobilePropertySearch = ({
                 suggestionScope="location"
                 scrollSuggestionsIntoView
                 showTypeLabels
-                placeholder={isThai ? 'ย่าน โครงการ หรือสถานีรถไฟฟ้า' : 'Area, project or transit station'}
+                placeholder={isThai ? 'ค้นหาย่าน ถนน หรือสถานที่' : 'Search area, road or place'}
                 onSubmitQuery={() => setOpen(false)}
               />
             </section>

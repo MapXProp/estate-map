@@ -5,32 +5,7 @@ const vm = require('node:vm')
 const { test } = require('node:test')
 const ts = require('typescript')
 
-const source = ts.transpileModule(
-  fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapLocationSearch.ts'), 'utf8'),
-  { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }
-).outputText
-const locationsContext = { exports: {} }
-vm.runInNewContext(
-  ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/propertyMapLocations.ts'), 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText,
-  locationsContext
-)
-function model(fetch) {
-  const context = {
-    exports: {},
-    URLSearchParams,
-    fetch,
-    require: (id) =>
-      id === './transitStations'
-        ? require('./helpers/transit-stations.cjs')
-        : id === './propertyMapLocations'
-          ? locationsContext.exports
-          : { getAuthApiUrl: (value) => '/apix/' + value },
-  }
-  vm.runInNewContext(source, context)
-  return context.exports
-}
+const model = (fetch) => require('./helpers/location-search.cjs')(fetch).map
 const signal = () => new AbortController().signal
 const json = (body) => ({ ok: true, json: async () => body })
 const project = (id, category = 'condominium') => ({
@@ -59,52 +34,34 @@ test('a village displays its preferred Thai name while its English name and alia
   assert.equal(m.projectSearchSuggestion(project('condo')).label, 'The Address Sathorn')
 })
 
-test('project mode ranks all registered project types before places and deduplicates each source', async () => {
-  const projects = ['condominium', 'housing_estate', 'commercial_complex'].map((type, i) => project(String(i), type))
-  const m = model(async (url) =>
-    url.startsWith('/apix/')
-      ? json({ projects: [...projects, projects[0], { name_th: 'Missing identity' }] })
-      : json({ data: [{ w: 'Sathorn Road' }, { w: ' sathorn road ' }, { w: '' }] })
-  )
-  const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', signal())
-  assert.equal(suggestions[0].label, 'The Address Sathorn')
-  assert.deepEqual(plain(suggestions.map((row) => row.kind)), ['project', 'project', 'project', 'place', 'place'])
-  assert.deepEqual(plain(suggestions.slice(0, 3).map((row) => row.project.project_category)), [
-    'condominium',
-    'housing_estate',
-    'commercial_complex',
-  ])
-  assert.equal(
-    suggestions[0].project.latitude,
-    undefined,
-    'a registered project without coordinates is still searchable'
-  )
-  assert.equal(suggestions.at(-1).direct, true, 'explicit place search remains available even with project matches')
+test('listing and project modes show the same place-first list with registered project identity', async () => {
+  const m = model(async (url) => url.startsWith('/apix/projects?')
+    ? json({ projects: [project('address'), project('address')] })
+    : json({ suggestions: [{type:'location',label:'Sathorn Road', query:'Sathorn Road',description:'location',place:{name:'Sathorn Road',address:'Bangkok',lat:13.7,lon:100.5}}] }))
+  const first = await m.fetchMapSearchSuggestions('Sathorn', 'projects', '', signal())
+  const second = await m.fetchMapSearchSuggestions('Sathorn', 'listings', '', signal())
+  assert.deepEqual(plain(first), plain(second))
+  assert.equal(first[0].label, 'Sathorn Road')
+  assert.equal(first[0].place.lon,100.5)
+  assert.equal(first.filter(x=>x.kind==='project').length,1)
+  assert.equal(first.find(x=>x.kind==='project').project.public_project_id,'address')
 })
 
-test('listing mode searches places only and honors a stale provider keyword', async () => {
-  const urls = []
-  const m = model(async (url) => {
-    urls.push(url)
-    return json({ meta: { keyword: 'previous' }, data: [{ w: 'Wrong place' }] })
-  })
-  assert.equal((await m.fetchMapSearchSuggestions('current', 'listings', 'test', signal())).length, 0)
-  assert.equal(urls.length, 1)
-  assert.ok(urls[0].startsWith('https://search.longdo.com/'))
-})
-
-test('either source can fail without hiding results from the other', async () => {
-  for (const failedSource of ['projects', 'places']) {
-    const m = model(async (url) => {
-      const isProject = url.startsWith('/apix/')
-      if (isProject === (failedSource === 'projects')) throw new Error('Unavailable')
-      return json(isProject ? { projects: [project('address')] } : { data: [{ w: 'Sathorn Road' }] })
+test('autocomplete uses only same-origin services and degrades to the remaining source on failure', async () => {
+  for (const failed of ['project','place']) {
+    const urls = []
+    const m = model(async url => {
+      urls.push(url)
+      if (url.startsWith('/apix/projects?')) {
+        if (failed === 'project') throw Error('Unavailable')
+        return json({projects:[project('address')]})
+      }
+      if (failed === 'place') throw Error('Unavailable')
+      return json({suggestions:[{type:'location',label:'Sathorn Road',query:'Sathorn Road',description:'location'}]})
     })
-    const suggestions = await m.fetchMapSearchSuggestions('Address', 'projects', 'test', signal())
-    assert.ok(
-      suggestions.some((row) => (failedSource === 'places' ? row.kind === 'project' : row.label === 'Sathorn Road'))
-    )
-    assert.ok(suggestions.some((row) => row.kind === 'place' && row.direct))
+    const rows = await m.fetchMapSearchSuggestions('Sathorn','listings','',signal())
+    assert.ok(rows.some(row=> failed === 'project' ? row.label === 'Sathorn Road' : row.kind === 'project'))
+    assert.ok(urls.every(url=>url.startsWith('/')))
   }
 })
 
@@ -115,7 +72,7 @@ test('Enter selects a unique name or alias but leaves ambiguous projects for the
   assert.equal(m.preferredMapProject('THE ADDRESS SATHORN', [other, address]), address)
   assert.equal(m.preferredMapProject('The Address Sathon', [other, address]), address)
   assert.equal(m.preferredMapProject('ดิ แอดเดรส สาทร', [other, address]), address)
-  assert.equal(m.preferredMapProject('Address', [address]), address)
+  assert.equal(m.preferredMapProject('Address', [address]), undefined)
   assert.equal(m.preferredMapProject('Address', [address, other]), undefined)
   assert.equal(m.preferredMapProject('The Address Sathorn', [address, project('duplicate-name')]), undefined)
 })
@@ -143,27 +100,16 @@ test('aborted search cannot return late project, suggestion or geocoding results
   }
 })
 
-test('place fallback rejects empty, invalid and out-of-range coordinates and uses the selected language', async () => {
+test('place fallback rejects invalid coordinates and uses the same-origin resolver and selected language', async () => {
+  for(const place of [{lat:null,lon:''},{lat:' ',lon:100},{lat:91,lon:100},{lat:13,lon:181},undefined]) {
+    const m=model(async()=>json({place}))
+    assert.equal(await m.searchMapPlace('park','',true,signal()),undefined)
+  }
   let requested
-  const m = model(async (url) => {
-    requested = new URL(url)
-    return json({
-      data: [
-        { lat: null, lon: '' },
-        { lat: ' ', lon: 100 },
-        { lat: 91, lon: 100 },
-        { lat: 13, lon: 181 },
-        { name: 'Park', lat: '13.73', lon: '100.54' },
-      ],
-    })
-  })
-  assert.deepEqual(plain(await m.searchMapPlace('park', 'test', false, signal())), {
-    name: 'Park',
-    address: '',
-    lat: 13.73,
-    lon: 100.54,
-  })
-  assert.equal(requested.searchParams.get('locale'), 'en')
+  const m=model(async url=>{requested=new URL(url,'https://mapxprop.com');return json({place:{name:'Park',address:'',lat:13.73,lon:100.54,zoom:15}})})
+  assert.deepEqual(plain(await m.searchMapPlace('park','',false,signal())),{name:'Park',address:'',lat:13.73,lon:100.54,zoom:15})
+  assert.equal(requested.pathname,'/api/location-search')
+  assert.equal(requested.searchParams.get('locale'),'en')
 })
 
 test('province searches use a wide area view without depending on listings or a provider response', async () => {
@@ -206,7 +152,7 @@ test('a partial project match does not hijack a district search, and project ser
         if (fail) throw Error('Project service unavailable')
         return json({ projects: [{ ...project('address'), latitude: 14, longitude: 101 }] })
       }
-      return json({ data: [{ name: 'เขตสาทร กรุงเทพมหานคร', lat: 13.71368, lon: 100.52715 }] })
+      return json({ place: { name: 'เขตสาทร กรุงเทพมหานคร', lat: 13.71368, lon: 100.52715 } })
     })
     const place = await m.resolveMapSearchPlace('สาทร', 'test', true, signal())
     assert.equal(place.lat, 13.71368)

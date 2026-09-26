@@ -1,8 +1,11 @@
+import type { PropertySearchSuggestion } from './propertySearch'
+
 export type PropertyRecentSearch = {
   query: string
   label: string
   type: string
   description: string
+  selection?: Pick<PropertySearchSuggestion, 'place' | 'stationId' | 'project'>
   searchedAt: number
 }
 
@@ -49,7 +52,8 @@ export const savePropertyRecentSearch = (
   query: string,
   label = query,
   type = 'search',
-  description = ''
+  description = '',
+  selection?: PropertyRecentSearch['selection']
 ): PropertyRecentSearch[] => {
   const normalizedQuery = normalizeQuery(query)
   if (!normalizedQuery || typeof window === 'undefined') return getPropertyRecentSearches()
@@ -61,6 +65,7 @@ export const savePropertyRecentSearch = (
       label: normalizeQuery(label) || normalizedQuery,
       type,
       description: normalizeQuery(description),
+      selection,
       searchedAt: Date.now(),
     },
     ...getPropertyRecentSearches().filter(

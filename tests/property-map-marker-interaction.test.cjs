@@ -45,7 +45,8 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     now = 0,
     timerId = 0,
     reducedMotion = false,
-    searchPlace = async (keyword) => ({ name: keyword, lat: 13.723, lon: 100.542 })
+    searchPlace = async (keyword) => ({ name: keyword, lat: 13.723, lon: 100.542 }),
+    suggestPlaces = async () => []
   const equal = (a, b) => a && b && a.length === b.length && a.every((value, index) => Object.is(value, b[index]))
   class Element {
     constructor(link = null) {
@@ -173,6 +174,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   const { formatCurrencyFrom } = require('./helpers/property-prices.cjs').preferences()
   const router = { push: (...args) => navigation.push(args) }
   const imports = {
+    '@/lib/locationSearch': require('./helpers/location-search.cjs')().location,
     '@/lib/transitStations': require('./helpers/transit-stations.cjs'),
     react: hooks,
     'react/jsx-runtime': jsx,
@@ -183,6 +185,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     '@/lib/propertyMapProjects': projectContext.exports,
     '@/lib/propertyMapProjectLayout': require('./helpers/property-prices.cjs').load('src/lib/propertyMapProjectLayout.ts'),
     '@/lib/propertyMapLocationSearch': {
+      fetchMapSearchSuggestions: (...args) => suggestPlaces(...args),
       resolveMapSearchPlace: async (...args) => {
         const place = await searchPlace(...args)
         return place ? { zoom: 15, ...place } : undefined
@@ -271,8 +274,8 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     Node: Element,
     URLSearchParams,
     AbortController,
-    setTimeout: () => 1,
-    clearTimeout() {},
+    setTimeout: window.setTimeout,
+    clearTimeout: window.clearTimeout,
     ResizeObserver: class {
       observe() {}
       disconnect() {}
@@ -428,6 +431,12 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
     },
     setSearchPlace: (fn) => {
       searchPlace = fn
+    },
+    setSuggestPlaces: (fn) => { suggestPlaces = fn },
+    typeSearch: (text) => {
+      findNode(node => node.type === 'input').props.onFocus()
+      findNode(node => node.type === 'input').props.onChange({target:{value:text}})
+      render()
     },
     reduceMotion: () => {
       reducedMotion = true
@@ -1074,6 +1083,25 @@ test('a manual mobile search supersedes an unfinished entry query', async () => 
   assert.equal(h.api.location().lat, 18.78)
   assert.equal(h.searchText(), 'New place')
   h.unmount()
+})
+
+test('submitting search cancels pending autocomplete so a late empty suggestion response cannot overwrite the result message', async () => {
+  const h = harness(390)
+  let release
+  h.setSuggestPlaces(() => new Promise(resolve => { release = resolve }))
+  h.setSearchPlace(async () => undefined)
+  h.typeSearch('unknown place')
+  h.advance(180)
+  await h.flushSearch()
+  assert.equal(typeof release, 'function')
+  await h.search('unknown place')
+  assert.match(h.searchMessage(), /ไม่พบสถานที่นี้/)
+  release([])
+  await h.flushSearch()
+  h.advance(500)
+  await h.flushSearch()
+  assert.match(h.searchMessage(), /ไม่พบสถานที่นี้/)
+  assert.doesNotMatch(h.searchMessage(), /ไม่พบคำแนะนำ/)
 })
 
 test('place search shows a small labelled red pin for 4 seconds, then fades without clearing the query or listings', async () => {

@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
       { place: { name: preset.nameTh, address: '', lat: preset.latitude, lon: preset.longitude, zoom: preset.zoom } },
       { headers: longdoNoStoreHeaders }
     )
-  const station = findTransitStation(query)
+  // A bare area name (e.g. Bang Na) must not silently become its train station.
+  const station = /(?:\b(?:bts|mrt|arl|srt|brt)\b|สถานี|รถไฟฟ้า|\([A-Z]{1,2}\d{1,2}\)|^[A-Z]{1,3}\d{1,2}$)/i.test(query)
+    ? findTransitStation(query)
+    : undefined
   if (station) return NextResponse.json({ place: transitStationPlace(station) }, { headers: longdoNoStoreHeaders })
 
   const apiKey = getLongdoApiKey()
@@ -47,7 +50,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const searchParams = new URLSearchParams({ keyword: query, limit: '5', locale: 'th', key: apiKey })
+    const searchParams = new URLSearchParams({
+      keyword: query,
+      limit: '5',
+      locale: request.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'th',
+      key: apiKey,
+    })
     const response = await fetch(`https://search.longdo.com/mapsearch/json/search?${searchParams}`, {
       cache: 'no-store',
       signal: AbortSignal.timeout(5000),
@@ -66,6 +74,13 @@ export async function GET(request: NextRequest) {
           address: typeof match.address === 'string' ? match.address.trim() : '',
           lat: Number(match.lat),
           lon: Number(match.lon),
+          zoom: /^(?:จ\.|จังหวัด)/.test(String(match.name))
+            ? 10
+            : /^(?:เขต|อ\.|อำเภอ)/.test(String(match.name))
+              ? 13
+              : /^(?:ถนน|ทางหลวง)/.test(String(match.name))
+                ? 14
+                : 15,
         }
       : null
 
