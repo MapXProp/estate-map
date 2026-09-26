@@ -1,539 +1,549 @@
 'use client'
 
-import { LoaderCircle, MapPin, Search, X, ZoomIn, ZoomOut } from 'lucide-react'
+import {
+  isListingPoint,
+  listingPlaces,
+  sameListingPoint,
+  type ListingPlace,
+  type ListingPoint,
+} from '@/lib/listingLocation'
+import { fetchLocationSearchSuggestions } from '@/lib/locationSearch'
+import {
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  LoaderCircle,
+  LocateFixed,
+  MapPin,
+  Search,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
 import Script from 'next/script'
-import { KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
-export type LongdoPickerLocation = { lng: number; lat: number }
-
-type LongdoLocation = { lon: number; lat: number }
-type LongdoOverlay = {
-  location: () => LongdoLocation
-}
-type LongdoMapInstance = {
-  Event: {
-    bind: (event: string, callback: (value?: LongdoOverlay) => void) => void
+export type LongdoPickerLocation = ListingPoint
+type MapLocation = { lon: number; lat: number }
+type PickerMap = {
+  Ui: {
+    Crosshair: { visible: (state: boolean) => void }
+    Keyboard: { enable: (state: boolean) => void }
+    Mouse: { enableInertia: (state: boolean) => void }
   }
-  Overlays: {
-    add: (overlay: LongdoOverlay) => void
-    clear: () => void
-    remove: (overlay: LongdoOverlay) => void
-  }
-  location: (location?: LongdoLocation | unknown, animate?: boolean) => LongdoLocation
+  Event: { bind: (event: string, callback: () => void) => void }
+  location: (value?: MapLocation | unknown, animate?: boolean) => MapLocation
   zoom: (level?: number, animate?: boolean) => number
-  resize: () => LongdoMapInstance
-  repaint: () => LongdoMapInstance
+  move: (offset: { x: number; y: number }, animate?: boolean) => void
+  resize: () => void
+  repaint: () => void
+  pause: (state: boolean) => void
 }
-type LongdoNamespace = {
+type Longdo = {
   UiComponent: { None: unknown }
   LocationMode: { Pointer: unknown }
-  Map: new (options: {
-    placeholder: HTMLElement
-    language?: string
-    location?: LongdoLocation
-    zoom?: number
-    lastView?: boolean
-    autoResize?: boolean
-    ui?: unknown
-  }) => LongdoMapInstance
-  Marker: new (
-    location: LongdoLocation,
-    options?: {
-      title?: string
-      detail?: string
-      icon?: { html: string; offset: { x: number; y: number } }
-      clickable?: boolean
-      draggable?: boolean
-    }
-  ) => LongdoOverlay
+  Map: new (options: Record<string, unknown>) => PickerMap
 }
-
-type LongdoSuggestion = { w: string }
-type LongdoSearchResult = {
-  name: string
-  address?: string
-  lat: number
-  lon: number
-}
-
+const sdk = () => (window as unknown as { longdo?: Longdo }).longdo
 interface Props {
   apiKey?: string
-  value: LongdoPickerLocation
+  value: ListingPoint
   locale: 'th' | 'en'
   hasMarker?: boolean
+  confirmed: boolean
   initialZoom?: number
-  onChange: (location: LongdoPickerLocation) => void
+  initialSearch?: string
+  locating?: boolean
+  onUseCurrentLocation: () => void
+  onChange: (location: ListingPoint) => void
+  onInteractionStart: () => void
+  onConfirm: () => void
 }
 
-const getLongdo = () => (window as unknown as { longdo?: LongdoNamespace }).longdo
-
-const markerHtml = `
-  <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#123f32;color:#fff;border:4px solid rgba(255,255,255,.96);box-shadow:0 8px 22px rgba(18,63,50,.3);cursor:grab;box-sizing:border-box;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path>
-      <circle cx="12" cy="10" r="2.5"></circle>
-    </svg>
-  </div>`
-
-const copy = {
-  th: {
-    ariaMap: 'แผนที่สำหรับปักหมุดตำแหน่งประกาศ',
-    ariaSearch: 'ค้นหาสถานที่บนแผนที่',
-    placeholder: 'ค้นหาโครงการ ถนน ซอย หรือสถานที่',
-    suggestionSource: 'สถานที่จาก Longdo Map',
-    noSuggestion: 'ไม่พบคำแนะนำ ลองระบุเขต จังหวัด หรือชื่อสถานที่',
-    suggestError: 'ค้นหาคำแนะนำไม่สำเร็จ กรุณาลองอีกครั้ง',
-    noPlace: 'ไม่พบสถานที่นี้ ลองเพิ่มชื่อเขตหรือจังหวัด',
-    searchError: 'ค้นหาสถานที่ไม่สำเร็จ กรุณาลองอีกครั้ง',
-    markerTitle: 'ตำแหน่งประกาศ',
-    markerDetail: 'ลากหมุดหรือแตะแผนที่เพื่อปรับตำแหน่ง',
-    loading: 'กำลังโหลดแผนที่ Longdo',
-    missingKey: 'ยังไม่ได้ตั้งค่า Longdo Map API Key',
-    clear: 'ล้างคำค้น',
-    searching: 'กำลังค้นหา',
-    zoomIn: 'ขยายแผนที่',
-    zoomOut: 'ย่อแผนที่',
-    zoomControls: 'ควบคุมระดับการซูมแผนที่',
-  },
-  en: {
-    ariaMap: 'Map for placing the listing location pin',
-    ariaSearch: 'Search for a place on the map',
-    placeholder: 'Search project, road, soi or place',
-    suggestionSource: 'Place from Longdo Map',
-    noSuggestion: 'No suggestions. Try adding a district, province or place name.',
-    suggestError: 'Unable to load suggestions. Please try again.',
-    noPlace: 'Place not found. Try adding a district or province.',
-    searchError: 'Unable to search for this place. Please try again.',
-    markerTitle: 'Listing location',
-    markerDetail: 'Drag the pin or tap the map to adjust the location',
-    loading: 'Loading Longdo Map',
-    missingKey: 'Longdo Map API Key has not been configured',
-    clear: 'Clear search',
-    searching: 'Searching',
-    zoomIn: 'Zoom in',
-    zoomOut: 'Zoom out',
-    zoomControls: 'Map zoom controls',
-  },
-} as const
-
-const LongdoLocationPicker = ({ apiKey, value, locale, hasMarker = false, initialZoom = 6, onChange }: Props) => {
-  const text = copy[locale]
-  const placeholderRef = useRef<HTMLDivElement>(null)
-  const searchContainerRef = useRef<HTMLDivElement>(null)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const mapRef = useRef<LongdoMapInstance | null>(null)
-  const markerRef = useRef<LongdoOverlay | null>(null)
-  const onChangeRef = useRef(onChange)
-  const valueRef = useRef(value)
-  const hasMarkerRef = useRef(hasMarker)
-  const initialZoomRef = useRef(initialZoom)
-  const skipNextValueSyncRef = useRef(false)
+export default function LongdoLocationPicker({
+  apiKey,
+  value,
+  locale,
+  hasMarker = false,
+  confirmed,
+  initialZoom = 6,
+  initialSearch = '',
+  locating = false,
+  onUseCurrentLocation,
+  onChange,
+  onInteractionStart,
+  onConfirm,
+}: Props) {
+  const th = locale === 'th'
+  const [query, setQuery] = useState(initialSearch)
+  const [focused, setFocused] = useState(false)
+  const [results, setResults] = useState<ListingPlace[]>([])
+  const [active, setActive] = useState(-1)
+  const [searching, setSearching] = useState(false)
+  const [searchMessage, setSearchMessage] = useState('')
+  const [retry, setRetry] = useState(0)
+  const [expanded, setExpanded] = useState(hasMarker)
   const [sdkReady, setSdkReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
-  const [searchText, setSearchText] = useState('')
-  const [suggestions, setSuggestions] = useState<LongdoSuggestion[]>([])
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
-  const [isSearchFocused, setIsSearchFocused] = useState(false)
-  const [isSuggesting, setIsSuggesting] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchMessage, setSearchMessage] = useState('')
+  const [mapError, setMapError] = useState(false)
+  const [moving, setMoving] = useState(false)
+  const [outsideThailand, setOutsideThailand] = useState(false)
+  const [zoom, setZoom] = useState(initialZoom)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const mapElement = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<PickerMap | null>(null)
+  const callbacks = useRef({ onChange, onInteractionStart })
+  const latest = useRef({ value, hasMarker, initialZoom })
+  const syncing = useRef(false)
+  const settledTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const pendingZoom = useRef<number | null>(null)
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const showMap = expanded || hasMarker
+  useEffect(() => {
+    callbacks.current = { onChange, onInteractionStart }
+  }, [onChange, onInteractionStart])
+  useEffect(() => {
+    latest.current = { value, hasMarker, initialZoom }
+  }, [value, hasMarker, initialZoom])
+  useEffect(() => () => clearTimeout(blurTimer.current), [])
 
   useEffect(() => {
-    onChangeRef.current = onChange
-  }, [onChange])
-
-  useEffect(() => {
-    valueRef.current = value
-  }, [value])
-
-  useEffect(() => {
-    hasMarkerRef.current = hasMarker
-  }, [hasMarker])
-
-  useEffect(() => {
-    initialZoomRef.current = initialZoom
-  }, [initialZoom])
-
-  useEffect(() => {
-    const touchSurface = placeholderRef.current
-    if (!touchSurface) return
-
-    const preventPagePinch = (event: TouchEvent) => {
-      if (event.touches.length > 1) event.preventDefault()
-    }
-    const preventSafariGesture = (event: Event) => event.preventDefault()
-
-    touchSurface.addEventListener('touchmove', preventPagePinch, { passive: false })
-    touchSurface.addEventListener('gesturestart', preventSafariGesture, { passive: false })
-    touchSurface.addEventListener('gesturechange', preventSafariGesture, { passive: false })
-
-    return () => {
-      touchSurface.removeEventListener('touchmove', preventPagePinch)
-      touchSurface.removeEventListener('gesturestart', preventSafariGesture)
-      touchSurface.removeEventListener('gesturechange', preventSafariGesture)
-    }
-  }, [])
-
-  const notifyLocation = useCallback((location: LongdoLocation) => {
-    if (!Number.isFinite(location.lon) || !Number.isFinite(location.lat)) return
-    const nextValue = { lng: location.lon, lat: location.lat }
-    valueRef.current = nextValue
-    skipNextValueSyncRef.current = true
-    onChangeRef.current(nextValue)
-  }, [])
-
-  const createMarker = useCallback(
-    (location: LongdoLocation) => {
-      const map = mapRef.current
-      const longdo = getLongdo()
-      if (!map || !longdo) return null
-
-      if (markerRef.current) map.Overlays.remove(markerRef.current)
-      const marker = new longdo.Marker(location, {
-        title: text.markerTitle,
-        detail: text.markerDetail,
-        clickable: true,
-        draggable: true,
-        icon: { html: markerHtml, offset: { x: 22, y: 42 } },
-      })
-      markerRef.current = marker
-      map.Overlays.add(marker)
-      return marker
-    },
-    [text.markerDetail, text.markerTitle]
-  )
-
-  useEffect(() => {
-    const keyword = searchText.trim()
-    if (!apiKey || !isSearchFocused || keyword.length < 3) {
-      // Reset asynchronous suggestions when the field is no longer eligible for lookup.
-      setSuggestions([])
-      setActiveSuggestionIndex(-1)
-      setIsSuggesting(false)
+    const keyword = query.trim()
+    setResults([])
+    setActive(-1)
+    setSearchMessage('')
+    if (!focused || Array.from(keyword).length < 2) {
+      setSearching(false)
       return
     }
-
     const controller = new AbortController()
+    setSearching(true)
     const timer = window.setTimeout(async () => {
-      setIsSuggesting(true)
-      setSearchMessage('')
       try {
-        const params = new URLSearchParams({ keyword, limit: '7', key: apiKey })
-        const response = await fetch(`https://search.longdo.com/mapsearch/json/suggest?${params}`, {
-          signal: controller.signal,
-        })
-        if (!response.ok) throw new Error('Longdo suggest request failed')
-        const result = (await response.json()) as { meta?: { keyword?: string }; data?: LongdoSuggestion[] }
-        if (result.meta?.keyword && result.meta.keyword !== keyword) return
-        setSuggestions(result.data || [])
-        setActiveSuggestionIndex(-1)
-        if (!result.data?.length) setSearchMessage(text.noSuggestion)
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') setSearchMessage(text.suggestError)
+        const rows = listingPlaces(await fetchLocationSearchSuggestions(keyword, controller.signal))
+        if (controller.signal.aborted) return
+        setResults(rows)
+        if (!rows.length)
+          setSearchMessage(
+            th
+              ? 'ลองเพิ่มเขตหรือจังหวัด หรือค้นหาชื่อถนนใกล้เคียง'
+              : 'Try adding a district or province, or search a nearby road.'
+          )
+      } catch {
+        if (!controller.signal.aborted)
+          setSearchMessage(
+            th ? 'ค้นหาไม่สำเร็จ ลองอีกครั้งหรือเลือกบนแผนที่' : 'Search unavailable. Retry or choose on the map.'
+          )
       } finally {
-        if (!controller.signal.aborted) setIsSuggesting(false)
+        if (!controller.signal.aborted) setSearching(false)
       }
     }, 350)
-
     return () => {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [apiKey, isSearchFocused, searchText, text.noSuggestion, text.suggestError])
+  }, [focused, query, retry, th])
 
-  const searchLocation = useCallback(
-    async (rawKeyword: string) => {
-      const keyword = rawKeyword.trim()
-      const map = mapRef.current
-      if (!apiKey || !keyword || !map || !getLongdo()) return
-
-      setSearchText(keyword)
-      setSuggestions([])
-      setIsSearching(true)
-      setSearchMessage('')
-      try {
-        const params = new URLSearchParams({ keyword, limit: '8', locale, key: apiKey })
-        const response = await fetch(`https://search.longdo.com/mapsearch/json/search?${params}`)
-        if (!response.ok) throw new Error('Longdo search request failed')
-        const result = (await response.json()) as { data?: LongdoSearchResult[] }
-        const place = result.data?.find(
-          (item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lon))
-        )
-        if (!place) {
-          setSearchMessage(text.noPlace)
-          setIsSearchFocused(true)
-          return
-        }
-
-        const location = { lon: Number(place.lon), lat: Number(place.lat) }
-        createMarker(location)
-        notifyLocation(location)
-        map.location(location, true)
-        map.zoom(16, true)
-        setSearchText(place.name || keyword)
-        setIsSearchFocused(false)
-        searchInputRef.current?.blur()
-      } catch {
-        setSearchMessage(text.searchError)
-        setIsSearchFocused(true)
-      } finally {
-        setIsSearching(false)
+  const choosePlace = (place: ListingPlace) => {
+    setQuery(place.label)
+    setResults([])
+    setFocused(false)
+    setExpanded(true)
+    pendingZoom.current = place.zoom
+    onInteractionStart()
+    onChange(place.point)
+    searchRef.current?.blur()
+  }
+  const searchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (['ArrowDown', 'ArrowUp'].includes(event.key) && results.length) {
+      event.preventDefault()
+      setActive((index) =>
+        event.key === 'ArrowDown' ? (index + 1) % results.length : index <= 0 ? results.length - 1 : index - 1
+      )
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      // Enter must not silently pick the first result.
+      if (active >= 0 && results[active]) choosePlace(results[active])
+      else {
+        setFocused(true)
+        setRetry((n) => n + 1)
       }
-    },
-    [apiKey, createMarker, locale, notifyLocation, text.noPlace, text.searchError]
-  )
-
-  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'ArrowDown' && suggestions.length) {
-      event.preventDefault()
-      setActiveSuggestionIndex((current) => (current + 1) % suggestions.length)
-      return
-    }
-    if (event.key === 'ArrowUp' && suggestions.length) {
-      event.preventDefault()
-      setActiveSuggestionIndex((current) => (current <= 0 ? suggestions.length - 1 : current - 1))
-      return
-    }
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      const suggestion = suggestions[activeSuggestionIndex]
-      void searchLocation(suggestion?.w || searchText)
-      return
-    }
-    if (event.key === 'Escape') {
-      setSuggestions([])
-      setIsSearchFocused(false)
-      searchInputRef.current?.blur()
+    } else if (event.key === 'Escape') {
+      setFocused(false)
+      searchRef.current?.blur()
     }
   }
+  useEffect(() => {
+    if (!showMap || !apiKey || mapReady) return
+    const timer = window.setTimeout(() => setMapError(true), 15000)
+    return () => window.clearTimeout(timer)
+  }, [apiKey, showMap, mapReady])
 
   useEffect(() => {
-    const longdo = getLongdo()
-    if (!sdkReady || !apiKey || !placeholderRef.current || !longdo || mapRef.current) return
-
-    const initialLocation = { lon: valueRef.current.lng, lat: valueRef.current.lat }
+    const longdo = sdk()
+    if (!showMap || !sdkReady || !apiKey || !longdo || !mapElement.current || mapRef.current) return
+    let alive = true,
+      ready = false
+    const initial = latest.current
     const map = new longdo.Map({
-      placeholder: placeholderRef.current,
+      placeholder: mapElement.current,
       language: locale,
-      location: initialLocation,
-      zoom: initialZoomRef.current,
+      location: { lon: initial.value.lng, lat: initial.value.lat },
+      zoom: pendingZoom.current ?? initial.initialZoom,
       lastView: false,
       autoResize: true,
       ui: longdo.UiComponent.None,
     })
     mapRef.current = map
-
     map.Event.bind('ready', () => {
-      if (hasMarkerRef.current) createMarker(initialLocation)
+      if (!alive) return
+      ready = true
+      map.Ui.Crosshair.visible(false)
+      map.Ui.Keyboard.enable(false)
+      map.Ui.Mouse.enableInertia(false)
       setMapReady(true)
-      window.requestAnimationFrame(() => {
-        map.resize()
-        map.repaint()
-      })
+      setMapError(false)
+      setZoom(map.zoom())
+      map.resize()
+      map.repaint()
     })
-    map.Event.bind('overlayDrop', (overlay) => {
-      if (!overlay || overlay !== markerRef.current) return
-      notifyLocation(overlay.location())
+    map.Event.bind('location', () => {
+      if (!alive || !ready || syncing.current) return
+      const location = map.location(),
+        point = { lng: location.lon, lat: location.lat }
+      setOutsideThailand(!isListingPoint(point))
+      if (sameListingPoint(point, latest.current.value) && latest.current.hasMarker) return
+      callbacks.current.onInteractionStart()
+      setMoving(true)
+      clearTimeout(settledTimer.current)
+      settledTimer.current = setTimeout(() => {
+        if (!alive) return
+        const center = map.location(),
+          next = { lng: center.lon, lat: center.lat }
+        if (isListingPoint(next)) callbacks.current.onChange(next)
+        setMoving(false)
+      }, 180)
+    })
+    map.Event.bind('zoom', () => {
+      if (alive) setZoom(map.zoom())
     })
     map.Event.bind('click', () => {
-      const pointerLocation = map.location(longdo.LocationMode.Pointer)
-      if (!pointerLocation) return
-      createMarker(pointerLocation)
-      notifyLocation(pointerLocation)
+      if (!alive || !ready) return
+      const location = map.location(longdo.LocationMode.Pointer)
+      if (location) map.location(location, false)
     })
-
     return () => {
-      map.Overlays.clear()
-      markerRef.current = null
+      alive = false
+      clearTimeout(settledTimer.current)
+      map.pause(true)
       mapRef.current = null
     }
-  }, [apiKey, createMarker, locale, notifyLocation, sdkReady])
+  }, [apiKey, locale, sdkReady, showMap])
 
   useEffect(() => {
     const map = mapRef.current
-    if (!mapReady || !map) return
-    if (!hasMarker) {
-      if (markerRef.current) map.Overlays.remove(markerRef.current)
-      markerRef.current = null
-      map.location({ lon: value.lng, lat: value.lat }, true)
-      map.zoom(initialZoom, true)
-      return
+    if (!mapReady || !map || !hasMarker) return
+    const current = map.location()
+    if (!sameListingPoint(value, { lng: current.lon, lat: current.lat }) || pendingZoom.current !== null) {
+      syncing.current = true
+      clearTimeout(settledTimer.current)
+      map.location({ lon: value.lng, lat: value.lat }, false)
+      map.zoom(pendingZoom.current ?? initialZoom, false)
+      setZoom(map.zoom())
+      setOutsideThailand(!isListingPoint(value))
+      pendingZoom.current = null
+      syncing.current = false
+      setMoving(false)
     }
-    if (skipNextValueSyncRef.current) {
-      skipNextValueSyncRef.current = false
-      return
-    }
-
-    const location = { lon: value.lng, lat: value.lat }
-    createMarker(location)
-    map.location(location, true)
-    map.zoom(initialZoom, true)
-  }, [createMarker, hasMarker, initialZoom, mapReady, value.lat, value.lng])
-
-  if (!apiKey) {
-    return (
-      <div className="flex size-full items-center justify-center bg-[#eef3f0] px-6 text-center text-sm font-medium text-[#31594e]">
-        {text.missingKey}
-      </div>
-    )
+  }, [value, hasMarker, initialZoom, mapReady])
+  const zoomBy = (amount: number) => {
+    const map = mapRef.current
+    if (map) map.zoom(Math.min(20, Math.max(6, map.zoom() + amount)), false)
   }
 
   return (
-    <div className="relative size-full overflow-hidden bg-[#eef3f0]">
-      <link rel="preconnect" href="https://api.longdo.com" />
-      <link rel="preconnect" href="https://search.longdo.com" />
-      <Script
-        id="longdo-map-sdk"
-        src={`https://api.longdo.com/map/?key=${encodeURIComponent(apiKey)}`}
-        strategy="afterInteractive"
-        onLoad={() => setSdkReady(true)}
-        onReady={() => setSdkReady(true)}
-      />
+    <div data-listing-location-picker className="space-y-3">
       <div
-        ref={placeholderRef}
-        tabIndex={-1}
-        className="size-full touch-none overscroll-contain"
-        aria-label={text.ariaMap}
-      />
-
-      {mapReady && (
-        <>
-          <div
-            ref={searchContainerRef}
-            className="absolute top-3 left-1/2 z-20 w-[min(92%,30rem)] -translate-x-1/2"
-            onBlur={(event) => {
-              const nextTarget = event.relatedTarget
-              if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
-              window.setTimeout(() => {
-                const container = searchContainerRef.current
-                if (container && !container.contains(document.activeElement)) setIsSearchFocused(false)
-              }, 150)
+        onBlur={(event) => {
+          const container = event.currentTarget
+          if (container.contains(event.relatedTarget as Node | null)) return
+          // iOS may not focus a tapped result button; let its click finish first.
+          clearTimeout(blurTimer.current)
+          blurTimer.current = setTimeout(() => {
+            if (!container.contains(document.activeElement)) setFocused(false)
+          }, 150)
+        }}
+      >
+        <label
+          htmlFor="listing-address-search"
+          className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-200"
+        >
+          {th ? 'พิมพ์ที่อยู่หรือชื่อสถานที่' : 'Enter an address or place name'}
+        </label>
+        <div className="flex min-h-14 items-center rounded-2xl border border-[#cbded5] bg-white pr-1.5 pl-3 focus-within:ring-2 focus-within:ring-[#176b50]/20 dark:bg-neutral-950">
+          <Search className="mr-2 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
+          <input
+            id="listing-address-search"
+            ref={searchRef}
+            value={query}
+            maxLength={120}
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
+            role="combobox"
+            autoComplete="off"
+            aria-autocomplete="list"
+            aria-expanded={focused && !!(results.length || searchMessage)}
+            aria-controls="listing-address-results"
+            aria-activedescendant={active >= 0 ? `listing-address-result-${active}` : undefined}
+            placeholder={th ? 'ที่อยู่ ถนน ซอย หรือโครงการ' : 'Address, road, soi or project'}
+            className="min-w-0 flex-1 border-0 bg-transparent px-0 py-3 text-base shadow-none outline-none placeholder:text-neutral-400 focus:ring-0"
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setActive(-1)
+              setResults([])
+              setFocused(true)
+            }}
+            onFocus={() => setFocused(true)}
+            onKeyDown={searchKeyDown}
+          />
+          {query && (
+            <button
+              type="button"
+              aria-label={th ? 'ล้างคำค้น' : 'Clear search'}
+              className="grid size-11 shrink-0 place-items-center rounded-xl text-neutral-500"
+              onClick={() => {
+                setQuery('')
+                searchRef.current?.focus()
+              }}
+            >
+              <X className="size-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label={th ? 'ค้นหาที่อยู่' : 'Find address'}
+            className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#176b50] text-white"
+            onClick={() => {
+              searchRef.current?.focus()
+              setFocused(true)
+              setRetry((n) => n + 1)
             }}
           >
-            <div className="flex h-12 items-center rounded-2xl border border-white/80 bg-white px-3 shadow-[0_8px_28px_rgba(18,63,50,0.18)] ring-1 ring-[#dbe8e2] transition focus-within:ring-2 focus-within:ring-[#176b50]/35">
-              <Search className="me-2.5 size-5 shrink-0 text-[#176b50]" aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                value={searchText}
-                type="text"
-                inputMode="search"
-                enterKeyHint="search"
-                role="combobox"
-                aria-label={text.ariaSearch}
-                aria-autocomplete="list"
-                aria-expanded={isSearchFocused && (suggestions.length > 0 || !!searchMessage)}
-                aria-controls="longdo-listing-location-suggestions"
-                aria-activedescendant={
-                  activeSuggestionIndex >= 0
-                    ? `longdo-listing-location-suggestion-${activeSuggestionIndex}`
-                    : undefined
-                }
-                placeholder={text.placeholder}
-                className="min-w-0 flex-1 rounded-[10px] bg-transparent font-sarabun text-base text-neutral-900 outline-none placeholder:text-neutral-400"
-                onChange={(event) => {
-                  setSearchText(event.target.value)
-                  setSearchMessage('')
-                }}
-                onFocus={() => setIsSearchFocused(true)}
-                onKeyDown={handleSearchKeyDown}
-              />
-              {(isSuggesting || isSearching) && (
-                <LoaderCircle
-                  className="ms-2 size-4 shrink-0 animate-spin text-[#176b50]"
-                  aria-label={text.searching}
-                />
-              )}
-              {searchText && !isSuggesting && !isSearching && (
+            {searching ? <LoaderCircle className="size-5 animate-spin" /> : <Search className="size-5" />}
+          </button>
+        </div>
+        {focused && !!(results.length || searchMessage) && (
+          <div className="mt-2 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-950">
+            <div
+              id="listing-address-results"
+              role="listbox"
+              aria-label={th ? 'เลือกสถานที่ที่ตรงกับที่อยู่' : 'Choose the matching place'}
+              className="max-h-80 overflow-y-auto overscroll-contain p-1"
+            >
+              {results.map((place, index) => (
                 <button
+                  key={place.id}
+                  id={`listing-address-result-${index}`}
                   type="button"
-                  aria-label={text.clear}
-                  className="ms-2 flex size-8 shrink-0 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
-                  onClick={() => {
-                    setSearchText('')
-                    setSuggestions([])
-                    setSearchMessage('')
-                    searchInputRef.current?.focus()
-                  }}
+                  role="option"
+                  aria-selected={index === active}
+                  className={`flex min-h-16 w-full items-center gap-3 rounded-xl p-3 text-left ${index === active ? 'bg-emerald-50 dark:bg-emerald-950' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'}`}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => choosePlace(place)}
                 >
-                  <X className="size-4" />
+                  <MapPin className="size-5 shrink-0 text-[#176b50]" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{place.label}</span>
+                    <span className="mt-0.5 line-clamp-2 text-xs leading-5 text-neutral-500">{place.address}</span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-neutral-400" />
                 </button>
-              )}
+              ))}
             </div>
-
-            {isSearchFocused && (suggestions.length > 0 || searchMessage) && (
-              <div
-                id="longdo-listing-location-suggestions"
-                role="listbox"
-                className="mt-2 overflow-hidden rounded-2xl border border-[#dfe9e5] bg-white p-1.5 shadow-[0_16px_40px_rgba(18,63,50,0.2)]"
-              >
-                {suggestions.map((suggestion, index) => (
+            {searchMessage && (
+              <p role="status" className="px-4 pb-4 text-sm text-neutral-500">
+                {searchMessage}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <button
+          type="button"
+          disabled={locating}
+          onClick={() => {
+            pendingZoom.current = 18
+            onUseCurrentLocation()
+          }}
+          className="inline-flex min-h-11 items-center gap-2 font-medium text-[#176b50] disabled:opacity-60 dark:text-emerald-300"
+        >
+          {locating ? <LoaderCircle className="size-4 animate-spin" /> : <LocateFixed className="size-4" />}
+          {locating ? (th ? 'กำลังหาตำแหน่ง…' : 'Locating…') : th ? 'อยู่ที่ทรัพย์ตอนนี้' : 'I’m at the property'}
+        </button>
+        {!showMap && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="min-h-11 text-neutral-500 underline underline-offset-4"
+          >
+            {th ? 'เลือกบนแผนที่' : 'Choose on map'}
+          </button>
+        )}
+      </div>
+      {showMap && (
+        <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] dark:border-neutral-700">
+          <div className="relative h-[300px] bg-[#eef3f0] sm:h-[360px]">
+            {apiKey && (
+              <Script
+                id="longdo-map-sdk"
+                src={`https://api.longdo.com/map/?key=${encodeURIComponent(apiKey)}`}
+                strategy="afterInteractive"
+                onReady={() => setSdkReady(true)}
+                onError={() => setMapError(true)}
+              />
+            )}
+            <div
+              ref={mapElement}
+              data-listing-pin-map
+              tabIndex={0}
+              aria-label={
+                th
+                  ? 'เลื่อนแผนที่ให้ปลายหมุดตรงตัวทรัพย์ ใช้ปุ่มลูกศรเพื่อขยับได้'
+                  : 'Move the map to place the pin on the property. Arrow keys move the map.'
+              }
+              className="size-full touch-none overscroll-contain outline-none focus-visible:ring-2 focus-visible:ring-[#176b50] focus-visible:ring-inset"
+              onKeyDown={(event) => {
+                const offsets: Record<string, { x: number; y: number }> = {
+                  ArrowLeft: { x: -12, y: 0 },
+                  ArrowRight: { x: 12, y: 0 },
+                  ArrowUp: { x: 0, y: -12 },
+                  ArrowDown: { x: 0, y: 12 },
+                }
+                if (offsets[event.key]) {
+                  event.preventDefault()
+                  mapRef.current?.move(offsets[event.key], false)
+                }
+                if (event.key === '+' || event.key === '-') {
+                  event.preventDefault()
+                  zoomBy(event.key === '+' ? 1 : -1)
+                }
+              }}
+            />
+            {mapReady && (
+              <>
+                <p className="pointer-events-none absolute inset-x-3 top-3 mx-auto w-fit max-w-[90%] rounded-full bg-white/95 px-3 py-2 text-center text-xs font-medium text-[#123f32] shadow-sm">
+                  {th ? 'เลื่อนแผนที่ให้ปลายหมุดตรงตัวทรัพย์' : 'Move the map to put the pin on your property'}
+                </p>
+                <div
+                  data-location-pin
+                  className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-full"
+                  aria-hidden="true"
+                >
+                  <svg width="38" height="46" viewBox="0 0 38 46" className="drop-shadow-[0_3px_4px_rgba(0,0,0,0.28)]">
+                    <path
+                      d="M19 44C15 38 2 25 2 18a17 17 0 1 1 34 0c0 7-13 20-17 26Z"
+                      fill="#176b50"
+                      stroke="white"
+                      strokeWidth="2.5"
+                    />
+                    <circle cx="19" cy="18" r="6" fill="white" />
+                  </svg>
+                  <span className="absolute bottom-[-3px] left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-[#123f32] ring-2 ring-white" />
+                </div>
+                <div className="absolute right-3 bottom-7 overflow-hidden rounded-xl border border-neutral-200 bg-white text-[#123f32] shadow-sm">
                   <button
-                    id={`longdo-listing-location-suggestion-${index}`}
-                    key={`${suggestion.w}-${index}`}
                     type="button"
-                    role="option"
-                    aria-selected={index === activeSuggestionIndex}
-                    className={`flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-start transition ${
-                      index === activeSuggestionIndex
-                        ? 'bg-[#edf6f1] text-[#124d3c]'
-                        : 'text-neutral-700 hover:bg-neutral-50'
-                    }`}
-                    onMouseEnter={() => setActiveSuggestionIndex(index)}
-                    onClick={() => void searchLocation(suggestion.w)}
+                    aria-label={th ? 'ขยายแผนที่' : 'Zoom in'}
+                    onClick={() => zoomBy(1)}
+                    className="grid size-11 place-items-center border-b border-neutral-100"
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#edf6f1] text-[#176b50]">
-                      <MapPin className="size-4" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-sarabun text-sm font-semibold">{suggestion.w}</span>
-                      <span className="block font-sarabun text-xs text-neutral-400">{text.suggestionSource}</span>
-                    </span>
+                    <ZoomIn className="size-5" />
                   </button>
-                ))}
-                {searchMessage && <p className="px-3 py-3 font-sarabun text-sm text-neutral-500">{searchMessage}</p>}
+                  <button
+                    type="button"
+                    aria-label={th ? 'ย่อแผนที่' : 'Zoom out'}
+                    onClick={() => zoomBy(-1)}
+                    className="grid size-11 place-items-center"
+                  >
+                    <ZoomOut className="size-5" />
+                  </button>
+                </div>
+              </>
+            )}
+            {!mapReady && (
+              <div
+                role="status"
+                className="absolute inset-0 flex items-center justify-center gap-2 px-5 text-center text-sm text-[#31594e]"
+              >
+                {mapError || !apiKey ? (
+                  th ? (
+                    'แผนที่ยังไม่พร้อม ลองเปิดหน้านี้ใหม่อีกครั้ง'
+                  ) : (
+                    'Map unavailable. Please reload this page.'
+                  )
+                ) : (
+                  <>
+                    <LoaderCircle className="size-5 animate-spin" />
+                    {th ? 'กำลังเปิดแผนที่…' : 'Loading map…'}
+                  </>
+                )}
               </div>
             )}
           </div>
-
           <div
-            className="absolute end-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border border-[#dbe8e2] bg-white shadow-[0_8px_24px_rgba(18,63,50,0.18)]"
-            aria-label={text.zoomControls}
+            className={`flex flex-wrap items-center justify-between gap-3 p-3 sm:px-4 ${confirmed ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-[#f6f9f7] dark:bg-neutral-950'}`}
           >
+            <span role="status" className="flex items-center gap-2 text-sm text-[#31594e] dark:text-emerald-200">
+              {confirmed ? <CheckCircle2 className="size-4" /> : <MapPin className="size-4" />}
+              {confirmed
+                ? th
+                  ? 'ยืนยันตำแหน่งแล้ว'
+                  : 'Location confirmed'
+                : outsideThailand
+                  ? th
+                    ? 'เลือกตำแหน่งในประเทศไทย'
+                    : 'Choose a location in Thailand'
+                  : th
+                    ? 'ตรวจจุดนี้ก่อนยืนยัน'
+                    : 'Check this point before confirming'}
+            </span>
             <button
               type="button"
-              className="flex size-10 items-center justify-center text-[#174d3e] transition hover:bg-[#edf6f1] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#176b50]"
-              aria-label={text.zoomIn}
+              data-confirm-listing-location
+              disabled={!mapReady || moving || confirmed || outsideThailand}
               onClick={() => {
                 const map = mapRef.current
-                if (map) map.zoom(Math.min(map.zoom() + 1, 20), true)
+                if (!map || moving) return
+                const center = map.location(),
+                  point = { lng: center.lon, lat: center.lat }
+                if (!isListingPoint(point)) return
+                if (zoom < 17) {
+                  map.zoom(18, false)
+                  return
+                }
+                if (!hasMarker) onChange(point)
+                onConfirm()
               }}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#176b50] px-4 text-sm font-semibold text-white disabled:bg-[#176b50]/50 sm:flex-none"
             >
-              <ZoomIn className="size-5" aria-hidden="true" />
-            </button>
-            <span className="mx-2 h-px bg-[#e3ebe7]" aria-hidden="true" />
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center text-[#174d3e] transition hover:bg-[#edf6f1] focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#176b50]"
-              aria-label={text.zoomOut}
-              onClick={() => {
-                const map = mapRef.current
-                if (map) map.zoom(Math.max(map.zoom() - 1, 1), true)
-              }}
-            >
-              <ZoomOut className="size-5" aria-hidden="true" />
+              <Check className="size-4" />
+              {confirmed
+                ? th
+                  ? 'ยืนยันแล้ว'
+                  : 'Confirmed'
+                : zoom < 17
+                  ? th
+                    ? 'ซูมใกล้เพื่อปักให้ตรง'
+                    : 'Zoom in to place the pin'
+                  : th
+                    ? 'ใช้ตำแหน่งนี้'
+                    : 'Use this location'}
             </button>
           </div>
-        </>
-      )}
-
-      {!mapReady && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#eef3f0] font-sarabun text-sm font-medium text-[#31594e]">
-          <span className="me-2 size-4 animate-spin rounded-full border-2 border-[#b7d1c6] border-t-[#176b50]" />
-          {text.loading}
         </div>
       )}
     </div>
   )
 }
-
-export default LongdoLocationPicker

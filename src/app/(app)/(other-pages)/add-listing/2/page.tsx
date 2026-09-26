@@ -11,10 +11,8 @@ import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { getBusinessSpaceType, getDiscoveryChannel, getPropertyType } from '@/data/propertyTaxonomy'
 import { getListingDraft, saveListingDraftToCloud, saveListingStep, type ListingDraft } from '@/lib/listingDraft'
 import { clearListingFormErrors, showListingFieldError, validateListingForm } from '@/lib/listingFormValidation'
-import {
-  consumeListingPublishValidationIssue,
-  listingValidationMessage,
-} from '@/lib/listingPublishValidation'
+import { isListingPoint, parseListingCoordinates, type ListingPoint } from '@/lib/listingLocation'
+import { consumeListingPublishValidationIssue, listingValidationMessage } from '@/lib/listingPublishValidation'
 import Input from '@/shared/Input'
 import {
   BuildingOffice2Icon,
@@ -61,7 +59,13 @@ const Page = () => {
   useListingStepAnalytics(2, Boolean(draft))
   const [marker, setMarker] = useState(THAILAND_CENTER)
   const [coordinateInput, setCoordinateInput] = useState('')
+  const [hasMarker, setHasMarker] = useState(false)
   const [hasConfirmedMarker, setHasConfirmedMarker] = useState(false)
+  const [addressLookupVersion, setAddressLookupVersion] = useState(0)
+  const [isLocating, setIsLocating] = useState(false)
+  const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null)
+  const [addressExpanded, setAddressExpanded] = useState(false)
+  const [coordinateError, setCoordinateError] = useState('')
   const [locationError, setLocationError] = useState('')
   const [locationValidationError, setLocationValidationError] = useState(false)
   const [isResolvingAddress, setIsResolvingAddress] = useState(false)
@@ -71,6 +75,17 @@ const Page = () => {
   const [province, setProvince] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const submitLockRef = useRef(false)
+  const gpsRequest = useRef(0)
+  const addressEdits = useRef({ street: 0, subdistrict: 0, district: 0, province: 0, postalCode: 0 })
+  const streetIsManual = useRef(false)
+  const addressDetailsRef = useRef<HTMLDetailsElement>(null)
+
+  useEffect(
+    () => () => {
+      gpsRequest.current++
+    },
+    []
+  )
 
   useEffect(() => {
     router.prefetch('/add-listing/3')
@@ -84,8 +99,10 @@ const Page = () => {
       setDraft(savedDraft)
       setMarker(savedPosition || THAILAND_CENTER)
       setCoordinateInput(savedPosition ? formatCoordinatePair(savedPosition) : '')
+      setHasMarker(Boolean(savedPosition))
       setHasConfirmedMarker(Boolean(savedPosition))
       setStreet(readText(savedDraft.Street))
+      streetIsManual.current = Boolean(readText(savedDraft.Street))
       setSubdistrict(readText(savedDraft.subdistrict))
       setDistrict(readText(savedDraft.city))
       setProvince(readText(savedDraft.state))
@@ -101,6 +118,13 @@ const Page = () => {
     if (!validationIssue || validationIssue.step !== 2) return
 
     const message = listingValidationMessage(validationIssue, locale)
+    if (
+      validationIssue.fieldName &&
+      ['state', 'city', 'subdistrict', 'Street', 'Postal'].includes(validationIssue.fieldName)
+    ) {
+      setAddressExpanded(true)
+      if (addressDetailsRef.current) addressDetailsRef.current.open = true
+    }
     if (validationIssue.target === 'location') {
       setLocationError(message)
       setLocationValidationError(true)
@@ -117,7 +141,10 @@ const Page = () => {
       const target = document.getElementById('listing-location-section')
       target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       window.setTimeout(
-        () => target?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')?.focus({ preventScroll: true }),
+        () =>
+          target
+            ?.querySelector<HTMLElement>('button:not([disabled]), input:not([disabled])')
+            ?.focus({ preventScroll: true }),
         280
       )
     })
@@ -127,11 +154,14 @@ const Page = () => {
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_LONGDO_MAP_KEY
-    if (!hasConfirmedMarker || !apiKey) return
+    if (!hasMarker || !apiKey || !addressLookupVersion) return
 
     const controller = new AbortController()
+    let cancelled = false
+    const edits = { ...addressEdits.current }
+    setIsResolvingAddress(true)
     const timer = window.setTimeout(async () => {
-      setIsResolvingAddress(true)
+      const timeout = window.setTimeout(() => controller.abort(), 8000)
       try {
         const params = new URLSearchParams({
           lon: String(marker.lng),
@@ -145,33 +175,45 @@ const Page = () => {
         })
         if (!response.ok) throw new Error('reverse geocoding failed')
         const address = (await response.json()) as LongdoAddress
+        if (controller.signal.aborted) return
         if (address.error) throw new Error(address.error)
+        if (!address.province) throw new Error('Province unavailable')
 
         const roadAddress = [address.house_num, address.road].filter(Boolean).join(' ')
-        setStreet((current) => current || roadAddress)
-        setSubdistrict(address.subdistrict || '')
-        setDistrict(address.district || '')
-        setProvince(address.province || '')
-        setPostalCode(address.postcode ? String(address.postcode) : '')
+        if (!streetIsManual.current && edits.street === addressEdits.current.street) setStreet(roadAddress)
+        if (edits.subdistrict === addressEdits.current.subdistrict) setSubdistrict(address.subdistrict || '')
+        if (edits.district === addressEdits.current.district) setDistrict(address.district || '')
+        if (edits.province === addressEdits.current.province) setProvince(address.province || '')
+        if (edits.postalCode === addressEdits.current.postalCode)
+          setPostalCode(address.postcode ? String(address.postcode) : '')
         if (address.province) window.requestAnimationFrame(() => clearListingFormErrors())
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
+      } catch {
+        if (!cancelled) {
+          // Do not leave an old administrative address attached to a new pin.
+          if (edits.subdistrict === addressEdits.current.subdistrict) setSubdistrict('')
+          if (edits.district === addressEdits.current.district) setDistrict('')
+          if (edits.province === addressEdits.current.province) setProvince('')
+          if (edits.postalCode === addressEdits.current.postalCode) setPostalCode('')
+          if (!streetIsManual.current && edits.street === addressEdits.current.street) setStreet('')
+          setAddressExpanded(true)
           setLocationError(
             isThai
-              ? 'อ่านที่อยู่จากหมุดไม่สำเร็จ กรุณาตรวจสอบและกรอกที่อยู่ด้านล่าง'
-              : 'Unable to read the address from the pin. Please check and complete the address below.'
+              ? 'เติมที่อยู่ไม่สำเร็จ กรุณาใส่จังหวัดและตรวจสอบที่อยู่'
+              : 'Address lookup unavailable. Enter the province and check the address.'
           )
         }
       } finally {
-        if (!controller.signal.aborted) setIsResolvingAddress(false)
+        window.clearTimeout(timeout)
+        if (!cancelled) setIsResolvingAddress(false)
       }
     }, 450)
 
     return () => {
+      cancelled = true
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [hasConfirmedMarker, isThai, marker.lat, marker.lng])
+  }, [hasMarker, addressLookupVersion, isThai, marker.lat, marker.lng])
 
   const propertyGroup = readText(draft?.property_group_code) || 'residential'
   const discoveryChannel = readText(draft?.discovery_channel_code) || 'homes'
@@ -209,6 +251,21 @@ const Page = () => {
       ? amenities.filter((amenity) => !['swimming_pool', 'fitness', 'pet_friendly'].includes(amenity.code))
       : amenities
 
+  const changeMarker = (location: ListingPoint) => {
+    if (!isListingPoint(location)) return
+    gpsRequest.current++
+    setIsLocating(false)
+    setGpsAccuracy(null)
+    setMarker(location)
+    setCoordinateInput(formatCoordinatePair(location))
+    setCoordinateError('')
+    setHasMarker(true)
+    setHasConfirmedMarker(false)
+    setAddressLookupVersion((version) => version + 1)
+    setLocationError('')
+    setLocationValidationError(false)
+  }
+
   const useCurrentLocation = () => {
     setLocationError('')
     setLocationValidationError(false)
@@ -217,53 +274,54 @@ const Page = () => {
       setLocationValidationError(true)
       return
     }
-
+    const request = ++gpsRequest.current
+    setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        if (request !== gpsRequest.current) return
         const nextMarker = { lng: coords.longitude, lat: coords.latitude }
-        setMarker(nextMarker)
-        setCoordinateInput(formatCoordinatePair(nextMarker))
-        setHasConfirmedMarker(true)
+        setIsLocating(false)
+        if (!isListingPoint(nextMarker)) {
+          setLocationError(
+            isThai ? 'กรุณาค้นหาที่อยู่ของทรัพย์ในประเทศไทย' : 'Search for the property address in Thailand.'
+          )
+          return
+        }
+        changeMarker(nextMarker)
+        setGpsAccuracy(Math.round(coords.accuracy))
       },
       () => {
-        setLocationValidationError(true)
+        if (request !== gpsRequest.current) return
+        setIsLocating(false)
         setLocationError(
           isThai
-            ? 'ไม่สามารถอ่านตำแหน่งได้ กรุณาอนุญาต Location หรือลากหมุดเอง'
-            : 'Unable to get your location. Allow location access or drag the pin manually.'
+            ? 'ใช้ตำแหน่งปัจจุบันไม่ได้ พิมพ์ที่อยู่เพื่อค้นหาได้เลย'
+            : 'Current location unavailable. Search by address instead.'
         )
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
   }
 
   const applyCoordinateInput = () => {
-    const nextMarker = parseCoordinatePair(coordinateInput)
+    const nextMarker = parseListingCoordinates(coordinateInput)
     if (!nextMarker) {
-      setHasConfirmedMarker(false)
-      setLocationValidationError(true)
-      setLocationError(
+      setCoordinateError(
         isThai
-          ? 'กรุณากรอกพิกัดในรูปแบบ ละติจูด, ลองจิจูด เช่น 13.75633000, 100.50177000'
-          : 'Enter coordinates as latitude, longitude, for example 13.75633000, 100.50177000.'
+          ? 'ใส่พิกัดในประเทศไทย เช่น 13.75633, 100.50177'
+          : 'Enter coordinates in Thailand, e.g. 13.75633, 100.50177.'
       )
       return
     }
 
-    setMarker(nextMarker)
-    setCoordinateInput(formatCoordinatePair(nextMarker))
-    setHasConfirmedMarker(true)
-    setLocationValidationError(false)
-    setLocationError('')
+    changeMarker(nextMarker)
   }
 
   const handleSubmitForm = async (formData: FormData) => {
     clearListingFormErrors()
     if (!hasConfirmedMarker) {
       setLocationError(
-        isThai
-          ? 'กรุณาค้นหาสถานที่หรือแตะแผนที่เพื่อยืนยันตำแหน่งอสังหา'
-          : 'Search for the place or tap the map to confirm the property location.'
+        isThai ? 'ตรวจหมุดบนแผนที่ แล้วกด “ใช้ตำแหน่งนี้”' : 'Check the pin, then choose “Use this location”.'
       )
       setLocationValidationError(true)
       window.requestAnimationFrame(() => {
@@ -281,6 +339,19 @@ const Page = () => {
     }
     setLocationValidationError(false)
     setLocationError('')
+    if (isResolvingAddress) {
+      setLocationError(
+        isThai
+          ? 'กำลังเติมที่อยู่ รอสักครู่แล้วกดไปขั้นถัดไปอีกครั้ง'
+          : 'Address lookup is in progress. Continue again in a moment.'
+      )
+      return
+    }
+    const needsAddressEdit = !province.trim() || (postalCode.trim() && !/^\d{5}$/.test(postalCode))
+    if (needsAddressEdit && addressDetailsRef.current) {
+      addressDetailsRef.current.open = true
+      setAddressExpanded(true)
+    }
     if (!validateListingForm({ isThai })) return
     if (submitLockRef.current) return
 
@@ -359,198 +430,193 @@ const Page = () => {
 
         <SectionCard
           id="listing-location-section"
-          title={isThai ? 'ปักหมุดที่ตั้งอสังหา' : 'Pin the property location'}
+          title={isThai ? 'ทรัพย์อยู่ที่ไหน?' : 'Where is the property?'}
           invalid={locationValidationError}
           errorText={locationValidationError ? locationError : ''}
         >
-          <div className="space-y-5">
-            <div className="flex flex-col gap-3 rounded-2xl bg-[#f1f7f4] p-4 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between dark:bg-emerald-950/25">
-              <div>
-                <p className="font-sarabun text-sm font-semibold text-[#123f32] dark:text-emerald-200">
-                  {isThai
-                    ? '1. ค้นหาชื่อโครงการ ถนน หรือสถานที่ใกล้เคียง'
-                    : '1. Search a project, road or nearby place'}
-                </p>
-                <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-600 dark:text-neutral-300">
-                  {isThai
-                    ? 'แผนที่เริ่มจากประเทศไทย เลือกผลค้นหาแล้วลากหมุดให้ตรงหน้าทรัพย์มากที่สุด'
-                    : 'The map starts at Thailand. Select a result, then drag the pin to the exact property entrance.'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={useCurrentLocation}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2.5 font-sarabun text-sm font-medium text-emerald-800 transition hover:border-emerald-400 dark:border-emerald-900 dark:bg-neutral-900 dark:text-emerald-200"
-              >
-                <MapPinIcon className="size-5" />
-                {isThai ? 'ใช้ตำแหน่งปัจจุบัน' : 'Use current location'}
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-              <label
-                htmlFor="coordinate-input"
-                className="font-sarabun text-sm font-semibold text-neutral-900 dark:text-neutral-100"
-              >
-                {isThai ? 'วางพิกัดจาก Google Maps' : 'Paste coordinates from Google Maps'}
-              </label>
-              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+          <div className="space-y-4">
+            <LongdoLocationPicker
+              apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
+              value={marker}
+              hasMarker={hasMarker}
+              confirmed={hasConfirmedMarker}
+              initialZoom={hasMarker ? 18 : 6}
+              initialSearch={readText(draft.placeName)}
+              locale={isThai ? 'th' : 'en'}
+              locating={isLocating}
+              onUseCurrentLocation={useCurrentLocation}
+              onChange={changeMarker}
+              onInteractionStart={() => {
+                gpsRequest.current++
+                setIsLocating(false)
+                setGpsAccuracy(null)
+                setHasConfirmedMarker(false)
+                setLocationValidationError(false)
+              }}
+              onConfirm={() => {
+                setHasConfirmedMarker(true)
+                setLocationValidationError(false)
+                setLocationError('')
+              }}
+            />
+            {gpsAccuracy !== null && (
+              <p role="status" className="text-xs leading-5 text-neutral-500">
                 {isThai
-                  ? 'วางตามลำดับ ละติจูด, ลองจิจูด ระบบจะเก็บสูงสุด 8 ตำแหน่งทศนิยม'
-                  : 'Paste latitude, longitude in that order. Up to 8 decimal places are stored.'}
+                  ? `ตำแหน่งจากเครื่องอาจคลาดเคลื่อนประมาณ ${gpsAccuracy.toLocaleString()} ม. ตรวจหมุดอีกครั้ง`
+                  : `Device accuracy is approximately ${gpsAccuracy.toLocaleString()} m. Check the pin.`}
               </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            )}
+            {locationError && !locationValidationError && (
+              <p
+                role="alert"
+                className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+              >
+                {locationError}
+              </p>
+            )}
+            {hasMarker && (
+              <details
+                ref={addressDetailsRef}
+                data-listing-address-details
+                open={addressExpanded}
+                onToggle={(event) => setAddressExpanded(event.currentTarget.open)}
+                className="group rounded-2xl border border-neutral-200 dark:border-neutral-700"
+              >
+                <summary className="flex min-h-16 cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#edf5f1] text-[#176b50]">
+                    <MapPinIcon className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-neutral-500">
+                      {isThai ? 'ที่อยู่ประกาศ' : 'Listing address'}
+                    </span>
+                    <span
+                      data-listing-address-summary
+                      role="status"
+                      className="mt-1 block text-sm leading-5 text-neutral-700 dark:text-neutral-200"
+                    >
+                      {isResolvingAddress
+                        ? isThai
+                          ? 'กำลังเติมที่อยู่จากหมุด…'
+                          : 'Looking up the address…'
+                        : [street, subdistrict, district, province].filter(Boolean).join(' · ') ||
+                          (isThai ? 'เพิ่มที่อยู่' : 'Add address')}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-xs font-medium text-[#176b50] dark:text-emerald-300">
+                    {isThai ? 'แก้ไข' : 'Edit'}
+                  </span>
+                </summary>
+                <div className="space-y-4 border-t border-neutral-100 p-4 dark:border-neutral-800">
+                  <FormItem label={isThai ? 'เลขที่ ถนน ซอย (ถ้ามี)' : 'House number, road or soi (optional)'}>
+                    <Input
+                      name="Street"
+                      value={street}
+                      onChange={(event) => {
+                        streetIsManual.current = true
+                        addressEdits.current.street++
+                        setStreet(event.target.value)
+                      }}
+                      placeholder={isThai ? 'เช่น 24 ถนนสุขุมวิท ซอย 39' : 'e.g. 24 Sukhumvit Road, Soi 39'}
+                    />
+                  </FormItem>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
+                      <Input
+                        name="subdistrict"
+                        value={subdistrict}
+                        onChange={(event) => {
+                          addressEdits.current.subdistrict++
+                          setSubdistrict(event.target.value)
+                        }}
+                      />
+                    </FormItem>
+                    <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
+                      <Input
+                        name="city"
+                        value={district}
+                        onChange={(event) => {
+                          addressEdits.current.district++
+                          setDistrict(event.target.value)
+                        }}
+                      />
+                    </FormItem>
+                    <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
+                      <Input
+                        name="state"
+                        value={province}
+                        required
+                        onChange={(event) => {
+                          addressEdits.current.province++
+                          setProvince(event.target.value)
+                        }}
+                      />
+                    </FormItem>
+                    <FormItem label={isThai ? 'รหัสไปรษณีย์ (ถ้ามี)' : 'Postal code (optional)'}>
+                      <Input
+                        name="Postal"
+                        value={postalCode}
+                        inputMode="numeric"
+                        pattern="[0-9]{5}"
+                        onChange={(event) => {
+                          addressEdits.current.postalCode++
+                          setPostalCode(event.target.value)
+                        }}
+                      />
+                    </FormItem>
+                    {showsFloorNumber ? (
+                      <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ถ้ามี)' : 'Room / unit (optional)'}>
+                        <Input name="room-number" defaultValue={readText(draft['room-number'])} />
+                      </FormItem>
+                    ) : (
+                      <input type="hidden" name="room-number" value={readText(draft['room-number'])} />
+                    )}
+                  </div>
+                </div>
+              </details>
+            )}
+            <details data-coordinate-tools className="border-t border-neutral-100 pt-2 dark:border-neutral-800">
+              <summary className="w-fit cursor-pointer py-2 text-xs text-neutral-500">
+                {isThai ? 'มีพิกัดอยู่แล้ว' : 'Already have coordinates?'}
+              </summary>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                 <Input
                   id="coordinate-input"
+                  aria-label={isThai ? 'ละติจูด, ลองจิจูด' : 'Latitude, longitude'}
                   value={coordinateInput}
                   onChange={(event) => {
                     setCoordinateInput(event.target.value)
-                    setHasConfirmedMarker(false)
-                    setLocationValidationError(false)
-                    setLocationError('')
+                    setCoordinateError('')
                   }}
                   onKeyDown={(event) => {
-                    if (event.key !== 'Enter') return
-                    event.preventDefault()
-                    applyCoordinateInput()
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      applyCoordinateInput()
+                    }
                   }}
-                  placeholder="13.73575135, 100.70620729"
+                  placeholder="13.75633, 100.50177"
                   autoComplete="off"
                   spellCheck={false}
-                  className="font-mono"
                 />
                 <button
                   type="button"
                   onClick={applyCoordinateInput}
-                  className="shrink-0 rounded-full bg-neutral-900 px-5 py-2.5 font-sarabun text-sm font-medium text-white transition hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+                  className="min-h-11 shrink-0 rounded-xl border border-neutral-300 px-4 text-sm font-medium"
                 >
-                  {isThai ? 'ใช้พิกัดนี้' : 'Use coordinates'}
+                  {isThai ? 'แสดงบนแผนที่' : 'Show on map'}
                 </button>
               </div>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] shadow-sm dark:border-neutral-700">
-              <div className="h-[22rem] lg:h-[28rem]">
-                <LongdoLocationPicker
-                  apiKey={process.env.NEXT_PUBLIC_LONGDO_MAP_KEY}
-                  value={marker}
-                  hasMarker={hasConfirmedMarker}
-                  initialZoom={hasConfirmedMarker ? 16 : 6}
-                  locale={isThai ? 'th' : 'en'}
-                  onChange={(location) => {
-                    setMarker(location)
-                    setCoordinateInput(formatCoordinatePair(location))
-                    setHasConfirmedMarker(true)
-                    setLocationError('')
-                    setLocationValidationError(false)
-                  }}
-                />
-              </div>
-            </div>
-
-            <div
-              role="status"
-              className={`flex flex-col gap-1 rounded-2xl border px-4 py-3 font-sarabun text-sm sm:flex-row sm:items-center sm:justify-between ${
-                hasConfirmedMarker
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200'
-                  : 'border-neutral-200 bg-neutral-50 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300'
-              }`}
-            >
-              <span className="font-medium">
-                {hasConfirmedMarker
-                  ? isResolvingAddress
-                    ? isThai
-                      ? 'กำลังอ่านที่อยู่จากหมุด...'
-                      : 'Reading the address from the pin...'
-                    : isThai
-                      ? 'ยืนยันพิกัดแล้ว ตรวจสอบที่อยู่ด้านล่างอีกครั้ง'
-                      : 'Coordinates confirmed. Check the address below.'
-                  : isThai
-                    ? 'ยังไม่ได้ปักหมุด กรุณาค้นหาหรือแตะแผนที่'
-                    : 'No pin yet. Search or tap the map.'}
-              </span>
-              {hasConfirmedMarker ? (
-                <span className="font-mono text-xs opacity-75">
-                  {formatCoordinatePair(marker)}
-                </span>
-              ) : null}
-            </div>
-
-            {locationError && !locationValidationError ? (
-              <p
-                role="alert"
-                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 font-sarabun text-sm text-red-700"
-              >
-                {locationError}
-              </p>
-            ) : null}
-
-            <div className="border-t border-neutral-200 pt-5 dark:border-neutral-800">
-              <h3 className="font-sarabun text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                {isThai ? '2. ตรวจสอบที่อยู่จากหมุด' : '2. Check the address from the pin'}
-              </h3>
-              <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
-                {isThai
-                  ? 'ระบบเติมเขตการปกครองให้อัตโนมัติ คุณแก้เลขที่ ถนน ซอย หรือรายละเอียดเพิ่มเติมได้'
-                  : 'Administrative fields are filled automatically. You can edit the house number, road or soi.'}
-              </p>
-
-              <div className="mt-5 space-y-5">
-                <FormItem label={isThai ? 'บ้านเลขที่ ถนน และซอย' : 'House number, road and soi'}>
-                  <Input
-                    name="Street"
-                    value={street}
-                    onChange={(event) => setStreet(event.target.value)}
-                    placeholder={isThai ? 'เช่น 24 ถนนสุขุมวิท ซอย 39' : 'e.g. 24 Sukhumvit Road, Soi 39'}
-                  />
-                </FormItem>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <FormItem label={isThai ? 'แขวง / ตำบล' : 'Subdistrict'}>
-                    <Input
-                      name="subdistrict"
-                      value={subdistrict}
-                      onChange={(event) => setSubdistrict(event.target.value)}
-                    />
-                  </FormItem>
-                  <FormItem label={isThai ? 'เขต / อำเภอ' : 'District'}>
-                    <Input name="city" value={district} onChange={(event) => setDistrict(event.target.value)} />
-                  </FormItem>
-                  <FormItem label={isThai ? 'จังหวัด' : 'Province'}>
-                    <Input
-                      name="state"
-                      value={province}
-                      onChange={(event) => setProvince(event.target.value)}
-                      required
-                    />
-                  </FormItem>
-                  <FormItem label={isThai ? 'รหัสไปรษณีย์' : 'Postal code'}>
-                    <Input
-                      name="Postal"
-                      value={postalCode}
-                      onChange={(event) => setPostalCode(event.target.value)}
-                      inputMode="numeric"
-                      pattern="[0-9]{5}"
-                      placeholder="10110"
-                    />
-                  </FormItem>
-                  <FormItem label={isThai ? 'เลขห้อง / ยูนิต (ถ้ามี)' : 'Room / unit number (if any)'}>
-                    <Input
-                      name="room-number"
-                      defaultValue={readText(draft['room-number'])}
-                      placeholder={isThai ? 'เช่น A-1208' : 'e.g. A-1208'}
-                    />
-                  </FormItem>
-                </div>
-              </div>
-            </div>
-
+              {coordinateError && (
+                <p role="alert" className="mt-2 text-sm text-red-600">
+                  {coordinateError}
+                </p>
+              )}
+            </details>
             <input type="hidden" name="country-region" value="Thailand" />
             <input type="hidden" name="latMapPosition" value={hasConfirmedMarker ? marker.lat : ''} />
             <input type="hidden" name="lngMapPosition" value={hasConfirmedMarker ? marker.lng : ''} />
           </div>
         </SectionCard>
-
         {discoveryChannel === 'homes' && propertyType ? (
           <HomesDetails draft={draft} propertyTypeCode={propertyType.code} isThai={isThai} />
         ) : null}
@@ -661,16 +727,6 @@ const parseSavedLocation = (lngValue: string, latValue: string) => {
   return { lng, lat }
 }
 
-const parseCoordinatePair = (value: string) => {
-  const match = value
-    .trim()
-    .match(/^(-?(?:\d+(?:\.\d+)?|\.\d+))\s*(?:[,，]\s*|\s+)(-?(?:\d+(?:\.\d+)?|\.\d+))$/)
-  if (!match) return null
-
-  return parseSavedLocation(match[2], match[1])
-}
-
-const formatCoordinatePair = ({ lat, lng }: { lat: number; lng: number }) =>
-  `${lat.toFixed(8)}, ${lng.toFixed(8)}`
+const formatCoordinatePair = ({ lat, lng }: { lat: number; lng: number }) => `${lat.toFixed(8)}, ${lng.toFixed(8)}`
 
 export default Page

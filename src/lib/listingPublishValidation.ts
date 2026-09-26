@@ -180,6 +180,8 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
   const latitude = parseNumber(text(draft.latMapPosition))
   const longitude = parseNumber(text(draft.lngMapPosition))
   if (
+    !text(draft.latMapPosition) ||
+    !text(draft.lngMapPosition) ||
     !Number.isFinite(latitude) ||
     !Number.isFinite(longitude) ||
     latitude < -90 ||
@@ -190,8 +192,8 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     return issue(
       'location_required',
       2,
-      'กรุณาค้นหาสถานที่หรือแตะแผนที่เพื่อยืนยันตำแหน่งอสังหา',
-      'Search for the place or tap the map to confirm the property location.',
+      'ตรวจหมุดบนแผนที่ แล้วกด “ใช้ตำแหน่งนี้”',
+      'Check the pin, then choose “Use this location”.',
       { target: 'location' }
     )
   }
