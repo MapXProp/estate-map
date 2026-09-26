@@ -100,6 +100,22 @@ export default function LongdoLocationPicker({
   const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const showMap = expanded || hasMarker
   useEffect(() => {
+    const surface = mapElement.current
+    if (!surface || !showMap) return
+    const preventPagePinch = (event: TouchEvent) => {
+      if (event.touches.length > 1) event.preventDefault()
+    }
+    const preventSafariGesture = (event: Event) => event.preventDefault()
+    surface.addEventListener('touchmove', preventPagePinch, { passive: false })
+    surface.addEventListener('gesturestart', preventSafariGesture)
+    surface.addEventListener('gesturechange', preventSafariGesture)
+    return () => {
+      surface.removeEventListener('touchmove', preventPagePinch)
+      surface.removeEventListener('gesturestart', preventSafariGesture)
+      surface.removeEventListener('gesturechange', preventSafariGesture)
+    }
+  }, [showMap])
+  useEffect(() => {
     callbacks.current = { onChange, onInteractionStart }
   }, [onChange, onInteractionStart])
   useEffect(() => {

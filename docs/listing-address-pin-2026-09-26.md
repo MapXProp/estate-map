@@ -10,7 +10,7 @@ Publish validation now rejects missing/blank coordinate strings before numeric c
 
 ## Verification
 
-- 410 existing/new Node tests pass, including place identity/precision, invalid coordinates, project/station destinations, and missing-coordinate publish regression.
+- 410 existing/new Node tests pass, including place identity/precision, invalid coordinates, project/station destinations, and missing-coordinate publish regression. The final road-result follow-up passes all 6 targeted tests, including deduplication of identical soi labels and a broader starting zoom.
 - Scoped ESLint and production Next build/TypeScript pass.
 - Built-browser checks use an isolated synthetic account and intercept all account/draft mutations. Real Longdo SDK/tiles, responsive widths 320/390/820/1440, touch panning, confirmation invalidation, exact handoff, GPS denial/stale callbacks, reverse failure and delayed address edits are checked. No real listing is published or account modified. Responsive Chrome is not a physical iPhone test.
 - Separate search smoke uses real shared location and reverse-geocoding services (Sukhumvit 39), with account state still synthetic.

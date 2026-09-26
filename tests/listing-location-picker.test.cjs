@@ -25,6 +25,12 @@ test('missing, nonfinite and out-of-country search coordinates never become sele
   for (const lat of [undefined, null, NaN, Infinity, 0, 50]) assert.equal(listingPlaces([place('ผิด', lat, 100.5)]).length, 0)
   assert.equal(listingPlaces([{ label: 'โครงการไม่มีพิกัด', project: { latitude: null, longitude: null } }]).length, 0)
 })
+test('indistinguishable soi geometry results collapse and start wide enough to review the road', () => {
+  const rows = listingPlaces([place('ซอยสุขุมวิท 39', 13.7, 100.5), place('ซอยสุขุมวิท 39', 13.71, 100.51), place('ซอยสุขุมวิท 39', 13.72, 100.52, 'อีกเขต')])
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].zoom, 16)
+  assert.equal(rows[1].address, 'อีกเขต')
+})
 test('coordinate input preserves precision, rejects swapped/partial/out-of-country pairs, and does not coerce blank values', () => {
   assert.equal(parseListingCoordinates('13.73575135, 100.70620729').lat, 13.73575135)
   assert.equal(parseListingCoordinates(' 13.73575135，100.70620729 ').lng, 100.70620729)

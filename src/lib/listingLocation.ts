@@ -10,6 +10,7 @@ export const sameListingPoint = (a: ListingPoint, b: ListingPoint) =>
 
 export function listingPlaces(suggestions: PropertySearchSuggestion[]): ListingPlace[] {
   const seen = new Set<string>()
+  const visibleRoads = new Set<string>()
   return suggestions
     .flatMap((s) => {
       const station = getTransitStation(s.stationId)
@@ -20,16 +21,25 @@ export function listingPlaces(suggestions: PropertySearchSuggestion[]): ListingP
       const id = `${s.label}:${lat.toFixed(6)},${lng.toFixed(6)}`
       if (seen.has(id)) return []
       seen.add(id)
+      const address =
+        place?.address ||
+        (s.project ? [s.project.district, s.project.province].filter(Boolean).join(' · ') : s.detail || '')
+      const road = /^(?:ถนน|ซอย|ทางหลวง)/.test(s.label)
+      // Multiple geometry points on one road can have identical visible labels.
+      // Keep a single starting point when no address distinguishes the segments.
+      if (road) {
+        const visible = `${s.label.trim()}:${address.trim()}`
+        if (visibleRoads.has(visible)) return []
+        visibleRoads.add(visible)
+      }
       return [
         {
           id,
           label: s.label,
-          address:
-            place?.address ||
-            (s.project ? [s.project.district, s.project.province].filter(Boolean).join(' · ') : s.detail || ''),
+          address,
           point: { lat, lng },
           // A road/area is a starting point, not a confirmed building location.
-          zoom: place?.zoom && place.zoom < 15 ? place.zoom : 18,
+          zoom: place?.zoom && place.zoom < 15 ? place.zoom : road ? 16 : 18,
         },
       ]
     })
