@@ -410,7 +410,8 @@ export default function LongdoLocationPicker({
       </div>
       {showMap && (
         <div className="overflow-hidden rounded-2xl border border-[#dbe8e2] dark:border-neutral-700">
-          <div className="relative h-[300px] bg-[#eef3f0] sm:h-[360px]">
+          {/* Stable viewport height keeps browser chrome from shifting the pin while panning. */}
+          <div className="relative h-[clamp(320px,52svh,420px)] max-h-[calc(100svh-180px)] bg-[#eef3f0] sm:h-[clamp(400px,55svh,520px)] lg:h-[clamp(440px,56svh,560px)]">
             {apiKey && (
               <Script
                 id="longdo-map-sdk"
