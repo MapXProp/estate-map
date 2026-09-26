@@ -227,6 +227,7 @@ export type PropertyListingDetail = {
   latitude?: number
   longitude?: number
   contact_name: string
+  contact_avatar_url?: string
   contact_phone: string
   contact_phone_secondary: string
   contact_email: string

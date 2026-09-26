@@ -136,6 +136,8 @@ const Page = () => {
   const [contactOrganizationName, setContactOrganizationName] = useState('')
   const [contactOrganizationRegistrationNo, setContactOrganizationRegistrationNo] = useState('')
   const [contactName, setContactName] = useState('')
+  const contactNameEdited = useRef(false)
+  const contactEmailEdited = useRef(false)
   const [contactPhone, setContactPhone] = useState('')
   const [contactPhoneSecondary, setContactPhoneSecondary] = useState('')
   const [lineId, setLineId] = useState('')
@@ -218,12 +220,12 @@ const Page = () => {
       setContactOrganizationRegistrationNo(readText(savedDraft.contactOrganizationRegistrationNo))
       const storedUser = getStoredUser()
       const accountName = [storedUser?.name, storedUser?.surname].filter(Boolean).join(' ').trim()
-      setContactName(readText(savedDraft.contactName) || accountName)
+      setContactName('contactName' in savedDraft ? readText(savedDraft.contactName) : accountName)
       setContactPhone(readText(savedDraft.contactPhone))
       setContactPhoneSecondary(readText(savedDraft.contactPhoneSecondary))
       setLineId(readText(savedDraft.lineId))
       setInstagramHandle(readText(savedDraft.instagramHandle))
-      setContactEmail(readText(savedDraft.contactEmail) || storedUser?.email || '')
+      setContactEmail('contactEmail' in savedDraft ? readText(savedDraft.contactEmail) : storedUser?.email || '')
       setEventName(readText(savedDraft.eventName))
       setEventVenueName(readText(savedDraft.eventVenueName) || readText(savedDraft.placeName))
       setEventVenueFloor(readText(savedDraft.eventVenueFloor))
@@ -254,12 +256,16 @@ const Page = () => {
           setContactAuthorityCode((current) => current || asContactAuthorityCode(profile.authority_source_code))
           setContactOrganizationName((current) => current || profile.organization_name)
           setContactOrganizationRegistrationNo((current) => current || profile.organization_registration_no)
-          setContactName((current) => current || profile.contact_name || accountName)
+          setContactName((current) =>
+            'contactName' in savedDraft || contactNameEdited.current ? current : profile.contact_name || accountName
+          )
           setContactPhone((current) => current || profile.contact_phone)
           setContactPhoneSecondary((current) => current || profile.contact_phone_secondary)
           setLineId((current) => current || profile.line_id)
           setInstagramHandle((current) => current || profile.instagram_handle)
-          setContactEmail((current) => current || profile.contact_email || storedUser?.email || '')
+          setContactEmail((current) =>
+            'contactEmail' in savedDraft || contactEmailEdited.current ? current : profile.contact_email
+          )
         })
         .catch(() => undefined)
     })
@@ -956,7 +962,10 @@ const Page = () => {
               <Input
                 name="contactName"
                 value={contactName}
-                onChange={(event) => setContactName(event.target.value)}
+                onChange={(event) => {
+                  contactNameEdited.current = true
+                  setContactName(event.target.value)
+                }}
                 autoComplete="name"
                 placeholder={isThai ? 'ชื่อเจ้าของหรือผู้ดูแล' : 'Owner or property manager'}
                 required
@@ -1004,7 +1013,10 @@ const Page = () => {
               <Input
                 name="contactEmail"
                 value={contactEmail}
-                onChange={(event) => setContactEmail(event.target.value)}
+                onChange={(event) => {
+                  contactEmailEdited.current = true
+                  setContactEmail(event.target.value)
+                }}
                 type="email"
                 autoComplete="email"
                 placeholder="name@example.com"

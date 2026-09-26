@@ -117,6 +117,7 @@ const common = {
 }
 const Description = load('src/components/PropertyDescription.tsx', common).default
 const ContactDetails = load('src/components/property-home/ListingContactDetails.tsx', {
+  '@/components/account/AccountAvatar': { default: ({ name }) => React.createElement('span', null, name?.[0]) },
   ...common,
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
   '@/lib/propertyPreviewDetails': helpers,

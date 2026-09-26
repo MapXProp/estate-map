@@ -18,10 +18,11 @@ type ListingContactProfileResponse = {
   error?: string
 }
 
-export const loadListingContactProfile = async () => {
+export const loadListingContactProfile = async (signal?: AbortSignal) => {
   const response = await fetchWithAuthRetry(getAuthApiUrl('me/listing-contact'), {
     cache: 'no-store',
     credentials: 'include',
+    signal,
   })
   if (!response.ok) {
     throw new Error('Cannot load listing contact details')

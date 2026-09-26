@@ -7,7 +7,9 @@ import { ChevronRight, Globe2, HelpCircle, LogOut, Moon, ShieldCheck } from 'luc
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
 import { useState } from 'react'
+import AccountAvatarEditor from './AccountAvatarEditor'
 import styles from './AccountDashboard.module.css'
+import AccountListingContactForm from './AccountListingContactForm'
 import AccountProfileForm from './AccountProfileForm'
 
 export default function AccountPersonalPanel() {
@@ -18,7 +20,6 @@ export default function AccountPersonalPanel() {
   const [logoutError, setLogoutError] = useState(false)
   const th = locale === 'th'
   const say = (thai: string, english: string) => (th ? thai : english)
-  const name = [user?.name, user?.surname].filter(Boolean).join(' ') || say('สมาชิก MapxProp', 'MapxProp member')
   return (
     <div>
       <header className={styles.heading}>
@@ -29,16 +30,15 @@ export default function AccountPersonalPanel() {
         </div>
       </header>
       <section className={styles.identity} aria-label={say('บัญชีของคุณ', 'Your account')}>
-        <span aria-hidden="true">{Array.from(user?.name || 'M')[0]}</span>
-        <div>
-          <h2 id="account-title">{name}</h2>
-          <p>{user?.email}</p>
-        </div>
+        {user && <AccountAvatarEditor key={user.public_user_id} user={user} />}
       </section>
       <div className={styles.personalGrid}>
-        <section id="profile" className={styles.panel} aria-busy={isLoading}>
-          <AccountProfileForm />
-        </section>
+        <div className={styles.stack}>
+          <section id="profile" className={styles.panel} aria-busy={isLoading}>
+            <AccountProfileForm key={user?.public_user_id} />
+          </section>
+          {user && <AccountListingContactForm key={user.public_user_id} user={user} />}
+        </div>
         <div className={styles.stack}>
           <section className={styles.panel}>
             <h2>{say('ตั้งค่าการใช้งาน', 'Your preferences')}</h2>

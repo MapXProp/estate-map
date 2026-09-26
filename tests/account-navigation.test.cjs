@@ -16,6 +16,7 @@ function renderNavigation(pathname, role = 'member', locale = 'th') {
     'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },
     'next/navigation': { usePathname: () => pathname },
     '@/components/account/AccountDashboard.module.css': { default: {} },
+    '@/components/account/AccountAvatar': { default: ({ name }) => React.createElement('span', null, name?.[0]) },
     '@/components/preferences/PreferencesProvider': { usePreferences: () => ({ locale }) },
     '@/hooks/useAuth': { useAuth: () => ({ user: role ? { name: 'Member', role_code: role } : null }) },
   }

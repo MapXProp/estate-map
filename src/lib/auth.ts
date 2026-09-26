@@ -4,6 +4,7 @@ export type AuthUser = {
   public_user_id: string
   name?: string
   surname?: string
+  avatar_url?: string
   email: string
   role_code: PlatformRoleCode
 }

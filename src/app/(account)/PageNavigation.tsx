@@ -1,5 +1,6 @@
 'use client'
 
+import AccountAvatar from '@/components/account/AccountAvatar'
 import styles from '@/components/account/AccountDashboard.module.css'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useAuth } from '@/hooks/useAuth'
@@ -87,7 +88,7 @@ function AccountNavigation({ pathname }: { pathname: string }) {
     <>
       <aside className={styles.sidebar}>
         <Link href="/account" className={styles.sidebarIdentity}>
-          <span>{Array.from(user?.name || 'M')[0]}</span>
+          <AccountAvatar src={user?.avatar_url} name={user?.name} />
           <div>
             <strong>{user?.name || (th ? 'สมาชิก MapxProp' : 'MapxProp member')}</strong>
             <small>{th ? 'บัญชีของฉัน' : 'My account'}</small>

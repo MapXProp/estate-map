@@ -66,7 +66,7 @@ const AccountProfileForm = () => {
   return (
     <form onSubmit={saveProfile} method="post" className="space-y-5">
       <div>
-        <h2>{isThai ? 'ชื่อที่แสดงในบัญชี' : 'Your display name'}</h2>
+        <h2>{isThai ? 'ข้อมูลบัญชี' : 'Account details'}</h2>
         <p className="mt-1 font-sarabun text-xs leading-5 text-neutral-500 dark:text-neutral-400">
           {isThai
             ? 'แก้ไขชื่อและนามสกุล แล้วกดบันทึกเมื่อพร้อม'

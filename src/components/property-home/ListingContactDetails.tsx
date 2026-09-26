@@ -1,5 +1,7 @@
 'use client'
 
+import AccountAvatar from '@/components/account/AccountAvatar'
+
 import { getPropertyPreviewContactRole, getPropertyPreviewContacts } from '@/lib/propertyPreviewDetails'
 import type { PropertyListingDetail } from '@/lib/propertySearch'
 import { Building2, ChevronDown, Globe, Instagram, Mail, MessageCircle, Phone, ShieldCheck } from 'lucide-react'
@@ -135,7 +137,12 @@ export default function ListingContactDetails({
       <h2 className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
         {isThai ? 'ติดต่อและนัดชม' : 'Contact and viewings'}
       </h2>
-      <p className="mt-2 font-semibold [overflow-wrap:anywhere] text-neutral-950 dark:text-white">{name}</p>
+      <div className="mt-2 flex items-center gap-3">
+        {listing.contact_avatar_url && (
+          <AccountAvatar src={listing.contact_avatar_url} name={name} className="size-11 bg-[#edf5ef] text-[#176b50]" />
+        )}
+        <p className="min-w-0 font-semibold [overflow-wrap:anywhere] text-neutral-950 dark:text-white">{name}</p>
+      </div>
       {listing.contact_role_code && (
         <p className="mt-1 text-xs leading-5 text-neutral-500 dark:text-neutral-400">
           {getPropertyPreviewContactRole(listing.contact_role_code, isThai)}

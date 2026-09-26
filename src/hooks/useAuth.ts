@@ -5,14 +5,15 @@ import {
   AuthStatus,
   AuthUser,
   clearStoredAuth,
-  getStoredUser,
   logoutStoredAuth,
   verifyStoredAuth,
 } from '@/lib/auth'
 import { useCallback, useEffect, useState } from 'react'
 
 export const useAuth = () => {
-  const [user, setUser] = useState<AuthUser | null>(() => getStoredUser())
+  // Match the server on the first render; restore the verified account in the
+  // effect below. Reading localStorage here makes signed-in reloads mismatch.
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [status, setStatus] = useState<AuthStatus>('loading')
 
   const refresh = useCallback(async () => {

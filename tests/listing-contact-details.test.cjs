@@ -26,6 +26,7 @@ function load(file, imports = {}) {
 }
 const contacts = load('src/lib/propertyPreviewDetails.ts')
 const shared = load('src/components/property-home/ListingContactDetails.tsx', {
+  '@/components/account/AccountAvatar': { default: ({ name }) => React.createElement('span', null, name?.[0]) },
   'react/jsx-runtime': require('react/jsx-runtime'),
   'lucide-react': require('lucide-react'),
   'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children) },

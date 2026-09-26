@@ -1,5 +1,7 @@
 'use client'
 
+import AccountAvatar from '@/components/account/AccountAvatar'
+
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import NotificationMessages from '@/components/Header/NotificationMessages'
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
@@ -7,7 +9,16 @@ import { useAuth } from '@/hooks/useAuth'
 import { useNotificationCenter } from '@/hooks/useNotificationCenter'
 import { showAuthNotice } from '@/lib/authNotice'
 import { Link } from '@/shared/link'
-import { CloseButton, Dialog, DialogPanel, DialogTitle, Popover, PopoverButton, PopoverPanel, Switch } from '@headlessui/react'
+import {
+  CloseButton,
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+  Switch,
+} from '@headlessui/react'
 import {
   BellIcon,
   CheckIcon,
@@ -92,11 +103,12 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
             '-m-1.5 flex cursor-pointer items-center justify-center rounded-full p-1.5 hover:bg-neutral-100 focus-visible:outline-hidden dark:hover:bg-neutral-800'
           }
         >
-          <span
+          <AccountAvatar
+            src={user?.avatar_url}
+            name={user?.name}
+            fallback={<FriendlyWinkIcon size={19} />}
             className={`${avatarClassName} grid place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700`}
-          >
-            <FriendlyWinkIcon size={19} />
-          </span>
+          />
         </PopoverButton>
 
         <TopNavPopoverBackdrop />
@@ -111,9 +123,12 @@ export default function AvatarDropdown({ avatarClassName = 'size-8', buttonClass
         >
           <div className="relative bg-white px-5 py-5 dark:bg-neutral-800">
             <div className="flex items-center gap-3 px-1">
-              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700">
-                <HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.5} />
-              </span>
+              <AccountAvatar
+                src={user?.avatar_url}
+                name={user?.name}
+                fallback={<HugeiconsIcon icon={UserIcon} size={22} strokeWidth={1.5} />}
+                className="grid size-12 shrink-0 place-items-center rounded-full bg-neutral-50 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-300 dark:ring-neutral-700"
+              />
 
               <div className="min-w-0 grow">
                 <h4 className="truncate font-semibold">
