@@ -348,7 +348,10 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     for (const [required, fieldName, value, messageTh, messageEn] of requiredPrices) {
       if (required && !value)
         return issue(`${fieldName}_required`, 3, messageTh, messageEn, { target: 'field', fieldName })
-      if (value && (fieldName === 'retailRentPrice' ? !isPositiveNumber(value) : !isNonNegativeNumber(value))) {
+      if (
+        value &&
+        (required && fieldName === 'retailRentPrice' ? !isPositiveNumber(value) : !isNonNegativeNumber(value))
+      ) {
         return issue(`${fieldName}_invalid`, 3, 'กรุณากรอกราคาเป็นตัวเลขที่ถูกต้อง', 'Enter a valid numeric price.', {
           target: 'field',
           fieldName,

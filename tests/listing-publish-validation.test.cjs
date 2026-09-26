@@ -46,4 +46,6 @@ test('retail rent is validated before upload using the same positive-price rule 
     listing_scope:'space_slot','useCaseCodes[]':['retail'],'offerTypes[]':['rent'],space_type_code:'standalone_shop',retailRentPrice:'0'}
   assert.equal(validate(retail)?.code,'retailRentPrice_invalid')
   assert.equal(validate({...retail,retailRentPrice:'1500'}),null)
+  // Switching category can leave an unused old price in a restored draft.
+  assert.equal(validate({...valid(),retailRentPrice:'0'}),null)
 })
