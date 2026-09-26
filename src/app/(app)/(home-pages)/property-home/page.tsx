@@ -6,7 +6,6 @@ import PropertyDiscovery from '@/components/property-home/PropertyDiscovery'
 import discoveryStyles from '@/components/property-home/PropertyDiscovery.module.css'
 import PropertyHomeSearch, { PropertySiteMode } from '@/components/property-home/PropertyHomeSearch'
 import PropertyListingShowcase from '@/components/property-home/PropertyListingShowcase'
-import PropertyPreferenceSection from '@/components/property-home/PropertyPreferenceSection'
 import heroImage from '@/images/hero-right-3.png'
 import type { PropertyLandingRowData } from '@/lib/propertyLandingRows'
 import { getPropertyMapLocationHref } from '@/lib/propertyMapLocations'
@@ -466,7 +465,7 @@ const PropertyHomePrototype = ({
       )}
 
       <div className={isChannelHomepage ? discoveryStyles.listings : undefined}>
-        <PropertyPreferenceSection mode={mode} offerType={offerType} />
+        {/* PropertyPreferenceSection is retained for future use; keep recommendations unmounted for now. */}
         <PropertyListingShowcase mode={mode} compact={!isMainLanding} initialRows={initialRows} offerType={offerType} />
       </div>
 

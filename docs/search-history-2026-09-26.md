@@ -25,6 +25,10 @@ LocalStorage keys start with `mapxprop_search_history_v2:` and end with `guest` 
 
 ## Personalized homepage recommendations
 
+**Current status:** hidden at the user's request on 26 September 2026. The shared homepage no longer mounts `PropertyPreferenceSection`, so its heading, interest chips, controls and cards are absent and no recommendation candidate requests run. The component, matching helpers and tests are retained for future use. Search history, account synchronization and derived preference summaries remain active; history can still be cleared from the search field. To restore the section, import and mount `PropertyPreferenceSection` before `PropertyListingShowcase` in `src/app/(app)/(home-pages)/property-home/page.tsx`.
+
+The following describes the retained implementation when enabled.
+
 The subsequent requested preference feature uses this history for a compact homepage section, with up to three reusable interest/search chips and four published property cards. Each card explains its geographic distance or matching project/search choices. Mobile uses two columns; desktop uses four. Saved-listing actions retain the existing guest/account behavior.
 
 - Derive coherent search scenarios from events in the last 90 days; preserve each scenario's location, offer, budget, category and additional filters together. Weight repeated searches with a 14-day half-life, capped at three contributions per scenario per day. Ignore broad empty browsing as evidence of a preference.
