@@ -174,6 +174,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
   const { formatCurrencyFrom } = require('./helpers/property-prices.cjs').preferences()
   const router = { push: (...args) => navigation.push(args) }
   const imports = {
+    '@/lib/propertySearchHistory': {recordSearchHistory(){},getRecentSearchHistory:()=>[],historyFilterSummary:()=>'',subscribeSearchHistory:()=>()=>{},clearSearchHistory:async()=>{}},
     '@/lib/locationSearch': require('./helpers/location-search.cjs')().location,
     '@/lib/transitStations': require('./helpers/transit-stations.cjs'),
     react: hooks,

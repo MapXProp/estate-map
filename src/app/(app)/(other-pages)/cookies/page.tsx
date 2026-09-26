@@ -8,7 +8,7 @@ const summary = 'เลือกได้ว่าจะให้ใช้คุ
 export const metadata = createPageMetadata({ title, description: summary, path: '/cookies' })
 export default function Page() {
   return (
-    <LegalPage title={title} summary={summary} sections={cookieSections}>
+    <LegalPage title={title} summary={summary} sections={cookieSections} updated="26 กันยายน 2569">
       <div id="preferences" className="mt-6">
         <CookieSettingsLink className="inline-flex min-h-11 items-center rounded-xl bg-[#176b50] px-5 py-3 text-sm font-semibold text-white hover:bg-[#125640]" />
       </div>

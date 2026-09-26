@@ -506,7 +506,10 @@ test('legal and free-listing pages are canonical sitemap URLs with real publicat
   for (const slug of ['privacy', 'terms', 'cookies', 'listing-plans']) {
     const entry = entries.find((item) => item.url === seo.absoluteUrl('/' + slug))
     assert.ok(entry, slug)
-    assert.equal(new Date(entry.lastModified).toISOString().slice(0, 10), '2026-09-25')
+    assert.equal(
+      new Date(entry.lastModified).toISOString().slice(0, 10),
+      slug === 'privacy' || slug === 'cookies' ? '2026-09-26' : '2026-09-25'
+    )
   }
   for (const slug of ['subscription', 'checkout', 'pay-done', 'privacy-policy', 'terms-of-service'])
     assert.ok(!entries.some((item) => item.url === seo.absoluteUrl('/' + slug)))

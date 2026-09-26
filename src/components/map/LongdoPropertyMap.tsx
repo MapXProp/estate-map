@@ -2,6 +2,13 @@
 
 import { locationSearchDestination } from '@/lib/locationSearch'
 import { getMapListingPrices, propertyPinPricesText, propertyPricesText } from '@/lib/propertyPrices'
+import {
+  clearSearchHistory,
+  getRecentSearchHistory,
+  historyFilterSummary,
+  recordSearchHistory,
+  subscribeSearchHistory,
+} from '@/lib/propertySearchHistory'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { TRealEstateListing } from '@/data/listings'
@@ -862,6 +869,22 @@ const LongdoPropertyMap = ({
 
   useEffect(() => {
     const keyword = searchText.trim()
+    if (isSearchFocused && !keyword) {
+      const recent = () =>
+        setSuggestions(
+          getRecentSearchHistory().map((event) => ({
+            kind: 'recent',
+            label: event.label,
+            query: event.query,
+            destination: event.url,
+            detail: historyFilterSummary(event) || (isThai ? 'ค้นหาล่าสุด' : 'Recent search'),
+          }))
+        )
+      recent()
+      setActiveSuggestionIndex(-1)
+      setIsSuggesting(false)
+      return subscribeSearchHistory(recent)
+    }
     if (!isSearchFocused || keyword.length < 2 || submittedSearchRef.current === keyword) {
       // Reset the asynchronous suggestion UI when the input is no longer eligible for lookup.
       setSuggestions([])
@@ -914,11 +937,11 @@ const LongdoPropertyMap = ({
   }, [mapMode, clearSearchMarker])
 
   const searchLocation = useCallback(
-    async (rawKeyword: string, suggestion?: MapSearchSuggestion) => {
+    async (rawKeyword: string, suggestion?: MapSearchSuggestion, remember = true) => {
       const keyword = rawKeyword.trim()
       const map = mapRef.current
       const longdo = window.longdo
-      if (!keyword || !map || !longdo) return
+      if ((!keyword && suggestion?.kind !== 'recent') || !map || !longdo) return
 
       searchRequestRef.current?.abort()
       suggestionRequestRef.current?.abort()
@@ -934,9 +957,33 @@ const LongdoPropertyMap = ({
       setIsSearching(true)
       setSearchMessage('')
       try {
+        if (suggestion?.kind === 'recent') {
+          if (remember)
+            recordSearchHistory({
+              query: suggestion.query,
+              label: suggestion.label,
+              url: suggestion.destination,
+              source: 'map',
+            })
+          router.push(suggestion.destination)
+          return
+        }
         const project = suggestion?.kind === 'project' ? suggestion.project : undefined
         controller.signal.throwIfAborted()
         if (project) {
+          if (remember)
+            recordSearchHistory({
+              query: keyword,
+              label: project.display_name || project.name_th || project.name_en,
+              source: 'map',
+              url: locationSearchDestination('/properties/map' + window.location.search, {
+                type: 'project',
+                query: keyword,
+                label: project.display_name || project.name_th || project.name_en,
+                description: 'project',
+                project,
+              }),
+            })
           if (onProjectSearchSelect && mapMode === 'projects') onProjectSearchSelect(project)
           else
             router.push(
@@ -973,6 +1020,21 @@ const LongdoPropertyMap = ({
         }
 
         const location = { lon: Number(place.lon), lat: Number(place.lat) }
+        const historyParams = new URLSearchParams(window.location.search)
+        historyParams.set('q', keyword)
+        if (remember)
+          recordSearchHistory({
+            query: keyword,
+            label: place.name || keyword,
+            source: 'map',
+            url: locationSearchDestination('/properties/map?' + historyParams, {
+              type: 'location',
+              query: keyword,
+              label: place.name || keyword,
+              description: 'location',
+              place,
+            }),
+          })
         map.location(location, false)
         map.zoom(place.zoom, false)
         const marker = new longdo.Marker(location, {
@@ -1016,7 +1078,7 @@ const LongdoPropertyMap = ({
     // them once through the same camera/marker flow as the map's own search.
     const timer = window.setTimeout(() => {
       initialSearchStartedRef.current = query
-      void searchLocation(query)
+      void searchLocation(query, undefined, false)
     }, 0)
     return () => window.clearTimeout(timer)
   }, [initialSearchQuery, mapReady, searchLocation])
@@ -1802,7 +1864,7 @@ const LongdoPropertyMap = ({
                       ? isThai
                         ? 'ค้นหาสถานที่ด้วยคำนี้'
                         : 'Search places with this name'
-                      : suggestion.kind === 'place' && suggestion.detail
+                      : (suggestion.kind === 'place' || suggestion.kind === 'recent') && suggestion.detail
                         ? suggestion.detail
                         : isThai
                           ? 'สถานที่'
@@ -1834,6 +1896,25 @@ const LongdoPropertyMap = ({
                   </button>
                 )
               })}
+              {!searchText.trim() && suggestions.length > 0 && (
+                <div className="flex items-center justify-between border-t border-neutral-100 px-3 text-xs text-neutral-500">
+                  <span>{isThai ? 'ค้นหาล่าสุด' : 'Recent searches'}</span>
+                  <button
+                    type="button"
+                    data-clear-search-history
+                    className="min-h-11 px-2"
+                    onClick={() =>
+                      void clearSearchHistory().catch(() =>
+                        setSearchMessage(
+                          isThai ? 'ล้างประวัติไม่สำเร็จ กรุณาลองอีกครั้ง' : 'Could not clear history. Please retry.'
+                        )
+                      )
+                    }
+                  >
+                    {isThai ? 'ล้างประวัติ' : 'Clear history'}
+                  </button>
+                </div>
+              )}
               {searchMessage && <p className="px-3 py-3 text-sm text-neutral-500">{searchMessage}</p>}
             </div>
           )}

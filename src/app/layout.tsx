@@ -2,6 +2,7 @@ import DeferredGoogleAnalytics from '@/components/analytics/DeferredGoogleAnalyt
 import { AuthModalProvider } from '@/components/auth/AuthModalProvider'
 import { PreferencesProvider } from '@/components/preferences/PreferencesProvider'
 import CookieConsentBanner from '@/components/privacy/CookieConsentBanner'
+import SearchHistorySync from '@/components/property-home/SearchHistorySync'
 import { SavedListingsProvider } from '@/components/saved-listings/SavedListingsProvider'
 import JsonLd from '@/components/seo/JsonLd'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -124,6 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <JsonLd data={websiteStructuredData} />
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <PreferencesProvider>
+            <SearchHistorySync />
             <CookieConsentBanner />
             <AuthModalProvider>
               <SavedListingsProvider>

@@ -22,7 +22,7 @@ export function buildPropertySitemap(
   const entries: MetadataRoute.Sitemap = [
     ...publicInformationPaths.map((path) => ({
       url: absoluteUrl(path),
-      lastModified: new Date(PUBLIC_INFORMATION_UPDATED_AT),
+      lastModified: new Date(path === '/privacy' || path === '/cookies' ? '2026-09-26' : PUBLIC_INFORMATION_UPDATED_AT),
     })),
     ...Object.values(discoveryPageSeo).map((page) => ({
       url: absoluteUrl(page.path),

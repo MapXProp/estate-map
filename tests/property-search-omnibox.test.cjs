@@ -58,9 +58,17 @@ function harness(variant, options = {}) {
       getPropertyRecentLocations: () => options.recentLocations || [],
       savePropertyRecentLocation() {},
     },
-    '@/lib/propertyRecentSearches': { getPropertyRecentSearches: () => [], savePropertyRecentSearch() {} },
+    '@/lib/propertyRecentSearches': {
+      getPropertyRecentSearches: () => options.recentLocations || [],
+      savePropertyRecentSearch: (...args) => options.saved?.push(args),
+    },
+    '@/lib/propertySearchHistory': {
+      subscribeSearchHistory: () => () => {},
+      clearSearchHistory: async () => {},
+      searchHistoryScope: () => 'device',
+    },
     '@/lib/propertySearch': {
-      getPropertyMapSearchUrl: query => `/properties/map?${new URLSearchParams({q:query})}`,
+      getPropertyMapSearchUrl: (query) => `/properties/map?${new URLSearchParams({ q: query })}`,
       fetchPropertySearchSuggestions: async (query, signal, config) => {
         localLookups.push({ query, config })
         return options.local ? options.local(query, signal) : []
@@ -209,8 +217,8 @@ test('all entry points resolve one stable suggestion list and preserve an explic
 
 test('sheet search exposes an external submit form and preserves empty or typed query submission', () => {
   const h = harness('sheet', { props: { formId: 'mobile-discovery-search', hideSubmitButton: true } })
-  assert.equal(h.nodes(node => node.type === 'form')[0].props.id, 'mobile-discovery-search')
-  assert.equal(h.nodes(node => node.type === 'button' && node.props.type === 'submit').length, 0)
+  assert.equal(h.nodes((node) => node.type === 'form')[0].props.id, 'mobile-discovery-search')
+  assert.equal(h.nodes((node) => node.type === 'button' && node.props.type === 'submit').length, 0)
   h.submit()
   assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), '')
   h.type('สาทร')
@@ -312,4 +320,22 @@ test('typing another place removes old clickable suggestions; direct submission 
     assert.equal(url.searchParams.get('channel'), 'homes')
     assert.equal(url.searchParams.get('offer_type'), 'rent')
   }
+})
+
+test('explicit filter-only searches are saved and can be replayed from a header without inventing location text', () => {
+  const saved = []
+  const first = harness('sheet', { saved })
+  first.submit()
+  assert.equal(saved.length, 1)
+  assert.equal(saved[0][0], '')
+  assert.equal(saved[0][1], 'ค้นหาทุกทำเล')
+  const destination = saved[0][5].url
+  const again = harness('header', {
+    props: { allowEmptyQuery: false, showSuggestionsOnEmpty: true },
+    recentLocations: [{ query: '', label: saved[0][1], destination, searchedAt: 1 }],
+  })
+  again.input().onFocus()
+  again.render()
+  again.nodes((node) => node.props?.role === 'option')[0].props.onClick()
+  assert.equal(again.navigation[0], destination)
 })

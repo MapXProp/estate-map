@@ -3,6 +3,7 @@ import type { MapProjectDetails } from './propertyMapProjects'
 import { getTransitSearchSuggestions } from './transitStations'
 
 export type PropertySearchSuggestion = {
+  destination?: string
   type: string
   label: string
   description: string

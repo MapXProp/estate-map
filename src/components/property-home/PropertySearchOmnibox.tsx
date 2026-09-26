@@ -2,7 +2,6 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { fetchLocationSearchSuggestions, locationSearchDestination } from '@/lib/locationSearch'
-import { getPropertyRecentLocations, savePropertyRecentLocation } from '@/lib/propertyRecentLocations'
 import { getPropertyRecentSearches, savePropertyRecentSearch } from '@/lib/propertyRecentSearches'
 import {
   fetchLongdoPropertyLocationSuggestions,
@@ -10,6 +9,7 @@ import {
   getPropertyMapSearchUrl,
   PropertySearchSuggestion,
 } from '@/lib/propertySearch'
+import { clearSearchHistory, searchHistoryScope, subscribeSearchHistory } from '@/lib/propertySearchHistory'
 import { getTransitSearchSuggestions, getTransitStationMapUrl } from '@/lib/transitStations'
 import { Building2, Clock3, FileText, MapPin, Search, TrainFront } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -104,25 +104,13 @@ const recentHeaderSuggestions = (isThai: boolean): PropertySearchSuggestion[] =>
       label: item.label,
       description: `${item.description || locationTypeLabels[item.type]?.[isThai ? 'th' : 'en'] || (isThai ? 'คำค้น' : 'Search')} · ${recentLabel}`,
       query: item.query,
-      ...item.selection,
+      destination: item.destination,
     },
   }))
-  const savedLocations = getPropertyRecentLocations().map((item) => ({
-    searchedAt: item.searchedAt,
-    suggestion: {
-      type: 'recent',
-      label: item.label || item.query,
-      description: `${isThai ? 'ทำเล' : 'Location'} · ${recentLabel}`,
-      query: item.query,
-    },
-  }))
-
-  return dedupeSuggestions(
-    [...savedSearches, ...savedLocations]
-      .sort((first, second) => second.searchedAt - first.searchedAt)
-      .map((item) => item.suggestion),
-    HEADER_SUGGESTION_LIMIT
-  )
+  return savedSearches
+    .sort((first, second) => second.searchedAt - first.searchedAt)
+    .map((item) => item.suggestion)
+    .slice(0, HEADER_SUGGESTION_LIMIT)
 }
 
 const PropertySearchOmnibox = ({
@@ -158,7 +146,34 @@ const PropertySearchOmnibox = ({
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<PropertySearchSuggestion[]>([])
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [clearingHistory, setClearingHistory] = useState(false)
+  const [historyError, setHistoryError] = useState('')
   const normalizedQuery = query.trim().replace(/\s+/g, ' ')
+
+  useEffect(
+    () =>
+      subscribeSearchHistory(() => {
+        if (focused && useRecents && !normalizedQuery) {
+          setSuggestions(recentHeaderSuggestions(isThai))
+          setActiveIndex(-1)
+        }
+      }),
+    [focused, useRecents, normalizedQuery, isThai]
+  )
+
+  const clearHistory = async () => {
+    setClearingHistory(true)
+    setHistoryError('')
+    try {
+      await clearSearchHistory()
+      setSuggestions(recentHeaderSuggestions(isThai))
+      setActiveIndex(-1)
+    } catch {
+      setHistoryError(isThai ? 'ล้างประวัติไม่สำเร็จ กรุณาลองอีกครั้ง' : 'Could not clear history. Please retry.')
+    } finally {
+      setClearingHistory(false)
+    }
+  }
 
   useEffect(() => {
     if (!focused || (!showSuggestionsOnEmpty && !normalizedQuery)) return
@@ -254,14 +269,22 @@ const PropertySearchOmnibox = ({
     event?.preventDefault()
     const rawValue = selectedQuery.trim()
     const value = (buildQuery?.(rawValue) ?? rawValue).trim()
-    if (!value && !allowEmptyQuery) {
+    if (!value && !allowEmptyQuery && !selectedSuggestion?.destination) {
       setFocused(true)
       return
     }
-    if (useRecents && rawValue) {
+    const destination =
+      selectedSuggestion?.destination ||
+      (suggestionScope === 'location'
+        ? locationSearchDestination(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion)
+        : getTransitStationMapUrl(
+            buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value),
+            selectedSuggestion?.stationId
+          ))
+    if (rawValue || allowEmptyQuery || selectedSuggestion?.destination) {
       savePropertyRecentSearch(
         rawValue,
-        selectedSuggestion?.label || rawValue,
+        selectedSuggestion?.label || rawValue || (isThai ? 'ค้นหาทุกทำเล' : 'All locations'),
         selectedSuggestion?.type === 'recent' ? 'search' : selectedSuggestion?.type || 'search',
         selectedSuggestion?.type === 'recent'
           ? isThai
@@ -278,27 +301,14 @@ const PropertySearchOmnibox = ({
               stationId: selectedSuggestion.stationId,
               project: selectedSuggestion.project,
             }
-          : undefined
+          : undefined,
+        { url: destination, source: suggestionScope === 'all' ? 'catalogue' : variant }
       )
-      if (selectedSuggestion?.type === 'location' || selectedSuggestion?.type === 'longdo') {
-        savePropertyRecentLocation(
-          rawValue,
-          selectedSuggestion.label,
-          selectedSuggestion.type === 'longdo' ? 'longdo' : 'local'
-        )
-      }
     }
     setFocused(false)
     setActiveIndex(-1)
     onSubmitQuery?.(value)
-    router.push(
-      suggestionScope === 'location'
-        ? locationSearchDestination(buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value), selectedSuggestion)
-        : getTransitStationMapUrl(
-            buildSearchUrl?.(value) ?? getPropertyMapSearchUrl(value),
-            selectedSuggestion?.stationId
-          )
-    )
+    router.push(destination)
   }
 
   const selectSuggestion = (suggestion: PropertySearchSuggestion) => {
@@ -491,7 +501,34 @@ const PropertySearchOmnibox = ({
                   : isThai
                     ? 'ลองค้นหาแบบนี้'
                     : 'Try one of these searches'}
+              {!normalizedQuery && useRecents && suggestions.length > 0 && (
+                <button
+                  type="button"
+                  data-clear-search-history
+                  disabled={clearingHistory}
+                  onClick={() => void clearHistory()}
+                  className="ms-auto min-h-10 px-2 text-xs font-medium text-neutral-500 hover:text-neutral-900 disabled:opacity-50"
+                >
+                  {isThai ? 'ล้างประวัติ' : 'Clear history'}
+                </button>
+              )}
             </div>
+            {!normalizedQuery && useRecents && (
+              <p className="px-5 pt-3 text-xs text-neutral-500" data-search-history-scope={searchHistoryScope()}>
+                {isThai
+                  ? searchHistoryScope() === 'account'
+                    ? 'ประวัติของบัญชีคุณ · ใช้ช่วยค้นหาครั้งถัดไป'
+                    : 'ประวัติบนอุปกรณ์นี้ · ใช้ช่วยค้นหาครั้งถัดไป'
+                  : searchHistoryScope() === 'account'
+                    ? 'Your account history'
+                    : 'History on this device'}
+              </p>
+            )}
+            {historyError && (
+              <p role="alert" className="px-5 py-2 text-xs text-red-600">
+                {historyError}
+              </p>
+            )}
             <div className="max-h-[min(360px,55vh)] overflow-y-auto p-2">
               {loading && suggestions.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-neutral-500">{isThai ? 'กำลังค้นหา…' : 'Searching…'}</div>

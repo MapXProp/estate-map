@@ -1341,6 +1341,9 @@
     width: var(--map-centered-search-width);
     transform: translateX(-50%);
   }
+  .canvas[data-map-floating-layout='true'] .locationSearch [role='listbox'] {
+    width: 100%;
+  }
   .canvas[data-map-floating-layout='true'] .areaControl {
     top: calc(var(--map-navigation-height, 0px) + 14px);
     right: auto;

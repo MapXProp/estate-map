@@ -8,11 +8,13 @@ export default function LegalPage({
   summary,
   sections,
   children,
+  updated = '25 กันยายน 2569',
 }: {
   title: string
   summary: string
   sections: LegalSection[]
   children?: ReactNode
+  updated?: string
 }) {
   return (
     <main className="mx-auto max-w-4xl px-5 py-10 sm:px-8 sm:py-14">
@@ -33,7 +35,7 @@ export default function LegalPage({
       <p className="mb-3 text-sm font-medium text-[#176b50] dark:text-emerald-300">MapxProp · ข้อมูลสำหรับผู้ใช้งาน</p>
       <h1 className="text-2xl font-semibold tracking-tight text-neutral-950 sm:text-3xl dark:text-white">{title}</h1>
       <p className="mt-4 text-base/7 text-neutral-600 dark:text-neutral-300">{summary}</p>
-      <p className="mt-3 text-xs text-neutral-500">มีผลและปรับปรุงล่าสุด: 25 กันยายน 2569</p>
+      <p className="mt-3 text-xs text-neutral-500">มีผลและปรับปรุงล่าสุด: {updated}</p>
       {children}
       <nav
         aria-label="สารบัญ"

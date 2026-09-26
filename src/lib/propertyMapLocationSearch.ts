@@ -6,6 +6,7 @@ import type { PropertySearchSuggestion } from './propertySearch'
 import { findTransitStation, transitStationPlace } from './transitStations'
 
 export type MapSearchSuggestion =
+  | { kind: 'recent'; label: string; query: string; destination: string; detail: string }
   | { kind: 'project'; label: string; project: MapProjectDetails }
   | {
       kind: 'place'
