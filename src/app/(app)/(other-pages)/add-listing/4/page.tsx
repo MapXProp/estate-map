@@ -319,7 +319,8 @@ const Page = () => {
     let publishConfirmed = false
     try {
       const completedDraft = getListingDraft()
-      await saveListingContactProfile(contactProfileFromDraft(completedDraft)).catch(() => undefined)
+      // Saving reusable defaults is best-effort and must not block publication.
+      void saveListingContactProfile(contactProfileFromDraft(completedDraft)).catch(() => undefined)
       await saveListingDraftToCloud(completedDraft).catch(() => undefined)
       const response = await publishListingDraft()
       const slug = response.slug || ''

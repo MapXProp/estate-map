@@ -348,7 +348,7 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
     for (const [required, fieldName, value, messageTh, messageEn] of requiredPrices) {
       if (required && !value)
         return issue(`${fieldName}_required`, 3, messageTh, messageEn, { target: 'field', fieldName })
-      if (value && !isNonNegativeNumber(value)) {
+      if (value && (fieldName === 'retailRentPrice' ? !isPositiveNumber(value) : !isNonNegativeNumber(value))) {
         return issue(`${fieldName}_invalid`, 3, 'กรุณากรอกราคาเป็นตัวเลขที่ถูกต้อง', 'Enter a valid numeric price.', {
           target: 'field',
           fieldName,
@@ -396,6 +396,22 @@ export const validateListingDraftForPublish = (draft: ListingDraft): ListingPubl
       target: 'field',
       fieldName: 'currency',
     })
+  }
+
+  // Pending files are counted here; step 4 verifies they still exist, and the
+  // API verifies the actual uploaded image URLs before publishing.
+  const photoCount = Math.max(values(draft['listingPhotoUrls[]']).length, Number(text(draft.selectedPhotoCount)) || 0)
+  if (photoCount < 1) {
+    return issue(
+      'listing_photo_required',
+      3,
+      'เพิ่มรูปภาพของทรัพย์อย่างน้อย 1 รูป',
+      'Add at least one property photo.',
+      {
+        target: 'field',
+        fieldName: 'listingPhotos',
+      }
+    )
   }
 
   const role = text(draft.contactRoleCode)

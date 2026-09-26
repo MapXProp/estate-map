@@ -5,7 +5,7 @@ const vm = require('node:vm')
 const { test } = require('node:test')
 const ts = require('typescript')
 function load(file, imports = {}, globals = {}) {
-  const context = { exports: {}, File, Blob, FormData, URL, ...globals, require(id) { if (!(id in imports)) throw Error(id); return imports[id] } }
+  const context = { exports: {}, File, Blob, FormData, URL, AbortController, setTimeout, clearTimeout, ...globals, require(id) { if (!(id in imports)) throw Error(id); return imports[id] } }
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText, context)

@@ -9,7 +9,7 @@ import {
   normalizeLegacyUsageType,
   normalizeUseCasesForUsage,
 } from '@/data/propertyTaxonomy'
-import { fetchWithAuthRetry, getAuthApiUrl, getStoredUser } from './auth'
+import { fetchWithAuthRetry as fetchAuthenticatedRequest, getAuthApiUrl, getStoredUser } from './auth'
 import { applyListingImageWatermark, prepareListingPanorama } from './listingImageWatermark'
 import { listingMediaFileIssue, listingMediaMaxBytes, listingMediaMimeType } from './listingMediaFormats'
 
@@ -462,6 +462,26 @@ export const saveListingFormSnapshot = (step: number, form: HTMLFormElement) => 
   return saveListingStep(step, new FormData(form), { clearKeys, resumeStep: step })
 }
 
+// A stalled connection (including session refresh) must always release the
+// wizard's pending state so the user can retry using the same submission key.
+const fetchWithAuthRetry = async (input: RequestInfo | URL, init: RequestInit, timeoutMs = 8_000) => {
+  const controller = new AbortController()
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      fetchAuthenticatedRequest(input, { ...init, signal: controller.signal }),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          controller.abort()
+          reject(new Error('Listing request timed out'))
+        }, timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
+
 export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft()) => {
   if (Object.keys(draft).length === 0) {
     return Promise.resolve(null)
@@ -470,6 +490,10 @@ export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft())
   const snapshot = { ...draft }
   const ownerPublicUserId = getStoredUser()?.public_user_id || ''
   const save = async () => {
+    if ((getStoredUser()?.public_user_id || '') !== ownerPublicUserId) return null
+    // Coalesce old queued snapshots when the user has already moved on.
+    const latestDraft = getListingDraft()
+    if ((Date.parse(text(latestDraft.updatedAt)) || 0) > (Date.parse(text(snapshot.updatedAt)) || 0)) return null
     const preparedDraft: ListingDraft = ownerPublicUserId
       ? { ...snapshot, draftOwnerPublicUserId: ownerPublicUserId }
       : snapshot
@@ -493,7 +517,14 @@ export const saveListingDraftToCloud = (draft: ListingDraft = getListingDraft())
       updatedAt: result.updated_at || text(preparedDraft.updatedAt),
       draftExpiresAt: result.expires_at || text(preparedDraft.draftExpiresAt),
     }
-    localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(persistedDraft))
+    // Do not restore an older form, a cleared draft, or another user's draft
+    // when an autosave response arrives after subsequent typing/navigation.
+    if (
+      JSON.stringify(getListingDraft()) === JSON.stringify(snapshot) &&
+      (getStoredUser()?.public_user_id || '') === ownerPublicUserId
+    ) {
+      localStorage.setItem(LISTING_DRAFT_KEY, JSON.stringify(persistedDraft))
+    }
     return result
   }
 
@@ -634,14 +665,18 @@ export const publishListingDraft = async () => {
   // refresh must update the same listing instead of creating a duplicate.
   const payload = buildCreateListingPayload(ensureListingSubmissionKey())
 
-  const response = await fetchWithAuthRetry(getAuthApiUrl('listings'), {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetchWithAuthRetry(
+    getAuthApiUrl('listings'),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
     },
-    body: JSON.stringify(payload),
-  })
+    30_000
+  )
 
   const data = (await response.json().catch(() => ({}))) as CreateListingResponse
   if (!response.ok) {
@@ -695,11 +730,15 @@ export const uploadListingMedia = async (
     formData.set('media_type', mediaType)
     let response: Response
     try {
-      response = await fetchWithAuthRetry(getAuthApiUrl('listing-media'), {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
+      response = await fetchWithAuthRetry(
+        getAuthApiUrl('listing-media'),
+        {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        },
+        120_000
+      )
     } catch {
       throw new ListingMediaUploadError('network_error', file.name, 'Cannot connect to media storage')
     }

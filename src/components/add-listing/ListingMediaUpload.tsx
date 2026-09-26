@@ -54,7 +54,7 @@ export default function ListingMediaUpload({ kind, count, limit, isThai, disable
   const Icon = isFull ? CheckIcon : config.icon
 
   return (
-    <>
+    <div data-listing-field data-listing-label={isThai ? config.th : config.en}>
       <label
         data-listing-media-upload={kind}
         className={`relative flex min-h-20 items-center gap-3 rounded-2xl border border-dashed p-3 transition focus-within:ring-2 focus-within:ring-[#176b50]/40 sm:min-h-24 sm:p-4 ${unavailable ? 'cursor-default border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950' : 'cursor-pointer border-neutral-300 bg-neutral-50/60 hover:border-[#176b50] hover:bg-emerald-50/40 dark:border-neutral-600 dark:bg-neutral-950 dark:hover:border-emerald-600'}`}
@@ -78,6 +78,7 @@ export default function ListingMediaUpload({ kind, count, limit, isThai, disable
             </span>
           </span>
           <span className="mt-1 block text-xs leading-5 text-neutral-500 dark:text-neutral-400">
+            {kind === 'photo' && (isThai ? 'อย่างน้อย 1 รูป · ' : 'At least 1 photo · ')}
             {config.formats} · {config.size} MB/{isThai ? 'ไฟล์' : 'file'}
           </span>
         </span>
@@ -88,11 +89,33 @@ export default function ListingMediaUpload({ kind, count, limit, isThai, disable
           accept={config.accept}
           multiple
           disabled={unavailable}
-          onChange={onChange}
+          onChange={(event) => {
+            const input = event.currentTarget
+            const field = input.closest('[data-listing-field]')
+            field?.removeAttribute('data-listing-invalid')
+            const slot = field?.querySelector<HTMLElement>('[data-listing-validation-error]')
+            if (slot) {
+              slot.hidden = true
+              slot.textContent = ''
+              slot.removeAttribute('id')
+            }
+            input.removeAttribute('aria-invalid')
+            if (input.dataset.listingPreviousDescribedby)
+              input.setAttribute('aria-describedby', input.dataset.listingPreviousDescribedby)
+            else input.removeAttribute('aria-describedby')
+            delete input.dataset.listingPreviousDescribedby
+            onChange(event)
+          }}
           className="sr-only"
           aria-describedby={error ? `listing-${kind}-error` : undefined}
         />
       </label>
+      <p
+        hidden
+        data-listing-validation-error
+        role="alert"
+        className="mt-2 font-sarabun text-xs leading-5 text-red-600 dark:text-red-400"
+      />
       {error && (
         <p
           id={`listing-${kind}-error`}
@@ -102,6 +125,6 @@ export default function ListingMediaUpload({ kind, count, limit, isThai, disable
           {error}
         </p>
       )}
-    </>
+    </div>
   )
 }
