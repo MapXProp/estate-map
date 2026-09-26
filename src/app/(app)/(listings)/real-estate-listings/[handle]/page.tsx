@@ -356,6 +356,7 @@ const Page = async ({ params }: { params: Promise<{ handle: string }> }) => {
       {/*  HEADER */}
       <HeaderGallery
         gridType="grid2"
+        squareMobileCorners
         images={galleryImgs}
         initiallySaved={like}
         listingIdentifier={handle}

@@ -196,6 +196,7 @@ const PropertyListingView = ({ listing }: { listing: PropertyListingDetail }) =>
                   media={media}
                   listingIdentifier={listing.slug || listing.public_listing_id}
                   gridType="grid2"
+                  squareMobileCorners
                   listingPresentation
                   previewImages={propertyPreviewImages(listing.media)}
                   propertyDetails={{
