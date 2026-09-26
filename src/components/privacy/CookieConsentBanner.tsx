@@ -119,7 +119,7 @@ export default function CookieConsentBanner() {
           onClick={() => save(true)}
           className="min-h-11 rounded-xl bg-[#176b50] px-3 py-3 text-sm font-semibold text-white hover:bg-[#125640]"
         >
-          {th ? 'ยอมรับคุกกี้วิเคราะห์' : 'Allow analytics'}
+          {th ? 'ยอมรับคุกกี้' : 'Accept cookies'}
         </button>
       </div>
     </section>
