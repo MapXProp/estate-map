@@ -1,5 +1,6 @@
 import { getAuthApiUrl } from './auth'
 import { explicitTransitQuery, fetchLocationSearchSuggestions } from './locationSearch'
+import { placeSearchLocale } from './placeAutocomplete'
 import { getPropertyMapLocationPreset } from './propertyMapLocations'
 import type { MapProjectDetails, PropertyMapMode } from './propertyMapProjects'
 import type { PropertySearchSuggestion } from './propertySearch'
@@ -80,7 +81,7 @@ export async function fetchMapSearchSuggestions(
 }
 
 export async function searchMapPlace(query: string, apiKey: string, th: boolean, signal: AbortSignal) {
-  const params = new URLSearchParams({ q: query, locale: th ? 'th' : 'en' })
+  const params = new URLSearchParams({ q: query, locale: placeSearchLocale(query, th ? 'th' : 'en') })
   const response = await fetch('/api/location-search?' + params, { signal, cache: 'no-store' })
   if (!response.ok) throw new Error('Place search unavailable')
   const result = (await response.json()) as {
@@ -112,7 +113,7 @@ export async function resolveMapSearchPlace(
   const preset = getPropertyMapLocationPreset(query)
   if (preset)
     return {
-      name: th ? preset.nameTh : preset.nameEn,
+      name: placeSearchLocale(query, th ? 'th' : 'en') === 'th' ? preset.nameTh : preset.nameEn,
       address: '',
       lat: preset.latitude,
       lon: preset.longitude,
@@ -120,7 +121,7 @@ export async function resolveMapSearchPlace(
     }
 
   const station = explicitTransitQuery(query) ? findTransitStation(query) : undefined
-  if (station) return transitStationPlace(station, th)
+  if (station) return transitStationPlace(station, placeSearchLocale(query, th ? 'th' : 'en') === 'th')
 
   if (includeProjects) {
     const projects = await searchMapProjects(query, signal).catch((error) => {

@@ -1,3 +1,4 @@
+import { placeSearchLocale, placeSearchName, placeSearchZoom } from '@/lib/placeAutocomplete'
 import { getPropertyMapLocationPreset } from '@/lib/propertyMapLocations'
 import { getLongdoApiKey, longdoNoStoreHeaders, takeLongdoQuota } from '@/lib/server/longdoQuota'
 import { findTransitStation, getTransitStation, transitStationPlace } from '@/lib/transitStations'
@@ -18,9 +19,13 @@ type LongdoSearchResponse = {
 export async function GET(request: NextRequest) {
   const stationId = request.nextUrl.searchParams.get('station') || undefined
   const query = request.nextUrl.searchParams.get('q')?.trim().replace(/\s+/g, ' ') || ''
+  const locale = placeSearchLocale(query, request.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'th')
   const selectedStation = getTransitStation(stationId)
   if (selectedStation)
-    return NextResponse.json({ place: transitStationPlace(selectedStation) }, { headers: longdoNoStoreHeaders })
+    return NextResponse.json(
+      { place: transitStationPlace(selectedStation, locale === 'th') },
+      { headers: longdoNoStoreHeaders }
+    )
   if (Array.from(query).length < 2 || query.length > 120) {
     return NextResponse.json({ place: null }, { headers: longdoNoStoreHeaders })
   }
@@ -28,14 +33,26 @@ export async function GET(request: NextRequest) {
   const preset = getPropertyMapLocationPreset(query)
   if (preset)
     return NextResponse.json(
-      { place: { name: preset.nameTh, address: '', lat: preset.latitude, lon: preset.longitude, zoom: preset.zoom } },
+      {
+        place: {
+          name: locale === 'en' ? preset.nameEn : preset.nameTh,
+          address: '',
+          lat: preset.latitude,
+          lon: preset.longitude,
+          zoom: preset.zoom,
+        },
+      },
       { headers: longdoNoStoreHeaders }
     )
   // A bare area name (e.g. Bang Na) must not silently become its train station.
   const station = /(?:\b(?:bts|mrt|arl|srt|brt)\b|สถานี|รถไฟฟ้า|\([A-Z]{1,2}\d{1,2}\)|^[A-Z]{1,3}\d{1,2}$)/i.test(query)
     ? findTransitStation(query)
     : undefined
-  if (station) return NextResponse.json({ place: transitStationPlace(station) }, { headers: longdoNoStoreHeaders })
+  if (station)
+    return NextResponse.json(
+      { place: transitStationPlace(station, locale === 'th') },
+      { headers: longdoNoStoreHeaders }
+    )
 
   const apiKey = getLongdoApiKey()
   if (!apiKey) {
@@ -53,7 +70,7 @@ export async function GET(request: NextRequest) {
     const searchParams = new URLSearchParams({
       keyword: query,
       limit: '5',
-      locale: request.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'th',
+      locale,
       key: apiKey,
     })
     const response = await fetch(`https://search.longdo.com/mapsearch/json/search?${searchParams}`, {
@@ -63,24 +80,21 @@ export async function GET(request: NextRequest) {
     if (!response.ok) throw new Error(`Longdo search returned ${response.status}`)
 
     const result = (await response.json()) as LongdoSearchResponse
-    const match = (result.data || []).find((item) => {
+    const matches = (result.data || []).filter((item) => {
       const lat = Number(item.lat)
       const lon = Number(item.lon)
       return Number.isFinite(lat) && Number.isFinite(lon) && lat >= 5 && lat <= 21 && lon >= 97 && lon <= 106
     })
+    const match =
+      matches.find((item) => typeof item.name === 'string' && placeSearchName(item.name) === placeSearchName(query)) ||
+      matches[0]
     const place = match
       ? {
           name: typeof match.name === 'string' ? match.name.trim() : query,
           address: typeof match.address === 'string' ? match.address.trim() : '',
           lat: Number(match.lat),
           lon: Number(match.lon),
-          zoom: /^(?:จ\.|จังหวัด)/.test(String(match.name))
-            ? 10
-            : /^(?:เขต|อ\.|อำเภอ)/.test(String(match.name))
-              ? 13
-              : /^(?:ถนน|ทางหลวง)/.test(String(match.name))
-                ? 14
-                : 15,
+          zoom: placeSearchZoom(String(match.name)),
         }
       : null
 

@@ -1,3 +1,4 @@
+import { isPlaceRoad } from './placeAutocomplete'
 import type { PropertySearchSuggestion } from './propertySearch'
 import { getTransitStation, transitStationPlace } from './transitStations'
 
@@ -24,7 +25,7 @@ export function listingPlaces(suggestions: PropertySearchSuggestion[]): ListingP
       const address =
         place?.address ||
         (s.project ? [s.project.district, s.project.province].filter(Boolean).join(' · ') : s.detail || '')
-      const road = /^(?:ถนน|ซอย|ทางหลวง)/.test(s.label)
+      const road = isPlaceRoad(s.label)
       // Multiple geometry points on one road can have identical visible labels.
       // Keep a single starting point when no address distinguishes the segments.
       if (road) {

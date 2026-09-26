@@ -2,16 +2,14 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { useInteractOutside } from '@/hooks/useInteractOutside'
+import { fetchLocationSearchSuggestions } from '@/lib/locationSearch'
+import { PLACE_AUTOCOMPLETE_DELAY, PLACE_AUTOCOMPLETE_MIN_LENGTH } from '@/lib/placeAutocomplete'
 import {
   clearPropertyRecentLocations,
   getPropertyRecentLocations,
   type PropertyRecentLocation,
 } from '@/lib/propertyRecentLocations'
-import {
-  fetchLongdoPropertyLocationSuggestions,
-  fetchPropertySearchSuggestions,
-  type PropertySearchSuggestion,
-} from '@/lib/propertySearch'
+import type { PropertySearchSuggestion } from '@/lib/propertySearch'
 import * as Headless from '@headlessui/react'
 import { MapPinIcon } from '@heroicons/react/24/outline'
 import { Location01Icon } from '@hugeicons/core-free-icons'
@@ -42,19 +40,6 @@ const locationTypeLabels: Record<string, { th: string; en: string }> = {
   project: { th: 'โครงการ', en: 'Project' },
   building: { th: 'อาคาร', en: 'Building' },
   longdo: { th: 'สถานที่จาก Longdo Map', en: 'Place from Longdo Map' },
-}
-
-const externalLocationPattern =
-  /(?:ถนน|ซอย|หมู่บ้าน|คอนโด|อาคาร|ตึก|โครงการ|ตลาด|ห้าง|โรงเรียน|มหาวิทยาลัย|โรงพยาบาล|สถานี|วัด|road|soi|village|condo|building|project|market|mall|school|university|hospital|station)/i
-
-const dedupeSuggestions = (items: PropertyLocationSuggestion[]) => {
-  const seen = new Set<string>()
-  return items.filter((item) => {
-    const key = (item.searchQuery || item.name).trim().toLocaleLowerCase('th-TH')
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
 }
 
 const styles = {
@@ -91,25 +76,14 @@ const toAutocompleteSuggestion = (
   index: number,
   isThai: boolean
 ): PropertyLocationSuggestion => ({
-  id: `autocomplete-${item.type}-${item.query}-${index}`,
-  name: item.query || item.label,
+  id: 'autocomplete-' + item.type + '-' + item.query + '-' + index,
+  name: item.label,
   nameTh: item.label,
   nameEn: item.label,
   searchQuery: item.query || item.label,
-  description: locationTypeLabels[item.description]?.[isThai ? 'th' : 'en'] || item.description,
-  provider: 'local',
-  source: 'autocomplete',
-})
-
-const toLongdoSuggestion = (item: PropertySearchSuggestion, index: number): PropertyLocationSuggestion => ({
-  id: `longdo-${item.query}-${index}`,
-  name: item.label || item.query,
-  nameTh: item.label || item.query,
-  nameEn: item.label || item.query,
-  searchQuery: item.query || item.label,
-  description: item.description,
-  provider: 'longdo',
-  source: 'longdo',
+  description: item.detail || locationTypeLabels[item.description]?.[isThai ? 'th' : 'en'] || item.description,
+  provider: item.type === 'longdo' ? 'longdo' : 'local',
+  source: item.type === 'longdo' ? 'longdo' : 'autocomplete',
 })
 
 export const PropertyLocationInputField: FC<Props> = ({
@@ -125,7 +99,6 @@ export const PropertyLocationInputField: FC<Props> = ({
   const isThai = locale === 'th'
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const longdoSuggestionCacheRef = useRef(new Map<string, PropertySearchSuggestion[]>())
   const [showPopover, setShowPopover] = useState(false)
   const [query, setQuery] = useState('')
   const [submittedQuery, setSubmittedQuery] = useState('')
@@ -173,58 +146,29 @@ export const PropertyLocationInputField: FC<Props> = ({
   }, [showPopover])
 
   useEffect(() => {
-    if (!showPopover || !normalizedQuery) return
-
+    if (!showPopover || Array.from(normalizedQuery).length < PLACE_AUTOCOMPLETE_MIN_LENGTH) {
+      setAutocompleteSuggestions([])
+      setIsLoading(false)
+      return
+    }
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
       setIsLoading(true)
-      const items = await fetchPropertySearchSuggestions(normalizedQuery, controller.signal, {
-        limit: 10,
-        scope: 'location',
-      })
-      if (controller.signal.aborted) return
-      const localSuggestions = items
-        .filter((item) => item.type === 'location')
-        .slice(0, 7)
-        .map((item, index) => toAutocompleteSuggestion(item, index, isThai))
-      setAutocompleteSuggestions(localSuggestions)
-
-      const shouldUseLongdo =
-        Array.from(normalizedQuery).length >= 3 &&
-        (localSuggestions.length < 5 || externalLocationPattern.test(normalizedQuery))
-      if (!shouldUseLongdo) {
-        setIsLoading(false)
-        return
+      try {
+        const items = await fetchLocationSearchSuggestions(normalizedQuery, controller.signal, locale)
+        if (!controller.signal.aborted)
+          setAutocompleteSuggestions(items.map((item, index) => toAutocompleteSuggestion(item, index, isThai)))
+      } catch {
+        if (!controller.signal.aborted) setAutocompleteSuggestions([])
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false)
       }
-
-      await new Promise((resolve) => window.setTimeout(resolve, 220))
-      if (controller.signal.aborted) return
-      const cacheKey = normalizedQuery.toLocaleLowerCase('th-TH')
-      let longdoItems = longdoSuggestionCacheRef.current.get(cacheKey)
-      if (!longdoItems) {
-        longdoItems = await fetchLongdoPropertyLocationSuggestions(normalizedQuery, controller.signal)
-        if (longdoItems.length) {
-          longdoSuggestionCacheRef.current.set(cacheKey, longdoItems)
-          if (longdoSuggestionCacheRef.current.size > 20) {
-            const oldestKey = longdoSuggestionCacheRef.current.keys().next().value
-            if (oldestKey) longdoSuggestionCacheRef.current.delete(oldestKey)
-          }
-        }
-      }
-      if (controller.signal.aborted) return
-      const longdoSuggestions = longdoItems.map(toLongdoSuggestion)
-      const combined = externalLocationPattern.test(normalizedQuery)
-        ? [...longdoSuggestions, ...localSuggestions]
-        : [...localSuggestions, ...longdoSuggestions]
-      setAutocompleteSuggestions(dedupeSuggestions(combined).slice(0, 7))
-      setIsLoading(false)
-    }, 180)
-
+    }, PLACE_AUTOCOMPLETE_DELAY)
     return () => {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [isThai, normalizedQuery, showPopover])
+  }, [isThai, locale, normalizedQuery, showPopover])
 
   const selectSuggestion = (item: PropertyLocationSuggestion | null) => {
     if (!item) return
@@ -312,7 +256,12 @@ export const PropertyLocationInputField: FC<Props> = ({
         </div>
 
         <Headless.Transition
-          show={showPopover && (Boolean(normalizedQuery) || recentSuggestions.length > 0)}
+          show={
+            showPopover &&
+            (normalizedQuery
+              ? Array.from(normalizedQuery).length >= PLACE_AUTOCOMPLETE_MIN_LENGTH
+              : recentSuggestions.length > 0)
+          }
           unmount={false}
         >
           <div className={clsx(styles.panel.base, styles.panel[fieldStyle], responsive && 'max-w-[calc(100vw-2rem)]')}>

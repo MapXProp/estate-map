@@ -7,7 +7,13 @@ import {
   type ListingPlace,
   type ListingPoint,
 } from '@/lib/listingLocation'
-import { fetchLocationSearchSuggestions } from '@/lib/locationSearch'
+import {
+  fetchPlaceAutocomplete,
+  PLACE_AUTOCOMPLETE_DELAY,
+  PLACE_AUTOCOMPLETE_MIN_LENGTH,
+  resolvePlaceAutocomplete,
+} from '@/lib/placeAutocomplete'
+import type { PropertySearchSuggestion } from '@/lib/propertySearch'
 import {
   Check,
   CheckCircle2,
@@ -21,7 +27,7 @@ import {
   ZoomOut,
 } from 'lucide-react'
 import Script from 'next/script'
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 export type LongdoPickerLocation = ListingPoint
 type MapLocation = { lon: number; lat: number }
@@ -77,7 +83,8 @@ export default function LongdoLocationPicker({
   const th = locale === 'th'
   const [query, setQuery] = useState(initialSearch)
   const [focused, setFocused] = useState(false)
-  const [results, setResults] = useState<ListingPlace[]>([])
+  const [results, setResults] = useState<PropertySearchSuggestion[]>([])
+  const [searchMode, setSearchMode] = useState<'suggest' | 'resolve'>('suggest')
   const [active, setActive] = useState(-1)
   const [searching, setSearching] = useState(false)
   const [searchMessage, setSearchMessage] = useState('')
@@ -123,52 +130,83 @@ export default function LongdoLocationPicker({
   }, [value, hasMarker, initialZoom])
   useEffect(() => () => clearTimeout(blurTimer.current), [])
 
+  const choosePlace = useCallback((place: ListingPlace) => {
+    setQuery(place.label)
+    setSearchMode('suggest')
+    setResults([])
+    setFocused(false)
+    setExpanded(true)
+    pendingZoom.current = place.zoom
+    callbacks.current.onInteractionStart()
+    callbacks.current.onChange(place.point)
+    searchRef.current?.blur()
+  }, [])
+
   useEffect(() => {
     const keyword = query.trim()
     setResults([])
     setActive(-1)
     setSearchMessage('')
-    if (!focused || Array.from(keyword).length < 2) {
+    if (!focused || Array.from(keyword).length < PLACE_AUTOCOMPLETE_MIN_LENGTH) {
       setSearching(false)
       return
     }
     const controller = new AbortController()
     setSearching(true)
-    const timer = window.setTimeout(async () => {
-      try {
-        const rows = listingPlaces(await fetchLocationSearchSuggestions(keyword, controller.signal))
-        if (controller.signal.aborted) return
-        setResults(rows)
-        if (!rows.length)
-          setSearchMessage(
-            th
-              ? 'ลองเพิ่มเขตหรือจังหวัด หรือค้นหาชื่อถนนใกล้เคียง'
-              : 'Try adding a district or province, or search a nearby road.'
-          )
-      } catch {
-        if (!controller.signal.aborted)
-          setSearchMessage(
-            th ? 'ค้นหาไม่สำเร็จ ลองอีกครั้งหรือเลือกบนแผนที่' : 'Search unavailable. Retry or choose on the map.'
-          )
-      } finally {
-        if (!controller.signal.aborted) setSearching(false)
-      }
-    }, 350)
+    const timer = window.setTimeout(
+      async () => {
+        try {
+          const rows = await (searchMode === 'resolve'
+            ? resolvePlaceAutocomplete(keyword, controller.signal, locale)
+            : fetchPlaceAutocomplete(keyword, controller.signal, locale))
+          if (controller.signal.aborted) return
+          if (searchMode === 'resolve') {
+            const places = listingPlaces(rows)
+            if (places.length === 1) {
+              choosePlace(places[0])
+              return
+            }
+            if (places.length > 1)
+              setSearchMessage(th ? 'เลือกสถานที่ให้ตรงกับเขตหรือจังหวัด' : 'Choose the matching district or province.')
+          }
+          setResults(rows)
+          if (!rows.length)
+            setSearchMessage(
+              th
+                ? 'ลองเพิ่มเขตหรือจังหวัด หรือค้นหาชื่อถนนใกล้เคียง'
+                : 'Try adding a district or province, or search a nearby road.'
+            )
+        } catch {
+          if (!controller.signal.aborted)
+            setSearchMessage(
+              th ? 'ค้นหาไม่สำเร็จ ลองอีกครั้งหรือเลือกบนแผนที่' : 'Search unavailable. Retry or choose on the map.'
+            )
+        } finally {
+          if (!controller.signal.aborted) setSearching(false)
+        }
+      },
+      searchMode === 'resolve' ? 0 : PLACE_AUTOCOMPLETE_DELAY
+    )
     return () => {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [focused, query, retry, th])
-
-  const choosePlace = (place: ListingPlace) => {
-    setQuery(place.label)
-    setResults([])
-    setFocused(false)
-    setExpanded(true)
-    pendingZoom.current = place.zoom
+  }, [focused, query, retry, th, locale, searchMode, choosePlace])
+  const chooseSuggestion = (suggestion: PropertySearchSuggestion) => {
+    const place = listingPlaces([suggestion])[0]
+    if (place) {
+      choosePlace(place)
+      return
+    }
     onInteractionStart()
-    onChange(place.point)
-    searchRef.current?.blur()
+    setQuery(suggestion.query || suggestion.label)
+    setSearchMode('resolve')
+    setResults([])
+    setActive(-1)
+    setRetry((n) => n + 1)
+    setFocused(true)
+    // Keep iOS blur handling from cancelling the coordinate lookup after a tap.
+    searchRef.current?.focus({ preventScroll: true })
   }
   const searchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (['ArrowDown', 'ArrowUp'].includes(event.key) && results.length) {
@@ -179,8 +217,10 @@ export default function LongdoLocationPicker({
     } else if (event.key === 'Enter') {
       event.preventDefault()
       // Enter must not silently pick the first result.
-      if (active >= 0 && results[active]) choosePlace(results[active])
+      if (active >= 0 && results[active]) chooseSuggestion(results[active])
       else {
+        if (Array.from(query.trim()).length >= PLACE_AUTOCOMPLETE_MIN_LENGTH) onInteractionStart()
+        setSearchMode('resolve')
         setFocused(true)
         setRetry((n) => n + 1)
       }
@@ -316,6 +356,7 @@ export default function LongdoLocationPicker({
             className="min-w-0 flex-1 border-0 bg-transparent px-0 py-3 text-base shadow-none outline-none placeholder:text-neutral-400 focus:ring-0"
             onChange={(event) => {
               setQuery(event.target.value)
+              setSearchMode('suggest')
               setActive(-1)
               setResults([])
               setFocused(true)
@@ -330,6 +371,7 @@ export default function LongdoLocationPicker({
               className="grid size-11 shrink-0 place-items-center rounded-xl text-neutral-500"
               onClick={() => {
                 setQuery('')
+                setSearchMode('suggest')
                 searchRef.current?.focus()
               }}
             >
@@ -342,6 +384,8 @@ export default function LongdoLocationPicker({
             className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#176b50] text-white"
             onClick={() => {
               searchRef.current?.focus()
+              if (Array.from(query.trim()).length >= PLACE_AUTOCOMPLETE_MIN_LENGTH) onInteractionStart()
+              setSearchMode('resolve')
               setFocused(true)
               setRetry((n) => n + 1)
             }}
@@ -359,19 +403,21 @@ export default function LongdoLocationPicker({
             >
               {results.map((place, index) => (
                 <button
-                  key={place.id}
+                  key={`${place.label}:${place.place?.lat ?? ''}:${place.place?.lon ?? ''}`}
                   id={`listing-address-result-${index}`}
                   type="button"
                   role="option"
                   aria-selected={index === active}
                   className={`flex min-h-16 w-full items-center gap-3 rounded-xl p-3 text-left ${index === active ? 'bg-emerald-50 dark:bg-emerald-950' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'}`}
                   onMouseEnter={() => setActive(index)}
-                  onClick={() => choosePlace(place)}
+                  onClick={() => chooseSuggestion(place)}
                 >
                   <MapPin className="size-5 shrink-0 text-[#176b50]" />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">{place.label}</span>
-                    <span className="mt-0.5 line-clamp-2 text-xs leading-5 text-neutral-500">{place.address}</span>
+                    <span className="mt-0.5 line-clamp-2 text-xs leading-5 text-neutral-500">
+                      {place.place?.address || place.detail}
+                    </span>
                   </span>
                   <ChevronRight className="size-4 shrink-0 text-neutral-400" />
                 </button>
@@ -529,10 +575,10 @@ export default function LongdoLocationPicker({
             <button
               type="button"
               data-confirm-listing-location
-              disabled={!mapReady || moving || confirmed || outsideThailand}
+              disabled={!mapReady || moving || confirmed || outsideThailand || (searching && searchMode === 'resolve')}
               onClick={() => {
                 const map = mapRef.current
-                if (!map || moving) return
+                if (!map || moving || (searching && searchMode === 'resolve')) return
                 const center = map.location(),
                   point = { lng: center.lon, lat: center.lat }
                 if (!isListingPoint(point)) return

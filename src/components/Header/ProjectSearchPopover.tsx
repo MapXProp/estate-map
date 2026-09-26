@@ -1,11 +1,9 @@
 'use client'
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
-import {
-  fetchPropertySearchSuggestions,
-  getPropertyMapSearchUrl,
-  PropertySearchSuggestion,
-} from '@/lib/propertySearch'
+import { fetchLocationSearchSuggestions, locationSearchDestination } from '@/lib/locationSearch'
+import { PLACE_AUTOCOMPLETE_DELAY, PLACE_AUTOCOMPLETE_MIN_LENGTH } from '@/lib/placeAutocomplete'
+import { getPropertyMapSearchUrl, PropertySearchSuggestion } from '@/lib/propertySearch'
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react'
 import { Building2, ChevronDown, House, Landmark, Search, ShoppingBag, Store } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -66,47 +64,46 @@ const ProjectSearchPopover = () => {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!query.trim()) {
-      setApiSuggestions([])
-      setLoading(false)
-      return
-    }
+    if (Array.from(query.trim()).length < PLACE_AUTOCOMPLETE_MIN_LENGTH) return
 
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
       setLoading(true)
-      const suggestions = await fetchPropertySearchSuggestions(query, controller.signal)
-      setApiSuggestions(
-        suggestions.filter(
-          (suggestion) =>
-            suggestion.type.toLowerCase() === 'project' || suggestion.description.toLowerCase() === 'project'
-        )
-      )
-      setLoading(false)
-    }, 180)
+      try {
+        const suggestions = await fetchLocationSearchSuggestions(query, controller.signal, locale)
+        if (!controller.signal.aborted) setApiSuggestions(suggestions.filter((suggestion) => suggestion.project))
+      } catch {
+        if (!controller.signal.aborted) setApiSuggestions([])
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }, PLACE_AUTOCOMPLETE_DELAY)
 
     return () => {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [query])
+  }, [query, locale])
 
   const matchingSamples = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('th-TH')
+    if (normalizedQuery) return []
     return sampleProjects.filter((project) => {
       const categoryMatches = category === 'all' || project.category === category
       const queryMatches =
         !normalizedQuery ||
-        `${project.name} ${project.descriptionTh} ${project.descriptionEn}`.toLocaleLowerCase('th-TH').includes(normalizedQuery)
+        `${project.name} ${project.descriptionTh} ${project.descriptionEn}`
+          .toLocaleLowerCase('th-TH')
+          .includes(normalizedQuery)
       return categoryMatches && queryMatches
     })
   }, [category, query])
 
-  const goToProject = (value: string, close: () => void) => {
+  const goToProject = (value: string, close: () => void, suggestion?: PropertySearchSuggestion) => {
     const nextQuery = value.trim()
     if (!nextQuery) return
     close()
-    router.push(getPropertyMapSearchUrl(nextQuery))
+    router.push(locationSearchDestination(getPropertyMapSearchUrl(nextQuery), suggestion))
   }
 
   return (
@@ -157,9 +154,15 @@ const ProjectSearchPopover = () => {
               <Search className="size-4.5 shrink-0 text-[#176b50] dark:text-emerald-300" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setApiSuggestions([])
+                  setLoading(false)
+                }}
                 className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-neutral-950 placeholder:text-neutral-400 focus:ring-0 dark:text-white"
-                placeholder={isThai ? 'พิมพ์ชื่อโครงการ ห้าง อาคาร หรือตลาด' : 'Project, mall, building, or market name'}
+                placeholder={
+                  isThai ? 'พิมพ์ชื่อโครงการ ห้าง อาคาร หรือตลาด' : 'Project, mall, building, or market name'
+                }
                 aria-label={isThai ? 'ค้นหาชื่อโครงการหรือห้าง' : 'Search project or mall'}
                 autoComplete="off"
               />
@@ -172,7 +175,7 @@ const ProjectSearchPopover = () => {
               </button>
             </form>
 
-            <div className="hidden-scrollbar mt-3 flex gap-1.5 overflow-x-auto pb-1">
+            <div className="mt-3 hidden-scrollbar flex gap-1.5 overflow-x-auto pb-1">
               {categories.map((item) => {
                 const Icon = item.icon
                 const active = category === item.id
@@ -209,7 +212,7 @@ const ProjectSearchPopover = () => {
                   <button
                     key={`${suggestion.type}-${suggestion.query}`}
                     type="button"
-                    onClick={() => goToProject(suggestion.query, close)}
+                    onClick={() => goToProject(suggestion.query, close, suggestion)}
                     className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-start transition hover:bg-[#f0f7f4] dark:hover:bg-emerald-950/40"
                   >
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#eaf4ef] text-[#176b50] dark:bg-emerald-950 dark:text-emerald-200">
@@ -220,13 +223,14 @@ const ProjectSearchPopover = () => {
                         {suggestion.label}
                       </span>
                       <span className="block truncate text-xs text-neutral-500 dark:text-neutral-400">
-                        {suggestion.description}
+                        {suggestion.detail || suggestion.description}
                       </span>
                     </span>
                   </button>
                 ))}
 
-                {!loading && apiSuggestions.length === 0 &&
+                {!loading &&
+                  apiSuggestions.length === 0 &&
                   matchingSamples.map((project) => (
                     <button
                       key={project.name}

@@ -48,6 +48,7 @@ function harness(variant, options = {}) {
     },
   }
   const imports = {
+    '@/lib/placeAutocomplete': require('./helpers/property-prices.cjs').load('src/lib/placeAutocomplete.ts'),
     '@/lib/transitStations': require('./helpers/transit-stations.cjs'),
     react: hooks,
     'react/jsx-runtime': require('react/jsx-runtime'),
@@ -189,7 +190,7 @@ function harness(variant, options = {}) {
   }
 }
 
-test('all entry points resolve one stable suggestion list and preserve an explicitly selected station and filters', async () => {
+test('all entry points preserve a selected Longdo station name and the existing filters', async () => {
   for (const variant of ['header', 'hero', 'sheet']) {
     let resolveLocal
     const h = harness(variant, {
@@ -206,8 +207,8 @@ test('all entry points resolve one stable suggestion list and preserve an explic
     const options = h.nodes((n) => n.props?.role === 'option')
     options[0].props.onClick()
     const url = new URL(h.navigation[0], 'https://mapxprop.com')
-    assert.equal(url.searchParams.get('station'), 'bts-n5')
-    assert.equal(url.searchParams.get('q'), 'BTS อารีย์ (N5)')
+    assert.equal(url.searchParams.get('station'), null)
+    assert.equal(url.searchParams.get('q'), 'BTS อารีย์ กรุงเทพมหานคร')
     assert.equal(url.searchParams.get('channel'), 'homes')
     assert.equal(url.searchParams.get('offer_type'), 'rent')
     h.render()
@@ -274,7 +275,7 @@ test('mobile autocomplete keeps loading rows unclickable and reveals the complet
   resolveExternal([{ type: 'longdo', label: 'สาทร ซอย 1', query: 'สาทร ซอย 1', description: 'longdo' }])
   await h.suggestions()
   const results = h.nodes((node) => node.props?.role === 'option')
-  results[1].props.onClick()
+  results[0].props.onClick()
   assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), 'สาทร ซอย 1')
 })
 
@@ -300,7 +301,7 @@ test('mobile empty field shows recent places and stale autocomplete responses ca
   oldResolve([{ type: 'location', label: 'สาทร', query: 'สาทร', description: 'district' }])
   await h.suggestions()
   h.nodes((node) => node.props?.role === 'option')[0].props.onClick()
-  assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), 'บางนา')
+  assert.equal(new URL(h.navigation[0], 'https://mapxprop.com').searchParams.get('q'), 'บางนา กรุงเทพมหานคร')
 })
 
 test('typing another place removes old clickable suggestions; direct submission preserves the new query and filters', async () => {

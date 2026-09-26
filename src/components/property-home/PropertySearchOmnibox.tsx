@@ -2,15 +2,11 @@
 
 import { usePreferences } from '@/components/preferences/PreferencesProvider'
 import { fetchLocationSearchSuggestions, locationSearchDestination } from '@/lib/locationSearch'
+import { PLACE_AUTOCOMPLETE_DELAY, PLACE_AUTOCOMPLETE_MIN_LENGTH } from '@/lib/placeAutocomplete'
 import { getPropertyRecentSearches, savePropertyRecentSearch } from '@/lib/propertyRecentSearches'
-import {
-  fetchLongdoPropertyLocationSuggestions,
-  fetchPropertySearchSuggestions,
-  getPropertyMapSearchUrl,
-  PropertySearchSuggestion,
-} from '@/lib/propertySearch'
+import { getPropertyMapSearchUrl, PropertySearchSuggestion } from '@/lib/propertySearch'
 import { clearSearchHistory, searchHistoryScope, subscribeSearchHistory } from '@/lib/propertySearchHistory'
-import { getTransitSearchSuggestions, getTransitStationMapUrl } from '@/lib/transitStations'
+import { getTransitStationMapUrl } from '@/lib/transitStations'
 import { Building2, Clock3, FileText, MapPin, Search, TrainFront } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FormEvent, KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
@@ -38,9 +34,6 @@ type Props = {
 
 const HEADER_SUGGESTION_LIMIT = 8
 
-const externalLocationPattern =
-  /(?:ถนน|ซอย|หมู่บ้าน|คอนโด|อาคาร|ตึก|โครงการ|ตลาด|ห้าง|โรงเรียน|มหาวิทยาลัย|โรงพยาบาล|สถานี|วัด|road|soi|village|condo|building|project|market|mall|school|university|hospital|station)/i
-
 const locationTypeLabels: Record<string, { th: string; en: string }> = {
   location: { th: 'ทำเล', en: 'Location' },
   country: { th: 'ประเทศ', en: 'Country' },
@@ -61,21 +54,6 @@ const locationTypeLabels: Record<string, { th: string; en: string }> = {
   space_type: { th: 'ประเภทพื้นที่', en: 'Space type' },
   feature: { th: 'สิ่งอำนวยความสะดวก', en: 'Feature' },
   search: { th: 'คำค้น', en: 'Search' },
-}
-
-const normalizedSuggestionKey = (item: PropertySearchSuggestion) =>
-  (item.query || item.label).trim().replace(/\s+/g, ' ').toLocaleLowerCase('th-TH')
-
-const dedupeSuggestions = (items: PropertySearchSuggestion[], limit: number) => {
-  const seen = new Set<string>()
-  return items
-    .filter((item) => {
-      const key = normalizedSuggestionKey(item)
-      if (!key || seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-    .slice(0, limit)
 }
 
 const suggestionDescription = (item: PropertySearchSuggestion, isThai: boolean) => {
@@ -140,7 +118,6 @@ const PropertySearchOmnibox = ({
   const integratedHeader = isHeader && Boolean(children)
   const listboxId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
-  const longdoSuggestionCacheRef = useRef(new Map<string, PropertySearchSuggestion[]>())
   const [query, setQuery] = useState(initialQuery)
   const [focused, setFocused] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -149,6 +126,7 @@ const PropertySearchOmnibox = ({
   const [clearingHistory, setClearingHistory] = useState(false)
   const [historyError, setHistoryError] = useState('')
   const normalizedQuery = query.trim().replace(/\s+/g, ' ')
+  const canSuggest = Array.from(normalizedQuery).length >= PLACE_AUTOCOMPLETE_MIN_LENGTH
 
   useEffect(
     () =>
@@ -180,71 +158,31 @@ const PropertySearchOmnibox = ({
 
     if (useRecents && !normalizedQuery) return
 
+    if (Array.from(normalizedQuery).length < PLACE_AUTOCOMPLETE_MIN_LENGTH) {
+      setSuggestions([])
+      setLoading(false)
+      return
+    }
     const controller = new AbortController()
-    const timer = window.setTimeout(
-      async () => {
-        setLoading(true)
-        if (suggestionScope === 'location') {
-          try {
-            const items = await fetchLocationSearchSuggestions(normalizedQuery, controller.signal)
-            if (!controller.signal.aborted) {
-              setSuggestions(items)
-              setActiveIndex(-1)
-            }
-          } catch {
-            if (!controller.signal.aborted) setSuggestions([])
-          } finally {
-            if (!controller.signal.aborted) setLoading(false)
-          }
-          return
+    const timer = window.setTimeout(async () => {
+      setLoading(true)
+      try {
+        const items = await fetchLocationSearchSuggestions(normalizedQuery, controller.signal, locale)
+        if (!controller.signal.aborted) {
+          setSuggestions(items)
+          setActiveIndex(-1)
         }
-        setSuggestions(getTransitSearchSuggestions(normalizedQuery, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
-        const localItems = await fetchPropertySearchSuggestions(normalizedQuery, controller.signal, {
-          limit: isHeader ? 8 : undefined,
-          scope: suggestionScope,
-        })
-        if (controller.signal.aborted) return
-
-        // Local matches stay tappable while external place results are still loading.
-        setSuggestions(dedupeSuggestions(localItems, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
-
-        let items = localItems
-        if (Array.from(normalizedQuery).length >= 3) {
-          const localLocationCount = localItems.filter((item) => item.type === 'location').length
-          const shouldUseLongdo = localLocationCount < 3 || externalLocationPattern.test(normalizedQuery)
-
-          if (shouldUseLongdo) {
-            await new Promise((resolve) => window.setTimeout(resolve, 220))
-            if (controller.signal.aborted) return
-
-            const cacheKey = normalizedQuery.toLocaleLowerCase('th-TH')
-            let longdoItems = longdoSuggestionCacheRef.current.get(cacheKey)
-            if (!longdoItems) {
-              longdoItems = await fetchLongdoPropertyLocationSuggestions(normalizedQuery, controller.signal)
-              if (longdoItems.length) {
-                longdoSuggestionCacheRef.current.set(cacheKey, longdoItems)
-                if (longdoSuggestionCacheRef.current.size > 20) {
-                  const oldestKey = longdoSuggestionCacheRef.current.keys().next().value
-                  if (oldestKey) longdoSuggestionCacheRef.current.delete(oldestKey)
-                }
-              }
-            }
-            if (controller.signal.aborted) return
-            // Append new matches so a visible row never moves under a user's finger.
-            items = [...localItems, ...(longdoItems || [])]
-          }
-        }
-
-        setSuggestions(dedupeSuggestions(items, isHeader ? HEADER_SUGGESTION_LIMIT : 8))
-        setLoading(false)
-      },
-      normalizedQuery ? 180 : 0
-    )
+      } catch {
+        if (!controller.signal.aborted) setSuggestions([])
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }, PLACE_AUTOCOMPLETE_DELAY)
     return () => {
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [focused, isHeader, isThai, normalizedQuery, showSuggestionsOnEmpty, suggestionScope, useRecents])
+  }, [focused, locale, normalizedQuery, showSuggestionsOnEmpty, useRecents])
 
   useEffect(() => {
     if (!focused || !scrollSuggestionsIntoView) return
@@ -316,7 +254,7 @@ const PropertySearchOmnibox = ({
     submit(undefined, suggestion.query, suggestion)
   }
 
-  const searchableItemCount = suggestions.length + (normalizedQuery ? 1 : 0)
+  const searchableItemCount = canSuggest ? suggestions.length + 1 : !normalizedQuery ? suggestions.length : 0
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Escape') {
       setFocused(false)
@@ -416,7 +354,7 @@ const PropertySearchOmnibox = ({
             setQuery(nextQuery)
             setActiveIndex(-1)
             setSuggestions(useRecents && !nextQuery.trim() ? recentHeaderSuggestions(isThai) : [])
-            setLoading(Boolean(nextQuery.trim()))
+            setLoading(Array.from(nextQuery.trim()).length >= PLACE_AUTOCOMPLETE_MIN_LENGTH)
           }}
           onKeyDown={handleInputKeyDown}
           aria-label={isThai ? 'ค้นหาอสังหาริมทรัพย์' : 'Search properties'}
@@ -424,7 +362,7 @@ const PropertySearchOmnibox = ({
           aria-autocomplete="list"
           aria-expanded={
             focused &&
-            (showSuggestionsOnEmpty || Boolean(normalizedQuery)) &&
+            (normalizedQuery ? canSuggest : showSuggestionsOnEmpty) &&
             (loading || suggestions.length > 0 || Boolean(normalizedQuery))
           }
           aria-controls={listboxId}
@@ -471,7 +409,7 @@ const PropertySearchOmnibox = ({
       </form>
 
       {focused &&
-        (showSuggestionsOnEmpty || Boolean(normalizedQuery)) &&
+        (normalizedQuery ? canSuggest : showSuggestionsOnEmpty) &&
         (loading || suggestions.length > 0 || Boolean(normalizedQuery)) && (
           <div
             id={listboxId}

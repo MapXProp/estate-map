@@ -123,6 +123,7 @@ test('known landmarks and all station selections resolve without external geocod
     {
       './auth': { getAuthApiUrl: (value) => value },
       './propertyMapLocations': locations,
+      './placeAutocomplete': load('src/lib/placeAutocomplete.ts'),
       './locationSearch': require('./helpers/location-search.cjs')().location,
       './transitStations': transit,
     },
@@ -147,7 +148,7 @@ test('known landmarks and all station selections resolve without external geocod
     const place = await model.resolveMapSearchPlace(query, '', true, new AbortController().signal)
     assert.equal(place.lat, 13.780953470242196)
     assert.equal(place.lon, 100.54483583660047)
-    assert.ok(place.name.includes('ซอยอารีย์'))
+    assert.ok(place.name.includes(query === 'Ari' ? 'Ari' : 'ซอยอารีย์'))
   }
   for (const query of ['พระราม 9', 'Rama 9', 'แยกพระราม 9–รัชดาภิเษก']) {
     const place = await model.resolveMapSearchPlace(query, '', true, new AbortController().signal)
@@ -160,7 +161,7 @@ test('known landmarks and all station selections resolve without external geocod
   )
 })
 
-test('local stations remain in both autocomplete clients when remote search services fail', async () => {
+test('legacy station lookup remains available but the shared autocomplete does not inject local stations on provider failure', async () => {
   const fetch = async () => {
     throw Error('Search service unavailable')
   }
@@ -179,18 +180,19 @@ test('local stations remain in both autocomplete clients when remote search serv
     {
       './auth': { getAuthApiUrl: (value) => value },
       './propertyMapLocations': locations,
+      './placeAutocomplete': load('src/lib/placeAutocomplete.ts'),
       './locationSearch': require('./helpers/location-search.cjs')(fetch).location,
       './transitStations': transit,
     },
     { fetch }
   )
   const suggestions = await map.fetchMapSearchSuggestions('MT02', 'listings', '', new AbortController().signal)
-  assert.equal(suggestions[0].stationId, 'mrt-mt02')
-  assert.equal(suggestions[0].kind, 'station')
+  assert.equal(suggestions.length, 0)
 })
 
 test('public location APIs serve known stations and corrected landmarks before provider keys or quota are needed', async () => {
   const imports = {
+    '@/lib/placeAutocomplete': load('src/lib/placeAutocomplete.ts'),
     '@/lib/transitStations': transit,
     '@/lib/propertyMapLocations': locations,
     '@/lib/server/longdoQuota': {

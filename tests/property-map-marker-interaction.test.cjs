@@ -287,6 +287,7 @@ function harness(width, initialZoom = 14, initialListings = [listing], projectsE
       visibilityState: 'visible',
     },
     require: (name) => {
+      if (name === '@/lib/placeAutocomplete') return require('./helpers/property-prices.cjs').load('src/lib/placeAutocomplete.ts')
       if (!(name in imports)) throw Error(name)
       return imports[name]
     },
@@ -1092,7 +1093,7 @@ test('submitting search cancels pending autocomplete so a late empty suggestion 
   h.setSuggestPlaces(() => new Promise(resolve => { release = resolve }))
   h.setSearchPlace(async () => undefined)
   h.typeSearch('unknown place')
-  h.advance(180)
+  h.advance(300)
   await h.flushSearch()
   assert.equal(typeof release, 'function')
   await h.search('unknown place')

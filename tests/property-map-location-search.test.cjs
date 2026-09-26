@@ -118,7 +118,7 @@ test('province searches use a wide area view without depending on listings or a 
   })
   for (const query of ['สุราษฎร์ธานี', 'Surat Thani', 'surat-thani']) {
     const place = await m.resolveMapSearchPlace(query, 'test', true, signal())
-    assert.deepEqual(plain(place), { name: 'สุราษฎร์ธานี', address: '', lat: 9.1382, lon: 99.3217, zoom: 10 })
+    assert.deepEqual(plain(place), { name: query === 'สุราษฎร์ธานี' ? 'สุราษฎร์ธานี' : 'Surat Thani', address: '', lat: 9.1382, lon: 99.3217, zoom: 10 })
   }
 })
 

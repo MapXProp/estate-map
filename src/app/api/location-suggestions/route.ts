@@ -1,3 +1,4 @@
+import { isPlaceRoad, placeSearchLocale, placeSearchZoom } from '@/lib/placeAutocomplete'
 import { getLongdoApiKey, longdoNoStoreHeaders, takeLongdoQuota } from '@/lib/server/longdoQuota'
 import { getTransitSearchSuggestions } from '@/lib/transitStations'
 import { NextRequest, NextResponse } from 'next/server'
@@ -17,13 +18,18 @@ const cache = new Map<string, { expires: number; suggestions: Suggestion[] }>()
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim().replace(/\s+/g, ' ') || ''
-  if (query.length <= 120 && /(?:\b(?:bts|mrt|arl|srt|brt)\b|สถานี|รถไฟฟ้า|^[A-Z]{1,3}\d{1,2}$)/i.test(query)) {
+  if (
+    request.nextUrl.searchParams.get('source') !== 'longdo' &&
+    query.length <= 120 &&
+    /(?:\b(?:bts|mrt|arl|srt|brt)\b|สถานี|รถไฟฟ้า|^[A-Z]{1,3}\d{1,2}$)/i.test(query)
+  ) {
     const stations = getTransitSearchSuggestions(query)
     if (stations.length) return NextResponse.json({ suggestions: stations }, { headers: longdoNoStoreHeaders })
   }
   if (Array.from(query).length < 3 || query.length > 120)
     return NextResponse.json({ suggestions: [] }, { headers: longdoNoStoreHeaders })
-  const cacheKey = query.toLocaleLowerCase('th-TH')
+  const locale = placeSearchLocale(query, request.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'th')
+  const cacheKey = locale + ':' + query.toLocaleLowerCase('th-TH')
   const cached = cache.get(cacheKey)
   if (cached && cached.expires > Date.now())
     return NextResponse.json({ suggestions: cached.suggestions }, { headers: longdoNoStoreHeaders })
@@ -38,7 +44,7 @@ export async function GET(request: NextRequest) {
   try {
     // Search returns the actual address and coordinates. Suggest returns only
     // words, which cannot distinguish two places sharing the same name.
-    const params = new URLSearchParams({ keyword: query, limit: '12', locale: 'th', key: apiKey })
+    const params = new URLSearchParams({ keyword: query, limit: '12', locale, key: apiKey })
     const response = await fetch('https://search.longdo.com/mapsearch/json/search?' + params, {
       cache: 'no-store',
       signal: AbortSignal.timeout(4500),
@@ -70,24 +76,27 @@ export async function GET(request: NextRequest) {
         seen.add(key)
         // A road geometry can yield multiple points with identical visible
         // labels. Keep one when no address distinguishes its road segments.
-        if (!address && /^(?:ถนน|ทางหลวง)/.test(name)) {
-          if (unnamedRoads.has(name)) return []
-          unnamedRoads.add(name)
+        if (isPlaceRoad(name)) {
+          const roadKey = name + ':' + address
+          if (unnamedRoads.has(roadKey)) return []
+          unnamedRoads.add(roadKey)
         }
-        const zoom = /^(?:จ\.|จังหวัด)/.test(name)
-          ? 10
-          : /^(?:เขต|อ\.|อำเภอ)/.test(name)
-            ? 13
-            : /^(?:ถนน|ทางหลวง)/.test(name)
-              ? 14
-              : 15
+        const zoom = placeSearchZoom(name)
         return [
           {
             type: 'longdo',
             label: name,
             description: 'location',
             query: name,
-            detail: address || (/^(?:ถนน|ซอย|ทางหลวง)/.test(name) ? 'ถนน / ซอย' : 'สถานที่ / ทำเล'),
+            detail:
+              address ||
+              (locale === 'en'
+                ? isPlaceRoad(name)
+                  ? 'Road / soi'
+                  : 'Place / area'
+                : isPlaceRoad(name)
+                  ? 'ถนน / ซอย'
+                  : 'สถานที่ / ทำเล'),
             place: { name, address, lat, lon, zoom },
           },
         ]

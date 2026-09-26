@@ -1,6 +1,7 @@
 'use client'
 
 import { locationSearchDestination } from '@/lib/locationSearch'
+import { PLACE_AUTOCOMPLETE_DELAY, PLACE_AUTOCOMPLETE_MIN_LENGTH } from '@/lib/placeAutocomplete'
 import { getMapListingPrices, propertyPinPricesText, propertyPricesText } from '@/lib/propertyPrices'
 import {
   clearSearchHistory,
@@ -885,7 +886,11 @@ const LongdoPropertyMap = ({
       setIsSuggesting(false)
       return subscribeSearchHistory(recent)
     }
-    if (!isSearchFocused || keyword.length < 2 || submittedSearchRef.current === keyword) {
+    if (
+      !isSearchFocused ||
+      Array.from(keyword).length < PLACE_AUTOCOMPLETE_MIN_LENGTH ||
+      submittedSearchRef.current === keyword
+    ) {
       // Reset the asynchronous suggestion UI when the input is no longer eligible for lookup.
       setSuggestions([])
       setActiveSuggestionIndex(-1)
@@ -918,7 +923,7 @@ const LongdoPropertyMap = ({
       } finally {
         if (!controller.signal.aborted) setIsSuggesting(false)
       }
-    }, 180)
+    }, PLACE_AUTOCOMPLETE_DELAY)
 
     return () => {
       clearTimeout(timer)

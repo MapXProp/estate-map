@@ -1,12 +1,8 @@
 import { getAuthApiUrl } from './auth'
-import { getPropertyMapLocationPreset } from './propertyMapLocations'
+import { fetchPlaceAutocomplete, PLACE_AUTOCOMPLETE_MIN_LENGTH, placeSearchLocale } from './placeAutocomplete'
 import type { MapProjectDetails } from './propertyMapProjects'
-import {
-  fetchLongdoPropertyLocationSuggestions,
-  fetchPropertySearchSuggestions,
-  type PropertySearchSuggestion,
-} from './propertySearch'
-import { getTransitSearchSuggestions, getTransitStationMapUrl } from './transitStations'
+import type { PropertySearchSuggestion } from './propertySearch'
+import { getTransitStationMapUrl } from './transitStations'
 
 export const LOCATION_SEARCH_PLACEHOLDER_TH = 'ค้นหาย่าน ถนน หรือสถานที่'
 export const LOCATION_SEARCH_PLACEHOLDER_EN = 'Search area, road or place'
@@ -31,99 +27,48 @@ export const validSearchPlace = (place: PropertySearchSuggestion['place']) =>
 export const locationSearchZoom = (name: string) =>
   /^(?:จ\.|จังหวัด)/.test(name) ? 10 : /^(?:เขต|อ\.|อำเภอ)/.test(name) ? 13 : /^(?:ถนน|ทางหลวง)/.test(name) ? 14 : 15
 
-const areaName = (name: string) =>
-  locationSearchKey(
-    name
-      .split(' · ')[0]
-      .replace(/^(?:เขต|อำเภอ|แขวง|ตำบล|จังหวัด|อ\.|จ\.|ต\.)\s*/, '')
-      .split(/\s+(?=กรุงเทพ|จังหวัด|จ\.|อำเภอ|เขต)/)[0]
-  )
-const locationLabels: Record<string, string> = {
-  neighborhood: 'ย่าน',
-  district: 'เขต / อำเภอ',
-  subdistrict: 'แขวง / ตำบล',
-  province: 'จังหวัด',
-  location: 'ทำเล',
-  project: 'โครงการ',
-  building: 'อาคาร',
-}
-
 export function mergeLocationSuggestions(
   query: string,
-  local: PropertySearchSuggestion[],
+  _local: PropertySearchSuggestion[],
   external: PropertySearchSuggestion[],
   projects: MapProjectDetails[] = []
 ) {
   const key = locationSearchKey(query)
-  const preset = getPropertyMapLocationPreset(query)
-  const presetRows: PropertySearchSuggestion[] = preset
-    ? [
-        {
-          type: 'location',
-          label: preset.nameTh,
-          query: preset.nameTh,
-          description: 'location',
-          detail: 'ทำเล',
-          place: { name: preset.nameTh, address: '', lat: preset.latitude, lon: preset.longitude, zoom: preset.zoom },
-        },
-      ]
-    : []
+  const english = placeSearchLocale(query) === 'en'
   const projectRows: PropertySearchSuggestion[] = projects
     .filter((project) => project.public_project_id && (project.display_name || project.name_th || project.name_en))
-    .map((project) => ({
-      type: 'project',
-      label: project.display_name || project.name_th || project.name_en,
-      query: project.display_name || project.name_th || project.name_en,
-      description: 'project',
-      detail: ['โครงการ', project.district, project.province].filter(Boolean).join(' · '),
-      project,
-    }))
-  const items: PropertySearchSuggestion[] = [
-    ...presetRows,
-    ...local
-      .filter(
-        (item) =>
-          item.type === 'location' &&
-          !projectRows.some((project) => locationSearchKey(project.label) === locationSearchKey(item.label))
-      )
-      .map((item) => ({
-        ...item,
-        detail:
-          item.detail && !/^รหัส\s*:/.test(item.detail) ? item.detail : locationLabels[item.description] || 'ทำเล',
-      })),
-    ...external,
-    ...getTransitSearchSuggestions(query),
+    .map((project) => {
+      const label =
+        (english ? project.name_en : project.name_th) || project.display_name || project.name_th || project.name_en
+      return {
+        type: 'project',
+        label,
+        query: label,
+        description: 'project',
+        detail: [english ? 'Project' : 'โครงการ', project.district, project.province].filter(Boolean).join(' · '),
+        project,
+      }
+    })
+  // Only Longdo places and registered projects belong in autocomplete. Listing
+  // titles and the database's administrative address groups stay out of it.
+  const items = [
     ...projectRows,
+    ...external.filter(
+      (item) =>
+        !projectRows.some((project) =>
+          [project.project?.name_th, project.project?.name_en, project.label].some(
+            (name) => name && locationSearchKey(name) === locationSearchKey(item.label)
+          )
+        )
+    ),
   ]
-  // Prefer an identified place over a text-only copy of the same name. Keep
-  // homonyms with different coordinates/addresses and separate train lines.
-  const identified = items.filter((item) => validSearchPlace(item.place))
-  const enriched = items.map((item) => {
-    if (item.place || item.stationId || item.project) return item
-    const matches = identified.filter((other) => locationSearchKey(other.label) === locationSearchKey(item.label))
-    return matches.length === 1 ? { ...item, place: matches[0].place, detail: matches[0].detail || item.detail } : item
-  })
   const seen = new Set<string>()
   const score = (item: PropertySearchSuggestion) => {
-    const label = areaName(item.label)
-    const areaKey = areaName(query) || key
-    const match = label === areaKey ? 0 : label.startsWith(areaKey) ? 10 : label.includes(areaKey) ? 20 : 30
-    return (
-      match +
-      (item.stationId
-        ? explicitTransitQuery(query)
-          ? -60
-          : 25
-        : item.project
-          ? 18
-          : validSearchPlace(item.place)
-            ? -2
-            : 0)
-    )
+    const label = locationSearchKey(item.label)
+    return label === key ? 0 : label.startsWith(key) ? 10 : label.includes(key) ? 20 : 30
   }
-  let stations = 0,
-    projectCount = 0
-  return enriched
+  let projectCount = 0
+  return items
     .sort((a, b) => score(a) - score(b))
     .filter((item) => {
       const id = item.stationId
@@ -133,7 +78,6 @@ export function mergeLocationSuggestions(
           : `${locationSearchKey(item.label)}:${item.place ? `${item.place.lat.toFixed(4)},${item.place.lon.toFixed(4)}` : ''}`
       if (!item.label.trim() || seen.has(id)) return false
       seen.add(id)
-      if (item.stationId && ++stations > (explicitTransitQuery(query) ? 6 : 2)) return false
       if (item.project && ++projectCount > 2) return false
       return true
     })
@@ -143,12 +87,13 @@ export function mergeLocationSuggestions(
 const cache = new Map<string, { at: number; items: PropertySearchSuggestion[] }>()
 export async function fetchLocationSearchSuggestions(
   query: string,
-  signal: AbortSignal
+  signal: AbortSignal,
+  locale: 'th' | 'en' = 'th'
 ): Promise<PropertySearchSuggestion[]> {
   const value = query.trim().replace(/\s+/g, ' ')
-  if (Array.from(value).length < 2 || value.length > 120) return []
+  if (Array.from(value).length < PLACE_AUTOCOMPLETE_MIN_LENGTH || value.length > 120) return []
   signal.throwIfAborted()
-  const key = value.toLocaleLowerCase('th-TH')
+  const key = placeSearchLocale(value, locale) + ':' + value.toLocaleLowerCase('th-TH')
   const cached = cache.get(key)
   if (cached && Date.now() - cached.at < 300000) return cached.items
   const projectLookup = async () => {
@@ -159,19 +104,15 @@ export async function fetchLocationSearchSuggestions(
     if (!response.ok) return []
     return ((await response.json()) as { projects?: MapProjectDetails[] }).projects || []
   }
-  const results = await Promise.allSettled([
-    fetchPropertySearchSuggestions(value, signal, { scope: 'location', limit: 12 }),
-    fetchLongdoPropertyLocationSuggestions(value, signal),
-    projectLookup(),
-  ])
+  const results = await Promise.allSettled([fetchPlaceAutocomplete(value, signal, locale), projectLookup()])
   signal.throwIfAborted()
   const items = mergeLocationSuggestions(
     value,
+    [],
     results[0].status === 'fulfilled' ? results[0].value : [],
-    results[1].status === 'fulfilled' ? results[1].value : [],
-    results[2].status === 'fulfilled' ? results[2].value : []
+    results[1].status === 'fulfilled' ? results[1].value : []
   )
-  if (items.length) {
+  if (items.length && results.every((result) => result.status === 'fulfilled')) {
     cache.set(key, { at: Date.now(), items })
     if (cache.size > 40) cache.delete(cache.keys().next().value!)
   }

@@ -2,6 +2,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const { load } = require('./helpers/property-prices.cjs')
 const { listingPlaces, parseListingCoordinates, sameListingPoint } = load('src/lib/listingLocation.ts', {
+  './placeAutocomplete': load('src/lib/placeAutocomplete.ts'),
   './transitStations': {
     getTransitStation: id => id === 'bts-ari' ? { id } : undefined,
     transitStationPlace: () => ({ lat: 13.7795, lon: 100.5446, address: 'พญาไท กรุงเทพฯ', zoom: 16 }),
